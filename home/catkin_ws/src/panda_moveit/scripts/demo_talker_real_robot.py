@@ -397,8 +397,8 @@ if __name__ == '__main__':
     #panda.move_to(x=-0.2, y=0.0, z=1.9)
     #panda.move_straight_line_jac()
     
-    #targetPositionsJoints_test = [0.0,-0.08,0.0,-1.65,0.0,1.58,0.870]
-    #panda.move_to_target_joints(targetPositionsJoints_test)
+    targetPositionsJoints_test = [0.0,-0.08,0.0,-1.65,0.0,1.58,0.870]
+    panda.move_to_target_joints(targetPositionsJoints_test)
     #targetPositionsJoints_test = [-2.5,0.0,0.0,-1.0,1.7,1.57,0.6]
     #panda.move_to_target_joints(targetPositionsJoints_test)
     ###targetPositionsJoints_test = [-1.42,0.7,0.0,-2.5,1.7,1.57,0.69]
@@ -407,8 +407,8 @@ if __name__ == '__main__':
     ###targetPositionsJoints_test = [-1.71, 0.78, -0.31, -2.23, 1.21, 1.35, 0.84]
     ###targetPositionsJoints_test = [-0.6775140517657262, 0.7127484643415426, 0.4621938594010617, -2.6687187543477897, 2.8689298160969887, 1.4986877312925124, 0.44157811804032987]
     ###targetPositionsJoints_test = [-1.04,0.82,0.33,-2.13,0.73,1.64,1.07]
-    targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.469608373509513, 0.9228163020693847]
-    panda.move_to_target_joints(targetPositionsJoints_test)
+    #targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.469608373509513, 0.9228163020693847]
+    #panda.move_to_target_joints(targetPositionsJoints_test)
     #panda.move_straight_line_ccp()
     #panda.move_back_straight_line_ccp()
     #panda.move_y_straight_line_ccp()

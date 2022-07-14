@@ -392,12 +392,14 @@ class PFMove():
         self.display_real_object_in_visual_model(observation)
         self.draw_contrast_figure(estimated_object_pose,observation)
         
-        print("write error file")
+        
         error = self.compute_distance(estimated_object_pose,observation)
         self.error_df[self.u_flag]=[error]
         self.u_flag = self.u_flag + 1
         while self.u_flag == 8:
-            self.error_df.to_csv('error_sum.csv_0_0',index=0,header=0,mode='a')
+            print("write error file")
+            self.error_df.to_csv('error_sum_0_0.csv',index=0,header=0,mode='a')
+            self.u_flag = self.u_flag + 1
         # print debug info of all particles here
         #input('hit enter to continue')
         return
@@ -648,14 +650,14 @@ if __name__ == '__main__':
     print(init_object_ori)
 
     #compute transformation matrix
-    input('Press [ENTER] to compute transformation matrix')
+    #input('Press [ENTER] to compute transformation matrix')
     robot_T_object = compute_transformation_matrix(init_robot_pos,init_robot_ori,init_object_pos,init_object_ori)
 
     pybullet_robot_pos = [0.0, 0.0, 0.0]
     pybullet_robot_ori = [0,0,0,1]
 
     
-    input('Press [ENTER] to compute the pose of object in the pybullet world')
+    #input('Press [ENTER] to compute the pose of object in the pybullet world')
     #init_object_pos = [0.567, -0.3642, 0.057]
     pybullet_robot_transformation_matrix = transformations.quaternion_matrix(pybullet_robot_ori)
     pw_T_robot = rotation_4_4_to_transformation_4_4(pybullet_robot_transformation_matrix,pybullet_robot_pos)
@@ -672,7 +674,7 @@ if __name__ == '__main__':
                                                    pw_T_object_pos,
                                                    pw_T_object_ori)                          
     
-    input('Press [ENTER] to initial real world model')
+    #input('Press [ENTER] to initial real world model')
     #build an object of class "InitialRealworldModel"
     real_world_object = InitialRealworldModel(ros_listener.current_joint_values)
     print("ros_listener.current_joint_values:")
@@ -684,7 +686,7 @@ if __name__ == '__main__':
     #build an object of class "Franka_robot"
     franka_robot = Franka_robot(real_robot_id)
     
-    input('Press [ENTER] to initial simulation world model')
+    #input('Press [ENTER] to initial simulation world model')
     particle_cloud = []
     particle_num = 50
     d_thresh_limitation = 0.05
@@ -723,7 +725,7 @@ if __name__ == '__main__':
         print(ros_listener.object_ori)
     '''
     
-    input('Press [ENTER] to enter into while loop')
+    #input('Press [ENTER] to enter into while loop')
     while True:
         franka_robot.fanka_robot_move(ros_listener.current_joint_values)
         p_visualisation.stepSimulation()

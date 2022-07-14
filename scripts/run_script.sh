@@ -11,6 +11,7 @@ if [ ! -d "$HOME/catkin_ws/devel" ]; then
     catkin_make
     pip install pyquaternion
     pip3 install pybullet
+    pip3 install pandas
 fi
 
 source $HOME/catkin_ws/devel/setup.bash

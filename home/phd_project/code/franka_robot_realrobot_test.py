@@ -31,6 +31,7 @@ import random
 import copy
 import os
 import matplotlib.pyplot as plt
+import pandas as pd
 '''
 physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
 p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
@@ -318,6 +319,7 @@ class PFMove():
         self.object_estimate_pose_y = []
         self.object_real_____pose_x = []
         self.object_real_____pose_y = []
+        self.error_df = pd.DataFrame()
 
     #new structure
     def real_robot_control(self,observation,pw_T_object_ori,real_robot_joint_pos):   
@@ -372,8 +374,7 @@ class PFMove():
                                                    pybullet_env.POSITION_CONTROL,
                                                    targetPosition=position[joint_index])  
     
-    
-    #already changed need to del                                                         
+                                                            
     def compute_distance(self,object_current_pos,object_last_update_pos):
         x_distance = object_current_pos[0] - object_last_update_pos[0]
         y_distance = object_current_pos[1] - object_last_update_pos[1]
@@ -381,18 +382,22 @@ class PFMove():
         return distance
         
     #executed_control 
-    def update_particle_filter_cheat(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos, observation,pw_T_object_ori):
+    def update_particle_filter_cheat(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos, observation, pw_T_object_ori):
         self.motion_update(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
         estimated_object_pose = self.observation_update(observation,pw_T_object_ori)
         #if Flag is False:
         #    return False
         print("display particle")
         self.display_particle_in_visual_model(self.particle_cloud)
-        self.display_real_robot_in_visual_model(observation)
-        
-
-        
+        self.display_real_object_in_visual_model(observation)
         self.draw_contrast_figure(estimated_object_pose,observation)
+        
+        print("write error file")
+        error = self.compute_distance(estimated_object_pose,observation)
+        self.error_df[self.u_flag]=[error]
+        self.u_flag = self.u_flag + 1
+        while self.u_flag == 8:
+            self.error_df.to_csv('error_sum.csv_0_0',index=0,header=0,mode='a')
         # print debug info of all particles here
         #input('hit enter to continue')
         return
@@ -496,9 +501,7 @@ class PFMove():
         for particle in self.particle_cloud:
             particle_w = particle.w/tot_weight
             particle.w = particle_w
-            
         #tot_weight_test = sum([particle.w for particle in self.particle_cloud])
-        
         #print("tot_weight_test:",tot_weight_test)
             
     def resample_particles(self):
@@ -507,17 +510,14 @@ class PFMove():
         n_particle = len(self.particle_cloud)
         for particle in self.particle_cloud:
             particles_w.append(particle.w)
-        
         particle_array= np.random.choice(a = n_particle, size = n_particle, replace=True, p= particles_w)
         particle_array_list = list(particle_array)
         for index,i in enumerate(particle_array_list):
             particle = Particle(self.particle_cloud[i].x,self.particle_cloud[i].y,self.particle_cloud[i].z,self.particle_cloud[i].w,index)
             newParticles.append(particle)
-            
         self.particle_cloud = copy.deepcopy(newParticles)
         
     def set_paticle_in_each_sim_env(self):
-        
         for index, pybullet_env in enumerate(self.pybullet_env_id_collection):
             visual_particle_pos = [self.particle_cloud[index].x, self.particle_cloud[index].y, 0.057]
             visual_particle_orientation = pybullet_env.getQuaternionFromEuler([0,0,0])
@@ -525,7 +525,6 @@ class PFMove():
             pybullet_env.resetBasePositionAndOrientation(self.particle_no_visual_id_collection[index],
                                                          visual_particle_pos,
                                                          visual_particle_orientation)
-        
         return
         
         
@@ -536,10 +535,10 @@ class PFMove():
             p_visualisation.resetBasePositionAndOrientation(self.particle_with_visual_id_collection[index],
                                                             visual_particle_pos,
                                                             visual_particle_orientation)
-            print("visual_particle_pos:",visual_particle_pos)
+            #print("visual_particle_pos:",visual_particle_pos)
             #particle_pos = self.get_item_pos(pybullet_env[index],initial_parameter.cylinder_particle_no_visual_id_collection[index])
     
-    def display_real_robot_in_visual_model(self, observation):
+    def display_real_object_in_visual_model(self, observation):
         optitrack_obj_pos = observation
         optitrack_obj_ori = p_visualisation.getQuaternionFromEuler([0,0,0])
         p_visualisation.resetBasePositionAndOrientation(optitrack_object_id,
@@ -558,7 +557,6 @@ class PFMove():
         self.object_estimate_pose_y.append(estimated_object_pose[1])
         self.object_real_____pose_x.append(observation[0])
         self.object_real_____pose_y.append(observation[1])
-        
         plt.plot(self.object_estimate_pose_x,self.object_estimate_pose_y,"x-",label="Estimated Object Pose")
         plt.plot(self.object_real_____pose_x,self.object_real_____pose_y,"*-",label="Real Object Pose")
         plt.xlabel('X Axis')
@@ -573,7 +571,6 @@ class PFMove():
         y_set = 0
         z_set = 0
         w_set = 0
-        
         for index,particle in enumerate(particle_cloud):
             x_set = x_set + particle.x * particle.w
             y_set = y_set + particle.y * particle.w

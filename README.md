@@ -6,8 +6,8 @@ Ubuntu20 ROS:noetic Pybullet
 
 How to run the panda robot in the real world?
   1. Go into the container
-  2. [PandaPlanning] xterm
-  3. [PandaPlanning xterm1] roslaunch panda_moveit moveit_with_rviz.launch
-  4. [PandaPlanning] xterm
-  5. [PandaPlanning xterm2] cd ~/catkin_ws/src/panda_moveit/scripts
-  6. [PandaPlanning xterm2] python3 demo_talker_real_robot.py
+  2. [TrackObjectWithPF] xterm
+  3. [TrackObjectWithPF xterm1] roslaunch panda_moveit moveit_with_rviz.launch
+  4. [TrackObjectWithPF] xterm
+  5. [TrackObjectWithPF xterm2] cd ~/catkin_ws/src/panda_moveit/scripts
+  6. [TrackObjectWithPF xterm2] python3 demo_talker_real_robot.py

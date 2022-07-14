@@ -1,0 +1,5 @@
+<launch>
+    <include file="$(find panda_moveit)/launch/moveit.launch">
+        <arg name="use_rviz" value="true"/>
+    </include>
+</launch>

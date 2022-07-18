@@ -94,55 +94,11 @@ class Franka_robot():
 class Ros_listener():
     def __init__(self):
         self.joint_subscriber = rospy.Subscriber('/joint_states', JointState, self.joint_values_callback)
-        self.robot_pose = rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose',PoseStamped, self.robot_pose_callback)
-        self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/zisongObject/pose',PoseStamped, self.object_pose_callback)
         self.current_joint_values = [-1.57,0.0,0.0,-2.8,1.7,1.57,1.1]
-        self.robot_pos = [ 0.139080286026,
-                          -0.581342339516,
-                           0.0238141193986]
-        #x,y,z,w
-        self.robot_ori = [ 0.707254290581,
-                           0.0115503482521,
-                          -0.0140119809657,
-                          -0.706726074219]
-                          
-        self.object_pos = [ 0.504023790359,
-                           -0.214561194181,
-                            0.0601389780641]
-        #x,y,z,w
-        self.object_ori = [-0.51964700222,
-                           -0.476704657078,
-                            0.490200251342,
-                            0.512272834778]
-        
-        #self.object_ori = [0,0,0,1]        
         rospy.spin
     def joint_values_callback(self, msg):
         self.current_joint_values = list(msg.position)
-    def robot_pose_callback(self, data):
-        #pos
-        x_pos = data.pose.position.x
-        y_pos = data.pose.position.y
-        z_pos = data.pose.position.z
-        self.robot_pos = [x_pos,y_pos,z_pos]
-        #ori
-        x_ori = data.pose.orientation.x
-        y_ori = data.pose.orientation.y
-        z_ori = data.pose.orientation.z
-        w_ori = data.pose.orientation.w
-        self.robot_ori = [x_ori,y_ori,z_ori,w_ori]
-    def object_pose_callback(self, data):
-        #pos
-        x_pos = data.pose.position.x
-        y_pos = data.pose.position.y
-        z_pos = data.pose.position.z
-        self.object_pos = [x_pos,y_pos,z_pos]
-        #ori
-        x_ori = data.pose.orientation.x
-        y_ori = data.pose.orientation.y
-        z_ori = data.pose.orientation.z
-        w_ori = data.pose.orientation.w
-        self.object_ori = [x_ori,y_ori,z_ori,w_ori]
+
 
 #Class of particle's structure
 class Particle(object):
@@ -543,7 +499,7 @@ class PFMove():
     def display_real_object_in_visual_model(self, observation):
         optitrack_obj_pos = observation
         optitrack_obj_ori = p_visualisation.getQuaternionFromEuler([0,0,0])
-        p_visualisation.resetBasePositionAndOrientation(optitrack_object_id,
+        p_visualisation.resetBasePositionAndOrientation(dope_object_id,
                                                         optitrack_obj_pos,
                                                         optitrack_obj_ori)
     def display_estimated_robot_in_visual_model(self, observation):
@@ -628,40 +584,30 @@ def compute_transformation_matrix(init_robot_pos,init_robot_ori,init_object_pos,
     #print(robot_T_object)
     return robot_T_object
 if __name__ == '__main__':
-    rospy.init_node('listen_joint_info')
+    rospy.init_node('PF_for_dope')
     
     #build an object of class "Ros_listener"
     ros_listener = Ros_listener()
     
+    listener = tf.TransformListener()
+    (trans,rot) = listener.lookupTransform('/cheezit', '/panda_link0', rospy.Time(0))
+    robot_T_obj_dope_pos = list(trans)
+    robot_T_obj_dope_ori = list(rot)
+    
     #give some time to update the data
     time.sleep(0.5)
-    init_robot_pos = ros_listener.robot_pos
-    init_robot_ori = ros_listener.robot_ori 
-    init_object_pos = ros_listener.object_pos
-    init_object_ori = ros_listener.object_ori
-    
-    print("init_robot_pos:")
-    print(init_robot_pos)
-    print("init_robot_ori:")
-    print(init_robot_ori)  
-    print("init_object_pos:")
-    print(init_object_pos)
-    print("init_object_ori:")
-    print(init_object_ori)
-
-    #compute transformation matrix
-    #input('Press [ENTER] to compute transformation matrix')
-    robot_T_object = compute_transformation_matrix(init_robot_pos,init_robot_ori,init_object_pos,init_object_ori)
 
     pybullet_robot_pos = [0.0, 0.0, 0.0]
     pybullet_robot_ori = [0,0,0,1]
-
-    
-    #input('Press [ENTER] to compute the pose of object in the pybullet world')
+    input('Press [ENTER] to compute rob_T_obj')
+    rob_T_obj_rot_matrix = transformations.quaternion_matrix(robot_T_obj_dope_ori)
+    rob_T_obj = rotation_4_4_to_transformation_4_4(rob_T_obj_rot_matrix,robot_T_obj_dope_pos)
+    print("rob_T_obj:",rob_T_obj)
+    input('Press [ENTER] to compute the pose of object in the pybullet world')
     #init_object_pos = [0.567, -0.3642, 0.057]
     pybullet_robot_transformation_matrix = transformations.quaternion_matrix(pybullet_robot_ori)
     pw_T_robot = rotation_4_4_to_transformation_4_4(pybullet_robot_transformation_matrix,pybullet_robot_pos)
-    pw_T_object = np.dot(pw_T_robot,robot_T_object)
+    pw_T_object = np.dot(pw_T_robot,rob_T_obj)
     print("pw_T_object:")
     print(pw_T_object)
     pw_T_object_pos = [pw_T_object[0][3],
@@ -670,11 +616,11 @@ if __name__ == '__main__':
 
     pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
 
-    optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_real_object_with_visual_small.urdf"),
+    dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_real_object_with_visual_small.urdf"),
                                                    pw_T_object_pos,
                                                    pw_T_object_ori)                          
     
-    #input('Press [ENTER] to initial real world model')
+    input('Press [ENTER] to initial real world model')
     #build an object of class "InitialRealworldModel"
     real_world_object = InitialRealworldModel(ros_listener.current_joint_values)
     print("ros_listener.current_joint_values:")

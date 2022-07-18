@@ -628,7 +628,7 @@ def compute_transformation_matrix(init_robot_pos,init_robot_ori,init_object_pos,
     #print(robot_T_object)
     return robot_T_object
 if __name__ == '__main__':
-    rospy.init_node('listen_joint_info')
+    rospy.init_node('PF_for_optitrack')
     
     #build an object of class "Ros_listener"
     ros_listener = Ros_listener()

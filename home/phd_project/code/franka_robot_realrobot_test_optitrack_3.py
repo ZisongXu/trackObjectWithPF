@@ -323,7 +323,8 @@ class PFMove():
         
         self.u_flag = 0
         
-        self.sigma = 0.01
+        self.sigma_motion_model = 0.01
+        self.sigma_observ_model = 0.015
         self.sigma_obs = 0.03
 
         self.object_estimate_pose_x = []
@@ -477,7 +478,7 @@ class PFMove():
             
             x = distance
             mean = 0
-            sigma = self.sigma
+            sigma = self.sigma_observ_model
             #weight = self.normal_distribution(x, mean, sigma) * sigma
             weight = self.normal_distribution(x, mean, sigma)
             
@@ -512,9 +513,7 @@ class PFMove():
     def add_noise(self,current_pos,old_pos):
         distance = math.fabs(current_pos - old_pos)
         mean = current_pos
-        sigma = self.sigma
-        #sigma = self.sigma * 2
-        #print ("sigma:",sigma)
+        sigma = self.sigma_motion_model
         new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_pos_is_added_noise
     

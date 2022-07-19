@@ -331,7 +331,10 @@ class PFMove():
         self.object_real_____pose_x = []
         self.object_real_____pose_y = []
         self.error_df = pd.DataFrame()
-
+        
+        self.t1 = 0
+        self.t2 = 0
+        self.t3 = 0
     #new structure
     def real_robot_control(self,observation,pw_T_object_ori,real_robot_joint_pos):   
         #real_robot_joint_pos = self.get_real_robot_joint(real_robot_id)
@@ -394,8 +397,14 @@ class PFMove():
         
     #executed_control 
     def update_particle_filter_cheat(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos, observation, pw_T_object_ori):
+        self.t1 = time.time()
         self.motion_update(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
+        self.t2 = time.time()
+        #print("observation:",observation)
         estimated_object_pose = self.observation_update(observation,pw_T_object_ori)
+        self.t3 = time.time()
+        print("motion model time consuming:",self.t2-self.t1)
+        print("observ model time consuming:",self.t3-self.t2)
         #if Flag is False:
         #    return False
         print("display particle")
@@ -407,10 +416,9 @@ class PFMove():
         error = self.compute_distance(estimated_object_pose,observation)
         self.error_df[self.u_flag]=[error]
         self.u_flag = self.u_flag + 1
-        while self.u_flag == 8:
+        if self.u_flag >= 8:
             print("write error file")
             self.error_df.to_csv('error_sum_0_5.csv',index=0,header=0,mode='a')
-            self.u_flag = self.u_flag + 1
         # print debug info of all particles here
         #input('hit enter to continue')
         return
@@ -449,7 +457,7 @@ class PFMove():
             #print("particle_x__after:",self.particle_cloud[index].x," ","particle_y__after:",self.particle_cloud[index].y)
 
     def observation_update(self, observation,pw_T_object_ori):
-        pos_of_real_object = observation #pos of real object [1,2,3]
+        pos_of_real_object = copy.deepcopy(observation) #pos of real object [1,2,3]
         pos_real_obj_x = pos_of_real_object[0]
         pos_real_obj_y = pos_of_real_object[1]
         pos_of_real_object[0] = self.add_noise_to_obs_model(pos_real_obj_x)
@@ -562,6 +570,7 @@ class PFMove():
             #particle_pos = self.get_item_pos(pybullet_env[index],initial_parameter.cylinder_particle_no_visual_id_collection[index])
     
     def display_real_object_in_visual_model(self, observation):
+        #print("observation",observation)
         optitrack_obj_pos = observation
         optitrack_obj_ori = p_visualisation.getQuaternionFromEuler([0,0,0])
         p_visualisation.resetBasePositionAndOrientation(optitrack_object_id,

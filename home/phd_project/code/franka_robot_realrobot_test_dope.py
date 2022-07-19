@@ -1,3 +1,4 @@
+#!/usr/bin/env python3  
 # -*- coding: utf-8 -*-
 """
 Created on Wed Mar 10 10:57:49 2021
@@ -94,7 +95,7 @@ class Franka_robot():
 class Ros_listener():
     def __init__(self):
         self.joint_subscriber = rospy.Subscriber('/joint_states', JointState, self.joint_values_callback)
-        self.current_joint_values = [-1.57,0.0,0.0,-2.8,1.7,1.57,1.1]
+        self.current_joint_values = [-1.57,0.0,0.0,-2.8,1.7,1.57,1.1,0.039916139,0.039916139]
         rospy.spin
     def joint_values_callback(self, msg):
         self.current_joint_values = list(msg.position)
@@ -590,7 +591,12 @@ if __name__ == '__main__':
     ros_listener = Ros_listener()
     
     listener = tf.TransformListener()
-    (trans,rot) = listener.lookupTransform('/cheezit', '/panda_link0', rospy.Time(0))
+    while True:
+        try:
+            (trans,rot) = listener.lookupTransform('/cheezit', '/panda_link0', rospy.Time(0))
+            break
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            continue
     robot_T_obj_dope_pos = list(trans)
     robot_T_obj_dope_ori = list(rot)
     

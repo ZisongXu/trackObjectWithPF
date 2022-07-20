@@ -215,9 +215,7 @@ class InitialSimulationModel():
         self.cylinder_real_object_start_pos[0] = self.add_noise_to_obs_model(self.cylinder_real_object_start_pos[0])
         self.cylinder_real_object_start_pos[1] = self.add_noise_to_obs_model(self.cylinder_real_object_start_pos[1])
         for i in range(self.particle_num):
-            x = random.uniform(self.cylinder_real_object_start_pos[0] - 0.07, self.cylinder_real_object_start_pos[0] + 0.07)
-            y = random.uniform(self.cylinder_real_object_start_pos[1] - 0.07, self.cylinder_real_object_start_pos[1] + 0.07)
-            z = self.cylinder_real_object_start_pos[2]
+            x,y,z = self.generate_random_pose()
             w = 1/self.particle_num
             
             #recover: need to del
@@ -229,6 +227,11 @@ class InitialSimulationModel():
         object_estimate_pos_x,object_estimate_pos_y,object_estimate_pos_z = self.compute_estimate_pos_of_object(self.particle_cloud)
         #print("initial_object_estimate_pos:",object_estimate_pos_x,object_estimate_pos_y)
         return object_estimate_pos_x,object_estimate_pos_y,object_estimate_pos_z
+    def generate_random_pose(self):
+        x = random.uniform(self.cylinder_real_object_start_pos[0] - 0.07, self.cylinder_real_object_start_pos[0] + 0.07)
+        y = random.uniform(self.cylinder_real_object_start_pos[1] - 0.07, self.cylinder_real_object_start_pos[1] + 0.07)
+        z = self.cylinder_real_object_start_pos[2]
+        return x,y,z
     def compute_estimate_pos_of_object(self, particle_cloud):
         x_set = 0
         y_set = 0
@@ -252,11 +255,13 @@ class InitialSimulationModel():
             self.cylinder_particle_with_visual_id_collection.append(cylinder_visualize_particle_Id)
     def initial_and_set_simulation_env(self,pos_of_robot):
         for index, particle in enumerate(self.particle_cloud):
+            #input('Press [ENTER] to generate particle')
             pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT)
             self.pybullet_particle_env_collection.append(pybullet_simulation_env)
             
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0,0,-9.81)
+            fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
             cylinder_fake_robot_start_pos = self.cylinder_real_robot_start_pos
             cylinder_fake_robot_start_orientation = self.cylinder_real_robot_start_ori
             fake_robot_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
@@ -267,19 +272,35 @@ class InitialSimulationModel():
             
             #set joint of fake robot
             self.set_sim_robot_JointPosition(pybullet_simulation_env,fake_robot_id,pos_of_robot)
-                        
-            fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
+            
             z = self.cylinder_real_object_start_pos[2]
             cylinder_particle_no_visual_start_pos = [particle.x, particle.y, z]
             cylinder_particle_no_visual_start_orientation = self.cylinder_real_object_start_ori 
             cylinder_particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_particle_no_visual_small.urdf"),
                                                                               cylinder_particle_no_visual_start_pos,
                                                                               cylinder_particle_no_visual_start_orientation)
+            
+            while True:
+                flag = 0
+                pmin,pmax = pybullet_simulation_env.getAABB(cylinder_particle_no_visual_id)
+                collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
+                length = len(collide_ids)
+                for t_i in range(length):
+                    if collide_ids[t_i][1] == 8:
+                        Px,Py,Pz = self.generate_random_pose()
+                        pybullet_simulation_env.resetBasePositionAndOrientation(cylinder_particle_no_visual_id,
+                                                                                [Px,Py,Pz],
+                                                                                cylinder_particle_no_visual_start_orientation)
+                        flag = 1
+                        particle.x = Px
+                        particle.y = Py
+                        particle.z = Pz
+                        break
+                if flag == 0:
+                    break    
             pybullet_simulation_env.changeDynamics(cylinder_particle_no_visual_id,-1,lateralFriction = 0.53)
             self.cylinder_particle_no_visual_id_collection.append(cylinder_particle_no_visual_id)
-            for i in range(240):                        
-                pybullet_simulation_env.stepSimulation()
-                #time.sleep(1./240.)
+
     def set_sim_robot_JointPosition(self,pybullet_simulation_env,robot, position):
         position[7] = 0.039916139
         position[8] = 0.039916139
@@ -296,6 +317,9 @@ class InitialSimulationModel():
                                                               joint_index,
                                                               pybullet_simulation_env.POSITION_CONTROL,
                                                               targetPosition=position[joint_index])
+        for i in range(240):                        
+            pybullet_simulation_env.stepSimulation()
+            #time.sleep(1./240.)
     def add_noise_to_obs_model(self,current_pos):
         mean = current_pos
         sigma = self.sigma_obs
@@ -325,7 +349,7 @@ class PFMove():
         
         self.sigma_motion_model = 0.01
         self.sigma_observ_model = 0.015
-        self.sigma_obs = 0.04
+        self.sigma_obs = 0.05
 
         self.object_estimate_pose_x = []
         self.object_estimate_pose_y = []
@@ -688,7 +712,7 @@ if __name__ == '__main__':
 
     
     #input('Press [ENTER] to compute the pose of object in the pybullet world')
-    #init_object_pos = [0.567, -0.3642, 0.057]
+
     pybullet_robot_transformation_matrix = transformations.quaternion_matrix(pybullet_robot_ori)
     pw_T_robot = rotation_4_4_to_transformation_4_4(pybullet_robot_transformation_matrix,pybullet_robot_pos)
     pw_T_object = np.dot(pw_T_robot,robot_T_object)
@@ -700,32 +724,32 @@ if __name__ == '__main__':
 
     pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
 
-    optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_real_object_with_visual_small.urdf"),
-                                                   pw_T_object_pos,
-                                                   pw_T_object_ori)                          
-    
+    optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_real_object_with_visual_small.urdf"),pw_T_object_pos,pw_T_object_ori)                          
+
+
     #input('Press [ENTER] to initial real world model')
     #build an object of class "InitialRealworldModel"
     real_world_object = InitialRealworldModel(ros_listener.current_joint_values)
-    print("ros_listener.current_joint_values:")
-    print(ros_listener.current_joint_values)
+    #print("ros_listener.current_joint_values:")
+    #print(ros_listener.current_joint_values)
     #initialize the real robot in the pybullet
     real_robot_id = real_world_object.initial_robot(robot_pos = pybullet_robot_pos,robot_orientation = pybullet_robot_ori)
     #initialize the real object in the pybullet
     real_object_id = real_world_object.initial_target_object(object_pos = pw_T_object_pos,object_orientation = pw_T_object_ori)
+
     #build an object of class "Franka_robot"
     franka_robot = Franka_robot(real_robot_id)
     
     #input('Press [ENTER] to initial simulation world model')
     particle_cloud = []
-    particle_num = 50
-    d_thresh_limitation = 0.05
+    particle_num = 100
+    d_thresh_limitation = 0.025
     initial_parameter = InitialSimulationModel(particle_num,pybullet_robot_pos,pybullet_robot_ori,pw_T_object_pos,pw_T_object_ori)
     estimated_object_pos_x,estimated_object_pos_y,estimated_object_pos_z = initial_parameter.initial_particle() #only position of particle
     estimated_object_pos = [estimated_object_pos_x,estimated_object_pos_y,estimated_object_pos_z]
-    initial_parameter.display_particle()
     #initial_parameter.initial_and_set_simulation_env()
     initial_parameter.initial_and_set_simulation_env(ros_listener.current_joint_values)
+    initial_parameter.display_particle()
     estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_estimated_object_with_visual_small.urdf"),
                                                    estimated_object_pos,
                                                    pw_T_object_ori)  
@@ -738,7 +762,7 @@ if __name__ == '__main__':
     #build an object of class "PFMove"
     robot1 = PFMove()
     #wait for 2 seconds
-    time.sleep(2)
+    #time.sleep(2)
     
     #get real object pos
     real_object_last_update_pos = pw_T_object_pos
@@ -746,16 +770,8 @@ if __name__ == '__main__':
     #run the simulation
     Flag = True
     
-    '''
-    while True:
-        #print(ros_listener.current_joint_values)
-        print("pos:")
-        print(ros_listener.object_pos)
-        print("ori:")
-        print(ros_listener.object_ori)
-    '''
     data_old = p_visualisation.getLinkState(real_robot_id,9)
-    #input('Press [ENTER] to enter into while loop')
+    input('Press [ENTER] to enter into while loop')
     while True:
         franka_robot.fanka_robot_move(ros_listener.current_joint_values)
         p_visualisation.stepSimulation()

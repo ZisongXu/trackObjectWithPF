@@ -210,11 +210,12 @@ class InitialSimulationModel():
         self.fake_robot_id_collection = []
         self.cylinder_particle_no_visual_id_collection = []
         self.cylinder_particle_with_visual_id_collection =[]
+        self.sigma_obs = 0.00
     def initial_particle(self):
+        self.cylinder_real_object_start_pos[0] = self.add_noise_to_obs_model(self.cylinder_real_object_start_pos[0])
+        self.cylinder_real_object_start_pos[1] = self.add_noise_to_obs_model(self.cylinder_real_object_start_pos[1])
         for i in range(self.particle_num):
-            x = random.uniform(self.cylinder_real_object_start_pos[0] - 0.07, self.cylinder_real_object_start_pos[0] + 0.07)
-            y = random.uniform(self.cylinder_real_object_start_pos[1] - 0.07, self.cylinder_real_object_start_pos[1] + 0.07)
-            z = self.cylinder_real_object_start_pos[2]
+            x,y,z = self.generate_random_pose()
             w = 1/self.particle_num
             
             #recover: need to del
@@ -226,6 +227,11 @@ class InitialSimulationModel():
         object_estimate_pos_x,object_estimate_pos_y,object_estimate_pos_z = self.compute_estimate_pos_of_object(self.particle_cloud)
         #print("initial_object_estimate_pos:",object_estimate_pos_x,object_estimate_pos_y)
         return object_estimate_pos_x,object_estimate_pos_y,object_estimate_pos_z
+    def generate_random_pose(self):
+        x = random.uniform(self.cylinder_real_object_start_pos[0] - 0.07, self.cylinder_real_object_start_pos[0] + 0.07)
+        y = random.uniform(self.cylinder_real_object_start_pos[1] - 0.07, self.cylinder_real_object_start_pos[1] + 0.07)
+        z = self.cylinder_real_object_start_pos[2]
+        return x,y,z
     def compute_estimate_pos_of_object(self, particle_cloud):
         x_set = 0
         y_set = 0
@@ -249,11 +255,13 @@ class InitialSimulationModel():
             self.cylinder_particle_with_visual_id_collection.append(cylinder_visualize_particle_Id)
     def initial_and_set_simulation_env(self,pos_of_robot):
         for index, particle in enumerate(self.particle_cloud):
+            #input('Press [ENTER] to generate particle')
             pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT)
             self.pybullet_particle_env_collection.append(pybullet_simulation_env)
             
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0,0,-9.81)
+            fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
             cylinder_fake_robot_start_pos = self.cylinder_real_robot_start_pos
             cylinder_fake_robot_start_orientation = self.cylinder_real_robot_start_ori
             fake_robot_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
@@ -264,19 +272,35 @@ class InitialSimulationModel():
             
             #set joint of fake robot
             self.set_sim_robot_JointPosition(pybullet_simulation_env,fake_robot_id,pos_of_robot)
-                        
-            fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
+            
             z = self.cylinder_real_object_start_pos[2]
             cylinder_particle_no_visual_start_pos = [particle.x, particle.y, z]
             cylinder_particle_no_visual_start_orientation = self.cylinder_real_object_start_ori 
             cylinder_particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_particle_no_visual_small.urdf"),
                                                                               cylinder_particle_no_visual_start_pos,
                                                                               cylinder_particle_no_visual_start_orientation)
+            
+            while True:
+                flag = 0
+                pmin,pmax = pybullet_simulation_env.getAABB(cylinder_particle_no_visual_id)
+                collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
+                length = len(collide_ids)
+                for t_i in range(length):
+                    if collide_ids[t_i][1] == 8:
+                        Px,Py,Pz = self.generate_random_pose()
+                        pybullet_simulation_env.resetBasePositionAndOrientation(cylinder_particle_no_visual_id,
+                                                                                [Px,Py,Pz],
+                                                                                cylinder_particle_no_visual_start_orientation)
+                        flag = 1
+                        particle.x = Px
+                        particle.y = Py
+                        particle.z = Pz
+                        break
+                if flag == 0:
+                    break    
             pybullet_simulation_env.changeDynamics(cylinder_particle_no_visual_id,-1,lateralFriction = 0.53)
             self.cylinder_particle_no_visual_id_collection.append(cylinder_particle_no_visual_id)
-            for i in range(240):                        
-                pybullet_simulation_env.stepSimulation()
-                #time.sleep(1./240.)
+
     def set_sim_robot_JointPosition(self,pybullet_simulation_env,robot, position):
         position[7] = 0.039916139
         position[8] = 0.039916139
@@ -293,7 +317,17 @@ class InitialSimulationModel():
                                                               joint_index,
                                                               pybullet_simulation_env.POSITION_CONTROL,
                                                               targetPosition=position[joint_index])
-
+        for i in range(240):                        
+            pybullet_simulation_env.stepSimulation()
+            #time.sleep(1./240.)
+    def add_noise_to_obs_model(self,current_pos):
+        mean = current_pos
+        sigma = self.sigma_obs
+        new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
+        return new_pos_is_added_noise
+    def take_easy_gaussian_value(self,mean,sigma):
+        normal = random.normalvariate(mean, sigma)
+        return normal
 
 #Class of Particle Filter move
 class PFMove():
@@ -315,14 +349,17 @@ class PFMove():
         
         self.sigma_motion_model = 0.01
         self.sigma_observ_model = 0.015
-
+        self.sigma_obs = 0.00
 
         self.object_estimate_pose_x = []
         self.object_estimate_pose_y = []
         self.object_real_____pose_x = []
         self.object_real_____pose_y = []
         self.error_df = pd.DataFrame()
-
+        
+        self.t1 = 0
+        self.t2 = 0
+        self.t3 = 0
     #new structure
     def real_robot_control(self,observation,pw_T_object_ori,real_robot_joint_pos):   
         #real_robot_joint_pos = self.get_real_robot_joint(real_robot_id)
@@ -385,9 +422,14 @@ class PFMove():
         
     #executed_control 
     def update_particle_filter_cheat(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos, observation, pw_T_object_ori):
+        self.t1 = time.time()
         self.motion_update(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
-        print("observation:",observation)
+        self.t2 = time.time()
+        #print("observation:",observation)
         estimated_object_pose = self.observation_update(observation,pw_T_object_ori)
+        self.t3 = time.time()
+        print("motion model time consuming:",self.t2-self.t1)
+        print("observ model time consuming:",self.t3-self.t2)
         #if Flag is False:
         #    return False
         print("display particle")
@@ -399,10 +441,9 @@ class PFMove():
         error = self.compute_distance(estimated_object_pose,observation)
         self.error_df[self.u_flag]=[error]
         self.u_flag = self.u_flag + 1
-        while self.u_flag == 8:
+        if self.u_flag >= 8:
             print("write error file")
-            self.error_df.to_csv('error_sum_0_0.csv',index=0,header=0,mode='a')
-            self.u_flag = self.u_flag + 1
+            #self.error_df.to_csv('error_sum_0_5.csv',index=0,header=0,mode='a')
         # print debug info of all particles here
         #input('hit enter to continue')
         return
@@ -441,7 +482,11 @@ class PFMove():
             #print("particle_x__after:",self.particle_cloud[index].x," ","particle_y__after:",self.particle_cloud[index].y)
 
     def observation_update(self, observation,pw_T_object_ori):
-        pos_of_real_object = observation #pos of real object [1,2,3]
+        pos_of_real_object = copy.deepcopy(observation) #pos of real object [1,2,3]
+        pos_real_obj_x = pos_of_real_object[0]
+        pos_real_obj_y = pos_of_real_object[1]
+        pos_of_real_object[0] = self.add_noise_to_obs_model(pos_real_obj_x)
+        pos_of_real_object[1] = self.add_noise_to_obs_model(pos_real_obj_y)
         for index,particle in enumerate(self.particle_cloud):
             
             particle_x = particle.x
@@ -481,6 +526,12 @@ class PFMove():
     def get_item_pos(self,pybullet_env,item_id):
         item_info = pybullet_env.getBasePositionAndOrientation(item_id)
         return item_info[0]
+    
+    def add_noise_to_obs_model(self,current_pos):
+        mean = current_pos
+        sigma = self.sigma_obs
+        new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
+        return new_pos_is_added_noise
     
     def add_noise(self,current_pos,old_pos):
         distance = math.fabs(current_pos - old_pos)
@@ -542,7 +593,7 @@ class PFMove():
             #particle_pos = self.get_item_pos(pybullet_env[index],initial_parameter.cylinder_particle_no_visual_id_collection[index])
     
     def display_real_object_in_visual_model(self, observation):
-        print("observation:",observation)
+        #print("observation",observation)
         optitrack_obj_pos = observation
         optitrack_obj_ori = p_visualisation.getQuaternionFromEuler([0,0,0])
         p_visualisation.resetBasePositionAndOrientation(optitrack_object_id,
@@ -629,6 +680,7 @@ def compute_transformation_matrix(init_robot_pos,init_robot_ori,init_object_pos,
     #print("robot_T_object:")
     #print(robot_T_object)
     return robot_T_object
+
 if __name__ == '__main__':
     rospy.init_node('PF_for_optitrack')
     
@@ -660,7 +712,7 @@ if __name__ == '__main__':
 
     
     #input('Press [ENTER] to compute the pose of object in the pybullet world')
-    #init_object_pos = [0.567, -0.3642, 0.057]
+
     pybullet_robot_transformation_matrix = transformations.quaternion_matrix(pybullet_robot_ori)
     pw_T_robot = rotation_4_4_to_transformation_4_4(pybullet_robot_transformation_matrix,pybullet_robot_pos)
     pw_T_object = np.dot(pw_T_robot,robot_T_object)
@@ -672,19 +724,19 @@ if __name__ == '__main__':
 
     pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
 
-    optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_real_object_with_visual_small.urdf"),
-                                                   pw_T_object_pos,
-                                                   pw_T_object_ori)                          
-    
+    optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_real_object_with_visual_small.urdf"),pw_T_object_pos,pw_T_object_ori)                          
+
+
     #input('Press [ENTER] to initial real world model')
     #build an object of class "InitialRealworldModel"
     real_world_object = InitialRealworldModel(ros_listener.current_joint_values)
-    print("ros_listener.current_joint_values:")
-    print(ros_listener.current_joint_values)
+    #print("ros_listener.current_joint_values:")
+    #print(ros_listener.current_joint_values)
     #initialize the real robot in the pybullet
     real_robot_id = real_world_object.initial_robot(robot_pos = pybullet_robot_pos,robot_orientation = pybullet_robot_ori)
     #initialize the real object in the pybullet
     real_object_id = real_world_object.initial_target_object(object_pos = pw_T_object_pos,object_orientation = pw_T_object_ori)
+
     #build an object of class "Franka_robot"
     franka_robot = Franka_robot(real_robot_id)
     
@@ -695,9 +747,9 @@ if __name__ == '__main__':
     initial_parameter = InitialSimulationModel(particle_num,pybullet_robot_pos,pybullet_robot_ori,pw_T_object_pos,pw_T_object_ori)
     estimated_object_pos_x,estimated_object_pos_y,estimated_object_pos_z = initial_parameter.initial_particle() #only position of particle
     estimated_object_pos = [estimated_object_pos_x,estimated_object_pos_y,estimated_object_pos_z]
-    initial_parameter.display_particle()
     #initial_parameter.initial_and_set_simulation_env()
     initial_parameter.initial_and_set_simulation_env(ros_listener.current_joint_values)
+    initial_parameter.display_particle()
     estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_estimated_object_with_visual_small.urdf"),
                                                    estimated_object_pos,
                                                    pw_T_object_ori)  
@@ -718,14 +770,6 @@ if __name__ == '__main__':
     #run the simulation
     Flag = True
     
-    '''
-    while True:
-        #print(ros_listener.current_joint_values)
-        print("pos:")
-        print(ros_listener.object_pos)
-        print("ori:")
-        print(ros_listener.object_ori)
-    '''
     data_old = p_visualisation.getLinkState(real_robot_id,9)
     #input('Press [ENTER] to enter into while loop')
     while True:
@@ -748,7 +792,7 @@ if __name__ == '__main__':
         pw_T_object = np.dot(pw_T_robot,robot_T_object)
         pw_T_object_pos = [pw_T_object[0][3],pw_T_object[1][3],pw_T_object[2][3]]       
         pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
-
+        
         data_new = p_visualisation.getLinkState(real_robot_id,9)
         distance_between_current_and_old = compute_distance(data_new[0],data_old[0])
         real_object_current_pos = pw_T_object_pos
@@ -758,7 +802,7 @@ if __name__ == '__main__':
                            
             #Cheat
             observation = real_object_current_pos #get pos of real object
-            #print("observation:",observation)
+            
             #execute sim_robot movement 
             Flag = robot1.real_robot_control(observation,pw_T_object_ori,ros_listener.current_joint_values)
             

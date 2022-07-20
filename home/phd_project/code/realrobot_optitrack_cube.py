@@ -95,7 +95,7 @@ class Ros_listener():
     def __init__(self):
         self.joint_subscriber = rospy.Subscriber('/joint_states', JointState, self.joint_values_callback)
         self.robot_pose = rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose',PoseStamped, self.robot_pose_callback)
-        self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/zisongObject/pose',PoseStamped, self.object_pose_callback)
+        self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/zisongObjectCube/pose',PoseStamped, self.object_pose_callback)
         self.current_joint_values = [-1.57,0.0,0.0,-2.8,1.7,1.57,1.1,0.039916139,0.039916139]
         self.robot_pos = [0.13461002707481384,
                           0.027710117399692535,
@@ -706,10 +706,10 @@ if __name__ == '__main__':
     #build an object of class "Franka_robot"
     franka_robot = Franka_robot(real_robot_id)
     
-    input('Press [ENTER] to initial simulation world model')
+    #input('Press [ENTER] to initial simulation world model')
     particle_cloud = []
     particle_num = 50
-    d_thresh_limitation = 0.05
+    d_thresh_limitation = 30
     initial_parameter = InitialSimulationModel(particle_num,pybullet_robot_pos,pybullet_robot_ori,pw_T_object_pos,pw_T_object_ori)
     estimated_object_set = initial_parameter.initial_particle() #only position of particle
     estimated_object_pos = [estimated_object_set[0],estimated_object_set[1],estimated_object_set[2]]
@@ -739,7 +739,7 @@ if __name__ == '__main__':
     Flag = True
     
     data_old = p_visualisation.getLinkState(real_robot_id,9)
-    #input('Press [ENTER] to enter into while loop')
+    input('Press [ENTER] to enter into while loop')
     while True:
         franka_robot.fanka_robot_move(ros_listener.current_joint_values)
         p_visualisation.stepSimulation()

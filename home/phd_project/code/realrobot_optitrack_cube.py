@@ -146,7 +146,7 @@ class Ros_listener():
 
 #Class of particle's structure
 class Particle(object):
-    def __init__(self,x=0.0,y=0.0,z=0.0,x_angle,y_angle,z_angle,w=1.0,index = 0):
+    def __init__(self,x=0.0,y=0.0,z=0.0,x_angle=0.0,y_angle=0.0,z_angle=0.0,w=1.0,index = 0):
         self.x = x
         self.y = y
         self.z = z
@@ -219,7 +219,9 @@ class InitialSimulationModel():
             x = random.uniform(self.cube_real_object_start_pos[0] - 0.07, self.cube_real_object_start_pos[0] + 0.07)
             y = random.uniform(self.cube_real_object_start_pos[1] - 0.07, self.cube_real_object_start_pos[1] + 0.07)
             z = self.cube_real_object_start_pos[2]
-            
+            x_angle = cube_real_object_start_angle[0]
+            y_angle = cube_real_object_start_angle[1]
+            z_angle = random.uniform(cube_real_object_start_angle[2] - math.pi/6.0, cube_real_object_start_angle[2] + math.pi/6.0)
             
             
             
@@ -229,28 +231,36 @@ class InitialSimulationModel():
             #x = self.cube_real_object_start_pos[0]
             #y = self.cube_real_object_start_pos[1]
             
-            particle = Particle(x,y,z,w,index=i)
+            particle = Particle(x,y,z,x_angle,y_angle,z_angle,w,index=i)
             self.particle_cloud.append(particle)
-        object_estimate_pos_x,object_estimate_pos_y,object_estimate_pos_z = self.compute_estimate_pos_of_object(self.particle_cloud)
+        #object_estimate_pos_x,object_estimate_pos_y,object_estimate_pos_z,object_estimate_pos_x_angle,object_estimate_pos_y_angle,object_estimate_pos_z_angle
+        object_estimate_set = self.compute_estimate_pos_of_object(self.particle_cloud)
         #print("initial_object_estimate_pos:",object_estimate_pos_x,object_estimate_pos_y)
-        return object_estimate_pos_x,object_estimate_pos_y,object_estimate_pos_z
+        return object_estimate_set[0],object_estimate_set[1],object_estimate_set[2],object_estimate_set[3],object_estimate_set[4],object_estimate_set[5]
     def compute_estimate_pos_of_object(self, particle_cloud):
         x_set = 0
         y_set = 0
         z_set = 0
+        x_angle_set = 0
+        y_angle_set = 0
+        z_angle_set = 0
         w_set = 0
-        
         for index,particle in enumerate(particle_cloud):
             x_set = x_set + particle.x * particle.w
             y_set = y_set + particle.y * particle.w
             z_set = z_set + particle.z * particle.w
+            x_angle_set = x_angle_set + particle.x_angle * particle.w
+            y_angle_set = y_angle_set + particle.y_angle * particle.w
+            z_angle_set = z_angle_set + particle.z_angle * particle.w
             w_set = w_set + particle.w
-        return x_set/w_set,y_set/w_set,z_set/w_set
+        return x_set/w_set,y_set/w_set,z_set/w_set,x_angle_set/w_set,y_angle_set/w_set,z_angle_set/w_set
+
         
     def display_particle(self):
         for index, particle in enumerate(self.particle_cloud):
-            cube_visualize_particle_pos = [particle.x, particle.y, 0.057]
-            cube_visualize_particle_orientation = p_visualisation.getQuaternionFromEuler([0,0,0])
+            cube_visualize_particle_pos = [particle.x, particle.y, particle.z]
+            cube_visualize_particle_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
+            cube_visualize_particle_orientation = p_visualisation.getQuaternionFromEuler(cube_visualize_particle_angle)
             cube_visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cube_particle_with_visual_small.urdf"),
                                                                       cube_visualize_particle_pos,
                                                                       cube_visualize_particle_orientation)
@@ -701,14 +711,16 @@ if __name__ == '__main__':
     particle_num = 50
     d_thresh_limitation = 0.05
     initial_parameter = InitialSimulationModel(particle_num,pybullet_robot_pos,pybullet_robot_ori,pw_T_object_pos,pw_T_object_ori)
-    estimated_object_pos_x,estimated_object_pos_y,estimated_object_pos_z = initial_parameter.initial_particle() #only position of particle
-    estimated_object_pos = [estimated_object_pos_x,estimated_object_pos_y,estimated_object_pos_z]
+    estimated_object_set = initial_parameter.initial_particle() #only position of particle
+    estimated_object_pos = [estimated_object_set[0],estimated_object_set[1],estimated_object_set[2]]
+    estimated_object_ang = [estimated_object_set[3],estimated_object_set[4],estimated_object_set[5]]
+    estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
     initial_parameter.display_particle()
     #initial_parameter.initial_and_set_simulation_env()
     initial_parameter.initial_and_set_simulation_env(ros_listener.current_joint_values)
     estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cube_estimated_object_with_visual_small.urdf"),
                                                    estimated_object_pos,
-                                                   pw_T_object_ori)  
+                                                   estimated_object_ori)  
     #initial_parameter.particle_cloud #parameter of particle
     #initial_parameter.pybullet_particle_env_collection #env of simulation
     #initial_parameter.fake_robot_id_collection #id of robot in simulation

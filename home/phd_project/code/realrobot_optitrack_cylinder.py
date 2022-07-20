@@ -726,7 +726,7 @@ if __name__ == '__main__':
         print("ori:")
         print(ros_listener.object_ori)
     '''
-    
+    data_old = p_visualisation.getLinkState(real_robot_id,9)
     #input('Press [ENTER] to enter into while loop')
     while True:
         franka_robot.fanka_robot_move(ros_listener.current_joint_values)
@@ -749,19 +749,21 @@ if __name__ == '__main__':
         pw_T_object_pos = [pw_T_object[0][3],pw_T_object[1][3],pw_T_object[2][3]]       
         pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
 
+        data_new = p_visualisation.getLinkState(real_robot_id,9)
+        distance_between_current_and_old = compute_distance(data_new[0],data_old[0])
         real_object_current_pos = pw_T_object_pos
-        distance_between_current_and_old = compute_distance(real_object_current_pos,real_object_last_update_pos)#Cheat        
+        #distance_between_current_and_old = compute_distance(real_object_current_pos,real_object_last_update_pos)#Cheat        
         if distance_between_current_and_old > d_thresh_limitation:
             print("Need to update particles")
                            
             #Cheat
             observation = real_object_current_pos #get pos of real object
-            print("observation:",observation)
+            #print("observation:",observation)
             #execute sim_robot movement 
             Flag = robot1.real_robot_control(observation,pw_T_object_ori,ros_listener.current_joint_values)
             
             real_object_last_update_pos = real_object_current_pos
-           
+            data_old = data_new
         if Flag is False:
             break  
     p_visualisation.disconnect()

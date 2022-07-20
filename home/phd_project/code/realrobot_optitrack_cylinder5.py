@@ -419,7 +419,7 @@ class PFMove():
         self.u_flag = self.u_flag + 1
         if self.u_flag >= 8:
             print("write error file")
-            self.error_df.to_csv('error_sum_0_5.csv',index=0,header=0,mode='a')
+            #self.error_df.to_csv('error_sum_0_5.csv',index=0,header=0,mode='a')
         # print debug info of all particles here
         #input('hit enter to continue')
         return

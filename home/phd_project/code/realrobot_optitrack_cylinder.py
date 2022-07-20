@@ -691,7 +691,7 @@ if __name__ == '__main__':
     #input('Press [ENTER] to initial simulation world model')
     particle_cloud = []
     particle_num = 50
-    d_thresh_limitation = 0.05
+    d_thresh_limitation = 0.025
     initial_parameter = InitialSimulationModel(particle_num,pybullet_robot_pos,pybullet_robot_ori,pw_T_object_pos,pw_T_object_ori)
     estimated_object_pos_x,estimated_object_pos_y,estimated_object_pos_z = initial_parameter.initial_particle() #only position of particle
     estimated_object_pos = [estimated_object_pos_x,estimated_object_pos_y,estimated_object_pos_z]

@@ -60,11 +60,11 @@ real_robot_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/data/
 
 
 #load and set object
-cylinder_real_object_start_pos = [0.567, -0.3642, 0.057]
-cylinder_real_object_start_orientation = p_visualisation.getQuaternionFromEuler([0,0,0])
-real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_object_small.urdf"),
-                                          cylinder_real_object_start_pos,
-                                          cylinder_real_object_start_orientation)
+cube_real_object_start_pos = [0.567, -0.3642, 0.057]
+cube_real_object_start_orientation = p_visualisation.getQuaternionFromEuler([0,0,0])
+real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cube_object_small.urdf"),
+                                          cube_real_object_start_pos,
+                                          cube_real_object_start_orientation)
                                           
 '''                                         
                                           
@@ -96,24 +96,24 @@ class Ros_listener():
         self.joint_subscriber = rospy.Subscriber('/joint_states', JointState, self.joint_values_callback)
         self.robot_pose = rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose',PoseStamped, self.robot_pose_callback)
         self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/zisongObject/pose',PoseStamped, self.object_pose_callback)
-        self.current_joint_values = [-1.57,0.0,0.0,-2.8,1.7,1.57,1.1]
-        self.robot_pos = [ 0.139080286026,
-                          -0.581342339516,
-                           0.0238141193986]
+        self.current_joint_values = [-1.57,0.0,0.0,-2.8,1.7,1.57,1.1,0.039916139,0.039916139]
+        self.robot_pos = [0.13461002707481384,
+                          0.027710117399692535,
+                          0.5817811489105225]
         #x,y,z,w
-        self.robot_ori = [ 0.707254290581,
-                           0.0115503482521,
-                          -0.0140119809657,
-                          -0.706726074219]
+        self.robot_ori = [ 0.704399824142456,
+                          -0.008833962492644787,
+                          -0.0068166847340762615,
+                          -0.7097157835960388]
                           
-        self.object_pos = [ 0.504023790359,
-                           -0.214561194181,
-                            0.0601389780641]
+        self.object_pos = [ 0.5271802544593811,
+                            0.08594661951065063,
+                            0.449358731508255]
         #x,y,z,w
-        self.object_ori = [-0.51964700222,
-                           -0.476704657078,
-                            0.490200251342,
-                            0.512272834778]
+        self.object_ori = [ 0.6507412195205688,
+                           -0.27033957839012146,
+                           -0.2745985686779022,
+                           -0.6542537808418274]
         
         #self.object_ori = [0,0,0,1]        
         rospy.spin
@@ -146,10 +146,13 @@ class Ros_listener():
 
 #Class of particle's structure
 class Particle(object):
-    def __init__(self,x=0.0,y=0.0,z=0.0,w=1.0,index = 0):
+    def __init__(self,x=0.0,y=0.0,z=0.0,x_angle,y_angle,z_angle,w=1.0,index = 0):
         self.x = x
         self.y = y
         self.z = z
+        self.x_angle = x_angle
+        self.y_angle = y_angle
+        self.z_angle = z_angle
         self.w = w
         self.index = index
     def as_pose(self):
@@ -173,9 +176,9 @@ class InitialRealworldModel():
             time.sleep(1./240.)
         
         return real_robot_id
-    def initial_target_object(self,object_pos,object_orientation = [0,0,0,1]):
+    def initial_target_object(self,object_pos,object_orientation):
         #object_orientation = p_visualisation.getQuaternionFromEuler(object_euler)
-        real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_object_small.urdf"),
+        real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cube_object_small.urdf"),
                                                   object_pos,
                                                   object_orientation)
         p_visualisation.changeDynamics(real_object_id,-1,lateralFriction = 0.53)
@@ -201,25 +204,30 @@ class InitialRealworldModel():
 class InitialSimulationModel():
     def __init__(self,particle_num,real_robot_start_pos,real_robot_start_ori,real_object_start_pos,real_object_start_ori):
         self.particle_num = particle_num
-        self.cylinder_real_object_start_pos = real_object_start_pos
-        self.cylinder_real_object_start_ori = real_object_start_ori
-        self.cylinder_real_robot_start_pos = real_robot_start_pos
-        self.cylinder_real_robot_start_ori = real_robot_start_ori
+        self.cube_real_object_start_pos = real_object_start_pos
+        self.cube_real_object_start_ori = real_object_start_ori
+        self.cube_real_robot_start_pos = real_robot_start_pos
+        self.cube_real_robot_start_ori = real_robot_start_ori
         self.particle_cloud = []
         self.pybullet_particle_env_collection = []
         self.fake_robot_id_collection = []
-        self.cylinder_particle_no_visual_id_collection = []
-        self.cylinder_particle_with_visual_id_collection =[]
+        self.cube_particle_no_visual_id_collection = []
+        self.cube_particle_with_visual_id_collection =[]
     def initial_particle(self):
+        cube_real_object_start_angle = p_visualisation.getEulerFromQuaternion(self.cube_real_object_start_ori)
         for i in range(self.particle_num):
-            x = random.uniform(self.cylinder_real_object_start_pos[0] - 0.07, self.cylinder_real_object_start_pos[0] + 0.07)
-            y = random.uniform(self.cylinder_real_object_start_pos[1] - 0.07, self.cylinder_real_object_start_pos[1] + 0.07)
-            z = self.cylinder_real_object_start_pos[2]
+            x = random.uniform(self.cube_real_object_start_pos[0] - 0.07, self.cube_real_object_start_pos[0] + 0.07)
+            y = random.uniform(self.cube_real_object_start_pos[1] - 0.07, self.cube_real_object_start_pos[1] + 0.07)
+            z = self.cube_real_object_start_pos[2]
+            
+            
+            
+            
             w = 1/self.particle_num
             
             #recover: need to del
-            #x = self.cylinder_real_object_start_pos[0]
-            #y = self.cylinder_real_object_start_pos[1]
+            #x = self.cube_real_object_start_pos[0]
+            #y = self.cube_real_object_start_pos[1]
             
             particle = Particle(x,y,z,w,index=i)
             self.particle_cloud.append(particle)
@@ -241,12 +249,12 @@ class InitialSimulationModel():
         
     def display_particle(self):
         for index, particle in enumerate(self.particle_cloud):
-            cylinder_visualize_particle_pos = [particle.x, particle.y, 0.057]
-            cylinder_visualize_particle_orientation = p_visualisation.getQuaternionFromEuler([0,0,0])
-            cylinder_visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_particle_with_visual_small.urdf"),
-                                                                      cylinder_visualize_particle_pos,
-                                                                      cylinder_visualize_particle_orientation)
-            self.cylinder_particle_with_visual_id_collection.append(cylinder_visualize_particle_Id)
+            cube_visualize_particle_pos = [particle.x, particle.y, 0.057]
+            cube_visualize_particle_orientation = p_visualisation.getQuaternionFromEuler([0,0,0])
+            cube_visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cube_particle_with_visual_small.urdf"),
+                                                                      cube_visualize_particle_pos,
+                                                                      cube_visualize_particle_orientation)
+            self.cube_particle_with_visual_id_collection.append(cube_visualize_particle_Id)
     def initial_and_set_simulation_env(self,pos_of_robot):
         for index, particle in enumerate(self.particle_cloud):
             pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT)
@@ -254,11 +262,11 @@ class InitialSimulationModel():
             
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0,0,-9.81)
-            cylinder_fake_robot_start_pos = self.cylinder_real_robot_start_pos
-            cylinder_fake_robot_start_orientation = self.cylinder_real_robot_start_ori
+            cube_fake_robot_start_pos = self.cube_real_robot_start_pos
+            cube_fake_robot_start_orientation = self.cube_real_robot_start_ori
             fake_robot_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
-                                                             cylinder_fake_robot_start_pos,
-                                                             cylinder_fake_robot_start_orientation,
+                                                             cube_fake_robot_start_pos,
+                                                             cube_fake_robot_start_orientation,
                                                              useFixedBase=1)
             self.fake_robot_id_collection.append(fake_robot_id)
             
@@ -266,14 +274,14 @@ class InitialSimulationModel():
             self.set_sim_robot_JointPosition(pybullet_simulation_env,fake_robot_id,pos_of_robot)
                         
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
-            z = self.cylinder_real_object_start_pos[2]
-            cylinder_particle_no_visual_start_pos = [particle.x, particle.y, z]
-            cylinder_particle_no_visual_start_orientation = self.cylinder_real_object_start_ori 
-            cylinder_particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_particle_no_visual_small.urdf"),
-                                                                              cylinder_particle_no_visual_start_pos,
-                                                                              cylinder_particle_no_visual_start_orientation)
-            pybullet_simulation_env.changeDynamics(cylinder_particle_no_visual_id,-1,lateralFriction = 0.53)
-            self.cylinder_particle_no_visual_id_collection.append(cylinder_particle_no_visual_id)
+            z = self.cube_real_object_start_pos[2]
+            cube_particle_no_visual_start_pos = [particle.x, particle.y, z]
+            cube_particle_no_visual_start_orientation = self.cube_real_object_start_ori 
+            cube_particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/cube_particle_no_visual_small.urdf"),
+                                                                              cube_particle_no_visual_start_pos,
+                                                                              cube_particle_no_visual_start_orientation)
+            pybullet_simulation_env.changeDynamics(cube_particle_no_visual_id,-1,lateralFriction = 0.53)
+            self.cube_particle_no_visual_id_collection.append(cube_particle_no_visual_id)
             for i in range(240):                        
                 pybullet_simulation_env.stepSimulation()
                 #time.sleep(1./240.)
@@ -300,10 +308,10 @@ class PFMove():
     def __init__(self,robot_id=None,real_robot_id=None,object_id=None):
         # init internals
         self.particle_cloud = copy.deepcopy(initial_parameter.particle_cloud)
-        self.particle_no_visual_id_collection = copy.deepcopy(initial_parameter.cylinder_particle_no_visual_id_collection)
+        self.particle_no_visual_id_collection = copy.deepcopy(initial_parameter.cube_particle_no_visual_id_collection)
         self.pybullet_env_id_collection = copy.deepcopy(initial_parameter.pybullet_particle_env_collection)
         self.pybullet_sim_fake_robot_id_collection = copy.deepcopy(initial_parameter.fake_robot_id_collection)
-        self.particle_with_visual_id_collection = copy.deepcopy(initial_parameter.cylinder_particle_with_visual_id_collection)
+        self.particle_with_visual_id_collection = copy.deepcopy(initial_parameter.cube_particle_with_visual_id_collection)
         
         self.step_size = 1
         self.joint_num = 7
@@ -428,7 +436,7 @@ class PFMove():
                                     self.particle_cloud[index].y,
                                     self.particle_cloud[index].z]
             sim_particle_cur_pos = self.get_item_pos(pybullet_env,
-                                                     initial_parameter.cylinder_particle_no_visual_id_collection[index])
+                                                     initial_parameter.cube_particle_no_visual_id_collection[index])
             
             #add noise on particle filter
             normal_x = self.add_noise(sim_particle_cur_pos[0],sim_particle_old_pos[0])
@@ -539,7 +547,7 @@ class PFMove():
                                                             visual_particle_pos,
                                                             visual_particle_orientation)
             #print("visual_particle_pos:",visual_particle_pos)
-            #particle_pos = self.get_item_pos(pybullet_env[index],initial_parameter.cylinder_particle_no_visual_id_collection[index])
+            #particle_pos = self.get_item_pos(pybullet_env[index],initial_parameter.cube_particle_no_visual_id_collection[index])
     
     def display_real_object_in_visual_model(self, observation):
         print("observation:",observation)
@@ -671,8 +679,8 @@ if __name__ == '__main__':
                        pw_T_object[2][3]]       
 
     pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
-
-    optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_real_object_with_visual_small.urdf"),
+    #load blue cube represents the ground truth pose of target object
+    optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cube_real_object_with_visual_small.urdf"),
                                                    pw_T_object_pos,
                                                    pw_T_object_ori)                          
     
@@ -688,7 +696,7 @@ if __name__ == '__main__':
     #build an object of class "Franka_robot"
     franka_robot = Franka_robot(real_robot_id)
     
-    #input('Press [ENTER] to initial simulation world model')
+    input('Press [ENTER] to initial simulation world model')
     particle_cloud = []
     particle_num = 50
     d_thresh_limitation = 0.05
@@ -698,13 +706,13 @@ if __name__ == '__main__':
     initial_parameter.display_particle()
     #initial_parameter.initial_and_set_simulation_env()
     initial_parameter.initial_and_set_simulation_env(ros_listener.current_joint_values)
-    estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_estimated_object_with_visual_small.urdf"),
+    estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cube_estimated_object_with_visual_small.urdf"),
                                                    estimated_object_pos,
                                                    pw_T_object_ori)  
     #initial_parameter.particle_cloud #parameter of particle
     #initial_parameter.pybullet_particle_env_collection #env of simulation
     #initial_parameter.fake_robot_id_collection #id of robot in simulation
-    #initial_parameter.cylinder_particle_no_visual_id_collection #id of particle in simulation
+    #initial_parameter.cube_particle_no_visual_id_collection #id of particle in simulation
     #print(initial_parameter.pybullet_particle_env_collection)
     
     #build an object of class "PFMove"
@@ -727,7 +735,7 @@ if __name__ == '__main__':
         print(ros_listener.object_ori)
     '''
     
-    #input('Press [ENTER] to enter into while loop')
+    input('Press [ENTER] to enter into while loop')
     while True:
         franka_robot.fanka_robot_move(ros_listener.current_joint_values)
         p_visualisation.stepSimulation()

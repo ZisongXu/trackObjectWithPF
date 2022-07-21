@@ -214,7 +214,6 @@ class Panda:
         for i in range(75):	
             step_flag = step_flag + 1
             current_pose = self.moveit_group.get_current_pose()
-            #print("current_pose:",current_pose)
             #position
             end_effector_x = current_pose.pose.position.x
             end_effector_y = current_pose.pose.position.y
@@ -235,7 +234,6 @@ class Panda:
             curr_link_ori_qu_inv = curr_link_ori_qu.inverse
             org_link_ori_qu = Quaternion(org_link_ori)
             quaternion_multiple = org_link_ori_qu * curr_link_ori_qu_inv
-            #print("quaternion_multiple:",quaternion_multiple)
             w_cos_theta_over_2 = quaternion_multiple.w
             sin_theta_over_2 = math.sqrt(quaternion_multiple.x ** 2 + quaternion_multiple.y ** 2 + quaternion_multiple.z ** 2)
             theta_over_2 = math.atan2(sin_theta_over_2,w_cos_theta_over_2)
@@ -243,14 +241,9 @@ class Panda:
             
             #motion
             jacobian_matrix = self.moveit_group.get_jacobian_matrix(targetPositionsJoints,curr_link_pos)
-            #print("jacobian_matrix:",jacobian_matrix)
             jac_t = [jacobian_matrix[0],jacobian_matrix[1],jacobian_matrix[2]]
             jac_r = [jacobian_matrix[3],jacobian_matrix[4],jacobian_matrix[5]]
-            #print("jac_t:",jac_t)
-            #print("jac_r:",jac_r)
             jac_t_pi = pinv(jac_t)
-            #print("jac_t_pi:",jac_t_pi)
-            #movement_vector = [0.0,0.0,-self.move_step]
             expected_delta_q_dot_1 = list(numpy.dot(jac_t_pi, movement_vector))
             targetPositionsJoints = list(numpy.sum([expected_delta_q_dot_1, targetPositionsJoints], axis = 0))
             
@@ -265,9 +258,7 @@ class Panda:
                 
             else:
                 expected_delta_q_dot_2 = [0,0,0,0,0,0,0]
-            #print("expected_delta_q_dot_2:",expected_delta_q_dot_2)
-            targetPositionsJoints = list(numpy.sum([expected_delta_q_dot_2, targetPositionsJoints], axis = 0))
-            #print("targetPositionsJoints:",targetPositionsJoints)   
+            targetPositionsJoints = list(numpy.sum([expected_delta_q_dot_2, targetPositionsJoints], axis = 0)) 
             self.move_to_target_joints(targetPositionsJoints)
         return
                

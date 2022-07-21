@@ -186,26 +186,32 @@ class Panda:
         self.moveit_group.set_joint_value_target(target_joint)
         self.moveit_group.go(wait=True)
         self.moveit_group.clear_pose_targets()
-        current_pose = self.moveit_group.get_current_pose()
-        #print("current_pose:",current_pose)
-        current_joint_values3 = self.moveit_group.get_current_joint_values()
-        #print("current_joint_values3:",current_joint_values3)
+        
         
     def move_straight_line_jac(self):
+        end_effector_link = self.moveit_group.get_end_effector_link()
+        print(end_effector_link)
+        
         org_current_pose = self.moveit_group.get_current_pose()
         org_end_effector_ori_x = org_current_pose.pose.orientation.x
         org_end_effector_ori_y = org_current_pose.pose.orientation.y
         org_end_effector_ori_z = org_current_pose.pose.orientation.z
         org_end_effector_ori_w = org_current_pose.pose.orientation.w
-        org_end_effector_ori_list = [org_end_effector_ori_w,
-                                     org_end_effector_ori_x,
-                                     org_end_effector_ori_y,
-                                     org_end_effector_ori_z]
+        org_link_ori = [org_end_effector_ori_w,
+                        org_end_effector_ori_x,
+                        org_end_effector_ori_y,
+                        org_end_effector_ori_z]
         step_flag = 0
-        
+        move_step = 0.001
         targetPositionsJoints = self.moveit_group.get_current_joint_values()
+        print("targetPositionsJoints:",targetPositionsJoints)
+        org_link_pos = [org_current_pose.pose.position.x,
+                        org_current_pose.pose.position.y,
+                        org_current_pose.pose.position.z]
+        last_link_pos = org_link_pos
+        print("org_link_pos:",org_link_pos)
         
-        for i in range(60):	
+        for i in range(75):	
             step_flag = step_flag + 1
             current_pose = self.moveit_group.get_current_pose()
             #print("current_pose:",current_pose)
@@ -213,27 +219,30 @@ class Panda:
             end_effector_x = current_pose.pose.position.x
             end_effector_y = current_pose.pose.position.y
             end_effector_z = current_pose.pose.position.z
-            end_effector_pos_list = [end_effector_x,end_effector_y,end_effector_z]
+            curr_link_pos = [end_effector_x,end_effector_y,end_effector_z]
+            delta_x = org_link_pos[0] + step_flag * 0 - curr_link_pos[0]
+            delta_y = org_link_pos[1] + step_flag * move_step - curr_link_pos[1]
+            delta_z = org_link_pos[2] + step_flag * 0 - curr_link_pos[2]
+            movement_vector = [delta_x,delta_y,delta_z]
             #orientation
             end_effector_ori_x = current_pose.pose.orientation.x
             end_effector_ori_y = current_pose.pose.orientation.y
             end_effector_ori_z = current_pose.pose.orientation.z
             end_effector_ori_w = current_pose.pose.orientation.w
-            end_effector_ori_list = [end_effector_ori_w,end_effector_ori_x,end_effector_ori_y,end_effector_ori_z]
-        
+            curr_link_ori = [end_effector_ori_w,end_effector_ori_x,end_effector_ori_y,end_effector_ori_z]
             #rotation
-            end_effector_ori_list_qu = Quaternion(end_effector_ori_list)
-            end_effector_ori_list_qu_inv = end_effector_ori_list_qu.inverse
-            org_end_effector_ori_list_qu = Quaternion(org_end_effector_ori_list)
-            quaternion_multiple = org_end_effector_ori_list_qu * end_effector_ori_list_qu_inv
-            print("quaternion_multiple:",quaternion_multiple)
+            curr_link_ori_qu = Quaternion(curr_link_ori)
+            curr_link_ori_qu_inv = curr_link_ori_qu.inverse
+            org_link_ori_qu = Quaternion(org_link_ori)
+            quaternion_multiple = org_link_ori_qu * curr_link_ori_qu_inv
+            #print("quaternion_multiple:",quaternion_multiple)
             w_cos_theta_over_2 = quaternion_multiple.w
             sin_theta_over_2 = math.sqrt(quaternion_multiple.x ** 2 + quaternion_multiple.y ** 2 + quaternion_multiple.z ** 2)
             theta_over_2 = math.atan2(sin_theta_over_2,w_cos_theta_over_2)
             theta =  theta_over_2 * 2
             
             #motion
-            jacobian_matrix = self.moveit_group.get_jacobian_matrix(targetPositionsJoints,end_effector_pos_list)
+            jacobian_matrix = self.moveit_group.get_jacobian_matrix(targetPositionsJoints,curr_link_pos)
             #print("jacobian_matrix:",jacobian_matrix)
             jac_t = [jacobian_matrix[0],jacobian_matrix[1],jacobian_matrix[2]]
             jac_r = [jacobian_matrix[3],jacobian_matrix[4],jacobian_matrix[5]]
@@ -241,9 +250,8 @@ class Panda:
             #print("jac_r:",jac_r)
             jac_t_pi = pinv(jac_t)
             #print("jac_t_pi:",jac_t_pi)
-            movement_vector = [0.0,0.0,-self.move_step]
+            #movement_vector = [0.0,0.0,-self.move_step]
             expected_delta_q_dot_1 = list(numpy.dot(jac_t_pi, movement_vector))
-            print("expected_delta_q_dot_1:",expected_delta_q_dot_1)
             targetPositionsJoints = list(numpy.sum([expected_delta_q_dot_1, targetPositionsJoints], axis = 0))
             
             if sin_theta_over_2 != 0:
@@ -257,11 +265,12 @@ class Panda:
                 
             else:
                 expected_delta_q_dot_2 = [0,0,0,0,0,0,0]
-            print("expected_delta_q_dot_2:",expected_delta_q_dot_2)
+            #print("expected_delta_q_dot_2:",expected_delta_q_dot_2)
             targetPositionsJoints = list(numpy.sum([expected_delta_q_dot_2, targetPositionsJoints], axis = 0))
-            print("targetPositionsJoints:",targetPositionsJoints)
+            #print("targetPositionsJoints:",targetPositionsJoints)   
             self.move_to_target_joints(targetPositionsJoints)
-            
+        return
+               
     def move_straight_line_ccp(self):
         waypoints = []
         
@@ -299,28 +308,12 @@ class Panda:
 
     def move_back_straight_line_ccp(self):
         waypoints = []
-        
         scale = 1.0
         wpose = self.moveit_group.get_current_pose().pose
         #be careful inertance
         for i in range(5):
-            
             wpose.position.x = wpose.position.x + scale * (-0.01)
             waypoints.append(copy.deepcopy(wpose))
-        
-        '''
-        scale = 1.0
-        wpose = self.moveit_group.get_current_pose().pose
-        wpose.position.z = wpose.position.z - scale * 0.1
-        wpose.position.y = wpose.position.y + scale * 0.2
-        waypoints.append(copy.deepcopy(wpose))
-        
-        wpose.position.x = wpose.position.x + scale * 0.1
-        waypoints.append(copy.deepcopy(wpose))
-        
-        wpose.position.y = wpose.position.y - scale * 0.1
-        waypoints.append(copy.deepcopy(wpose))
-        '''
         
         (plan,fraction) = self.moveit_group.compute_cartesian_path(waypoints,0.01,0.0)
         self.moveit_group.execute(plan, wait=True)
@@ -339,24 +332,9 @@ class Panda:
         wpose = self.moveit_group.get_current_pose().pose
         #be careful inertance
         for i in range(5):
-            
             wpose.position.y = wpose.position.y + scale * 0.01
             waypoints.append(copy.deepcopy(wpose))
-        
-        '''
-        scale = 1.0
-        wpose = self.moveit_group.get_current_pose().pose
-        wpose.position.z = wpose.position.z - scale * 0.1
-        wpose.position.y = wpose.position.y + scale * 0.2
-        waypoints.append(copy.deepcopy(wpose))
-        
-        wpose.position.x = wpose.position.x + scale * 0.1
-        waypoints.append(copy.deepcopy(wpose))
-        
-        wpose.position.y = wpose.position.y - scale * 0.1
-        waypoints.append(copy.deepcopy(wpose))
-        '''
-        
+                
         (plan,fraction) = self.moveit_group.compute_cartesian_path(waypoints,0.01,0.0)
         self.moveit_group.execute(plan, wait=True)
         joint = self.moveit_group.get_current_joint_values()
@@ -383,19 +361,15 @@ class Panda:
 
 print(0)
 if __name__ == '__main__':
-    print(1)
     rospy.init_node('panda_demo')
-    print(2)
     moveit_commander.roscpp_initialize(sys.argv)
-    print(3)
     panda = Panda()
-    print(4)
     #input('Press [ENTER] to start')
 
     panda.fully_open_gripper()
     
     #panda.move_to(x=-0.2, y=0.0, z=1.9)
-    #panda.move_straight_line_jac()
+    panda.move_straight_line_jac()
     
     #targetPositionsJoints_test = [0.0,-0.08,0.0,-1.65,0.0,1.58,0.870]
     #panda.move_to_target_joints(targetPositionsJoints_test)
@@ -405,8 +379,8 @@ if __name__ == '__main__':
     #targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.469608373509513, 0.9228163020693847]
     #panda.move_to_target_joints(targetPositionsJoints_test)
     #cube
-    targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.499608373509513, 0.9228163020693847]
-    panda.move_to_target_joints(targetPositionsJoints_test)
+    #targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.499608373509513, 0.9228163020693847]
+    #panda.move_to_target_joints(targetPositionsJoints_test)
     #panda.move_straight_line_ccp()
     #panda.move_back_straight_line_ccp()
     #panda.move_y_straight_line_ccp()

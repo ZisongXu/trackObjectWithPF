@@ -100,7 +100,7 @@ class Ros_listener():
     def __init__(self):
         self.joint_subscriber = rospy.Subscriber('/joint_states', JointState, self.joint_values_callback)
         self.robot_pose = rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose',PoseStamped, self.robot_pose_callback)
-        self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/zisongObjectCube/pose',PoseStamped, self.object_pose_callback)
+        self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/zisongCheezit/pose',PoseStamped, self.object_pose_callback)
         self.current_joint_values = [-1.57,0.0,0.0,-2.8,1.7,1.57,1.1,0.039916139,0.039916139]
         self.robot_pos = [0.13461002707481384,
                           0.027710117399692535,
@@ -223,8 +223,8 @@ class InitialSimulationModel():
         
         self.particle_cloud_copy = []
         self.pybullet_particle_env_collection_copy = []
-        self.cylinder_particle_no_visual_id_collection_copy = []
-        self.cylinder_particle_with_visual_id_collection_copy =[]
+        self.cube_particle_no_visual_id_collection_copy = []
+        self.cube_particle_with_visual_id_collection_copy =[]
         
     def initial_particle(self):
         self.cube_real_object_start_angle = p_visualisation.getEulerFromQuaternion(self.cube_real_object_start_ori)
@@ -261,9 +261,9 @@ class InitialSimulationModel():
         return distance
     def generate_random_pose(self,cube_real_object_start_angle):
         angle = copy.deepcopy(cube_real_object_start_angle)
-        x = random.uniform(self.cylinder_real_object_start_pos[0] - 0.07, self.cylinder_real_object_start_pos[0] + 0.07)
-        y = random.uniform(self.cylinder_real_object_start_pos[1] - 0.07, self.cylinder_real_object_start_pos[1] + 0.07)
-        z = self.cylinder_real_object_start_pos[2]
+        x = random.uniform(self.cube_real_object_start_pos[0] - 0.07, self.cube_real_object_start_pos[0] + 0.07)
+        y = random.uniform(self.cube_real_object_start_pos[1] - 0.07, self.cube_real_object_start_pos[1] + 0.07)
+        z = self.cube_real_object_start_pos[2]
         x_angle = angle[0]
         y_angle = angle[1]
         z_angle = random.uniform(angle[2] - math.pi/6.0, angle[2] + math.pi/6.0)
@@ -301,10 +301,10 @@ class InitialSimulationModel():
             cube_visualize_particle_pos = [particle.x, particle.y, particle.z]
             cube_visualize_particle_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             cube_visualize_particle_orientation = p_visualisation.getQuaternionFromEuler(cube_visualize_particle_angle)
-            cube_visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_particle_with_visual_small.urdf"),
+            cube_visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cube_particle_with_visual_small.urdf"),
                                                                   cube_visualize_particle_pos,
                                                                   cube_visualize_particle_orientation)
-            self.cylinder_particle_with_visual_id_collection_copy.append(cube_visualize_particle_Id)
+            self.cube_particle_with_visual_id_collection_copy.append(cube_visualize_particle_Id)
     def initial_and_set_simulation_env(self,pos_of_robot):
         for index, particle in enumerate(self.particle_cloud):
             pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT)
@@ -366,14 +366,14 @@ class InitialSimulationModel():
             pybullet_simulation_env.setGravity(0,0,-9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
             
-            z = self.cylinder_real_object_start_pos[2]
-            cylinder_particle_no_visual_start_pos = [particle.x, particle.y, z]
-            cylinder_particle_no_visual_start_orientation = self.cylinder_real_object_start_ori 
-            cylinder_particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_particle_no_visual_small.urdf"),
-                                                                              cylinder_particle_no_visual_start_pos,
-                                                                              cylinder_particle_no_visual_start_orientation)
-            pybullet_simulation_env.changeDynamics(cylinder_particle_no_visual_id,-1,lateralFriction = 0.53)
-            self.cylinder_particle_no_visual_id_collection_copy.append(cylinder_particle_no_visual_id)
+            z = self.cube_real_object_start_pos[2]
+            cube_particle_no_visual_start_pos = [particle.x, particle.y, z]
+            cube_particle_no_visual_start_orientation = self.cube_real_object_start_ori 
+            cube_particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube_particle_no_visual_small.urdf"),
+                                                                              cube_particle_no_visual_start_pos,
+                                                                              cube_particle_no_visual_start_orientation)
+            pybullet_simulation_env.changeDynamics(cube_particle_no_visual_id,-1,lateralFriction = 0.53)
+            self.cube_particle_no_visual_id_collection_copy.append(cube_particle_no_visual_id)
         return
     
     
@@ -416,9 +416,9 @@ class PFMove():
         self.particle_with_visual_id_collection = copy.deepcopy(initial_parameter.cube_particle_with_visual_id_collection)
         '''
         self.particle_cloud_copy = copy.deepcopy(initial_parameter.particle_cloud_copy)
-        self.particle_no_visual_id_collection_copy = copy.deepcopy(initial_parameter.cylinder_particle_no_visual_id_collection_copy)
+        self.particle_no_visual_id_collection_copy = copy.deepcopy(initial_parameter.cube_particle_no_visual_id_collection_copy)
         self.pybullet_env_id_collection_copy = copy.deepcopy(initial_parameter.pybullet_particle_env_collection_copy)
-        self.particle_with_visual_id_collection_copy = copy.deepcopy(initial_parameter.cylinder_particle_with_visual_id_collection_copy)
+        self.particle_with_visual_id_collection_copy = copy.deepcopy(initial_parameter.cube_particle_with_visual_id_collection_copy)
         '''
         self.step_size = 1
         self.joint_num = 7
@@ -626,7 +626,7 @@ class PFMove():
                                     self.particle_cloud_copy[index].z]
             d_thresh_limitation#0.05
             sim_particle_cur_pos = self.get_item_pos(pybullet_env,
-                                                     initial_parameter.cylinder_particle_no_visual_id_collection_copy[index])
+                                                     initial_parameter.cube_particle_no_visual_id_collection_copy[index])
             
             #add noise on particle filter
             normal_x = self.add_noise(sim_particle_cur_pos[0],sim_particle_old_pos[0])

@@ -360,7 +360,7 @@ if __name__ == '__main__':
     panda.fully_open_gripper()
     
     #panda.move_to(x=-0.2, y=0.0, z=1.9)
-    panda.move_straight_line_jac()
+    #panda.move_straight_line_jac()
     
     #targetPositionsJoints_test = [0.0,-0.08,0.0,-1.65,0.0,1.58,0.870]
     #panda.move_to_target_joints(targetPositionsJoints_test)
@@ -374,5 +374,5 @@ if __name__ == '__main__':
     #panda.move_to_target_joints(targetPositionsJoints_test)
     #panda.move_straight_line_ccp()
     #panda.move_back_straight_line_ccp()
-    #panda.move_y_straight_line_ccp()
+    panda.move_y_straight_line_ccp()
     #panda.fully_close_gripper()

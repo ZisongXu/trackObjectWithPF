@@ -1,5 +1,5 @@
 # trackObjectWithPF
-Ubuntu20 ROS:noetic Pybullet
+Ubuntu20; ROS:noetic; Pybullet
   1. Go to this file
   2. Run ./build.sh in the terminal
   3. Run ./run.sh in the terminal
@@ -35,9 +35,9 @@ How to run the DOPE:
   
 Some commands:
   rosbag:
-  rosbag record -a
-  rosbag play "file_name".bag
+  1. rosbag record -a
+  2. rosbag play "file_name".bag
   
   rosparam:
-  rosparam list
-  rosparam get /DOPE_object_names
+  1. rosparam list
+  2. rosparam get /DOPE_object_names

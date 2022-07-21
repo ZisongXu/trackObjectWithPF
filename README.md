@@ -34,6 +34,7 @@ How to run the DOPE:
       [Frames]
   
 Some commands:
+  
   rosbag:
   1. rosbag record -a
   2. rosbag play "file_name".bag

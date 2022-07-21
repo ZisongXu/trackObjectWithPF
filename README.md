@@ -27,11 +27,11 @@ How to run the DOPE:
   6. In the RViz:
     
     [Global Options]
-      6.1.1. [Fixed Frame] panda_link0
-    6.2. ADD [Camera]
-      6.2.1. [Image Topic] /dope/rgb_points
-    6.3. ADD [TF]
-      6.3.1. [Frames]
+      [Fixed Frame] panda_link0
+    ADD [Camera]
+      [Image Topic] /dope/rgb_points
+    ADD [TF]
+      [Frames]
   
 Some commands:
   rosbag:

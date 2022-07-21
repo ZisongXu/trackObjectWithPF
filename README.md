@@ -25,7 +25,8 @@ How to run the DOPE:
   4. [DOPE] rosrun rviz rviz
   5. [DOPE] rosrun dope convert_dope_2_tf.py
   6. In the RViz:
-    1. [Global Options]
+    
+    [Global Options]
       6.1.1. [Fixed Frame] panda_link0
     6.2. ADD [Camera]
       6.2.1. [Image Topic] /dope/rgb_points

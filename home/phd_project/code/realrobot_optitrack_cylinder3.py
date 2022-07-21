@@ -444,7 +444,7 @@ class PFMove():
         self.motion_update(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
         self.t2 = time.time()
         #print("observation:",observation)
-        estimated_object_pose = self.observation_update(observation,pw_T_object_ori)
+        estimated_object_pos = self.observation_update(observation,pw_T_object_ori)
         self.t3 = time.time()
         print("motion model time consuming:",self.t2-self.t1)
         print("observ model time consuming:",self.t3-self.t2)
@@ -453,10 +453,10 @@ class PFMove():
         print("display particle")
         self.display_particle_in_visual_model(self.particle_cloud)
         self.display_real_object_in_visual_model(observation)
-        self.draw_contrast_figure(estimated_object_pose,observation)
+        self.draw_contrast_figure(estimated_object_pos,observation)
         
         
-        error = self.compute_distance(estimated_object_pose,observation)
+        error = self.compute_distance(estimated_object_pos,observation)
         boss_error_df[self.u_flag]=[error]
         if self.u_flag >= 7:
             print("write error file")
@@ -552,9 +552,9 @@ class PFMove():
         object_estimate_pos_x,object_estimate_pos_y,object_estimate_pos_z = self.compute_estimate_pos_of_object(self.particle_cloud)
         #print("object_estimate_pos:",object_estimate_pos_x,object_estimate_pos_y)
         #print("object_real_____pos:",pos_of_real_object[0],pos_of_real_object[1])
-        estimated_object_pose = [object_estimate_pos_x,object_estimate_pos_y,object_estimate_pos_z]
-        self.display_estimated_robot_in_visual_model(estimated_object_pose)    
-        return estimated_object_pose
+        estimated_object_pos = [object_estimate_pos_x,object_estimate_pos_y,object_estimate_pos_z]
+        self.display_estimated_robot_in_visual_model(estimated_object_pos)    
+        return estimated_object_pos
     
     def get_item_pos(self,pybullet_env,item_id):
         item_info = pybullet_env.getBasePositionAndOrientation(item_id)
@@ -639,10 +639,10 @@ class PFMove():
                                                         optitrack_obj_pos,
                                                         optitrack_obj_ori)    
 
-    def draw_contrast_figure(self,estimated_object_pose,observation):
+    def draw_contrast_figure(self,estimated_object_pos,observation):
         print("Begin to draw contrast figure!")
-        self.object_estimate_pose_x.append(estimated_object_pose[0])
-        self.object_estimate_pose_y.append(estimated_object_pose[1])
+        self.object_estimate_pose_x.append(estimated_object_pos[0])
+        self.object_estimate_pose_y.append(estimated_object_pos[1])
         self.object_real_____pose_x.append(observation[0])
         self.object_real_____pose_y.append(observation[1])
         plt.plot(self.object_estimate_pose_x,self.object_estimate_pose_y,"x-",label="Estimated Object Pose")

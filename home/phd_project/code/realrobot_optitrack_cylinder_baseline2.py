@@ -440,6 +440,8 @@ class PFMove():
         self.object_estimate_pose_y = []
         self.object_real_____pose_x = []
         self.object_real_____pose_y = []
+        
+        self.noise_object_pos = []
 
     #new structure
     def real_robot_control(self,observation,pw_T_object_ori,real_robot_joint_pos,rob_cur_pos,rob_cur_ori,rob_old_pos,rob_old_ori):   
@@ -521,6 +523,9 @@ class PFMove():
         print("observ model time consuming:",t4-t3)
         #if Flag is False:
         #    return False
+        
+        estimated_object_pos_copy = self.observation_update_copy(observation,pw_T_object_ori)
+        
         print("display particle")
         self.display_particle_in_visual_model(self.particle_cloud)
         self.display_real_object_in_visual_model(observation)
@@ -532,7 +537,15 @@ class PFMove():
         if self.u_flag >= 7:
             print("write error file")
             boss_error_df.to_csv('error_sum_0_0.csv',index=0,header=0,mode='a')
+        
+        
+        error = self.compute_distance(estimated_object_pos_copy,observation)
+        boss_bsln2_df[self.u_flag]=[error]
+        if self.u_flag >= 7:
+            print("write error file")
+            boss_bsln2_df.to_csv('error_sum_0_0.csv',index=0,header=0,mode='a')
         self.u_flag = self.u_flag + 1
+        
         # print debug info of all particles here
         #input('hit enter to continue')
         return
@@ -587,8 +600,9 @@ class PFMove():
         noise_object_x = pos_of_real_object[0]
         noise_object_y = pos_of_real_object[1]
         noise_object_z = pos_of_real_object[2]
-        noise_object = [noise_object_x,noise_object_y,noise_object_z]
-        error = self.compute_distance(noise_object,real_object)
+        
+        self.noise_object_pos = [noise_object_x,noise_object_y,noise_object_z]
+        error = self.compute_distance(self.noise_object_pos,real_object)
         print("error:",error)
         boss_obser_df[self.u_flag]=[error]        
         if self.u_flag >= 7:
@@ -614,7 +628,6 @@ class PFMove():
             weight = self.normal_distribution(x, mean, sigma)
             
             particle.w = weight
-            
         Flag = self.normalize_particles()
         #if Flag is False:
         #    return False
@@ -633,7 +646,7 @@ class PFMove():
 
     def motion_update_copy(self, pybullet_sim_env_copy, rob_cur_pos, rob_cur_ori, rob_old_pos, rob_old_ori):
         robO_T_robN = self.compute_transformation_matrix(rob_old_pos, rob_old_ori, rob_cur_pos, rob_cur_ori)
-        parO_T_parN = robO_T_robN
+        parO_T_parN = copy.deepcopy(robO_T_robN)
         for index, pybullet_env in enumerate(pybullet_sim_env_copy):
             sim_particle_old_pos = [self.particle_cloud_copy[index].x,
                                     self.particle_cloud_copy[index].y,
@@ -660,7 +673,45 @@ class PFMove():
             self.particle_cloud_copy[index].x = normal_x
             self.particle_cloud_copy[index].y = normal_y
         return
-    
+
+    def observation_update_copy(self, observation,pw_T_object_ori):
+        pos_of_obse_object = copy.deepcopy(self.noise_object_pos)
+        for index,particle in enumerate(self.particle_cloud_copy):
+            
+            particle_x = particle.x
+            particle_y = particle.y
+            
+            obse_object_pos = pos_of_obse_object
+            
+            obse_object_pos_x = obse_object_pos[0]
+            obse_object_pos_y = obse_object_pos[1]
+            
+            distance = math.sqrt((particle_x - obse_object_pos_x) ** 2 + (particle_y - obse_object_pos_y) ** 2)
+            
+            x = distance
+            mean = 0
+            sigma = self.sigma_observ_model
+            #weight = self.normal_distribution(x, mean, sigma) * sigma
+            weight = self.normal_distribution(x, mean, sigma)
+            
+            particle.w = weight
+            
+        Flag = self.normalize_particles()
+        #if Flag is False:
+        #    return False
+        
+        self.resample_particles_copy()
+        self.set_paticle_in_each_sim_env_copy()
+        for index, pybullet_env in enumerate(self.pybullet_env_id_collection_copy):
+            part_pos = pybullet_env.getBasePositionAndOrientation(self.particle_no_visual_id_collection[index])
+            #print("particle:",part_pos[0][0],part_pos[0][1],part_pos[0][2])
+        object_estimate_pos_x,object_estimate_pos_y,object_estimate_pos_z = self.compute_estimate_pos_of_object(self.particle_cloud_copy)
+        #print("object_estimate_pos:",object_estimate_pos_x,object_estimate_pos_y)
+        #print("object_real_____pos:",pos_of_real_object[0],pos_of_real_object[1])
+        estimated_object_pos = [object_estimate_pos_x,object_estimate_pos_y,object_estimate_pos_z]
+        #self.display_estimated_robot_in_visual_model(estimated_object_pos)    
+        return estimated_object_pos
+ 
     def get_item_pos(self,pybullet_env,item_id):
         item_info = pybullet_env.getBasePositionAndOrientation(item_id)
         return item_info[0]
@@ -705,7 +756,13 @@ class PFMove():
         particle_array= np.random.choice(a = n_particle, size = n_particle, replace=True, p= particles_w)
         particle_array_list = list(particle_array)
         for index,i in enumerate(particle_array_list):
-            particle = Particle(self.particle_cloud[i].x,self.particle_cloud[i].y,self.particle_cloud[i].z,self.particle_cloud[i].w,index)
+            particle = Particle(self.particle_cloud[i].x,
+                                self.particle_cloud[i].y,
+                                self.particle_cloud[i].z,
+                                self.particle_cloud[i].x_angle,
+                                self.particle_cloud[i].y_angle,
+                                self.particle_cloud[i].z_angle,
+                                self.particle_cloud[i].w,index)
             newParticles.append(particle)
         self.particle_cloud = copy.deepcopy(newParticles)
         
@@ -718,7 +775,35 @@ class PFMove():
                                                          visual_particle_pos,
                                                          visual_particle_orientation)
         return
+
+    def resample_particles_copy(self):
+        particles_w = []
+        newParticles = [] 
+        n_particle = len(self.particle_cloud_copy)
+        for particle in self.particle_cloud_copy:
+            particles_w.append(particle.w)
+        particle_array= np.random.choice(a = n_particle, size = n_particle, replace=True, p= particles_w)
+        particle_array_list = list(particle_array)
+        for index,i in enumerate(particle_array_list):
+            particle = Particle(self.particle_cloud_copy[i].x,
+                                self.particle_cloud_copy[i].y,
+                                self.particle_cloud_copy[i].z,
+                                self.particle_cloud_copy[i].x_angle,
+                                self.particle_cloud_copy[i].y_angle,
+                                self.particle_cloud_copy[i].z_angle,
+                                self.particle_cloud_copy[i].w,index)
+            newParticles.append(particle)
+        self.particle_cloud_copy = copy.deepcopy(newParticles)
         
+    def set_paticle_in_each_sim_env_copy(self):
+        for index, pybullet_env in enumerate(self.pybullet_env_id_collection_copy):
+            visual_particle_pos = [self.particle_cloud_copy[index].x, self.particle_cloud_copy[index].y, 0.057]
+            visual_particle_angle = [self.particle_cloud_copy[index].x_angle, self.particle_cloud_copy[index].y_angle, self.particle_cloud_copy[index].z_angle]
+            visual_particle_orientation = pybullet_env.getQuaternionFromEuler(visual_particle_angle)
+            pybullet_env.resetBasePositionAndOrientation(self.particle_no_visual_id_collection_copy[index],
+                                                         visual_particle_pos,
+                                                         visual_particle_orientation)
+        return        
         
     def display_particle_in_visual_model(self, particle_cloud):
         for index, particle in enumerate(particle_cloud):

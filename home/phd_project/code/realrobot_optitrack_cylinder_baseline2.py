@@ -219,7 +219,7 @@ class InitialSimulationModel():
         self.fake_robot_id_collection = []
         self.cylinder_particle_no_visual_id_collection = []
         self.cylinder_particle_with_visual_id_collection =[]
-        self.sigma_obs = 0.05
+        self.sigma_obs = 0.00
         
         self.particle_cloud_copy = []
         self.pybullet_particle_env_collection_copy = []
@@ -435,7 +435,7 @@ class PFMove():
         
         self.sigma_motion_model = 0.01
         self.sigma_observ_model = 0.015
-        self.sigma_obs = 0.05
+        self.sigma_obs = 0.00
 
         self.object_estimate_pose_x = []
         self.object_estimate_pose_y = []
@@ -536,14 +536,14 @@ class PFMove():
         
         error = self.compute_distance(estimated_object_pos,observation)
         boss_error_df[self.u_flag]=[error]
-        if self.u_flag >= 7:
+        if self.u_flag >= 10:
             print("write error file")
             boss_error_df.to_csv('error_sum_0_0.csv',index=0,header=0,mode='a')
         
         
         error = self.compute_distance(estimated_object_pos_copy,observation)
         boss_bsln2_df[self.u_flag]=[error]
-        if self.u_flag >= 7:
+        if self.u_flag >= 10:
             print("write error file")
             boss_bsln2_df.to_csv('baselin2_error_sum_0_0.csv',index=0,header=0,mode='a')
         
@@ -608,7 +608,7 @@ class PFMove():
         error = self.compute_distance(self.noise_object_pos,real_object)
         print("error:",error)
         boss_obser_df[self.u_flag]=[error]        
-        if self.u_flag >= 7:
+        if self.u_flag >= 10:
             print("write obser file")
             boss_obser_df.to_csv('obser_sum_0_0.csv',index=0,header=0,mode='a')        
 
@@ -678,7 +678,7 @@ class PFMove():
             '''
             
             new_x = self.particle_cloud_copy[index].x
-            new_y = self.particle_cloud_copy[index].y + 0.025
+            new_y = self.particle_cloud_copy[index].y + 0.05
             #add noise on particle filter
             normal_x = self.add_noise(new_x,sim_particle_old_pos[0])
             normal_y = self.add_noise(new_y,sim_particle_old_pos[1])
@@ -1014,7 +1014,7 @@ if __name__ == '__main__':
     #input('Press [ENTER] to initial simulation world model')
     particle_cloud = []
     particle_num = 50
-    d_thresh_limitation = 0.025
+    d_thresh_limitation = 0.05
     initial_parameter = InitialSimulationModel(particle_num,pybullet_robot_pos,pybullet_robot_ori,pw_T_object_pos,pw_T_object_ori)
     initial_parameter.initial_particle() #only position of particle
 

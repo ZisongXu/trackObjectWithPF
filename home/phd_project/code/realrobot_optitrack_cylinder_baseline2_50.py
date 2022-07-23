@@ -539,16 +539,16 @@ class PFMove():
         
         error = self.compute_distance(estimated_object_pos,observation)
         boss_error_df[self.u_flag]=[error]
-        if self.u_flag >= 21:
+        if self.u_flag >= 10:
             print("write error file")
-            boss_error_df.to_csv('error_sum_0_0_25.csv',index=0,header=0,mode='a')
+            boss_error_df.to_csv('error_sum_0_0_50.csv',index=0,header=0,mode='a')
         
         
         error = self.compute_distance(estimated_object_pos_copy,observation)
         boss_bsln2_df[self.u_flag]=[error]
-        if self.u_flag >= 21:
+        if self.u_flag >= 10:
             print("write error file")
-            boss_bsln2_df.to_csv('baselin2_error_sum_0_0_25.csv',index=0,header=0,mode='a')
+            boss_bsln2_df.to_csv('baselin2_error_sum_0_0_50.csv',index=0,header=0,mode='a')
         
         self.u_flag = self.u_flag + 1
         
@@ -626,9 +626,9 @@ class PFMove():
         boss_obser_df[self.u_flag]=[error]   
                
         
-        if self.u_flag >= 21:
+        if self.u_flag >= 10:
             print("write obser file")
-            boss_obser_df.to_csv('obser_sum_0_0_25.csv',index=0,header=0,mode='a')        
+            boss_obser_df.to_csv('obser_sum_0_0_50.csv',index=0,header=0,mode='a')        
 
         for index,particle in enumerate(self.particle_cloud):
             
@@ -1043,7 +1043,7 @@ if __name__ == '__main__':
     #input('Press [ENTER] to initial simulation world model')
     particle_cloud = []
     particle_num = 50
-    d_thresh_limitation = 0.025
+    d_thresh_limitation = 0.05
     initial_parameter = InitialSimulationModel(particle_num,pybullet_robot_pos,pybullet_robot_ori,pw_T_object_pos,pw_T_object_ori)
     initial_parameter.initial_particle() #only position of particle
 

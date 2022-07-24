@@ -219,7 +219,8 @@ class InitialSimulationModel():
         self.fake_robot_id_collection = []
         self.cylinder_particle_no_visual_id_collection = []
         self.cylinder_particle_with_visual_id_collection =[]
-        self.sigma_obs = 0.03
+        self.noise_object_pose = []
+        self.sigma_obs = 0.05
         
         self.particle_cloud_copy = []
         self.pybullet_particle_env_collection_copy = []
@@ -244,13 +245,13 @@ class InitialSimulationModel():
         noise_object_y_ang = self.cylinder_real_object_start_angle[1]
         noise_object_z_ang = random.uniform(real_object_z_ang - math.pi/6.0, real_object_z_ang + math.pi/6.0)
         noise_object_ang = [noise_object_x_ang,noise_object_y_ang,noise_object_z_ang]
-        noise_object_pose = [noise_object_x,noise_object_y,noise_object_z,noise_object_x_ang,noise_object_y_ang,noise_object_z_ang]
-        boss_obs_pose.append(noise_object_pose)
+        self.noise_object_pose = [noise_object_x,noise_object_y,noise_object_z,noise_object_x_ang,noise_object_y_ang,noise_object_z_ang]
+        boss_obs_pose.append(self.noise_object_pose)
         
         error = self.compute_distance(noise_object,real_object)
         boss_obser_df[0]=[error]
         for i in range(self.particle_num):
-            x,y,z,x_angle,y_angle,z_angle = self.generate_random_pose(self.cylinder_real_object_start_angle)
+            x,y,z,x_angle,y_angle,z_angle = self.generate_random_pose(self.noise_object_pose)
             w = 1/self.particle_num
             
             #recover: need to del
@@ -268,11 +269,11 @@ class InitialSimulationModel():
         y_distance = object_current_pos[1] - object_last_update_pos[1]
         distance = math.sqrt(x_distance ** 2 + y_distance ** 2)
         return distance
-    def generate_random_pose(self,cylinder_real_object_start_angle):
-        angle = copy.deepcopy(cylinder_real_object_start_angle)
-        x = random.uniform(self.cylinder_real_object_start_pos[0] - 0.07, self.cylinder_real_object_start_pos[0] + 0.07)
-        y = random.uniform(self.cylinder_real_object_start_pos[1] - 0.07, self.cylinder_real_object_start_pos[1] + 0.07)
-        z = self.cylinder_real_object_start_pos[2]
+    def generate_random_pose(self,noise_object_pose):
+        angle = copy.deepcopy([noise_object_pose[3],noise_object_pose[4],noise_object_pose[5]])
+        x = random.uniform(noise_object_pose[0] - 0.07, noise_object_pose[0] + 0.07)
+        y = random.uniform(noise_object_pose[1] - 0.07, noise_object_pose[1] + 0.07)
+        z = noise_object_pose[2]
         x_angle = angle[0]
         y_angle = angle[1]
         z_angle = random.uniform(angle[2] - math.pi/6.0, angle[2] + math.pi/6.0)
@@ -349,7 +350,7 @@ class InitialSimulationModel():
                 length = len(collide_ids)
                 for t_i in range(length):
                     if collide_ids[t_i][1] == 8:
-                        Px,Py,Pz,Px_angle,Py_angle,Pz_angle = self.generate_random_pose(self.cylinder_real_object_start_angle)
+                        Px,Py,Pz,Px_angle,Py_angle,Pz_angle = self.generate_random_pose(self.noise_object_pose)
                         cylinder_particle_no_visual_angle = [Px_angle,Py_angle,Pz_angle]
                         cylinder_particle_no_visual_ori = pybullet_simulation_env.getQuaternionFromEuler(cylinder_particle_no_visual_angle)
                         pybullet_simulation_env.resetBasePositionAndOrientation(cylinder_particle_no_visual_id,
@@ -444,7 +445,7 @@ class PFMove():
         
         self.sigma_motion_model = 0.01
         self.sigma_observ_model = 0.015
-        self.sigma_obs = 0.03
+        self.sigma_obs = 0.05
 
         self.object_estimate_pose_x = []
         self.object_estimate_pose_y = []
@@ -541,14 +542,14 @@ class PFMove():
         boss_error_df[self.u_flag]=[error]
         if self.u_flag >= 10:
             print("write error file")
-            boss_error_df.to_csv('error_sum_0_3_50.csv',index=0,header=0,mode='a')
+            boss_error_df.to_csv('error_sum_0_5_50.csv',index=0,header=0,mode='a')
         
         
         error = self.compute_distance(estimated_object_pos_copy,observation)
         boss_bsln2_df[self.u_flag]=[error]
         if self.u_flag >= 10:
             print("write error file")
-            boss_bsln2_df.to_csv('baselin2_error_sum_0_3_50.csv',index=0,header=0,mode='a')
+            boss_bsln2_df.to_csv('baselin2_error_sum_0_5_50.csv',index=0,header=0,mode='a')
         
         self.u_flag = self.u_flag + 1
         
@@ -628,19 +629,19 @@ class PFMove():
         
         if self.u_flag >= 10:
             print("write obser file")
-            boss_obser_df.to_csv('obser_sum_0_3_50.csv',index=0,header=0,mode='a')        
+            boss_obser_df.to_csv('obser_sum_0_5_50.csv',index=0,header=0,mode='a')        
 
         for index,particle in enumerate(self.particle_cloud):
             
             particle_x = particle.x
             particle_y = particle.y
             
-            real_object_pos = pos_of_real_object
+            obs_object_pos = [noise_object_pose[0],noise_object_pose[1],noise_object_pose[2]]
             
-            real_object_pos_x = real_object_pos[0]
-            real_object_pos_y = real_object_pos[1]
+            obs_object_pos_x = obs_object_pos[0]
+            obs_object_pos_y = obs_object_pos[1]
             
-            distance = math.sqrt((particle_x - real_object_pos_x) ** 2 + (particle_y - real_object_pos_y) ** 2)
+            distance = math.sqrt((particle_x - obs_object_pos_x) ** 2 + (particle_y - obs_object_pos_y) ** 2)
             
             x = distance
             mean = 0

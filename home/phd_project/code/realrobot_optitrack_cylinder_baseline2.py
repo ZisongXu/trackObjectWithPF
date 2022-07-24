@@ -219,7 +219,7 @@ class InitialSimulationModel():
         self.fake_robot_id_collection = []
         self.cylinder_particle_no_visual_id_collection = []
         self.cylinder_particle_with_visual_id_collection =[]
-        self.sigma_obs = 0.00
+        self.sigma_obs = 0.03
         
         self.particle_cloud_copy = []
         self.pybullet_particle_env_collection_copy = []
@@ -444,7 +444,7 @@ class PFMove():
         
         self.sigma_motion_model = 0.01
         self.sigma_observ_model = 0.015
-        self.sigma_obs = 0.00
+        self.sigma_obs = 0.03
 
         self.object_estimate_pose_x = []
         self.object_estimate_pose_y = []
@@ -541,14 +541,14 @@ class PFMove():
         boss_error_df[self.u_flag]=[error]
         if self.u_flag >= 21:
             print("write error file")
-            boss_error_df.to_csv('error_sum_0_0_25.csv',index=0,header=0,mode='a')
+            boss_error_df.to_csv('error_sum_0_3_25.csv',index=0,header=0,mode='a')
         
         
         error = self.compute_distance(estimated_object_pos_copy,observation)
         boss_bsln2_df[self.u_flag]=[error]
         if self.u_flag >= 21:
             print("write error file")
-            boss_bsln2_df.to_csv('baselin2_error_sum_0_0_25.csv',index=0,header=0,mode='a')
+            boss_bsln2_df.to_csv('baselin2_error_sum_0_3_25.csv',index=0,header=0,mode='a')
         
         self.u_flag = self.u_flag + 1
         
@@ -628,7 +628,7 @@ class PFMove():
         
         if self.u_flag >= 21:
             print("write obser file")
-            boss_obser_df.to_csv('obser_sum_0_0_25.csv',index=0,header=0,mode='a')        
+            boss_obser_df.to_csv('obser_sum_0_3_25.csv',index=0,header=0,mode='a')        
 
         for index,particle in enumerate(self.particle_cloud):
             
@@ -744,7 +744,7 @@ class PFMove():
         #print("object_estimate_pos:",object_estimate_pos_x,object_estimate_pos_y)
         #print("object_real_____pos:",pos_of_real_object[0],pos_of_real_object[1])
         estimated_object_pos = [object_estimate_pos_x,object_estimate_pos_y,object_estimate_pos_z]
-        #self.display_estimated_robot_in_visual_model(estimated_object_pos)    
+        self.display_estimated_robot_in_visual_model_copy(estimated_object_pos)    
         return estimated_object_pos
  
     def get_item_pos(self,pybullet_env,item_id):
@@ -883,7 +883,12 @@ class PFMove():
         p_visualisation.resetBasePositionAndOrientation(estimated_object_id,
                                                         optitrack_obj_pos,
                                                         optitrack_obj_ori)    
-
+    def display_estimated_robot_in_visual_model_copy(self, observation):
+        optitrack_obj_pos = observation
+        optitrack_obj_ori = p_visualisation.getQuaternionFromEuler([0,0,0])
+        p_visualisation.resetBasePositionAndOrientation(estimated_object_id_bl2,
+                                                        optitrack_obj_pos,
+                                                        optitrack_obj_ori) 
     def draw_contrast_figure(self,estimated_object_pos,observation):
         print("Begin to draw contrast figure!")
         self.object_estimate_pose_x.append(estimated_object_pos[0])
@@ -1060,6 +1065,9 @@ if __name__ == '__main__':
     estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_estimated_object_with_visual_small.urdf"),
                                                    estimated_object_pos,
                                                    estimated_object_ori)
+    estimated_object_id_bl2 = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_est_object_with_visual_small_bl2.urdf"),
+                                                       estimated_object_pos,
+                                                       estimated_object_ori)
     error = compute_distance(estimated_object_pos,pw_T_object_pos)
     boss_error_df[0]=[error]
     boss_bsln2_df[0]=[error]

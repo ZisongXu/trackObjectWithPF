@@ -79,7 +79,7 @@ class Franka_robot():
         self.franka_robot_id = franka_robot_id
     def fanka_robot_move(self,targetPositionsJoints):
     	self.setJointPosition(self.franka_robot_id,targetPositionsJoints)
-    def setJointPosition(self,robot, position):
+    def setJointPosition(self,robot,position):
         position[7] = 0.039916139
         position[8] = 0.039916139
         num_joints = 9

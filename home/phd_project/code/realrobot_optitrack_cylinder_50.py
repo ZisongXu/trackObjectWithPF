@@ -174,12 +174,10 @@ class InitialRealworldModel():
                                                  robot_pos,
                                                  robot_orientation,
                                                  useFixedBase=1)
-        
         self.set_real_robot_JointPosition(p_visualisation,real_robot_id,self.joint_pos)
         for i in range(240):
             p_visualisation.stepSimulation()
             time.sleep(1./240.)
-        
         return real_robot_id
     def initial_target_object(self,object_pos,object_orientation = [0,0,0,1]):
         #object_orientation = p_visualisation.getQuaternionFromEuler(object_euler)
@@ -247,7 +245,6 @@ class InitialSimulationModel():
         noise_object_ang = [noise_object_x_ang,noise_object_y_ang,noise_object_z_ang]
         self.noise_object_pose = [noise_object_x,noise_object_y,noise_object_z,noise_object_x_ang,noise_object_y_ang,noise_object_z_ang]
         boss_obs_pose.append(self.noise_object_pose)
-        
         error = self.compute_distance(noise_object,real_object)
         boss_obser_df[0]=[error]
         for i in range(self.particle_num):
@@ -260,7 +257,6 @@ class InitialSimulationModel():
             
             particle = Particle(x,y,z,x_angle,y_angle,z_angle,w,index=i)
             self.particle_cloud.append(particle)
-            
         #object_estimate_set = self.compute_estimate_pos_of_object(self.particle_cloud)
         #print("initial_object_estimate_pos:",object_estimate_pos_x,object_estimate_pos_y)
         #return object_estimate_set[0],object_estimate_set[1],object_estimate_set[2],object_estimate_set[3],object_estimate_set[4],object_estimate_set[5]
@@ -544,7 +540,6 @@ class PFMove():
             print("write error file")
             boss_error_df.to_csv('error_sum_0_1_50.csv',index=0,header=0,mode='a')
         
-        
         error = self.compute_distance(estimated_object_pos_copy,observation)
         boss_bsln2_df[self.u_flag]=[error]
         if self.u_flag >= 10:
@@ -759,7 +754,6 @@ class PFMove():
         return new_pos_is_added_noise
     
     def add_noise(self,current_pos,old_pos):
-        distance = math.fabs(current_pos - old_pos)
         mean = current_pos
         sigma = self.sigma_motion_model
         new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
@@ -1024,7 +1018,7 @@ if __name__ == '__main__':
                        pw_T_object[2][3]]       
 
     pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
-
+    #load blue cube represents the ground truth pose of target object
     optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_real_object_with_visual_small.urdf"),
                                                    pw_T_object_pos,
                                                    pw_T_object_ori)                          

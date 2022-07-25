@@ -220,7 +220,7 @@ class InitialSimulationModel():
         self.cylinder_particle_no_visual_id_collection = []
         self.cylinder_particle_with_visual_id_collection =[]
         self.noise_object_pose = []
-        self.sigma_obs = 0.03
+        self.sigma_obs = 0.01
         
         self.particle_cloud_copy = []
         self.pybullet_particle_env_collection_copy = []
@@ -445,7 +445,7 @@ class PFMove():
         
         self.sigma_motion_model = 0.01
         self.sigma_observ_model = 0.015
-        self.sigma_obs = 0.03
+        self.sigma_obs = 0.01
 
         self.object_estimate_pose_x = []
         self.object_estimate_pose_y = []
@@ -542,14 +542,14 @@ class PFMove():
         boss_error_df[self.u_flag]=[error]
         if self.u_flag >= 21:
             print("write error file")
-            boss_error_df.to_csv('error_sum_0_3_25.csv',index=0,header=0,mode='a')
+            boss_error_df.to_csv('error_sum_0_1_25.csv',index=0,header=0,mode='a')
         
         
         error = self.compute_distance(estimated_object_pos_copy,observation)
         boss_bsln2_df[self.u_flag]=[error]
         if self.u_flag >= 21:
             print("write error file")
-            boss_bsln2_df.to_csv('baselin2_error_sum_0_3_25.csv',index=0,header=0,mode='a')
+            boss_bsln2_df.to_csv('baselin2_error_sum_0_1_25.csv',index=0,header=0,mode='a')
         
         self.u_flag = self.u_flag + 1
         
@@ -629,7 +629,7 @@ class PFMove():
         
         if self.u_flag >= 21:
             print("write obser file")
-            boss_obser_df.to_csv('obser_sum_0_3_25.csv',index=0,header=0,mode='a')        
+            boss_obser_df.to_csv('obser_sum_0_1_25.csv',index=0,header=0,mode='a')        
 
         for index,particle in enumerate(self.particle_cloud):
             

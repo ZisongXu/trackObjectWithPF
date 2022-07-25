@@ -246,7 +246,9 @@ class InitialSimulationModel():
         self.noise_object_pose = [noise_object_x,noise_object_y,noise_object_z,noise_object_x_ang,noise_object_y_ang,noise_object_z_ang]
         boss_obs_pose.append(self.noise_object_pose)
         error = self.compute_distance(noise_object,real_object)
-        boss_obser_df[0]=[error]
+        error_angle = abs(noise_object_z_ang - real_object_z_ang)
+        error_sum = error + error_angle
+        boss_obser_df[0]=[error_sum]
         for i in range(self.particle_num):
             x,y,z,x_angle,y_angle,z_angle = self.generate_random_pose(self.noise_object_pose)
             w = 1/self.particle_num
@@ -519,6 +521,7 @@ class PFMove():
         
     #executed_control 
     def update_particle_filter_cheat(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos, observation, pw_T_object_ori):
+        pw_T_object_angle = p_visualisation.getEulerFromQuaternion(pw_T_object_ori)
         t1 = time.time()
         self.motion_update(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
         t2 = time.time()
@@ -542,13 +545,17 @@ class PFMove():
         self.display_particle_in_visual_model_copy(self.particle_cloud_copy)
         
         error = self.compute_distance(estimated_object_pos,observation)
-        boss_error_df[self.u_flag]=[error]
+        error_angle = abs(estimated_object_pos[2] - pw_T_object_angle[2])
+        error_sum = error + error_angle
+        boss_error_df[self.u_flag]=[error_sum]
         if self.u_flag >= 10:
             print("write error file")
             boss_error_df.to_csv('cubePF_opti_0_50.csv',index=0,header=0,mode='a')
         
         error = self.compute_distance(estimated_object_pos_copy,observation)
-        boss_bsln2_df[self.u_flag]=[error]
+        error_angle = abs(estimated_object_angle_copy[2] - pw_T_object_angle[2])
+        error_sum = error + error_angle
+        boss_bsln2_df[self.u_flag]=[error_sum]
         if self.u_flag >= 10:
             print("write error file")
             boss_bsln2_df.to_csv('cubePM_opti_0_50.csv',index=0,header=0,mode='a')  
@@ -625,8 +632,9 @@ class PFMove():
         
         self.noise_object_pose = [noise_object_x,noise_object_y,noise_object_z,noise_object_x_ang,noise_object_y_ang,noise_object_z_ang]
         error = self.compute_distance(noise_object_pos,real_object_pos)
-        print("error:",error)
-        boss_obser_df[self.u_flag]=[error]
+        error_ang = abs(noise_object_z_ang - real_object_z_ang)
+        error_sum = error + error_ang
+        boss_obser_df[self.u_flag]=[error_sum]
         
         
         if self.u_flag >= 10:
@@ -1053,6 +1061,7 @@ if __name__ == '__main__':
                        pw_T_object[2][3]]       
 
     pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
+    pw_T_object_angle = p_visualisation.getEulerFromQuaternion(pw_T_object_ori)
     #load blue cube represents the ground truth pose of target object
     optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cube_real_object_with_visual_small.urdf"),
                                                    pw_T_object_pos,
@@ -1091,8 +1100,10 @@ if __name__ == '__main__':
                                                    estimated_object_pos,
                                                    estimated_object_ori)
     error = compute_distance(estimated_object_pos,pw_T_object_pos)
-    boss_error_df[0]=[error]
-    boss_bsln2_df[0]=[error]
+    error_angle = abs(estimated_object_ang[2] - pw_T_object_angle[2])
+    error_sum = error + error_angle
+    boss_error_df[0]=[error_sum]
+    boss_bsln2_df[0]=[error_sum]
     #initial_parameter.particle_cloud #parameter of particle
     #initial_parameter.pybullet_particle_env_collection #env of simulation
     #initial_parameter.fake_robot_id_collection #id of robot in simulation

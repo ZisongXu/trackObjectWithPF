@@ -6,7 +6,7 @@
    <link name="base_link">
      <visual>
        <geometry>
-         <box size="0.027 0.0778 0.0774"/>
+         <box size="0.214 0.16 0.061"/>
        </geometry>
        <material name="golden"/>
      </visual>

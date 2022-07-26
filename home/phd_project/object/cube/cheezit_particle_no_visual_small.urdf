@@ -6,13 +6,13 @@
    <link name="right_leg">
      <visual>
        <geometry>
-         <box size="0.034 0.0848 0.0714"/>
+         <box size="0.214 0.16 0.061"/>
        </geometry>
        <material name="green"/>
      </visual>
      <collision>
        <geometry>
-         <box size="0.034 0.0848 0.0714"/>
+         <box size="0.214 0.16 0.061"/>
        </geometry>
      </collision>
      <inertial>

@@ -218,8 +218,8 @@ class InitialSimulationModel():
         self.cheezit_particle_no_visual_id_collection = []
         self.cheezit_particle_with_visual_id_collection =[]
         self.noise_object_pose = []
-        self.sigma_obs = 0.05
-        self.sigma_obs_angle = 0.10
+        self.sigma_obs = 0.03
+        self.sigma_obs_angle = 0.06
         self.particle_cloud_copy = []
         self.pybullet_particle_env_collection_copy = []
         self.cheezit_particle_no_visual_id_collection_copy = []
@@ -450,8 +450,8 @@ class PFMove():
         self.sigma_angle_mdoel = 0.02 #60-1.2
         self.sigma_observ_model_pos = 0.015
         self.sigma_observ_model_angle = 0.075
-        self.sigma_obs = 0.05
-        self.sigma_obs_angle = 0.10
+        self.sigma_obs = 0.03
+        self.sigma_obs_angle = 0.06
         self.object_estimate_pose_x = []
         self.object_estimate_pose_y = []
         self.object_real_____pose_x = []

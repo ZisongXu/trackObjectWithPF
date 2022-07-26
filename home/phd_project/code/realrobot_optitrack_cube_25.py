@@ -548,7 +548,7 @@ class PFMove():
         error_angle = abs(estimated_object_pos[2] - pw_T_object_angle[2])
         error_sum = error + error_angle
         boss_error_df[self.u_flag]=[error_sum]
-        if self.u_flag >= 15:
+        if self.u_flag >= 17:
             print("write error file")
             boss_error_df.to_csv('cubePF_opti_5_25.csv',index=0,header=0,mode='a')
         
@@ -556,7 +556,7 @@ class PFMove():
         error_angle = abs(estimated_object_angle_copy[2] - pw_T_object_angle[2])
         error_sum = error + error_angle
         boss_bsln2_df[self.u_flag]=[error_sum]
-        if self.u_flag >= 15:
+        if self.u_flag >= 17:
             print("write error file")
             boss_bsln2_df.to_csv('cubePM_opti_5_25.csv',index=0,header=0,mode='a')  
 
@@ -637,7 +637,7 @@ class PFMove():
         boss_obser_df[self.u_flag]=[error_sum]
         
         
-        if self.u_flag >= 15:
+        if self.u_flag >= 17:
             print("write obser file")
             boss_obser_df.to_csv('cubeOPES_opti_5_25.csv',index=0,header=0,mode='a')  
             

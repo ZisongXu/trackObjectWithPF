@@ -447,7 +447,7 @@ class PFMove():
         self.u_flag = 1
         
         self.sigma_motion_model = 0.01
-        self.sigma_angle_mdoel = 0.05 #60-3
+        self.sigma_angle_mdoel = 0.02 #60-1.2
         self.sigma_observ_model_pos = 0.015
         self.sigma_observ_model_angle = 0.075
         self.sigma_obs = 0.00

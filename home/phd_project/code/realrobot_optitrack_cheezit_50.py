@@ -100,7 +100,7 @@ class Ros_listener():
     def __init__(self):
         self.joint_subscriber = rospy.Subscriber('/joint_states', JointState, self.joint_values_callback)
         self.robot_pose = rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose',PoseStamped, self.robot_pose_callback)
-        self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/zisongObjectCube/pose',PoseStamped, self.object_pose_callback)
+        self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/zisongCheezit/pose',PoseStamped, self.object_pose_callback)
         self.current_joint_values = [-1.57,0.0,0.0,-2.8,1.7,1.57,1.1,0.039916139,0.039916139]
         self.robot_pos = [0.13461002707481384,
                           0.027710117399692535,
@@ -184,7 +184,7 @@ class InitialRealworldModel():
         real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_object_small.urdf"),
                                                   object_pos,
                                                   object_orientation)
-        p_visualisation.changeDynamics(real_object_id,-1,mass=2.5,lateralFriction = 0.7)
+        p_visualisation.changeDynamics(real_object_id,-1,mass=2.5,lateralFriction = 0.28)
         return real_object_id
     def set_real_robot_JointPosition(self,pybullet_simulation_env,robot, position):
         print("Preparing the joint pose of the panda robot!")
@@ -269,8 +269,8 @@ class InitialSimulationModel():
         return distance
     def generate_random_pose(self,noise_object_pose):
         angle = copy.deepcopy([noise_object_pose[3],noise_object_pose[4],noise_object_pose[5]])
-        x = random.uniform(noise_object_pose[0] - 0.07, noise_object_pose[0] + 0.07)
-        y = random.uniform(noise_object_pose[1] - 0.07, noise_object_pose[1] + 0.07)
+        x = random.uniform(noise_object_pose[0] - 0.08, noise_object_pose[0] + 0.08)
+        y = random.uniform(noise_object_pose[1] - 0.08, noise_object_pose[1] + 0.08)
         z = noise_object_pose[2]
         x_angle = angle[0]
         y_angle = angle[1]
@@ -364,7 +364,7 @@ class InitialSimulationModel():
                         break
                 if flag == 0:
                     break 
-            pybullet_simulation_env.changeDynamics(cheezit_particle_no_visual_id,-1,mass=2.5,lateralFriction = 0.7)
+            pybullet_simulation_env.changeDynamics(cheezit_particle_no_visual_id,-1,mass=2.5,lateralFriction = 0.28)
             self.cheezit_particle_no_visual_id_collection.append(cheezit_particle_no_visual_id)
         object_estimate_set = self.compute_estimate_pos_of_object(self.particle_cloud)
         return object_estimate_set[0],object_estimate_set[1],object_estimate_set[2],object_estimate_set[3],object_estimate_set[4],object_estimate_set[5] 
@@ -384,7 +384,7 @@ class InitialSimulationModel():
             cheezit_particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_particle_no_visual_small.urdf"),
                                                                           cheezit_particle_no_visual_start_pos,
                                                                           cheezit_particle_no_visual_start_orientation)
-            pybullet_simulation_env.changeDynamics(cheezit_particle_no_visual_id,-1,mass=2.5,lateralFriction = 0.7)
+            pybullet_simulation_env.changeDynamics(cheezit_particle_no_visual_id,-1,mass=2.5,lateralFriction = 0.28)
             self.cheezit_particle_no_visual_id_collection_copy.append(cheezit_particle_no_visual_id)
         object_estimate_set_copy = self.compute_estimate_pos_of_object(self.particle_cloud_copy)
         return object_estimate_set_copy[0],object_estimate_set_copy[1],object_estimate_set_copy[2],object_estimate_set_copy[3],object_estimate_set_copy[4],object_estimate_set_copy[5]
@@ -1028,7 +1028,7 @@ if __name__ == '__main__':
     ros_listener = Ros_listener()
     
     #give some time to update the data
-    time.sleep(0.5)
+    time.sleep(1)
     init_robot_pos = ros_listener.robot_pos
     init_robot_ori = ros_listener.robot_ori 
     init_object_pos = ros_listener.object_pos

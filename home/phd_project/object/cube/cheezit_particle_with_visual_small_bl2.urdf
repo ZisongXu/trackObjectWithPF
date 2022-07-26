@@ -6,7 +6,7 @@
    <link name="right_leg">
      <visual>
        <geometry>
-         <box size="0.214 0.16 0.061"/>
+         <box size="0.294 0.07 0.15"/>
        </geometry>
        <material name="green"/>
      </visual>

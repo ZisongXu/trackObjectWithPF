@@ -550,7 +550,7 @@ class PFMove():
         boss_error_df[self.u_flag]=[error_sum]
         if self.u_flag >= 8:
             print("write error file")
-            boss_error_df.to_csv('cubePF_opti_5_50.csv',index=0,header=0,mode='a')
+            boss_error_df.to_csv('cheezitPF_opti_5_50.csv',index=0,header=0,mode='a')
         
         error = self.compute_distance(estimated_object_pos_copy,observation)
         error_angle = abs(estimated_object_angle_copy[2] - pw_T_object_angle[2])
@@ -558,7 +558,7 @@ class PFMove():
         boss_bsln2_df[self.u_flag]=[error_sum]
         if self.u_flag >= 8:
             print("write error file")
-            boss_bsln2_df.to_csv('cubePM_opti_5_50.csv',index=0,header=0,mode='a')  
+            boss_bsln2_df.to_csv('cheezitPM_opti_5_50.csv',index=0,header=0,mode='a')  
 
         self.u_flag = self.u_flag + 1
         
@@ -639,7 +639,7 @@ class PFMove():
         
         if self.u_flag >= 8:
             print("write obser file")
-            boss_obser_df.to_csv('cubeOPES_opti_5_50.csv',index=0,header=0,mode='a')  
+            boss_obser_df.to_csv('cheezitOPES_opti_5_50.csv',index=0,header=0,mode='a')  
             
         for index,particle in enumerate(self.particle_cloud):
             

@@ -545,7 +545,7 @@ class PFMove():
         self.display_particle_in_visual_model_copy(self.particle_cloud_copy)
         
         error = self.compute_distance(estimated_object_pos,observation)
-        error_angle = abs(estimated_object_pos[2] - pw_T_object_angle[2])
+        error_angle = abs(estimated_object_angle[2] - pw_T_object_angle[2])
         error_sum = error + error_angle
         boss_error_df[self.u_flag]=[error_sum]
         if self.u_flag >= 9:

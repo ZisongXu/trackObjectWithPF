@@ -218,8 +218,8 @@ class InitialSimulationModel():
         self.cheezit_particle_no_visual_id_collection = []
         self.cheezit_particle_with_visual_id_collection =[]
         self.noise_object_pose = []
-        self.sigma_obs = 0.03
-        self.sigma_obs_angle = 0.06
+        self.sigma_obs = 0.01
+        self.sigma_obs_angle = 0.02
         self.particle_cloud_copy = []
         self.pybullet_particle_env_collection_copy = []
         self.cheezit_particle_no_visual_id_collection_copy = []
@@ -450,8 +450,8 @@ class PFMove():
         self.sigma_angle_mdoel = 0.02 #60-1.2
         self.sigma_observ_model_pos = 0.015
         self.sigma_observ_model_angle = 0.075
-        self.sigma_obs = 0.03
-        self.sigma_obs_angle = 0.06
+        self.sigma_obs = 0.01
+        self.sigma_obs_angle = 0.02
         self.object_estimate_pose_x = []
         self.object_estimate_pose_y = []
         self.object_real_____pose_x = []
@@ -550,7 +550,7 @@ class PFMove():
         boss_error_df[self.u_flag]=[error_sum]
         if self.u_flag >= 19:
             print("write error file")
-            boss_error_df.to_csv('cheezitPF_opti_3_25.csv',index=0,header=0,mode='a')
+            boss_error_df.to_csv('cheezitPF_opti_1_25.csv',index=0,header=0,mode='a')
         
         error = self.compute_distance(estimated_object_pos_copy,observation)
         error_angle = abs(estimated_object_angle_copy[2] - pw_T_object_angle[2])
@@ -558,7 +558,7 @@ class PFMove():
         boss_bsln2_df[self.u_flag]=[error_sum]
         if self.u_flag >= 19:
             print("write error file")
-            boss_bsln2_df.to_csv('cheezitPM_opti_3_25.csv',index=0,header=0,mode='a')  
+            boss_bsln2_df.to_csv('cheezitPM_opti_1_25.csv',index=0,header=0,mode='a')  
 
         self.u_flag = self.u_flag + 1
         
@@ -639,7 +639,7 @@ class PFMove():
         
         if self.u_flag >= 19:
             print("write obser file")
-            boss_obser_df.to_csv('cheezitOPES_opti_3_25.csv',index=0,header=0,mode='a')  
+            boss_obser_df.to_csv('cheezitOPES_opti_1_25.csv',index=0,header=0,mode='a')  
             
         for index,particle in enumerate(self.particle_cloud):
             

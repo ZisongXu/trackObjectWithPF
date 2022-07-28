@@ -78,7 +78,22 @@ class Franka_robot():
     def __init__(self,franka_robot_id):
         self.franka_robot_id = franka_robot_id
     def fanka_robot_move(self,targetPositionsJoints):
-    	self.setJointPosition(self.franka_robot_id,targetPositionsJoints)
+    	self.setJoinVisual(self.franka_robot_id,targetPositionsJoints)
+        
+    def setJoinVisual(self,robot, position):
+        position[7] = 0.039916139
+        position[8] = 0.039916139
+        num_joints = 9
+        for joint_index in range(num_joints): 
+            if joint_index == 7 or joint_index == 8:
+                p_visualisation.resetJointState(robot,
+                                                joint_index+2,
+                                                targetValue=position[joint_index])                
+            else:
+                p_visualisation.resetJointState(robot,
+                                                joint_index,
+                                                targetValue=position[joint_index])
+        
     def setJointPosition(self,robot, position):
         position[7] = 0.039916139
         position[8] = 0.039916139
@@ -98,9 +113,9 @@ class Franka_robot():
 #Class of franka robot listen to info from ROS
 class Ros_listener():
     def __init__(self):
-        self.joint_subscriber = rospy.Subscriber('/joint_states', JointState, self.joint_values_callback)
-        self.robot_pose = rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose',PoseStamped, self.robot_pose_callback)
-        self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/zisongObject/pose',PoseStamped, self.object_pose_callback)
+        self.joint_subscriber = rospy.Subscriber('/joint_states', JointState, self.joint_values_callback,queue_size=1)
+        self.robot_pose = rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose',PoseStamped, self.robot_pose_callback,queue_size=1)
+        self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/zisongObject/pose',PoseStamped, self.object_pose_callback,queue_size=1)
         self.current_joint_values = [-1.57,0.0,0.0,-2.8,1.7,1.57,1.1]
         self.robot_pos = [ 0.139080286026,
                           -0.581342339516,
@@ -186,7 +201,7 @@ class InitialRealworldModel():
         real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_object_small.urdf"),
                                                   object_pos,
                                                   object_orientation)
-        p_visualisation.changeDynamics(real_object_id,-1,lateralFriction = 0.53)
+        p_visualisation.changeDynamics(real_object_id,-1,mass=2.5,lateralFriction = 0.53)
         return real_object_id
     def set_real_robot_JointPosition(self,pybullet_simulation_env,robot, position):
         print("Preparing the joint pose of the panda robot!")
@@ -355,7 +370,7 @@ class InitialSimulationModel():
                         break
                 if flag == 0:
                     break    
-            pybullet_simulation_env.changeDynamics(particle_no_visual_id,-1,lateralFriction = 0.53)
+            pybullet_simulation_env.changeDynamics(particle_no_visual_id,-1,mass=2.5,lateralFriction = 0.53)
             self.particle_no_visual_id_collection.append(particle_no_visual_id)  
         obj_est_set = self.compute_estimate_pos_of_object(self.particle_cloud)
         return obj_est_set[0],obj_est_set[1],obj_est_set[2],obj_est_set[3],obj_est_set[4],obj_est_set[5] 
@@ -374,7 +389,7 @@ class InitialSimulationModel():
             particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_particle_no_visual_small.urdf"),
                                                                      particle_no_visual_start_pos,
                                                                      particle_no_visual_start_orientation)
-            pybullet_simulation_env.changeDynamics(particle_no_visual_id,-1,lateralFriction = 0.53)
+            pybullet_simulation_env.changeDynamics(particle_no_visual_id,-1,mass=2.5,lateralFriction = 0.53)
             self.particle_no_visual_id_collection_copy.append(particle_no_visual_id)
         obj_est_set_copy = self.compute_estimate_pos_of_object(self.particle_cloud_copy)
         return obj_est_set_copy[0],obj_est_set_copy[1],obj_est_set_copy[2],obj_est_set_copy[3],obj_est_set_copy[4],obj_est_set_copy[5] 
@@ -404,11 +419,6 @@ class InitialSimulationModel():
         sigma = sigma_init
         new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_pos_is_added_noise
-    def add_noise_to_obs_model(self,current_pos):
-        mean = current_pos
-        sigma = self.sigma_obs
-        new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
-        return new_pos_is_added_noise
     def take_easy_gaussian_value(self,mean,sigma):
         normal = random.normalvariate(mean, sigma)
         return normal
@@ -423,16 +433,10 @@ class PFMove():
         self.pybullet_sim_fake_robot_id_collection = copy.deepcopy(initial_parameter.fake_robot_id_collection)
         self.particle_with_visual_id_collection = copy.deepcopy(initial_parameter.particle_with_visual_id_collection)
         
-        self.particle_cloud_copy = copy.deepcopy(initial_parameter.particle_cloud_copy)
-        self.particle_no_visual_id_collection_copy = copy.deepcopy(initial_parameter.particle_no_visual_id_collection_copy)
-        self.pybullet_env_id_collection_copy = copy.deepcopy(initial_parameter.pybullet_particle_env_collection_copy)
-        self.particle_with_visual_id_collection_copy = copy.deepcopy(initial_parameter.particle_with_visual_id_collection_copy)
-        
         self.step_size = 1
         self.joint_num = 7
         
-        self.judgement_flag = False
-        self.d_thresh_limitation = 0.05
+
         
         self.u_flag = 1
         
@@ -455,7 +459,7 @@ class PFMove():
     #new structure
     def real_robot_control_PE(self,opti_obj_pos_cur,opti_obj_ori_cur,real_robot_joint_pos,nois_obj_pos_cur,nois_obj_ang_cur):        
         #Cheat
-        Flag = self.update_particle_filter_cheat(self.pybullet_env_id_collection, # simulation environment per particle
+        Flag = self.update_particle_filter_PE(self.pybullet_env_id_collection, # simulation environment per particle
                                                  self.pybullet_sim_fake_robot_id_collection, # fake robot id per sim_env
                                                  real_robot_joint_pos, # execution actions of the fake robot
                                                  opti_obj_pos_cur,
@@ -512,12 +516,12 @@ class PFMove():
         return distance
         
     #executed_control 
-    def update_particle_filter_cheat(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
+    def update_particle_filter_PE(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         opti_obj_ang_cur = p_visualisation.getEulerFromQuaternion(opti_obj_ori_cur)
         t1 = time.time()
-        self.motion_update(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
+        self.motion_update_PE(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
         t2 = time.time()
-        estimated_object_pos,estimated_object_ang = self.observation_update(opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur)
+        estimated_object_pos,estimated_object_ang = self.observation_update_PE(opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur)
         t3 = time.time()
 
         #print("motion model1 time consuming:",t2-t1)
@@ -528,11 +532,10 @@ class PFMove():
         
         
         print("display particle")
-        self.display_particle_in_visual_model(self.particle_cloud)
+        self.display_particle_in_visual_model_PE(self.particle_cloud)
 
         #self.draw_contrast_figure(estimated_object_pos,observation)
         
-        #self.display_particle_in_visual_model_copy(self.particle_cloud_copy)
         
         error = self.compute_distance(estimated_object_pos,opti_obj_pos_cur)
         #error_angle = abs(estimated_object_ang[2] - opti_obj_ang_cur[2])
@@ -549,7 +552,7 @@ class PFMove():
         #input('hit enter to continue')
         return
     
-    def motion_update(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
+    def motion_update_PE(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
         for index, pybullet_env in enumerate(pybullet_sim_env):
             #execute the control
             for i in range(int(self.step_size*240)):
@@ -576,7 +579,7 @@ class PFMove():
             #print("particle_x_before:",sim_par_cur_pos[0]," ","particle_y_before:",sim_par_cur_pos[1])
             #print("particle_x__after:",self.particle_cloud[index].x," ","particle_y__after:",self.particle_cloud[index].y)
 
-    def observation_update(self, opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
+    def observation_update_PE(self, opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         opti_obj_ang_cur = p_visualisation.getEulerFromQuaternion(opti_obj_ori_cur)
         
         real_obj_x = copy.deepcopy(opti_obj_pos_cur[0])
@@ -651,12 +654,6 @@ class PFMove():
         item_info = pybullet_env.getBasePositionAndOrientation(item_id)
         return item_info[0],item_info[1]
     
-    def add_noise_to_obs_model(self,current_pos):
-        mean = current_pos
-        sigma = self.sigma_obs
-        new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
-        return new_pos_is_added_noise
-    
     def add_noise_2_par(self,current_pos):
         mean = current_pos
         sigma = self.sigma_motion_model/(2 ** (1.0/2))
@@ -688,15 +685,6 @@ class PFMove():
         #tot_weight_test = sum([particle.w for particle in self.particle_cloud])
         #print("tot_weight_test:",tot_weight_test)
 
-    def normalize_particles_copy(self):
-        tot_weight = sum([particle.w for particle in self.particle_cloud_copy])
-        if tot_weight == 0:
-            print("Error!,total weight is 0")
-            return False
-        for particle in self.particle_cloud_copy:
-            particle_w = particle.w/tot_weight
-            particle.w = particle_w
-
     def resample_particles(self):
         particles_w = []
         newParticles = [] 
@@ -725,37 +713,8 @@ class PFMove():
                                                          visual_particle_pos,
                                                          visual_particle_orientation)
         return
-
-    def resample_particles_copy(self):
-        particles_w = []
-        newParticles = [] 
-        n_particle = len(self.particle_cloud_copy)
-        for particle in self.particle_cloud_copy:
-            particles_w.append(particle.w)
-        particle_array= np.random.choice(a = n_particle, size = n_particle, replace=True, p= particles_w)
-        particle_array_list = list(particle_array)
-        for index,i in enumerate(particle_array_list):
-            particle = Particle(self.particle_cloud_copy[i].x,
-                                self.particle_cloud_copy[i].y,
-                                self.particle_cloud_copy[i].z,
-                                self.particle_cloud_copy[i].x_angle,
-                                self.particle_cloud_copy[i].y_angle,
-                                self.particle_cloud_copy[i].z_angle,
-                                self.particle_cloud_copy[i].w,index)
-            newParticles.append(particle)
-        self.particle_cloud_copy = copy.deepcopy(newParticles)
         
-    def set_paticle_in_each_sim_env_copy(self):
-        for index, pybullet_env in enumerate(self.pybullet_env_id_collection_copy):
-            visual_particle_pos = [self.particle_cloud_copy[index].x, self.particle_cloud_copy[index].y, self.particle_cloud_copy[index].z]
-            visual_particle_angle = [self.particle_cloud_copy[index].x_angle, self.particle_cloud_copy[index].y_angle, self.particle_cloud_copy[index].z_angle]
-            visual_particle_orientation = pybullet_env.getQuaternionFromEuler(visual_particle_angle)
-            pybullet_env.resetBasePositionAndOrientation(self.particle_no_visual_id_collection_copy[index],
-                                                         visual_particle_pos,
-                                                         visual_particle_orientation)
-        return        
-        
-    def display_particle_in_visual_model(self, particle_cloud):
+    def display_particle_in_visual_model_PE(self, particle_cloud):
         for index, particle in enumerate(particle_cloud):
             visual_particle_pos = [particle.x, particle.y, 0.057]
             visual_particle_orientation = p_visualisation.getQuaternionFromEuler([0,0,0])
@@ -765,16 +724,6 @@ class PFMove():
             #print("visual_particle_pos:",visual_particle_pos)
             #particle_pos = self.get_item_pos(pybullet_env[index],initial_parameter.particle_no_visual_id_collection[index])
 
-    def display_particle_in_visual_model_copy(self, particle_cloud):
-        print("length:",len(self.particle_with_visual_id_collection_copy))
-        for index, particle in enumerate(particle_cloud):
-            visual_particle_pos = [particle.x, particle.y, 0.057]
-            visual_particle_orientation = p_visualisation.getQuaternionFromEuler([0,0,0])
-            p_visualisation.resetBasePositionAndOrientation(self.particle_with_visual_id_collection_copy[index],
-                                                            visual_particle_pos,
-                                                            visual_particle_orientation)
-            #print("visual_particle_pos:",visual_particle_pos)
-            #particle_pos = self.get_item_pos(pybullet_env[index],initial_parameter.particle_no_visual_id_collection[index])
 
     def display_estimated_robot_in_visual_model(self, observation,estimated_angle):
         esti_obj_pos = observation
@@ -839,23 +788,11 @@ class PFMove():
 
 class PFMovePM():
     def __init__(self,robot_id=None,real_robot_id=None,object_id=None):
-        # init internals
-        self.particle_cloud = copy.deepcopy(initial_parameter.particle_cloud)
-        self.particle_no_visual_id_collection = copy.deepcopy(initial_parameter.particle_no_visual_id_collection)
-        self.pybullet_env_id_collection = copy.deepcopy(initial_parameter.pybullet_particle_env_collection)
-        self.pybullet_sim_fake_robot_id_collection = copy.deepcopy(initial_parameter.fake_robot_id_collection)
-        self.particle_with_visual_id_collection = copy.deepcopy(initial_parameter.particle_with_visual_id_collection)
-        
+        # init internals   
         self.particle_cloud_copy = copy.deepcopy(initial_parameter.particle_cloud_copy)
         self.particle_no_visual_id_collection_copy = copy.deepcopy(initial_parameter.particle_no_visual_id_collection_copy)
         self.pybullet_env_id_collection_copy = copy.deepcopy(initial_parameter.pybullet_particle_env_collection_copy)
         self.particle_with_visual_id_collection_copy = copy.deepcopy(initial_parameter.particle_with_visual_id_collection_copy)
-        
-        self.step_size = 1
-        self.joint_num = 7
-        
-        self.judgement_flag = False
-        self.d_thresh_limitation = 0.05
         
         self.u_flag = 1
         
@@ -878,10 +815,10 @@ class PFMovePM():
     #new structure
     def real_robot_control_PM(self,opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):      
         #Cheat
-        Flag = self.update_particle_filter_cheat(opti_obj_pos_cur,
-                                                 opti_obj_ori_cur,
-                                                 nois_obj_pos_cur,
-                                                 nois_obj_ang_cur)
+        Flag = self.update_particle_filter_PM(opti_obj_pos_cur,
+                                              opti_obj_ori_cur,
+                                              nois_obj_pos_cur,
+                                              nois_obj_ang_cur)
         if Flag is False:
             return False    
                 
@@ -898,7 +835,7 @@ class PFMovePM():
         distance = math.sqrt(x_d ** 2 + y_d ** 2 + z_d ** 2)
         return distance        
     #executed_control 
-    def update_particle_filter_cheat(self, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
+    def update_particle_filter_PM(self, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         opti_obj_ang_cur = p_visualisation.getEulerFromQuaternion(opti_obj_ori_cur)
         t1 = time.time()
         self.motion_update_PM()
@@ -913,7 +850,7 @@ class PFMovePM():
 
         #self.draw_contrast_figure(estimated_object_pos,observation)
         
-        self.display_particle_in_visual_model_copy(self.particle_cloud_copy)
+        self.display_particle_in_visual_model_PM(self.particle_cloud_copy)
         '''
         error = self.compute_distance(estimated_object_pos_copy,opti_obj_pos_cur)
         boss_bsln2_df[self.u_flag]=[error]
@@ -991,12 +928,12 @@ class PFMovePM():
             '''
             particle.w = weight
             
-        Flag = self.normalize_particles_copy()
+        Flag = self.normalize_particles_PM()
         #if Flag is False:
         #    return False
         
-        self.resample_particles_copy()
-        self.set_paticle_in_each_sim_env_copy()
+        self.resample_particles_PM()
+        self.set_paticle_in_each_sim_env_PM()
 
         object_estimate_pose = self.compute_estimate_pos_of_object(self.particle_cloud_copy)
         #print("object_estimate_pos:",object_estimate_pos_x,object_estimate_pos_y)
@@ -1040,12 +977,6 @@ class PFMovePM():
         item_info = pybullet_env.getBasePositionAndOrientation(item_id)
         return item_info[0],item_info[1]
     
-    def add_noise_to_obs_model(self,current_pos):
-        mean = current_pos
-        sigma = self.sigma_obs
-        new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
-        return new_pos_is_added_noise
-    
     def add_noise_2_par(self,current_pos):
         mean = current_pos
         sigma = self.sigma_motion_model/(2 ** (1.0/2))
@@ -1067,7 +998,7 @@ class PFMovePM():
     def normal_distribution(self, x, mean, sigma):
         return np.exp(-1*((x-mean)**2)/(2*(sigma**2)))/(math.sqrt(2*np.pi)* sigma)
 
-    def normalize_particles_copy(self):
+    def normalize_particles_PM(self):
         tot_weight = sum([particle.w for particle in self.particle_cloud_copy])
         if tot_weight == 0:
             print("Error!,total weight is 0")
@@ -1076,7 +1007,7 @@ class PFMovePM():
             particle_w = particle.w/tot_weight
             particle.w = particle_w
 
-    def resample_particles_copy(self):
+    def resample_particles_PM(self):
         particles_w = []
         newParticles = [] 
         n_particle = len(self.particle_cloud_copy)
@@ -1095,7 +1026,7 @@ class PFMovePM():
             newParticles.append(particle)
         self.particle_cloud_copy = copy.deepcopy(newParticles)
         
-    def set_paticle_in_each_sim_env_copy(self):
+    def set_paticle_in_each_sim_env_PM(self):
         for index, pybullet_env in enumerate(self.pybullet_env_id_collection_copy):
             visual_particle_pos = [self.particle_cloud_copy[index].x, self.particle_cloud_copy[index].y, self.particle_cloud_copy[index].z]
             visual_particle_angle = [self.particle_cloud_copy[index].x_angle, self.particle_cloud_copy[index].y_angle, self.particle_cloud_copy[index].z_angle]
@@ -1105,7 +1036,7 @@ class PFMovePM():
                                                          visual_particle_orientation)
         return        
 
-    def display_particle_in_visual_model_copy(self, particle_cloud):
+    def display_particle_in_visual_model_PM(self, particle_cloud):
         for index, particle in enumerate(particle_cloud):
             visual_particle_pos = [particle.x, particle.y, 0.057]
             visual_particle_orientation = p_visualisation.getQuaternionFromEuler([0,0,0])
@@ -1247,7 +1178,7 @@ if __name__ == '__main__':
     
     particle_cloud = []
     particle_num = 50
-    d_thresh = 0.04
+    d_thresh = 0.01
     d_thresh_PM = 0.004
     a_thresh = math.pi/16
     flag_update_num_PM = 0
@@ -1358,9 +1289,12 @@ if __name__ == '__main__':
     #input('Press [ENTER] to enter into while loop')
     flag_pm = 0
     while True:
+        #for ij in range(240):
         franka_robot.fanka_robot_move(ros_listener.current_joint_values)
-        p_visualisation.stepSimulation()
+        #p_visualisation.stepSimulation()
         time.sleep(1./240.)
+        
+        
         
         init_robot_pos = ros_listener.robot_pos
         init_robot_ori = ros_listener.robot_ori 
@@ -1397,7 +1331,7 @@ if __name__ == '__main__':
         ang_betw_cur_and_old = comp_z_ang(noise_obj_ang_cur,noise_obj_ang_old)
         dis_betw_cur_and_old_PM = compute_distance_between_2_points_3D(noise_obj_pos_cur,noise_obj_pos_old_PM)
         ang_betw_cur_and_old_PM = comp_z_ang(noise_obj_ang_cur,noise_obj_ang_old_PM)
-        
+        display_real_object_in_visual_model(pw_T_object_pos,pw_T_object_ori)
         #distance_between_current_and_old = compute_distance(real_object_current_pos,real_object_last_update_pos)#Cheat 
         #print("dis_betw_cur_and_old_PM:",dis_betw_cur_and_old_PM)
         if (dis_betw_cur_and_old_PM > d_thresh_PM):
@@ -1429,7 +1363,7 @@ if __name__ == '__main__':
             #print("=")
         
         if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh):
-            display_real_object_in_visual_model(pw_T_object_pos,pw_T_object_ori)
+            
             flag_update_num_PE = flag_update_num_PE + 1
             error_opti_obs = compute_distance_between_2_points_3D(pw_T_object_pos,noise_obj_pos_cur)
             #error_ang = abs(nois_obj_z_ang - real_obj_z_ang)
@@ -1458,7 +1392,7 @@ if __name__ == '__main__':
             
             noise_obj_pos_old = copy.deepcopy(noise_obj_pos_cur)
             noise_obj_ang_old = copy.deepcopy(noise_obj_ang_cur)           
-        
+            
         if Flag is False:
             break
         

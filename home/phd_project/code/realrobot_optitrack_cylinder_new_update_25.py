@@ -1178,7 +1178,7 @@ if __name__ == '__main__':
     
     particle_cloud = []
     particle_num = 50
-    d_thresh = 0.01
+    d_thresh = 0.05
     d_thresh_PM = 0.004
     a_thresh = math.pi/16
     flag_update_num_PM = 0
@@ -1240,7 +1240,7 @@ if __name__ == '__main__':
     #initialize the real robot in the pybullet
     real_robot_id = real_world_object.initial_robot(robot_pos = pybullet_robot_pos,robot_orientation = pybullet_robot_ori)
     #initialize the real object in the pybullet
-    #real_object_id = real_world_object.initial_target_object(object_pos = pw_T_object_pos,object_orientation = pw_T_object_ori)
+    real_object_id = real_world_object.initial_target_object(object_pos = pw_T_object_pos,object_orientation = pw_T_object_ori)
     #build an object of class "Franka_robot"
     franka_robot = Franka_robot(real_robot_id)
     
@@ -1331,7 +1331,7 @@ if __name__ == '__main__':
         ang_betw_cur_and_old = comp_z_ang(noise_obj_ang_cur,noise_obj_ang_old)
         dis_betw_cur_and_old_PM = compute_distance_between_2_points_3D(noise_obj_pos_cur,noise_obj_pos_old_PM)
         ang_betw_cur_and_old_PM = comp_z_ang(noise_obj_ang_cur,noise_obj_ang_old_PM)
-        display_real_object_in_visual_model(pw_T_object_pos,pw_T_object_ori)
+        
         #distance_between_current_and_old = compute_distance(real_object_current_pos,real_object_last_update_pos)#Cheat 
         #print("dis_betw_cur_and_old_PM:",dis_betw_cur_and_old_PM)
         if (dis_betw_cur_and_old_PM > d_thresh_PM):
@@ -1392,7 +1392,7 @@ if __name__ == '__main__':
             
             noise_obj_pos_old = copy.deepcopy(noise_obj_pos_cur)
             noise_obj_ang_old = copy.deepcopy(noise_obj_ang_cur)           
-            
+            display_real_object_in_visual_model(pw_T_object_pos,pw_T_object_ori)
         if Flag is False:
             break
         

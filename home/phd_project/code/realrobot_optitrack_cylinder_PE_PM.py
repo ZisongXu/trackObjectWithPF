@@ -48,11 +48,15 @@ p_visualisation.setGravity(0,0,-9.81)
 p_visualisation.resetDebugVisualizerCamera(cameraDistance=2,cameraYaw=0,cameraPitch=-40,cameraTargetPosition=[0.5,-0.9,0.5])
 plane_id = p_visualisation.loadURDF("plane.urdf")
 
-boss_error_df = pd.DataFrame()
+boss_PFPE_df = pd.DataFrame()
 boss_obser_df = pd.DataFrame()
-boss_bsln2_df = pd.DataFrame()
+boss_PFPM_df = pd.DataFrame()
+boss_csv_index_df_obse = pd.DataFrame()
+boss_csv_index_df_PFPE = pd.DataFrame()
+boss_csv_index_df_PFPM = pd.DataFrame()
 boss_obs_pose_PFPM = []
 boss_est_pose_PFPM = []
+
 '''
 #load and set franka robot
 plane_id = p_visualisation.loadURDF("plane.urdf")
@@ -536,17 +540,17 @@ class PFMove():
 
         #self.draw_contrast_figure(estimated_object_pos,observation)
         
-        
-        error = self.compute_distance(estimated_object_pos,opti_obj_pos_cur)
+        error_opti_PFPE = self.compute_distance(estimated_object_pos,opti_obj_pos_cur)
         #error_angle = abs(estimated_object_ang[2] - opti_obj_ang_cur[2])
         #error_sum = error + error_angle
-        boss_error_df[self.u_flag]=[error]
-        if self.u_flag >= 21:
-            print("write error file")
-            boss_error_df.to_csv('error_sum_0_1_25.csv',index=0,header=0,mode='a')
-        
+        boss_PFPE_df[flag_update_num_PE] = error_opti_PFPE
+        if time_consuming >= 92:
+            print("write PFPE file")
+            for csv_index in range(flag_update_num_PE):
+                boss_csv_index_df_PFPE[csv_index+1] = [csv_index+1]
+            boss_csv_index_df_PFPE.to_csv('PFPE_error.csv',index=0,header=0,mode='a')
+            boss_PFPE_df.to_csv('PFPE_error.csv',index=0,header=0,mode='a')
 
-        self.u_flag = self.u_flag + 1
         
         # print debug info of all particles here
         #input('hit enter to continue')
@@ -853,12 +857,21 @@ class PFMovePM():
         self.display_particle_in_visual_model_PM(self.particle_cloud_copy)
         '''
         error = self.compute_distance(estimated_object_pos_copy,opti_obj_pos_cur)
-        boss_bsln2_df[self.u_flag]=[error]
+        boss_PFPM_df[self.u_flag]=[error]
         if self.u_flag >= 500:
             print("write error file")
-            boss_bsln2_df.to_csv('baselin2_error_sum_0_1_25.csv',index=0,header=0,mode='a')
+            boss_PFPM_df.to_csv('PFPM_error.csv',index=0,header=0,mode='a')
         '''
-        self.u_flag = self.u_flag + 1
+        error_opti_PFPM = self.compute_distance(estimated_object_pos_copy,opti_obj_pos_cur)
+        #error_angle = abs(estimated_object_ang[2] - opti_obj_ang_cur[2])
+        #error_sum = error + error_angle
+        boss_PFPM_df[flag_update_num_PE] = error_opti_PFPM
+        if time_consuming >= 92:
+            print("write PFPM file")
+            for csv_index in range(flag_update_num_PE):
+                boss_csv_index_df_PFPM[csv_index+1] = [csv_index+1]
+            boss_csv_index_df_PFPM.to_csv('PFPM_error.csv',index=0,header=0,mode='a')
+            boss_PFPM_df.to_csv('PFPM_error.csv',index=0,header=0,mode='a')
         
         # print debug info of all particles here
         #input('hit enter to continue')
@@ -1175,10 +1188,10 @@ def display_real_object_in_visual_model(opti_obj_pos,opti_obj_ori):
         
         
 if __name__ == '__main__':
-    
+    t_begin = time.time()
     particle_cloud = []
     particle_num = 50
-    d_thresh = 0.05
+    d_thresh = 0.01
     d_thresh_PM = 0.004
     a_thresh = math.pi/16
     flag_update_num_PM = 0
@@ -1232,6 +1245,7 @@ if __name__ == '__main__':
     noise_obj_ang_init = [noise_obj_x_ang,noise_obj_y_ang,noise_obj_z_ang]
     error_opti_obs = compute_distance_between_2_points_3D(pw_T_object_pos,noise_obj_pos_init)
     boss_obser_df[0]=[error_opti_obs]
+    boss_csv_index_df_obse[0] = [0]
     noise_obj_pose_init = [noise_obj_x,noise_obj_y,noise_obj_z,noise_obj_x_ang,noise_obj_y_ang,noise_obj_z_ang]
     boss_obs_pose_PFPM.append(noise_obj_pose_init)
     #input('Press [ENTER] to initial real world model')
@@ -1240,7 +1254,7 @@ if __name__ == '__main__':
     #initialize the real robot in the pybullet
     real_robot_id = real_world_object.initial_robot(robot_pos = pybullet_robot_pos,robot_orientation = pybullet_robot_ori)
     #initialize the real object in the pybullet
-    real_object_id = real_world_object.initial_target_object(object_pos = pw_T_object_pos,object_orientation = pw_T_object_ori)
+    #real_object_id = real_world_object.initial_target_object(object_pos = pw_T_object_pos,object_orientation = pw_T_object_ori)
     #build an object of class "Franka_robot"
     franka_robot = Franka_robot(real_robot_id)
     
@@ -1264,8 +1278,10 @@ if __name__ == '__main__':
                                                       estimated_object_pos,
                                                       estimated_object_ori)
     error = compute_distance(estimated_object_pos,pw_T_object_pos)
-    boss_error_df[0]=[error]
-    boss_bsln2_df[0]=[error]
+    boss_PFPE_df[0]=[error]
+    boss_csv_index_df_PFPE[0] = [0]
+    boss_PFPM_df[0]=[error]
+    boss_csv_index_df_PFPM[0] = [0]
     #initial_parameter.particle_cloud #parameter of particle
     #initial_parameter.pybullet_particle_env_collection #env of simulation
     #initial_parameter.fake_robot_id_collection #id of robot in simulation
@@ -1288,7 +1304,13 @@ if __name__ == '__main__':
     
     #input('Press [ENTER] to enter into while loop')
     flag_pm = 0
+    t_end = time.time()
     while True:
+        if t_end == 0 :
+            time_consuming = 0
+        else:
+            t_end = time.time()
+            time_consuming = t_end - t_begin
         #for ij in range(240):
         franka_robot.fanka_robot_move(ros_listener.current_joint_values)
         #p_visualisation.stepSimulation()
@@ -1334,34 +1356,6 @@ if __name__ == '__main__':
         
         #distance_between_current_and_old = compute_distance(real_object_current_pos,real_object_last_update_pos)#Cheat 
         #print("dis_betw_cur_and_old_PM:",dis_betw_cur_and_old_PM)
-        if (dis_betw_cur_and_old_PM > d_thresh_PM):
-            flag_update_num_PM = flag_update_num_PM + 1
-            error_opti_obs = compute_distance_between_2_points_3D(pw_T_object_pos,noise_obj_pos_cur)
-            #error_ang = abs(nois_obj_z_ang - real_obj_z_ang)
-            #error_sum = error + error_ang
-            '''
-            boss_obser_df[flag_update_num_PM] = error_opti_obs
-            if flag_update_num_PM >= 300:
-                print("write obser file")
-                boss_obser_df.to_csv('obser_sum_0_1_25.csv',index=0,header=0,mode='a')
-            '''
-            boss_obs_pose_PFPM.append(noise_obj_pose_cur)
-            #print("+")
-            opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object
-            opti_obj_ori_cur_PM = copy.deepcopy(pw_T_object_ori)
-            nois_obj_pos_cur_PM = copy.deepcopy(noise_obj_pos_cur)
-            nois_obj_ang_cur_PM = copy.deepcopy(noise_obj_ang_cur)
-            
-            Flag = robot2.real_robot_control_PM(opti_obj_pos_cur_PM,
-                                                opti_obj_ori_cur_PM,
-                                                nois_obj_pos_cur_PM,
-                                                nois_obj_ang_cur_PM)
-            
-            noise_obj_pos_old_PM = copy.deepcopy(noise_obj_pos_cur)
-            noise_obj_ang_old_PM = copy.deepcopy(noise_obj_ang_cur) 
-            
-            #print("=")
-        
         if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh):
             
             flag_update_num_PE = flag_update_num_PE + 1
@@ -1369,10 +1363,8 @@ if __name__ == '__main__':
             #error_ang = abs(nois_obj_z_ang - real_obj_z_ang)
             #error_sum = error + error_ang
             
-            #boss_obser_df[flag_update_num_PE] = error_opti_obs
-            #if flag_update_num_PE >= 300:
-            #    print("write obser file")
-            #    boss_obser_df.to_csv('obser_sum_0_1_25.csv',index=0,header=0,mode='a') 
+            boss_obser_df[flag_update_num_PE] = error_opti_obs
+            
             
             #rob_cur_pos = data_new[0]
             #rob_cur_ori = data_new[1]
@@ -1393,6 +1385,36 @@ if __name__ == '__main__':
             noise_obj_pos_old = copy.deepcopy(noise_obj_pos_cur)
             noise_obj_ang_old = copy.deepcopy(noise_obj_ang_cur)           
             display_real_object_in_visual_model(pw_T_object_pos,pw_T_object_ori)
+            if time_consuming >= 92:
+                print("write obser file")
+                for csv_index in range(flag_update_num_PE):
+                    boss_csv_index_df_obse[csv_index+1] = [csv_index+1]
+                boss_csv_index_df_obse.to_csv('obser_error.csv',index=0,header=0,mode='a')
+                boss_obser_df.to_csv('obser_error.csv',index=0,header=0,mode='a')
+                
+                
+        if (dis_betw_cur_and_old_PM > d_thresh_PM):
+            flag_update_num_PM = flag_update_num_PM + 1
+            boss_obs_pose_PFPM.append(noise_obj_pose_cur)
+            #print("+")
+            opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object
+            opti_obj_ori_cur_PM = copy.deepcopy(pw_T_object_ori)
+            nois_obj_pos_cur_PM = copy.deepcopy(noise_obj_pos_cur)
+            nois_obj_ang_cur_PM = copy.deepcopy(noise_obj_ang_cur)
+            
+            Flag = robot2.real_robot_control_PM(opti_obj_pos_cur_PM,
+                                                opti_obj_ori_cur_PM,
+                                                nois_obj_pos_cur_PM,
+                                                nois_obj_ang_cur_PM)
+            
+            noise_obj_pos_old_PM = copy.deepcopy(noise_obj_pos_cur)
+            noise_obj_ang_old_PM = copy.deepcopy(noise_obj_ang_cur) 
+            
+            #print("=")
+            if time_consuming >= 92:
+                t_end = 0
+                time_consuming = 0
+        
         if Flag is False:
             break
         

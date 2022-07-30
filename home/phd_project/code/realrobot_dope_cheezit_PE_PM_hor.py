@@ -1225,6 +1225,17 @@ if __name__ == '__main__':
     
     #build an object of class "Ros_listener"
     ros_listener = Ros_listener()
+    listener = tf.TransformListener()
+    while True:
+        try:
+            (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
+            break
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            continue
+    robot_T_obj_dope_pos = list(trans)
+    robot_T_obj_dope_ori = list(rot)
+    rob_T_obj_rot_matrix = transformations.quaternion_matrix(robot_T_obj_dope_ori)
+    rob_T_obj = rotation_4_4_to_transformation_4_4(rob_T_obj_rot_matrix,robot_T_obj_dope_pos)
     
     #give some time to update the data
     time.sleep(0.5)
@@ -1252,27 +1263,35 @@ if __name__ == '__main__':
     optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_real_obj_with_visual_small_hor.urdf"),
                                                    pw_T_object_pos,
                                                    pw_T_object_ori)
+    
+    pw_T_object_dope = np.dot(pw_T_robot,rob_T_obj)
+    pw_T_object_pos_dope = [pw_T_object_dope[0][3],pw_T_object_dope[1][3],pw_T_object_dope[2][3]]       
+    pw_T_object_ori_dope = transformations.quaternion_from_matrix(pw_T_object_dope) 
+    pw_T_object_ang_dope = p_visualisation.getEulerFromQuaternion(pw_T_object_ori_dope)
+    dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
+                                                   pw_T_object_pos_dope,
+                                                   pw_T_object_ori_dope)
+    
+    
+    #input('test')
     #add noise to OptiTrack pose
-    pw_T_obj_pos = copy.deepcopy(pw_T_object_pos)
-    pw_T_obj_ori = copy.deepcopy(pw_T_object_ori)
-    pw_T_obj_ang = copy.deepcopy(pw_T_object_ang)
-    noise_obj_x = add_noise_to_Opti(pw_T_obj_pos[0],boss_sigma_obs_pos)
-    noise_obj_y = add_noise_to_Opti(pw_T_obj_pos[1],boss_sigma_obs_pos)
-    noise_obj_z = pw_T_obj_pos[2]
-    noise_obj_pos_init = [noise_obj_x,noise_obj_y,noise_obj_z]
-    noise_obj_x_ang = pw_T_obj_ang[0]
-    noise_obj_y_ang = pw_T_obj_ang[1]
-    noise_obj_z_ang = add_noise_to_Opti(pw_T_obj_ang[2],boss_sigma_obs_ang * (2 ** (1/2)))
-    noise_obj_ang_init = [noise_obj_x_ang,noise_obj_y_ang,noise_obj_z_ang]
-    error_opti_obs = compute_distance_between_2_points_3D(pw_T_object_pos,noise_obj_pos_init)
+
+    dope_obj_x = pw_T_object_pos_dope[0]
+    dope_obj_y = pw_T_object_pos_dope[1]
+    dope_obj_z = pw_T_object_pos_dope[2]
+    dope_obj_pos_init = [dope_obj_x,dope_obj_y,dope_obj_z]
+    dope_obj_x_ang = pw_T_object_ang_dope[0]
+    dope_obj_y_ang = pw_T_object_ang_dope[1]
+    dope_obj_z_ang = pw_T_object_ang_dope[2]
+    noise_obj_ang_init = [dope_obj_x_ang,dope_obj_y_ang,dope_obj_z_ang]
+    error_opti_obs = compute_distance_between_2_points_3D(pw_T_object_pos,pw_T_object_pos_dope)
     boss_obser_df[0]=[error_opti_obs]
     boss_csv_index_df_obse[0] = [0]
     boss_csv_index_df_obse_index[0] = [0]
-    noise_obj_pose_init = [noise_obj_x,noise_obj_y,noise_obj_z,noise_obj_x_ang,noise_obj_y_ang,noise_obj_z_ang]
+    noise_obj_pose_init = [dope_obj_x,dope_obj_y,dope_obj_z,dope_obj_x_ang,dope_obj_y_ang,dope_obj_z_ang]
     boss_obs_pose_PFPM.append(noise_obj_pose_init)
     #input('Press [ENTER] to initial real world model')
     #build an object of class "InitialRealworldModel"
-    print("ros_listener.current_joint_values:",ros_listener.current_joint_values)
     real_world_object = InitialRealworldModel(ros_listener.current_joint_values)
     #initialize the real robot in the pybullet
     real_robot_id = real_world_object.initial_robot(robot_pos = pybullet_robot_pos,robot_orientation = pybullet_robot_ori)
@@ -1282,9 +1301,9 @@ if __name__ == '__main__':
     franka_robot = Franka_robot(real_robot_id)
     
     #input('Press [ENTER] to initial simulation world model')
-    initial_parameter = InitialSimulationModel(particle_num,pybullet_robot_pos,pybullet_robot_ori,noise_obj_pos_init,noise_obj_ang_init)
+    initial_parameter = InitialSimulationModel(particle_num,pybullet_robot_pos,pybullet_robot_ori,dope_obj_pos_init,noise_obj_ang_init)
     initial_parameter.initial_particle() #only position of particle
-
+    
     #initial_parameter.initial_and_set_simulation_env()
     estimated_object_set = initial_parameter.initial_and_set_simulation_env(ros_listener.current_joint_values)
     estimated_object_pos = [estimated_object_set[0],estimated_object_set[1],estimated_object_set[2]]
@@ -1292,6 +1311,7 @@ if __name__ == '__main__':
     estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
     boss_est_pose_PFPM.append(estimated_object_set)
     initial_parameter.display_particle()
+    input('test')
     initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
     initial_parameter.display_particle_PM()
     estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
@@ -1322,9 +1342,9 @@ if __name__ == '__main__':
     #run the simulation
     Flag = True
     
-    noise_obj_pos_old = copy.deepcopy(noise_obj_pos_init)
+    noise_obj_pos_old = copy.deepcopy(dope_obj_pos_init)
     noise_obj_ang_old = copy.deepcopy(noise_obj_ang_init)
-    noise_obj_pos_old_PM = copy.deepcopy(noise_obj_pos_init)
+    noise_obj_pos_old_PM = copy.deepcopy(dope_obj_pos_init)
     noise_obj_ang_old_PM = copy.deepcopy(noise_obj_ang_init)
     
     #input('Press [ENTER] to enter into while loop')

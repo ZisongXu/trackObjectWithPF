@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
- <robot name="cube">
-   <material name="golden">
-     <color rgba="1 0.843 0 1"/>
+ <robot name="myfirst">
+   <material name="light_green">
+     <color rgba="0 1 0.498 1"/>
    </material>
-   <link name="base_link">
+   <link name="right_leg">
      <visual>
        <geometry>
-         <box size="0.205 0.055 0.165"/>
+         <box size="0.145 0.23343700408935547 0.08"/>
        </geometry>
-       <material name="golden"/>
+       <material name="light_green"/>
      </visual>
      <inertial>
        <mass value="0"/>

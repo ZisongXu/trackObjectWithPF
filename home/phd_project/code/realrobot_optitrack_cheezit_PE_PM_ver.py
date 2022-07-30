@@ -1249,7 +1249,7 @@ if __name__ == '__main__':
     pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
     pw_T_object_ang = p_visualisation.getEulerFromQuaternion(pw_T_object_ori)
     #load the groud truth object
-    optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_real_obj_with_visual_small_hor.urdf"),
+    optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_real_obj_with_visual_small_ver.urdf"),
                                                    pw_T_object_pos,
                                                    pw_T_object_ori)
     #add noise to OptiTrack pose

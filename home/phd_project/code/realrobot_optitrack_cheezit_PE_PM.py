@@ -125,7 +125,7 @@ class Ros_listener():
     def __init__(self):
         self.joint_subscriber = rospy.Subscriber('/joint_states', JointState, self.joint_values_callback,queue_size=1)
         self.robot_pose = rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose',PoseStamped, self.robot_pose_callback,queue_size=1)
-        self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/zisongObject/pose',PoseStamped, self.object_pose_callback,queue_size=1)
+        self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/cheezit/pose',PoseStamped, self.object_pose_callback,queue_size=1)
         self.current_joint_values = [-1.57,0.0,0.0,-2.8,1.7,1.57,1.1]
         self.robot_pos = [ 0.139080286026,
                           -0.581342339516,
@@ -208,7 +208,7 @@ class InitialRealworldModel():
         return real_robot_id
     def initial_target_object(self,object_pos,object_orientation = [0,0,0,1]):
         #object_orientation = p_visualisation.getQuaternionFromEuler(object_euler)
-        real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_object_small.urdf"),
+        real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_obj_small_hor.urdf"),
                                                   object_pos,
                                                   object_orientation)
         p_visualisation.changeDynamics(real_object_id,-1,mass=2.5,lateralFriction = 0.53)
@@ -317,7 +317,7 @@ class InitialSimulationModel():
             visualize_particle_pos = [particle.x, particle.y, 0.057]
             visualize_particle_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             visualize_particle_orientation = p_visualisation.getQuaternionFromEuler(visualize_particle_angle)
-            visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_particle_with_visual_small.urdf"),
+            visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_with_visual_small_PE_hor.urdf"),
                                                                       visualize_particle_pos,
                                                                       visualize_particle_orientation)
             self.particle_with_visual_id_collection.append(visualize_particle_Id)
@@ -326,7 +326,7 @@ class InitialSimulationModel():
             visualize_particle_pos = [particle.x, particle.y, 0.057]
             visualize_particle_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             visualize_particle_orientation = p_visualisation.getQuaternionFromEuler(visualize_particle_angle)
-            visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_particle_with_visual_small_bl2.urdf"),
+            visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_with_visual_small_PM_hor.urdf"),
                                                                       visualize_particle_pos,
                                                                       visualize_particle_orientation)
             self.particle_with_visual_id_collection_PM.append(visualize_particle_Id)
@@ -353,7 +353,7 @@ class InitialSimulationModel():
             particle_no_visual_start_pos = [particle.x, particle.y, particle.z]
             particle_no_visual_start_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             particle_no_visual_start_orientation = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_start_angle)
-            particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_particle_no_visual_small.urdf"),
+            particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_no_visual_small_hor.urdf"),
                                                                      particle_no_visual_start_pos,
                                                                      particle_no_visual_start_orientation)
             
@@ -396,7 +396,7 @@ class InitialSimulationModel():
             particle_no_visual_start_pos = [particle.x, particle.y, particle.z]
             particle_no_visual_start_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             particle_no_visual_start_orientation = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_start_angle)
-            particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_particle_no_visual_small.urdf"),
+            particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_no_visual_small_hor.urdf"),
                                                                      particle_no_visual_start_pos,
                                                                      particle_no_visual_start_orientation)
             pybullet_simulation_env.changeDynamics(particle_no_visual_id,-1,mass=2.5,lateralFriction = 0.53)
@@ -543,7 +543,7 @@ class PFMove():
         
         
         print("display particle")
-        self.display_particle_in_visual_model_PE(self.particle_cloud)
+        #self.display_particle_in_visual_model_PE(self.particle_cloud)
 
         #self.draw_contrast_figure(estimated_object_pos,observation)
         
@@ -647,7 +647,7 @@ class PFMove():
             sigma = self.sigma_observ_model
             sigma = boss_sigma_obs_pos
             weight = self.normal_distribution(x, mean, sigma)
-            '''
+            
             nois_obj_ang = [nois_obj_pose[3],nois_obj_pose[4],nois_obj_pose[5]]
             nois_obj_ang_z = nois_obj_ang[2]
             delta_z = abs(particle.z_angle - nois_obj_ang_z)
@@ -657,8 +657,8 @@ class PFMove():
             #sigma_angle = boss_sigma_obs_ang
             weight_angle = self.normal_distribution(x_angle, mean_angle, sigma_angle)
             particle.w = weight + weight_angle
-            '''
-            particle.w = weight
+            
+            #particle.w = weight
         Flag = self.normalize_particles()
         #if Flag is False:
         #    return False
@@ -744,7 +744,8 @@ class PFMove():
     def display_particle_in_visual_model_PE(self, particle_cloud):
         for index, particle in enumerate(particle_cloud):
             visual_particle_pos = [particle.x, particle.y, 0.057]
-            visual_particle_orientation = p_visualisation.getQuaternionFromEuler([0,0,0])
+            visual_particle_ang = [particle.x_angle, particle.y_angle, particle.z_angle]
+            visual_particle_orientation = p_visualisation.getQuaternionFromEuler(visual_particle_ang)
             p_visualisation.resetBasePositionAndOrientation(self.particle_with_visual_id_collection[index],
                                                             visual_particle_pos,
                                                             visual_particle_orientation)
@@ -878,7 +879,7 @@ class PFMovePM():
 
         #self.draw_contrast_figure(estimated_object_pos,observation)
         
-        self.display_particle_in_visual_model_PM(self.particle_cloud_PM)
+        #self.display_particle_in_visual_model_PM(self.particle_cloud_PM)
         error_opti_PFPM = self.compute_distance(estimated_object_pos_PM,opti_obj_pos_cur)
         #error_angle = abs(estimated_object_ang[2] - opti_obj_ang_cur[2])
         #error_sum = error + error_angle
@@ -1071,7 +1072,8 @@ class PFMovePM():
     def display_particle_in_visual_model_PM(self, particle_cloud):
         for index, particle in enumerate(particle_cloud):
             visual_particle_pos = [particle.x, particle.y, 0.057]
-            visual_particle_orientation = p_visualisation.getQuaternionFromEuler([0,0,0])
+            visual_particle_ang = [particle.x_angle, particle.y_angle, particle.z_angle]
+            visual_particle_orientation = p_visualisation.getQuaternionFromEuler(visual_particle_ang)
             p_visualisation.resetBasePositionAndOrientation(self.particle_with_visual_id_collection_PM[index],
                                                             visual_particle_pos,
                                                             visual_particle_orientation)
@@ -1235,7 +1237,7 @@ if __name__ == '__main__':
     #input('Press [ENTER] to compute transformation matrix')
     robot_T_object = compute_transformation_matrix(init_robot_pos,init_robot_ori,init_object_pos,init_object_ori)
 
-    pybullet_robot_pos = [0.0, 0.0, 0.0]
+    pybullet_robot_pos = [0.0, 0.0, 0.025]
     pybullet_robot_ori = [0,0,0,1]
 
     
@@ -1247,7 +1249,7 @@ if __name__ == '__main__':
     pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
     pw_T_object_ang = p_visualisation.getEulerFromQuaternion(pw_T_object_ori)
     #load the groud truth object
-    optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_real_object_with_visual_small.urdf"),
+    optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_real_obj_with_visual_small_hor.urdf"),
                                                    pw_T_object_pos,
                                                    pw_T_object_ori)
     #add noise to OptiTrack pose
@@ -1270,6 +1272,7 @@ if __name__ == '__main__':
     boss_obs_pose_PFPM.append(noise_obj_pose_init)
     #input('Press [ENTER] to initial real world model')
     #build an object of class "InitialRealworldModel"
+    print("ros_listener.current_joint_values:",ros_listener.current_joint_values)
     real_world_object = InitialRealworldModel(ros_listener.current_joint_values)
     #initialize the real robot in the pybullet
     real_robot_id = real_world_object.initial_robot(robot_pos = pybullet_robot_pos,robot_orientation = pybullet_robot_ori)
@@ -1288,13 +1291,13 @@ if __name__ == '__main__':
     estimated_object_ang = [estimated_object_set[3],estimated_object_set[4],estimated_object_set[5]]
     estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
     boss_est_pose_PFPM.append(estimated_object_set)
-    initial_parameter.display_particle()
+    #initial_parameter.display_particle()
     initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
-    initial_parameter.display_particle_PM()
-    estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_estimated_object_with_visual_small.urdf"),
+    #initial_parameter.display_particle_PM()
+    estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
                                                    estimated_object_pos,
                                                    estimated_object_ori)
-    estimated_object_id_PM = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_est_object_with_visual_small_bl2.urdf"),
+    estimated_object_id_PM = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PM_hor.urdf"),
                                                       estimated_object_pos,
                                                       estimated_object_ori)
     error = compute_distance(estimated_object_pos,pw_T_object_pos)

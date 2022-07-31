@@ -7,6 +7,7 @@ Created on Wed Mar 10 10:57:49 2021
 #ROS
 import itertools
 import os.path
+from ssl import ALERT_DESCRIPTION_ILLEGAL_PARAMETER
 
 import rospy
 import rospkg
@@ -211,7 +212,7 @@ class InitialRealworldModel():
         real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_obj_small_hor.urdf"),
                                                   object_pos,
                                                   object_orientation)
-        p_visualisation.changeDynamics(real_object_id,-1,mass=2.5,lateralFriction = 0.53)
+        p_visualisation.changeDynamics(real_object_id,-1,mass=3,lateralFriction = 0.7)
         return real_object_id
     def set_real_robot_JointPosition(self,pybullet_simulation_env,robot, position):
         print("Preparing the joint pose of the panda robot!")
@@ -291,7 +292,7 @@ class InitialSimulationModel():
         z = noise_object_pose[2]
         x_angle = angle[0]
         y_angle = angle[1]
-        z_angle = self.add_noise_to_init_par(angle[2],math.pi/6.0)
+        z_angle = self.add_noise_to_init_par(angle[2],math.pi/12)
         return x,y,z,x_angle,y_angle,z_angle
     def compute_estimate_pos_of_object(self, particle_cloud):
         x_set = 0
@@ -380,7 +381,7 @@ class InitialSimulationModel():
                         break
                 if flag == 0:
                     break    
-            pybullet_simulation_env.changeDynamics(particle_no_visual_id,-1,mass=2.5,lateralFriction = 0.53)
+            pybullet_simulation_env.changeDynamics(particle_no_visual_id,-1,mass=3,lateralFriction = 0.53)
             self.particle_no_visual_id_collection.append(particle_no_visual_id)  
         obj_est_set = self.compute_estimate_pos_of_object(self.particle_cloud)
         return obj_est_set[0],obj_est_set[1],obj_est_set[2],obj_est_set[3],obj_est_set[4],obj_est_set[5] 
@@ -399,7 +400,7 @@ class InitialSimulationModel():
             particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_no_visual_small_hor.urdf"),
                                                                      particle_no_visual_start_pos,
                                                                      particle_no_visual_start_orientation)
-            pybullet_simulation_env.changeDynamics(particle_no_visual_id,-1,mass=2.5,lateralFriction = 0.53)
+            pybullet_simulation_env.changeDynamics(particle_no_visual_id,-1,mass=3,lateralFriction = 0.7)
             self.particle_no_visual_id_collection_PM.append(particle_no_visual_id)
         obj_est_set_PM = self.compute_estimate_pos_of_object(self.particle_cloud_PM)
         return obj_est_set_PM[0],obj_est_set_PM[1],obj_est_set_PM[2],obj_est_set_PM[3],obj_est_set_PM[4],obj_est_set_PM[5] 
@@ -550,7 +551,7 @@ class PFMove():
         error_opti_PFPE = self.compute_distance_between_2_points_3D(estimated_object_pos,opti_obj_pos_cur)
         #error_angle = abs(estimated_object_ang[2] - opti_obj_ang_cur[2])
         #error_sum = error + error_angle
-        error_opti_obs = self.compute_distance_between_2_points_3D(opti_obj_pos_cur,noise_obj_pos_cur)
+        error_opti_obs = self.compute_distance_between_2_points_3D(opti_obj_pos_cur,nois_obj_pos_cur)
         #error_ang = abs(nois_obj_z_ang - real_obj_z_ang)
         #error_sum = error + error_ang
         t_err_generate = time.time()
@@ -653,10 +654,10 @@ class PFMove():
             delta_z = abs(particle.z_angle - nois_obj_ang_z)
             x_angle = delta_z
             mean_angle = 0
-            sigma_angle = self.sigma_observ_model_angle
-            #sigma_angle = boss_sigma_obs_ang
+            #sigma_angle = self.sigma_observ_model_angle
+            sigma_angle = boss_sigma_obs_ang
             weight_angle = self.normal_distribution(x_angle, mean_angle, sigma_angle)
-            particle.w = weight + weight_angle
+            particle.w = weight + weight_angle/2
             
             #particle.w = weight
         Flag = self.normalize_particles()
@@ -948,18 +949,18 @@ class PFMovePM():
             sigma = self.sigma_observ_model
             sigma = boss_sigma_obs_pos
             weight = self.normal_distribution(x, mean, sigma)
-            '''
+            
             nois_obj_ang = [nois_obj_ang_cur[0],nois_obj_ang_cur[1],nois_obj_ang_cur[2]]
             nois_obj_ang_z = nois_obj_ang[2]
             delta_z = abs(particle.z_angle - nois_obj_ang_z)
             x_angle = delta_z
             mean_angle = 0
             sigma_angle = self.sigma_observ_model_angle
-            #sigma_angle = boss_sigma_obs_ang
+            sigma_angle = boss_sigma_obs_ang
             weight_angle = self.normal_distribution(x_angle, mean_angle, sigma_angle)
-            particle.w = weight + weight_angle
-            '''
-            particle.w = weight
+            particle.w = weight + weight_angle/2
+            
+            #particle.w = weight
             
         Flag = self.normalize_particles_PM()
         #if Flag is False:
@@ -1202,24 +1203,36 @@ def take_easy_gaussian_value(mean,sigma):
     normal = random.normalvariate(mean, sigma)
     return normal
 
-def display_real_object_in_visual_model(opti_obj_pos,opti_obj_ori):
-    p_visualisation.resetBasePositionAndOrientation(optitrack_object_id,
+def display_real_object_in_visual_model(ID,opti_obj_pos,opti_obj_ori):
+    p_visualisation.resetBasePositionAndOrientation(ID,
                                                     opti_obj_pos,
                                                     opti_obj_ori)
-        
-        
+def cheat_dope_obj_ang(angle):
+    ang = copy.deepcopy(angle)
+    if angle > -math.pi/4 and angle < math.pi/4:
+        ang = 0.0
+    elif angle > math.pi/4 and angle < 3 * math.pi/4:
+        ang = math.pi/2
+    elif angle > 3 * math.pi/4 and angle < 5 * math.pi/4:
+        ang = math.pi
+    elif angle > -3 * math.pi/4 and angle < -math.pi/4:
+        ang = -math.pi/2
+    elif angle > -5 * math.pi/4 and angle < -3 * math.pi/4:
+        ang = -math.pi
+    return ang
 if __name__ == '__main__':
     t_begin = time.time()
     particle_cloud = []
-    particle_num = 50
-    d_thresh = 0.05
+    particle_num = 70
+    d_thresh = 0.025
+    a_thresh = 0.05
     d_thresh_PM = 0.008
-    a_thresh = math.pi/16
+    a_thresh_PM = math.pi/16
     flag_update_num_PM = 0
     flag_update_num_PE = 0
     #the sigma that is added to optitrack data
-    boss_sigma_obs_pos = 0.05
-    boss_sigma_obs_ang = 0.10
+    boss_sigma_obs_pos = 0.02
+    boss_sigma_obs_ang = 0.1
     
     rospy.init_node('PF_for_optitrack')
     
@@ -1268,9 +1281,15 @@ if __name__ == '__main__':
     pw_T_object_pos_dope = [pw_T_object_dope[0][3],pw_T_object_dope[1][3],pw_T_object_dope[2][3]]       
     pw_T_object_ori_dope = transformations.quaternion_from_matrix(pw_T_object_dope) 
     pw_T_object_ang_dope = p_visualisation.getEulerFromQuaternion(pw_T_object_ori_dope)
-    dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
-                                                   pw_T_object_pos_dope,
-                                                   pw_T_object_ori_dope)
+    pw_T_object_ang_dope = list(pw_T_object_ang_dope)
+    cheat_dope_x_ang = cheat_dope_obj_ang(pw_T_object_ang_dope[0])
+    cheat_dope_y_ang = cheat_dope_obj_ang(pw_T_object_ang_dope[1])
+    cheat_dope_z_ang = pw_T_object_ang_dope[2]
+    cheat_dope_ang = [cheat_dope_x_ang,cheat_dope_y_ang,cheat_dope_z_ang]
+    cheat_dope_ori = p_visualisation.getQuaternionFromEuler(cheat_dope_ang)
+    dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_dope_obj_with_visual_small_PE_hor.urdf"),
+                                              pw_T_object_pos_dope,
+                                              pw_T_object_ori_dope)
     
     
     #input('test')
@@ -1278,11 +1297,15 @@ if __name__ == '__main__':
 
     dope_obj_x = pw_T_object_pos_dope[0]
     dope_obj_y = pw_T_object_pos_dope[1]
-    dope_obj_z = pw_T_object_pos_dope[2]
+    #dope_obj_z = pw_T_object_pos_dope[2]
+    dope_obj_z = 0.09
+    #print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    #print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    #print(dope_obj_z)
     dope_obj_pos_init = [dope_obj_x,dope_obj_y,dope_obj_z]
-    dope_obj_x_ang = pw_T_object_ang_dope[0]
-    dope_obj_y_ang = pw_T_object_ang_dope[1]
-    dope_obj_z_ang = pw_T_object_ang_dope[2]
+    dope_obj_x_ang = cheat_dope_ang[0]
+    dope_obj_y_ang = cheat_dope_ang[1]
+    dope_obj_z_ang = cheat_dope_ang[2]
     noise_obj_ang_init = [dope_obj_x_ang,dope_obj_y_ang,dope_obj_z_ang]
     error_opti_obs = compute_distance_between_2_points_3D(pw_T_object_pos,pw_T_object_pos_dope)
     boss_obser_df[0]=[error_opti_obs]
@@ -1311,9 +1334,9 @@ if __name__ == '__main__':
     estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
     boss_est_pose_PFPM.append(estimated_object_set)
     initial_parameter.display_particle()
-    input('test')
     initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
     initial_parameter.display_particle_PM()
+    #input('test')
     estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
                                                    estimated_object_pos,
                                                    estimated_object_ori)
@@ -1358,22 +1381,51 @@ if __name__ == '__main__':
     rob_link_9_ang_old_PM = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_old_PM[1])
     
     while True:
+        
         if t_end == 0 :
             time_consuming = 0
         else:
             t_end = time.time()
             time_consuming = t_end - t_begin
-        #for ij in range(240):
-        franka_robot.fanka_robot_move(ros_listener.current_joint_values)
-        #p_visualisation.stepSimulation()
-        time.sleep(1./240.)
+        for ij in range(240):
+            franka_robot.fanka_robot_move(ros_listener.current_joint_values)
+            p_visualisation.stepSimulation()
+            time.sleep(1./240.)
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
+        print(ros_listener.current_joint_values)
         
         
         
-        init_robot_pos = ros_listener.robot_pos
-        init_robot_ori = ros_listener.robot_ori 
-        init_object_pos = ros_listener.object_pos
-        init_object_ori = ros_listener.object_ori
+        listener = tf.TransformListener()
+        while True:
+            try:
+                (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
+                print("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
+                break
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                print("========================================================================================================================================================================================================================================================================================================================================================================================================")
+                continue
+        robot_T_obj_dope_pos = list(trans)
+        robot_T_obj_dope_ori = list(rot)
+        rob_T_obj_rot_matrix = transformations.quaternion_matrix(robot_T_obj_dope_ori)
+        rob_T_obj = rotation_4_4_to_transformation_4_4(rob_T_obj_rot_matrix,robot_T_obj_dope_pos)
         
         #Determine if particles need to be updated
         robot_T_object = compute_transformation_matrix(ros_listener.robot_pos,
@@ -1388,18 +1440,33 @@ if __name__ == '__main__':
         pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
         pw_T_object_ang = p_visualisation.getEulerFromQuaternion(pw_T_object_ori)
         
+        pw_T_object_dope = np.dot(pw_T_robot,rob_T_obj)
+        pw_T_object_pos_dope = [pw_T_object_dope[0][3],pw_T_object_dope[1][3],pw_T_object_dope[2][3]]       
+        pw_T_object_ori_dope = transformations.quaternion_from_matrix(pw_T_object_dope) 
+        pw_T_object_ang_dope = p_visualisation.getEulerFromQuaternion(pw_T_object_ori_dope)
+        
+        cheat_dope_x_ang = cheat_dope_obj_ang(pw_T_object_ang_dope[0])
+        cheat_dope_y_ang = cheat_dope_obj_ang(pw_T_object_ang_dope[1])
+        cheat_dope_z_ang = pw_T_object_ang_dope[2]
+        cheat_dope_ang = [cheat_dope_x_ang,cheat_dope_y_ang,cheat_dope_z_ang]
+        cheat_dope_ori = p_visualisation.getQuaternionFromEuler(cheat_dope_ang)
+        
+        
         pw_T_obj_pos = copy.deepcopy(pw_T_object_pos)
         pw_T_obj_ori = copy.deepcopy(pw_T_object_ori)
         pw_T_obj_ang = copy.deepcopy(pw_T_object_ang)
-        noise_obj_x = add_noise_to_Opti(pw_T_obj_pos[0],boss_sigma_obs_pos)
-        noise_obj_y = add_noise_to_Opti(pw_T_obj_pos[1],boss_sigma_obs_pos)
-        noise_obj_z = pw_T_obj_pos[2]
+        noise_obj_x = pw_T_object_pos_dope[0]
+        noise_obj_y = pw_T_object_pos_dope[1]
+        #noise_obj_z = pw_T_object_ang_dope[2]
+        noise_obj_z = 0.09
         noise_obj_pos_cur = [noise_obj_x,noise_obj_y,noise_obj_z]
-        noise_obj_x_ang = pw_T_obj_ang[0]
-        noise_obj_y_ang = pw_T_obj_ang[1]
-        noise_obj_z_ang = add_noise_to_Opti(pw_T_obj_ang[2],boss_sigma_obs_ang * (2 ** (1/2)))
+        noise_obj_x_ang = cheat_dope_ang[0]
+        noise_obj_y_ang = cheat_dope_ang[1]
+        noise_obj_z_ang = cheat_dope_ang[2]
         noise_obj_ang_cur = [noise_obj_x_ang,noise_obj_y_ang,noise_obj_z_ang]
         noise_obj_pose_cur = [noise_obj_x,noise_obj_y,noise_obj_z,noise_obj_x_ang,noise_obj_y_ang,noise_obj_z_ang]
+        
+        display_real_object_in_visual_model(dope_object_id,pw_T_object_pos_dope,pw_T_object_ori_dope)
         
         dis_betw_cur_and_old = compute_distance_between_2_points_3D(noise_obj_pos_cur,noise_obj_pos_old)
         ang_betw_cur_and_old = comp_z_ang(noise_obj_ang_cur,noise_obj_ang_old)
@@ -1416,11 +1483,11 @@ if __name__ == '__main__':
         ang_robcur_robold_PM = comp_z_ang(rob_link_9_ang_cur_PM,rob_link_9_ang_old_PM)
         #distance_between_current_and_old = compute_distance(real_object_current_pos,real_object_last_update_pos)#Cheat 
         #print("dis_betw_cur_and_old_PM:",dis_betw_cur_and_old_PM)
+        print("dis_robcur_robold_PE:")
+        print(dis_robcur_robold_PE)
         if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh) or (dis_robcur_robold_PE > d_thresh):
             
             flag_update_num_PE = flag_update_num_PE + 1
-            
-            
             
             #rob_cur_pos = data_new[0]
             #rob_cur_ori = data_new[1]
@@ -1440,13 +1507,13 @@ if __name__ == '__main__':
             
             noise_obj_pos_old = copy.deepcopy(noise_obj_pos_cur)
             noise_obj_ang_old = copy.deepcopy(noise_obj_ang_cur)           
-            display_real_object_in_visual_model(pw_T_object_pos,pw_T_object_ori)
+            display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
             
             rob_link_9_pose_old_PE = copy.deepcopy(rob_link_9_pose_cur_PE)
             
                 
                 
-        if (dis_betw_cur_and_old_PM > d_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
+        if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
             flag_update_num_PM = flag_update_num_PM + 1
             boss_obs_pose_PFPM.append(noise_obj_pose_cur)
             #print("+")

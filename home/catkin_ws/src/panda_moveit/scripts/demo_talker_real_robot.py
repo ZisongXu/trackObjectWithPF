@@ -335,6 +335,26 @@ class Panda:
         joint_state_info.position = joint
         #self.joint_publisher.publish(joint_state_info)
         self.moveit_group.stop()
+        
+    def move_minus_y_straight_line_ccp(self):
+        waypoints = []
+        
+        scale = 1.0
+        wpose = self.moveit_group.get_current_pose().pose
+        #be careful inertance
+        for i in range(1):
+            wpose.position.y = wpose.position.y + scale * (-0.01)
+            waypoints.append(copy.deepcopy(wpose))
+                
+        (plan,fraction) = self.moveit_group.compute_cartesian_path(waypoints,0.01,0.0)
+        self.moveit_group.execute(plan, wait=True)
+        joint = self.moveit_group.get_current_joint_values()
+        joint_state_info = JointState()
+        #joint_state_info.header = Header()
+        #joint_state_info.header.stamp = rospy.Time.now()
+        joint_state_info.position = joint
+        #self.joint_publisher.publish(joint_state_info)
+        self.moveit_group.stop()
     
     def joint_values_callback(self, msg):
         self.current_joint_values = msg.position
@@ -361,7 +381,9 @@ if __name__ == '__main__':
     
     #panda.move_to(x=-0.2, y=0.0, z=1.9)
     #panda.move_straight_line_jac()
-    
+    #for i in range(8):
+    #    panda.move_y_straight_line_ccp()
+    #    time.sleep(1)
     #targetPositionsJoints_test = [0.0,-0.08,0.0,-1.65,0.0,1.58,0.870]
     #panda.move_to_target_joints(targetPositionsJoints_test)
     #targetPositionsJoints_test = [-2.5,0.0,0.0,-1.0,1.7,1.57,0.6]
@@ -372,7 +394,14 @@ if __name__ == '__main__':
     #cube
     #targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.499608373509513, 0.9228163020693847]
     #panda.move_to_target_joints(targetPositionsJoints_test)
+    #cheezit
+    #targetPositionsJoints_test = [-0.37611809028263904, 1.0542567263506848, 0.0039623287396545115, -1.514141659285099, 1.2019493953534113, 1.4195338642218471, 1.2938332387612945]
+    #panda.move_to_target_joints(targetPositionsJoints_test)
+    #test
+    #targetPositionsJoints_test = [-0.39268936579891744, 1.0749383543375984, -0.04246610496406864, -1.4827234936764365, 1.1450266403932545, 1.4720578482110835, 1.0963488744405498]
+    #panda.move_to_target_joints(targetPositionsJoints_test)
     #panda.move_straight_line_ccp()
     #panda.move_back_straight_line_ccp()
     panda.move_y_straight_line_ccp()
+    #panda.move_minus_y_straight_line_ccp
     #panda.fully_close_gripper()

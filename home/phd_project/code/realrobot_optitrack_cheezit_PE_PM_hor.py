@@ -1240,8 +1240,16 @@ if __name__ == '__main__':
     pybullet_robot_pos = [0.0, 0.0, 0.025]
     pybullet_robot_ori = [0,0,0,1]
 
+    pybullet_robot_ang = p_visualisation.getEulerFromQuaternion(pybullet_robot_ori)
+    print("pybullet_robot_ang:",pybullet_robot_ang)
+    test_ang = [math.pi/12, -math.pi/12,0]
+    test_ang = [0,math.pi/12,0]
+    test_ori = p_visualisation.getQuaternionFromEuler(test_ang)
+    optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_real_obj_with_visual_small_hor.urdf"),
+                                                   [1,1,1],
+                                                   test_ori)
     
-    #input('Press [ENTER] to compute the pose of object in the pybullet world')
+    input('Press [ENTER] to compute the pose of object in the pybullet world')
     pybullet_robot_transformation_matrix = transformations.quaternion_matrix(pybullet_robot_ori)
     pw_T_robot = rotation_4_4_to_transformation_4_4(pybullet_robot_transformation_matrix,pybullet_robot_pos)
     pw_T_object = np.dot(pw_T_robot,robot_T_object)

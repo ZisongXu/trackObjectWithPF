@@ -384,8 +384,8 @@ if __name__ == '__main__':
     #for i in range(8):
     #    panda.move_y_straight_line_ccp()
     #    time.sleep(1)
-    #targetPositionsJoints_test = [0.0,-0.08,0.0,-1.65,0.0,1.58,0.870]
-    #panda.move_to_target_joints(targetPositionsJoints_test)
+    targetPositionsJoints_test = [0.0,-0.08,0.0,-1.65,0.0,1.58,0.870]
+    panda.move_to_target_joints(targetPositionsJoints_test)
     #targetPositionsJoints_test = [-2.5,0.0,0.0,-1.0,1.7,1.57,0.6]
     #panda.move_to_target_joints(targetPositionsJoints_test)
     #cylinder
@@ -402,6 +402,6 @@ if __name__ == '__main__':
     #panda.move_to_target_joints(targetPositionsJoints_test)
     #panda.move_straight_line_ccp()
     #panda.move_back_straight_line_ccp()
-    panda.move_y_straight_line_ccp()
+    #panda.move_y_straight_line_ccp()
     #panda.move_minus_y_straight_line_ccp
     #panda.fully_close_gripper()

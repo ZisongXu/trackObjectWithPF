@@ -78,7 +78,20 @@ class Franka_robot():
     def __init__(self,franka_robot_id):
         self.franka_robot_id = franka_robot_id
     def fanka_robot_move(self,targetPositionsJoints):
-    	self.setJointPosition(self.franka_robot_id,targetPositionsJoints)
+    	self.setJoinVisual(self.franka_robot_id,targetPositionsJoints)
+    def setJoinVisual(self,robot, position):
+        position[7] = 0.039916139
+        position[8] = 0.039916139
+        num_joints = 9
+        for joint_index in range(num_joints): 
+            if joint_index == 7 or joint_index == 8:
+                p_visualisation.resetJointState(robot,
+                                                joint_index+2,
+                                                targetValue=position[joint_index])                
+            else:
+                p_visualisation.resetJointState(robot,
+                                                joint_index,
+                                                targetValue=position[joint_index])
     def setJointPosition(self,robot,position):
         position[7] = 0.039916139
         position[8] = 0.039916139
@@ -184,7 +197,7 @@ class InitialRealworldModel():
         real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_object_small.urdf"),
                                                   object_pos,
                                                   object_orientation)
-        p_visualisation.changeDynamics(real_object_id,-1,lateralFriction = 0.53)
+        p_visualisation.changeDynamics(real_object_id,-1,lateralFriction = 0.54)
         return real_object_id
     def set_real_robot_JointPosition(self,pybullet_simulation_env,robot, position):
         print("Preparing the joint pose of the panda robot!")
@@ -362,7 +375,7 @@ class InitialSimulationModel():
                         break
                 if flag == 0:
                     break    
-            pybullet_simulation_env.changeDynamics(cylinder_particle_no_visual_id,-1,lateralFriction = 0.53)
+            pybullet_simulation_env.changeDynamics(cylinder_particle_no_visual_id,-1,lateralFriction = 0.54)
             self.cylinder_particle_no_visual_id_collection.append(cylinder_particle_no_visual_id)  
         object_estimate_set = self.compute_estimate_pos_of_object(self.particle_cloud)
         return object_estimate_set[0],object_estimate_set[1],object_estimate_set[2],object_estimate_set[3],object_estimate_set[4],object_estimate_set[5] 
@@ -464,10 +477,10 @@ class PFMove():
             return False    
         #real_robot_joint_pos = self.get_real_robot_joint(real_robot_id)
                 
-    def get_real_robot_joint(self, real_robot_id):
+    def get_real_robot_joint(self, py_sim_env, real_robot_id):
         real_robot_joint_list = []
         for index in range(self.joint_num):
-            real_robot_info = p_visualisation.getJointState(real_robot_id,index)[0]
+            real_robot_info = py_sim_env.getJointState(real_robot_id,index)[0]
             real_robot_joint_list.append(real_robot_info)
         return real_robot_joint_list
     
@@ -553,12 +566,23 @@ class PFMove():
         return
     
     def motion_update(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
+        
         for index, pybullet_env in enumerate(pybullet_sim_env):
-            
+            #
             #execute the control
-            for i in range(int(self.step_size*240)):
+            #diff_list = []
+            flag_set_sim = 1
+            while True:
+            #for i in range(240):
+                #print("I am here")
+                if flag_set_sim == 0:
+                        break
+  
                 self.set_real_robot_JointPosition(pybullet_env,fake_robot_id[index],real_robot_joint_pos)
                 pybullet_env.stepSimulation()
+                real_rob_joint_list_cur = self.get_real_robot_joint(pybullet_env,fake_robot_id[index])
+                flag_set_sim,diff_list = self.compare_rob_joint(real_rob_joint_list_cur,real_robot_joint_pos)
+ 
                 #time.sleep(1./240.)
 
             #real_robot_joint_list = []
@@ -581,7 +605,8 @@ class PFMove():
             #add noise on particle filter
             normal_x = self.add_noise(sim_particle_cur_pos[0],sim_particle_old_pos[0])
             normal_y = self.add_noise(sim_particle_cur_pos[1],sim_particle_old_pos[1])
-            
+            #normal_x = sim_particle_cur_pos[0]
+            #normal_y = sim_particle_cur_pos[1]
             self.particle_cloud[index].x = normal_x
             self.particle_cloud[index].y = normal_y
             
@@ -614,7 +639,11 @@ class PFMove():
         noise_object_ang = [noise_object_x_ang,noise_object_y_ang,noise_object_z_ang]
         noise_object_pose = [noise_object_x,noise_object_y,noise_object_z,noise_object_x_ang,noise_object_y_ang,noise_object_z_ang]
         boss_obs_pose.append(noise_object_pose)
-
+        noise_object_ori = p_visualisation.getQuaternionFromEuler(noise_object_ang)
+        
+        p_visualisation.resetBasePositionAndOrientation(obs_object_id,
+                                                        noise_object,
+                                                        noise_object_ori)
 
         self.noise_object_pos = [noise_object_x,noise_object_y,noise_object_z]
         error = self.compute_distance(self.noise_object_pos,real_object)
@@ -660,7 +689,18 @@ class PFMove():
         estimated_object_pos = [object_estimate_pos_x,object_estimate_pos_y,object_estimate_pos_z]
         self.display_estimated_robot_in_visual_model(estimated_object_pos)    
         return estimated_object_pos
-
+    def compare_rob_joint(self,real_rob_joint_list_cur,real_robot_joint_pos):
+        diff_list = []
+        for i in range(self.joint_num):
+            diff = 10
+            diff = abs(real_rob_joint_list_cur[i] - real_robot_joint_pos[i])
+            if diff > 0.001:
+                return 1,diff_list
+            diff_list.append(diff)
+        return 0,diff_list
+        
+        
+        
     def motion_update_copy(self, pybullet_sim_env_copy):
         length = len(boss_obs_pose)
         obs_curr_pose = copy.deepcopy(boss_obs_pose[length-1])
@@ -972,6 +1012,20 @@ def compute_transformation_matrix(init_robot_pos,init_robot_ori,init_object_pos,
     #print("robot_T_object:")
     #print(robot_T_object)
     return robot_T_object
+def get_real_robot_joint(real_robot_id):
+    real_robot_joint_list = []
+    for index in range(7):
+        real_robot_info = p_visualisation.getJointState(real_robot_id,index)[0]
+        real_robot_joint_list.append(real_robot_info)
+    return real_robot_joint_list
+def compare_rob_joint(real_rob_joint_list_cur,real_robot_joint_pos):
+    for i in range(self.joint_num):
+        diff = real_rob_joint_list_cur[i] - real_robot_joint_pos[i]
+        if diff <= 0.0001:
+            continue
+        else:
+            return 1
+    return 0
 if __name__ == '__main__':
     rospy.init_node('PF_for_optitrack')
     
@@ -1023,6 +1077,9 @@ if __name__ == '__main__':
                                                    pw_T_object_pos,
                                                    pw_T_object_ori)                          
 
+    obs_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_obs_obj_with_visual_small.urdf"),
+                                                   pw_T_object_pos,
+                                                   pw_T_object_ori)    
     #input('Press [ENTER] to initial real world model')
     #build an object of class "InitialRealworldModel"
     real_world_object = InitialRealworldModel(ros_listener.current_joint_values)
@@ -1031,9 +1088,16 @@ if __name__ == '__main__':
     #initialize the real robot in the pybullet
     real_robot_id = real_world_object.initial_robot(robot_pos = pybullet_robot_pos,robot_orientation = pybullet_robot_ori)
     #initialize the real object in the pybullet
-    #real_object_id = real_world_object.initial_target_object(object_pos = pw_T_object_pos,object_orientation = pw_T_object_ori)
+    real_object_id = real_world_object.initial_target_object(object_pos = pw_T_object_pos,object_orientation = pw_T_object_ori)
     #build an object of class "Franka_robot"
     franka_robot = Franka_robot(real_robot_id)
+    
+    real_rob_list = get_real_robot_joint(real_robot_id)
+    print("||||||||||||||||||||||||||||||||||||||||")
+    print(ros_listener.current_joint_values)
+    #while True:
+    print(real_rob_list)
+    
     
     #input('Press [ENTER] to initial simulation world model')
     particle_cloud = []
@@ -1078,10 +1142,18 @@ if __name__ == '__main__':
     data_old = p_visualisation.getLinkState(real_robot_id,9)
     #input('Press [ENTER] to enter into while loop')
     while True:
+        #while True:
         franka_robot.fanka_robot_move(ros_listener.current_joint_values)
-        p_visualisation.stepSimulation()
-        time.sleep(1./240.)
-        
+        #p_visualisation.stepSimulation()
+        time.sleep(1./240.)   
+        #real_rob_joint_list_cur = self.get_real_robot_joint(fake_robot_id[index])
+        #flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur,real_robot_joint_pos)
+        #if flag_set_sim == 0:
+        #    break
+        #compare_rob_joint
+                    
+                    
+                    
         init_robot_pos = ros_listener.robot_pos
         init_robot_ori = ros_listener.robot_ori 
         init_object_pos = ros_listener.object_pos
@@ -1101,8 +1173,11 @@ if __name__ == '__main__':
         data_new = p_visualisation.getLinkState(real_robot_id,9)
         distance_between_current_and_old = compute_distance(data_new[0],data_old[0])
         real_object_current_pos = pw_T_object_pos
-        #distance_between_current_and_old = compute_distance(real_object_current_pos,real_object_last_update_pos)#Cheat        
+        #distance_between_current_and_old = compute_distance(real_object_current_pos,real_object_last_update_pos)#Cheat   
+        
         if distance_between_current_and_old > d_thresh_limitation:
+            joint_list = get_real_robot_joint(real_robot_id)
+            
             obj_cur_pos = real_object_current_pos
             obj_cur_ori = pw_T_object_ori
             rob_cur_pose = copy.deepcopy(data_new)
@@ -1120,6 +1195,7 @@ if __name__ == '__main__':
             real_object_last_update_pos = obj_cur_pos
             real_object_last_update_ori = obj_cur_ori
             data_old = copy.deepcopy(rob_cur_pose)
+        
         if Flag is False:
             break  
     p_visualisation.disconnect()

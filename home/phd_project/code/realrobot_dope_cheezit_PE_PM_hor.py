@@ -581,10 +581,19 @@ class PFMove():
     def motion_update_PE(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
         for index, pybullet_env in enumerate(pybullet_sim_env):
             #execute the control
-            for i in range(int(self.step_size*240)):
+            #time.sleep(1./240.)
+            flag_set_sim = 1
+            while True:
+            #for i in range(240):
+                #print("I am here")
+                if flag_set_sim == 0:
+                        break
                 self.set_real_robot_JointPosition(pybullet_env,fake_robot_id[index],real_robot_joint_pos)
                 pybullet_env.stepSimulation()
-                #time.sleep(1./240.)
+                real_rob_joint_list_cur = self.get_real_robot_joint(pybullet_env,fake_robot_id[index])
+                flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur,real_robot_joint_pos)
+
+
 
             sim_par_old_pos = [self.particle_cloud[index].x,
                                self.particle_cloud[index].y,
@@ -673,9 +682,15 @@ class PFMove():
         estimated_object_ang = [object_estimate_pose[3],object_estimate_pose[4],object_estimate_pose[5]]
         self.display_estimated_robot_in_visual_model(estimated_object_pos,estimated_object_ang)    
         return estimated_object_pos,estimated_object_ang
+    
+    def compare_rob_joint(self,real_rob_joint_list_cur,real_robot_joint_pos):
+        for i in range(self.joint_num):
+            diff = 10
+            diff = abs(real_rob_joint_list_cur[i] - real_robot_joint_pos[i])
+            if diff > 0.001:
+                return 1
+        return 0
 
-
- 
     def get_item_pos(self,pybullet_env,item_id):
         item_info = pybullet_env.getBasePositionAndOrientation(item_id)
         return item_info[0],item_info[1]
@@ -1383,10 +1398,10 @@ if __name__ == '__main__':
         else:
             t_end = time.time()
             time_consuming = t_end - t_begin
-        for ij in range(240):
-            franka_robot.fanka_robot_move(ros_listener.current_joint_values)
-            p_visualisation.stepSimulation()
-            time.sleep(1./240.)
+        #for ij in range(240):
+        franka_robot.fanka_robot_move(ros_listener.current_joint_values)
+        p_visualisation.stepSimulation()
+        time.sleep(1./240.)
         
         
         listener = tf.TransformListener()

@@ -399,9 +399,6 @@ if __name__ == '__main__':
     #panda.move_to_target_joints(targetPositionsJoints_test)
     #targetPositionsJoints_test = [-2.5,0.0,0.0,-1.0,1.7,1.57,0.6]
     #panda.move_to_target_joints(targetPositionsJoints_test)
-    #cylinder
-    #targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.469608373509513, 0.9228163020693847]
-    #panda.move_to_target_joints(targetPositionsJoints_test)
     #cube
     #targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.499608373509513, 0.9228163020693847]
     #panda.move_to_target_joints(targetPositionsJoints_test)
@@ -416,7 +413,10 @@ if __name__ == '__main__':
     #panda.move_y_straight_line_ccp()
     #panda.move_minus_y_straight_line_ccp
     #panda.fully_close_gripper()
-    #sys.exit()
+    #cylinder
+    targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.469608373509513, 0.9228163020693847]
+    panda.move_to_target_joints(targetPositionsJoints_test)
+    sys.exit()
     wpose = panda.moveit_group.get_current_pose().pose
     waypoints = []
     wpose.position.y += 0.05

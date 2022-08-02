@@ -1071,7 +1071,10 @@ if __name__ == '__main__':
                        pw_T_object[1][3],
                        pw_T_object[2][3]]       
 
-    pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
+    pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) #x,y,z,w
+    print(pw_T_object_ori)
+    print(pw_T_object_ori[3])
+    input("")
     #load blue cube represents the ground truth pose of target object
     optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_real_object_with_visual_small.urdf"),
                                                    pw_T_object_pos,
@@ -1093,10 +1096,8 @@ if __name__ == '__main__':
     franka_robot = Franka_robot(real_robot_id)
     
     real_rob_list = get_real_robot_joint(real_robot_id)
-    print("||||||||||||||||||||||||||||||||||||||||")
-    print(ros_listener.current_joint_values)
     #while True:
-    print(real_rob_list)
+
     
     
     #input('Press [ENTER] to initial simulation world model')

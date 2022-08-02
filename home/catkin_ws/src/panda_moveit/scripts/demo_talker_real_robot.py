@@ -261,7 +261,12 @@ class Panda:
             targetPositionsJoints = list(numpy.sum([expected_delta_q_dot_2, targetPositionsJoints], axis = 0)) 
             self.move_to_target_joints(targetPositionsJoints)
         return
-               
+    
+    def move_through_waypoints(self, end_effector_waypoints):
+        plan, _ = self.moveit_group.compute_cartesian_path(end_effector_waypoints, 0.01, 0.0)
+        trajectory = plan.joint_trajectory.points
+        self.moveit_group.go(trajectory[-1].positions, wait=True)
+        
     def move_straight_line_ccp(self):
         waypoints = []
         
@@ -376,8 +381,21 @@ if __name__ == '__main__':
     moveit_commander.roscpp_initialize(sys.argv)
     panda = Panda()
     #input('Press [ENTER] to start')
-
+    
+    wpose = panda.moveit_group.get_current_pose().pose
+    waypoints = []
+    wpose.position.x += 0.05
+    waypoints.append(copy.deepcopy(wpose))
+    #be careful inertance
+    # for i in range(5):
+    #     wpose.position.x += 0.02
+    #     waypoints.append(copy.deepcopy(wpose))
+        
+    panda.move_through_waypoints(waypoints)
+    sys.exit()
+    
     panda.fully_open_gripper()
+
     
     #panda.move_to(x=-0.2, y=0.0, z=1.9)
     #panda.move_straight_line_jac()

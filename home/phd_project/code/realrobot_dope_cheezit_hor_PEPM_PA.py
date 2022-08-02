@@ -1373,11 +1373,11 @@ if __name__ == '__main__':
     pw_T_object_ori_dope = transformations.quaternion_from_matrix(pw_T_object_dope) 
     pw_T_object_ang_dope = p_visualisation.getEulerFromQuaternion(pw_T_object_ori_dope)
     pw_T_object_ang_dope = list(pw_T_object_ang_dope)
-    cheat_dope_x_ang = pw_T_object_ang_dope[0]
-    cheat_dope_y_ang = pw_T_object_ang_dope[1]
-    cheat_dope_z_ang = pw_T_object_ang_dope[2]
-    cheat_dope_ang = [cheat_dope_x_ang,cheat_dope_y_ang,cheat_dope_z_ang]
-    cheat_dope_ori = p_visualisation.getQuaternionFromEuler(cheat_dope_ang)
+    dope_x_ang = pw_T_object_ang_dope[0]
+    dope_y_ang = pw_T_object_ang_dope[1]
+    dope_z_ang = pw_T_object_ang_dope[2]
+    dope_ang = [dope_x_ang,dope_y_ang,dope_z_ang]
+    cheat_dope_ori = p_visualisation.getQuaternionFromEuler(dope_ang)
     dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_dope_obj_with_visual_small_PE_hor.urdf"),
                                               pw_T_object_pos_dope,
                                               pw_T_object_ori_dope)
@@ -1394,9 +1394,9 @@ if __name__ == '__main__':
     #print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     #print(dope_obj_z)
     dope_obj_pos_init = [dope_obj_x,dope_obj_y,dope_obj_z]
-    dope_obj_x_ang = cheat_dope_ang[0]
-    dope_obj_y_ang = cheat_dope_ang[1]
-    dope_obj_z_ang = cheat_dope_ang[2]
+    dope_obj_x_ang = dope_ang[0]
+    dope_obj_y_ang = dope_ang[1]
+    dope_obj_z_ang = dope_ang[2]
     noise_obj_ang_init = [dope_obj_x_ang,dope_obj_y_ang,dope_obj_z_ang]
     error_opti_obs = compute_distance_between_2_points_3D(pw_T_object_pos,pw_T_object_pos_dope)
     boss_obser_df[0]=[error_opti_obs]
@@ -1516,10 +1516,10 @@ if __name__ == '__main__':
         pw_T_object_ori_dope = transformations.quaternion_from_matrix(pw_T_object_dope) 
         pw_T_object_ang_dope = p_visualisation.getEulerFromQuaternion(pw_T_object_ori_dope)
         
-        cheat_dope_x_ang = pw_T_object_ang_dope[0]
-        cheat_dope_y_ang = pw_T_object_ang_dope[1]
-        cheat_dope_z_ang = pw_T_object_ang_dope[2]
-        cheat_dope_ang = [cheat_dope_x_ang,cheat_dope_y_ang,cheat_dope_z_ang]
+        dope_x_ang = pw_T_object_ang_dope[0]
+        dope_y_ang = pw_T_object_ang_dope[1]
+        dope_z_ang = pw_T_object_ang_dope[2]
+        cheat_dope_ang = [dope_x_ang,dope_y_ang,dope_z_ang]
         cheat_dope_ori = p_visualisation.getQuaternionFromEuler(cheat_dope_ang)
         
         

@@ -644,17 +644,26 @@ class PFMove():
             
             particle_x = particle.x
             particle_y = particle.y
+            particle_z = particle.z
+            particle_x_ang = particle.x_angle
+            particle_y_ang = particle.y_angle
             particle_z_ang = particle.z_angle
             
             nois_obj_pos = [nois_obj_pose[0],nois_obj_pose[1],nois_obj_pose[2]]
             nois_obj_pos_x = nois_obj_pos[0]
             nois_obj_pos_y = nois_obj_pos[1]
-            distance = math.sqrt((particle_x - nois_obj_pos_x) ** 2 + (particle_y - nois_obj_pos_y) ** 2)
-            x = distance
+            nois_obj_pos_z = nois_obj_pos[2]
             mean = 0
-            sigma = self.sigma_observ_model
-            sigma = boss_sigma_obs_pos
-            weight = self.normal_distribution(x, mean, sigma)
+            dis_x = abs(particle_x-nois_obj_pos_x)
+            dis_y = abs(particle_y-nois_obj_pos_y)
+            dis_z = abs(particle_z-nois_obj_pos_z)
+            sigma_x = boss_sigma_obs_x
+            sigma_y = boss_sigma_obs_y
+            sigma_z = boss_sigma_obs_z
+            weight_x = self.normal_distribution(dis_x, mean, sigma_x)
+            weight_y = self.normal_distribution(dis_y, mean, sigma_y)
+            weight_z = self.normal_distribution(dis_z, mean, sigma_z)
+            weight_pos = weight_x + weight_y + weight_z
             
             nois_obj_ang = [nois_obj_pose[3],nois_obj_pose[4],nois_obj_pose[5]]
             nois_obj_ang_z = nois_obj_ang[2]
@@ -1243,7 +1252,10 @@ if __name__ == '__main__':
     flag_update_num_PE = 0
     #the sigma that is added to optitrack data
     boss_sigma_obs_pos = 0.02
-    boss_sigma_obs_ang = 0.08
+    boss_sigma_obs_x = 0.03973017808163751
+    boss_sigma_obs_y = 0.01167211468503462
+    boss_sigma_obs_z = 0.02820930183351492
+    boss_sigma_obs_ang = 0.1927180068546701
     
     rospy.init_node('PF_for_optitrack')
     

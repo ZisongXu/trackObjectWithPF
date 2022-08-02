@@ -304,9 +304,11 @@ class InitialSimulationModel():
         y_quat = math.sin(angle_noise/2.0) * y_axis
         z_quat = math.sin(angle_noise/2.0) * z_axis
         nois_quat = Quaternion(x=x_quat,y=y_quat,z=z_quat,w=w_quat)
-        ###nois_quat(w,x,y,z)
+        ###nois_quat(w,x,y,z); new_quat(w,x,y,z)
         new_quat = nois_quat * quat_QuatStyle
-        new_angle = p_visualisation.getEulerFromQuaternion(new_quat)
+        ###pb_quat(x,y,z,w)
+        pb_quat = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
+        new_angle = p_visualisation.getEulerFromQuaternion(pb_quat)
         x_angle = new_angle[0]
         y_angle = new_angle[1]
         z_angle = new_angle[2]
@@ -662,27 +664,43 @@ class PFMove():
             
             particle_x = particle.x
             particle_y = particle.y
+            particle_z = particle.z
+            particle_x_ang = particle.x_angle
+            particle_y_ang = particle.y_angle
             particle_z_ang = particle.z_angle
             
             nois_obj_pos = [nois_obj_pose[0],nois_obj_pose[1],nois_obj_pose[2]]
             nois_obj_pos_x = nois_obj_pos[0]
             nois_obj_pos_y = nois_obj_pos[1]
-            distance = math.sqrt((particle_x - nois_obj_pos_x) ** 2 + (particle_y - nois_obj_pos_y) ** 2)
-            x = distance
+            nois_obj_pos_z = nois_obj_pos[2]
             mean = 0
-            sigma = self.sigma_observ_model
-            sigma = boss_sigma_obs_pos
-            weight = self.normal_distribution(x, mean, sigma)
+            dis_x = abs(particle_x-nois_obj_pos_x)
+            dis_y = abs(particle_y-nois_obj_pos_y)
+            dis_z = abs(particle_z-nois_obj_pos_z)
+            sigma_x = boss_sigma_obs_x
+            sigma_y = boss_sigma_obs_y
+            sigma_z = boss_sigma_obs_z
+            weight_x = self.normal_distribution(dis_x, mean, sigma_x)
+            weight_y = self.normal_distribution(dis_y, mean, sigma_y)
+            weight_z = self.normal_distribution(dis_z, mean, sigma_z)
+            weight_pos = weight_x + weight_y + weight_z
             
+            #pybullet x,y,z,w
             nois_obj_ang = [nois_obj_pose[3],nois_obj_pose[4],nois_obj_pose[5]]
-            nois_obj_ang_z = nois_obj_ang[2]
-            delta_z = abs(particle.z_angle - nois_obj_ang_z)
-            x_angle = delta_z
-            mean_angle = 0
-            #sigma_angle = self.sigma_observ_model_angle
-            sigma_angle = boss_sigma_obs_ang
-            weight_angle = self.normal_distribution(x_angle, mean_angle, sigma_angle)
-            particle.w = weight + weight_angle/2
+            par_ang = [particle_x_ang,particle_y_ang,particle_z_ang]
+            nois_obj_ori = p_visualisation.getQuaternionFromEuler(nois_obj_ang)
+            par_ori = p_visualisation.getQuaternionFromEuler(par_ang)
+            #w,x,y,z
+            nois_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3])
+            par_quat = Quaternion(x=par_ori[0],y=par_ori[1],z=par_ori[2],w=par_ori[3])
+            err_bt_par_dope = nois_obj_quat * par_quat.inverse
+            cos_theta_over_2 = err_bt_par_dope.w
+            sin_theta_over_2 = math.sqrt(err_bt_par_dope.x ** 2 + err_bt_par_dope.y ** 2 + err_bt_par_dope.z ** 2)
+            theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
+            theta = theta_over_2 * 2
+            weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
+            weight = weight_pos * weight_ang
+            particle.w = weight
             
             #particle.w = weight
         Flag = self.normalize_particles()
@@ -967,34 +985,68 @@ class PFMovePM():
 
     def observation_update_PM(self,opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         opti_obj_ang_cur = p_visualisation.getEulerFromQuaternion(opti_obj_ori_cur)
-        obs_obj_pos = copy.deepcopy(nois_obj_pos_cur)
+        
+        real_obj_x = copy.deepcopy(opti_obj_pos_cur[0])
+        real_obj_y = copy.deepcopy(opti_obj_pos_cur[1])
+        real_obj_z = copy.deepcopy(opti_obj_pos_cur[2])
+        real_obj_pos = [real_obj_x,real_obj_y,real_obj_z]
+        real_obj_x_ang = copy.deepcopy(opti_obj_ang_cur[0])
+        real_obj_y_ang = copy.deepcopy(opti_obj_ang_cur[1])
+        real_obj_z_ang = copy.deepcopy(opti_obj_ang_cur[2])
+        real_obj_ang = [real_obj_x_ang,real_obj_y_ang,real_obj_z_ang]
+        
+        nois_obj_x = nois_obj_pos_cur[0]
+        nois_obj_y = nois_obj_pos_cur[1]
+        nois_obj_z = nois_obj_pos_cur[2]
+        nois_obj_x_ang = nois_obj_ang_cur[0]
+        nois_obj_y_ang = nois_obj_ang_cur[1]
+        nois_obj_z_ang = nois_obj_ang_cur[2]
+        nois_obj_pose = [nois_obj_x,nois_obj_y,nois_obj_z,nois_obj_x_ang,nois_obj_y_ang,nois_obj_z_ang]
+
+        self.noise_object_pos = [nois_obj_x,nois_obj_y,nois_obj_z]
+        self.noise_object_ang = [nois_obj_x_ang,nois_obj_y_ang,nois_obj_z_ang]
+        self.noise_object_pose = [nois_obj_x,nois_obj_y,nois_obj_z,nois_obj_x_ang,nois_obj_y_ang,nois_obj_z_ang]
+        
         for index,particle in enumerate(self.particle_cloud_PM):
-            
             particle_x = particle.x
             particle_y = particle.y
-            particle_z_angle = particle.z_angle
+            particle_z = particle.z
+            particle_x_ang = particle.x_angle
+            particle_y_ang = particle.y_angle
+            particle_z_ang = particle.z_angle
             
-            obs_obj_pos_x = obs_obj_pos[0]
-            obs_obj_pos_y = obs_obj_pos[1]
-            
-            distance = math.sqrt((particle_x - obs_obj_pos_x) ** 2 + (particle_y - obs_obj_pos_y) ** 2)
-            x = distance
+            nois_obj_pos = [nois_obj_pose[0],nois_obj_pose[1],nois_obj_pose[2]]
+            nois_obj_pos_x = nois_obj_pos[0]
+            nois_obj_pos_y = nois_obj_pos[1]
+            nois_obj_pos_z = nois_obj_pos[2]
             mean = 0
-            sigma = self.sigma_observ_model
-            sigma = boss_sigma_obs_pos
-            weight = self.normal_distribution(x, mean, sigma)
+            dis_x = abs(particle_x-nois_obj_pos_x)
+            dis_y = abs(particle_y-nois_obj_pos_y)
+            dis_z = abs(particle_z-nois_obj_pos_z)
+            sigma_x = boss_sigma_obs_x
+            sigma_y = boss_sigma_obs_y
+            sigma_z = boss_sigma_obs_z
+            weight_x = self.normal_distribution(dis_x, mean, sigma_x)
+            weight_y = self.normal_distribution(dis_y, mean, sigma_y)
+            weight_z = self.normal_distribution(dis_z, mean, sigma_z)
+            weight_pos = weight_x + weight_y + weight_z
             
-            nois_obj_ang = [nois_obj_ang_cur[0],nois_obj_ang_cur[1],nois_obj_ang_cur[2]]
-            nois_obj_ang_z = nois_obj_ang[2]
-            delta_z = abs(particle.z_angle - nois_obj_ang_z)
-            x_angle = delta_z
-            mean_angle = 0
-            sigma_angle = self.sigma_observ_model_angle
-            sigma_angle = boss_sigma_obs_ang
-            weight_angle = self.normal_distribution(x_angle, mean_angle, sigma_angle)
-            particle.w = weight + weight_angle/2
-            
-            #particle.w = weight
+            #pybullet x,y,z,w
+            nois_obj_ang = [nois_obj_pose[3],nois_obj_pose[4],nois_obj_pose[5]]
+            par_ang = [particle_x_ang,particle_y_ang,particle_z_ang]
+            nois_obj_ori = p_visualisation.getQuaternionFromEuler(nois_obj_ang)
+            par_ori = p_visualisation.getQuaternionFromEuler(par_ang)
+            #w,x,y,z
+            nois_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3])
+            par_quat = Quaternion(x=par_ori[0],y=par_ori[1],z=par_ori[2],w=par_ori[3])
+            err_bt_par_dope = nois_obj_quat * par_quat.inverse
+            cos_theta_over_2 = err_bt_par_dope.w
+            sin_theta_over_2 = math.sqrt(err_bt_par_dope.x ** 2 + err_bt_par_dope.y ** 2 + err_bt_par_dope.z ** 2)
+            theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
+            theta = theta_over_2 * 2
+            weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
+            weight = weight_pos * weight_ang
+            particle.w = weight
             
         Flag = self.normalize_particles_PM()
         #if Flag is False:

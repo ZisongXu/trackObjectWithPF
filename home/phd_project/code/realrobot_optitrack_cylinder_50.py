@@ -21,6 +21,7 @@ import tf.transformations as transformations
 from visualization_msgs.msg import Marker
 
 #pybullet
+from pyquaternion import Quaternion
 import pybullet as p
 import time
 import pybullet_data
@@ -1072,8 +1073,12 @@ if __name__ == '__main__':
                        pw_T_object[2][3]]       
 
     pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) #x,y,z,w
-    print(pw_T_object_ori)
-    print(pw_T_object_ori[3])
+    q1 = Quaternion(x=pw_T_object_ori[0],y=pw_T_object_ori[1],z=pw_T_object_ori[2],w=pw_T_object_ori[3])
+    print(q1)#w,x,y,z
+    ang1 = p_visualisation.getEulerFromQuaternion(pw_T_object_ori)
+    print(ang1)
+    ang1 = p_visualisation.getEulerFromQuaternion([q1[1],q1[2],q1[3],q1[0]])
+    print(ang1)
     input("")
     #load blue cube represents the ground truth pose of target object
     optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_real_object_with_visual_small.urdf"),

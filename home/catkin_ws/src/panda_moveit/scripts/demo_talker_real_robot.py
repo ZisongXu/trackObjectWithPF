@@ -382,17 +382,10 @@ if __name__ == '__main__':
     panda = Panda()
     #input('Press [ENTER] to start')
     
-    wpose = panda.moveit_group.get_current_pose().pose
-    waypoints = []
-    wpose.position.x += 0.05
-    waypoints.append(copy.deepcopy(wpose))
+    
     #be careful inertance
-    # for i in range(5):
-    #     wpose.position.x += 0.02
-    #     waypoints.append(copy.deepcopy(wpose))
-        
-    panda.move_through_waypoints(waypoints)
-    sys.exit()
+
+    
     
     panda.fully_open_gripper()
 
@@ -402,8 +395,8 @@ if __name__ == '__main__':
     #for i in range(8):
     #    panda.move_y_straight_line_ccp()
     #    time.sleep(1)
-    targetPositionsJoints_test = [0.0,-0.08,0.0,-1.65,0.0,1.58,0.870]
-    panda.move_to_target_joints(targetPositionsJoints_test)
+    #targetPositionsJoints_test = [0.0,-0.08,0.0,-1.65,0.0,1.58,0.870]
+    #panda.move_to_target_joints(targetPositionsJoints_test)
     #targetPositionsJoints_test = [-2.5,0.0,0.0,-1.0,1.7,1.57,0.6]
     #panda.move_to_target_joints(targetPositionsJoints_test)
     #cylinder
@@ -423,3 +416,10 @@ if __name__ == '__main__':
     #panda.move_y_straight_line_ccp()
     #panda.move_minus_y_straight_line_ccp
     #panda.fully_close_gripper()
+    #sys.exit()
+    wpose = panda.moveit_group.get_current_pose().pose
+    waypoints = []
+    wpose.position.y += 0.05
+    waypoints.append(copy.deepcopy(wpose))    
+    panda.move_through_waypoints(waypoints)
+    

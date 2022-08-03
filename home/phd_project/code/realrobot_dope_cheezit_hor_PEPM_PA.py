@@ -44,14 +44,14 @@ planeId = p.loadURDF("plane.urdf")
 
 
 #visualisation_model
-p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)
+p_visualisation = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
 p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
 p_visualisation.setGravity(0,0,-9.81)
 p_visualisation.resetDebugVisualizerCamera(cameraDistance=2,cameraYaw=0,cameraPitch=-40,cameraTargetPosition=[0.5,-0.9,0.5])
 plane_id = p_visualisation.loadURDF("plane.urdf")
 
 boss_PFPE_df = pd.DataFrame()
-boss_obser_df = pd.DataFrame()
+boss_obse_df = pd.DataFrame()
 boss_PFPM_df = pd.DataFrame()
 boss_csv_index_df_obse = pd.DataFrame()
 boss_csv_index_df_PFPE = pd.DataFrame()
@@ -93,8 +93,8 @@ class Franka_robot():
     	self.setJoinVisual(self.franka_robot_id,targetPositionsJoints)
         
     def setJoinVisual(self,robot, position):
-        position[7] = 0.039916139
-        position[8] = 0.039916139
+        #position[7] = 0.039916139
+        #position[8] = 0.039916139
         num_joints = 9
         for joint_index in range(num_joints): 
             if joint_index == 7 or joint_index == 8:
@@ -107,8 +107,8 @@ class Franka_robot():
                                                 targetValue=position[joint_index])
         
     def setJointPosition(self,robot, position):
-        position[7] = 0.039916139
-        position[8] = 0.039916139
+        #position[7] = 0.039916139
+        #position[8] = 0.039916139
         num_joints = 9
         for joint_index in range(num_joints): 
             if joint_index == 7 or joint_index == 8:
@@ -217,8 +217,8 @@ class InitialRealworldModel():
         return real_object_id
     def set_real_robot_JointPosition(self,pybullet_simulation_env,robot, position):
         print("Preparing the joint pose of the panda robot!")
-        position[7] = 0.039916139
-        position[8] = 0.039916139
+        #position[7] = 0.039916139
+        #position[8] = 0.039916139
         #num_joints = 7
         num_joints = 9
         for joint_index in range(num_joints): 
@@ -275,7 +275,12 @@ class InitialSimulationModel():
             #recover: need to del
             #x = self.noise_obj_pos[0]
             #y = self.noise_obj_pos[1]
-            
+            x = pw_T_object_pos[0]
+            y = pw_T_object_pos[1]
+            z = pw_T_object_pos[2]
+            x_angle = pw_T_object_ang[0]
+            y_angle = pw_T_object_ang[1]
+            z_angle = pw_T_object_ang[2]
             particle = Particle(x,y,z,x_angle,y_angle,z_angle,w,index=i)
             self.particle_cloud.append(particle)
             
@@ -303,8 +308,8 @@ class InitialSimulationModel():
         x_quat = math.sin(angle_noise/2.0) * x_axis
         y_quat = math.sin(angle_noise/2.0) * y_axis
         z_quat = math.sin(angle_noise/2.0) * z_axis
-        nois_quat = Quaternion(x=x_quat,y=y_quat,z=z_quat,w=w_quat)
         ###nois_quat(w,x,y,z); new_quat(w,x,y,z)
+        nois_quat = Quaternion(x=x_quat,y=y_quat,z=z_quat,w=w_quat)
         new_quat = nois_quat * quat_QuatStyle
         ###pb_quat(x,y,z,w)
         pb_quat = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
@@ -312,7 +317,7 @@ class InitialSimulationModel():
         x_angle = new_angle[0]
         y_angle = new_angle[1]
         z_angle = new_angle[2]
-        return x,y,z,x_angle,y_angle,z_angle,new_quat
+        return x,y,z,x_angle,y_angle,z_angle,pb_quat
     def compute_estimate_pos_of_object(self, particle_cloud):
         x_set = 0
         y_set = 0
@@ -353,7 +358,7 @@ class InitialSimulationModel():
         
     def initial_and_set_simulation_env(self,joint_of_robot):
         for index, particle in enumerate(self.particle_cloud):
-            pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT)
+            pybullet_simulation_env = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
             self.pybullet_particle_env_collection.append(pybullet_simulation_env)
             
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -376,7 +381,7 @@ class InitialSimulationModel():
             particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_no_visual_small_hor.urdf"),
                                                                      particle_no_visual_start_pos,
                                                                      particle_no_visual_start_orientation)
-            
+                
             while True:
                 flag = 0
                 pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
@@ -385,8 +390,8 @@ class InitialSimulationModel():
                 for t_i in range(length):
                     if collide_ids[t_i][1] == 8:
                         Px,Py,Pz,Px_angle,Py_angle,Pz_angle,P_quat = self.generate_random_pose(self.noise_object_pose,self.pw_T_object_ori_dope)
-                        #particle_no_visual_angle = [Px_angle,Py_angle,Pz_angle]
-                        #particle_no_visual_ori = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_angle)
+                        particle_no_visual_angle = [Px_angle,Py_angle,Pz_angle]
+                        particle_no_visual_ori = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_angle)
                         pybullet_simulation_env.resetBasePositionAndOrientation(particle_no_visual_id,
                                                                                 [Px,Py,Pz],
                                                                                 P_quat)
@@ -426,8 +431,8 @@ class InitialSimulationModel():
         
         
     def set_sim_robot_JointPosition(self,pybullet_simulation_env,robot, position):
-        position[7] = 0.039916139
-        position[8] = 0.039916139
+        #position[7] = 0.039916139
+        #position[8] = 0.039916139
         #num_joints = 7
         num_joints = 9
         for joint_index in range(num_joints): 
@@ -522,8 +527,8 @@ class PFMove():
             time.sleep(1.0/240)
           
     def set_real_robot_JointPosition(self,pybullet_env,robot, position):
-        position[7] = 0.039916139
-        position[8] = 0.039916139
+        #position[7] = 0.039916139
+        #position[8] = 0.039916139
         #num_joints = 7
         num_joints = 9
         for joint_index in range(num_joints):
@@ -551,8 +556,13 @@ class PFMove():
         opti_obj_ang_cur = p_visualisation.getEulerFromQuaternion(opti_obj_ori_cur)
         t1 = time.time()
         self.motion_update_PE(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
+        self.display_particle_in_visual_model_PE(self.particle_cloud)
+        time.sleep(1)
         t2 = time.time()
+        '''
         estimated_object_pos,estimated_object_ang = self.observation_update_PE(opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur)
+        estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
+        nois_obj_ori_cur = p_visualisation.getQuaternionFromEuler(nois_obj_ang_cur)
         t3 = time.time()
 
         #print("motion model1 time consuming:",t2-t1)
@@ -561,36 +571,25 @@ class PFMove():
         #if Flag is False:
         #    return False
         
-        
         print("display particle")
         self.display_particle_in_visual_model_PE(self.particle_cloud)
 
         #self.draw_contrast_figure(estimated_object_pos,observation)
         
-        error_opti_PFPE = self.compute_distance_between_2_points_3D(estimated_object_pos,opti_obj_pos_cur)
-        #error_ang_x = abs(estimated_object_ang[0] - opti_obj_ang_cur[0])
-        #error_ang_y = abs(estimated_object_ang[1] - opti_obj_ang_cur[1])
-        #error_ang_z = abs(estimated_object_ang[2] - opti_obj_ang_cur[2])
-        #error_PFPE_sum = error_ang_x + error_ang_y + error_ang_z
-        #error_opti_PFPE = error_opti_PFPE + error_ang_z
-        error_opti_obs = self.compute_distance_between_2_points_3D(opti_obj_pos_cur,nois_obj_pos_cur)
-        #error_ang_x = abs(nois_obj_ang_cur[0] - opti_obj_ang_cur[0])
-        #error_ang_y = abs(nois_obj_ang_cur[1] - opti_obj_ang_cur[1])
-        #error_ang_z = abs(nois_obj_ang_cur[2] - opti_obj_ang_cur[2])
-        #error_obs_sum = error_ang_x + error_ang_y + error_ang_z
-        #error_opti_obs = error_opti_obs + error_ang_z
-        t_err_generate = time.time()
-        boss_obser_df[flag_update_num_PE] = error_opti_obs
-        boss_csv_index_df_obse[flag_update_num_PE] = [t_err_generate-agl_start_t]
-        boss_csv_index_df_obse_index[flag_update_num_PE] = [flag_update_num_PE]
-        
-        
-        boss_PFPE_df[flag_update_num_PE] = error_opti_PFPE
-        boss_csv_index_df_PFPE[flag_update_num_PE] = [t_err_generate-agl_start_t]
-        boss_csv_index_df_PFPE_index[flag_update_num_PE] = [flag_update_num_PE]
-        
+        err_opti_PFPE_pos = self.compute_distance_between_2_points_3D(estimated_object_pos,opti_obj_pos_cur)
+        err_opti_PFPE_ang = compute_ang_err_bt_2_points(estimated_object_ori,opti_obj_ori_cur)
 
-        
+        err_opti_dope_pos = self.compute_distance_between_2_points_3D(nois_obj_pos_cur,opti_obj_pos_cur)
+        err_opti_dope_ang = compute_ang_err_bt_2_points(nois_obj_ori_cur,opti_obj_ori_cur)
+
+        t_err_generate = time.time()
+        boss_PFPE_df[flag_update_num_PE] = err_opti_PFPE_pos + err_opti_PFPE_ang
+        boss_obse_df[flag_update_num_PE] = err_opti_dope_pos + err_opti_dope_ang
+        boss_csv_index_df_PFPE[flag_update_num_PE] = [t_err_generate-agl_start_t]
+        boss_csv_index_df_obse[flag_update_num_PE] = [t_err_generate-agl_start_t]
+        boss_csv_index_df_PFPE_index[flag_update_num_PE] = [flag_update_num_PE]
+        boss_csv_index_df_obse_index[flag_update_num_PE] = [flag_update_num_PE]
+        '''
         # print debug info of all particles here
         #input('hit enter to continue')
         return
@@ -610,6 +609,7 @@ class PFMove():
                 pybullet_env.stepSimulation()
                 real_rob_joint_list_cur = self.get_real_robot_joint(pybullet_env,fake_robot_id[index])
                 flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur,real_robot_joint_pos)
+                time.sleep(1/240)
 
             sim_par_old_pos = [self.particle_cloud[index].x,
                                self.particle_cloud[index].y,
@@ -617,6 +617,7 @@ class PFMove():
             sim_par_old_ang = [self.particle_cloud[index].x_angle,
                                self.particle_cloud[index].y_angle,
                                self.particle_cloud[index].z_angle]
+            ### ori: x,y,z,w
             sim_par_cur_pos,sim_par_cur_ori = self.get_item_pos(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
             sim_par_cur_angle = pybullet_env.getEulerFromQuaternion(sim_par_cur_ori)
             #add noise on particle filter
@@ -624,14 +625,41 @@ class PFMove():
             normal_y = self.add_noise_2_par(sim_par_cur_pos[1])
             #normal_z_ang = self.add_noise_2_ang(sim_par_cur_angle[2])
             
+            quat = copy.deepcopy(sim_par_cur_ori)#x,y,z,w
+            quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3])#w,x,y,z
+            random_dir = random.uniform(0, 2*math.pi)
+            z_axis = random.uniform(-1,1)
+            x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
+            y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
+            angle_noise = self.add_noise_to_init_par(0,boss_sigma_obs_ang)
+            w_quat = math.cos(angle_noise/2.0)
+            x_quat = math.sin(angle_noise/2.0) * x_axis
+            y_quat = math.sin(angle_noise/2.0) * y_axis
+            z_quat = math.sin(angle_noise/2.0) * z_axis
+            ###nois_quat(w,x,y,z); new_quat(w,x,y,z)
+            nois_quat = Quaternion(x=x_quat,y=y_quat,z=z_quat,w=w_quat)
+            new_quat = nois_quat * quat_QuatStyle
+            ###pb_quat(x,y,z,w)
+            pb_quat = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
+            new_angle = p_visualisation.getEulerFromQuaternion(pb_quat)
+            x_angle = new_angle[0]
+            y_angle = new_angle[1]
+            z_angle = new_angle[2]
+            
+            
+            
             self.particle_cloud[index].x = sim_par_cur_pos[0]
-            #self.particle_cloud[index].x = normal_x
             self.particle_cloud[index].y = sim_par_cur_pos[1]
-            self.particle_cloud[index].y = normal_y
             self.particle_cloud[index].z = sim_par_cur_pos[2]
             self.particle_cloud[index].x_ang = sim_par_cur_angle[0]
             self.particle_cloud[index].y_ang = sim_par_cur_angle[1]
             self.particle_cloud[index].z_ang = sim_par_cur_angle[2]
+            #self.particle_cloud[index].x = normal_x
+            #self.particle_cloud[index].y = normal_y
+            #self.particle_cloud[index].x_ang = x_angle
+            #self.particle_cloud[index].y_ang = y_angle
+            #self.particle_cloud[index].z_ang = z_angle
+            
             
             #print("particle_x_before:",sim_par_cur_pos[0]," ","particle_y_before:",sim_par_cur_pos[1])
             #print("particle_x__after:",self.particle_cloud[index].x," ","particle_y__after:",self.particle_cloud[index].y)
@@ -639,14 +667,8 @@ class PFMove():
     def observation_update_PE(self, opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         opti_obj_ang_cur = p_visualisation.getEulerFromQuaternion(opti_obj_ori_cur)
         
-        real_obj_x = copy.deepcopy(opti_obj_pos_cur[0])
-        real_obj_y = copy.deepcopy(opti_obj_pos_cur[1])
-        real_obj_z = copy.deepcopy(opti_obj_pos_cur[2])
-        real_obj_pos = [real_obj_x,real_obj_y,real_obj_z]
-        real_obj_x_ang = copy.deepcopy(opti_obj_ang_cur[0])
-        real_obj_y_ang = copy.deepcopy(opti_obj_ang_cur[1])
-        real_obj_z_ang = copy.deepcopy(opti_obj_ang_cur[2])
-        real_obj_ang = [real_obj_x_ang,real_obj_y_ang,real_obj_z_ang]
+        real_obj_pos = copy.deepcopy(opti_obj_pos_cur)
+        real_obj_ang = copy.deepcopy(opti_obj_ang_cur)
         
         nois_obj_x = nois_obj_pos_cur[0]
         nois_obj_y = nois_obj_pos_cur[1]
@@ -659,8 +681,6 @@ class PFMove():
         self.noise_object_pos = [nois_obj_x,nois_obj_y,nois_obj_z]
         self.noise_object_ang = [nois_obj_x_ang,nois_obj_y_ang,nois_obj_z_ang]
         self.noise_object_pose = [nois_obj_x,nois_obj_y,nois_obj_z,nois_obj_x_ang,nois_obj_y_ang,nois_obj_z_ang]
-        
-       
         
         for index,particle in enumerate(self.particle_cloud):
             
@@ -687,6 +707,8 @@ class PFMove():
             weight_z = self.normal_distribution(dis_z, mean, sigma_z)
             #weight_pos = math.sqrt(weight_x ** 2 + weight_y ** 2 + weight_z ** 2)
             weight_pos = weight_x + weight_y + weight_z
+            dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
+            weight_xyz = self.normal_distribution(dis_xyz, mean, 0.025)
             
             #pybullet x,y,z,w
             nois_obj_ang = [nois_obj_pose[3],nois_obj_pose[4],nois_obj_pose[5]]
@@ -696,13 +718,13 @@ class PFMove():
             #w,x,y,z
             nois_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3])
             par_quat = Quaternion(x=par_ori[0],y=par_ori[1],z=par_ori[2],w=par_ori[3])
-            err_bt_par_dope = nois_obj_quat * par_quat.inverse
+            err_bt_par_dope = par_quat * nois_obj_quat.inverse
             cos_theta_over_2 = err_bt_par_dope.w
             sin_theta_over_2 = math.sqrt(err_bt_par_dope.x ** 2 + err_bt_par_dope.y ** 2 + err_bt_par_dope.z ** 2)
             theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
             theta = theta_over_2 * 2
             weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
-            weight = weight_pos * weight_ang
+            weight = weight_xyz * weight_ang
             particle.w = weight
             
             #particle.w = weight
@@ -733,6 +755,8 @@ class PFMove():
     def change_obj_parameters(self,pybullet_env,par_id):
         mass_a = random.uniform(1.5,3)
         fricton_b = random.uniform(0.3,0.7)
+        mass_a = 3
+        fricton_b = 0.7
         pybullet_env.changeDynamics(par_id, -1, mass = mass_a, lateralFriction = fricton_b)
     
     def get_item_pos(self,pybullet_env,item_id):
@@ -743,6 +767,7 @@ class PFMove():
         mean = current_pos
         sigma = self.sigma_motion_model/(2 ** (1.0/2))
         sigma = boss_sigma_obs_x
+        sigma = 0.01
         new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_pos_is_added_noise
     
@@ -751,6 +776,12 @@ class PFMove():
         sigma = boss_sigma_obs_ang
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
+    
+    def add_noise_to_init_par(self,current_pos,sigma_init):
+        mean = current_pos
+        sigma = sigma_init
+        new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
+        return new_pos_is_added_noise 
     
     def take_easy_gaussian_value(self,mean,sigma):
         normal = random.normalvariate(mean, sigma)
@@ -801,7 +832,7 @@ class PFMove():
         
     def display_particle_in_visual_model_PE(self, particle_cloud):
         for index, particle in enumerate(particle_cloud):
-            visual_particle_pos = [particle.x, particle.y, 0.057]
+            visual_particle_pos = [particle.x, particle.y, particle.z]
             visual_particle_ang = [particle.x_angle, particle.y_angle, particle.z_angle]
             visual_particle_orientation = p_visualisation.getQuaternionFromEuler(visual_particle_ang)
             p_visualisation.resetBasePositionAndOrientation(self.particle_with_visual_id_collection[index],
@@ -934,18 +965,15 @@ class PFMovePM():
         t3 = time.time()
         #print("motion model2 time consuming:",t2-t1)
         #print("observ model time consuming:",t3-t2)
-
         #self.draw_contrast_figure(estimated_object_pos,observation)
         
+        estimated_object_ori_PM = p_visualisation.getQuaternionFromEuler(estimated_object_ang_PM)
         self.display_particle_in_visual_model_PM(self.particle_cloud_PM)
-        error_opti_PFPM = self.compute_distance(estimated_object_pos_PM,opti_obj_pos_cur)
-        #error_ang_x = abs(estimated_object_ang[0] - opti_obj_ang_cur[0])
-        #error_ang_y = abs(estimated_object_ang[1] - opti_obj_ang_cur[1])
-        #error_ang_z = abs(estimated_object_ang[2] - opti_obj_ang_cur[2])
-        #error_PFPM_sum = error_ang_x + error_ang_y + error_ang_z
-        #error_opti_PFPM = error_opti_PFPM + error_ang_z
+        err_opti_PFPM_pos = self.compute_distance(estimated_object_pos_PM,opti_obj_pos_cur)
+        err_opti_PFPM_ang = compute_ang_err_bt_2_points(estimated_object_ori_PM,opti_obj_ori_cur)
+
         t_err_generate = time.time()
-        boss_PFPM_df[flag_update_num_PM] = error_opti_PFPM
+        boss_PFPM_df[flag_update_num_PM] = err_opti_PFPM_pos + err_opti_PFPM_ang
         boss_csv_index_df_PFPM[flag_update_num_PM] = [t_err_generate-agl_start_t]
         boss_csv_index_df_PFPM_index[flag_update_num_PM] = [flag_update_num_PM]
         
@@ -989,14 +1017,8 @@ class PFMovePM():
     def observation_update_PM(self,opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         opti_obj_ang_cur = p_visualisation.getEulerFromQuaternion(opti_obj_ori_cur)
         
-        real_obj_x = copy.deepcopy(opti_obj_pos_cur[0])
-        real_obj_y = copy.deepcopy(opti_obj_pos_cur[1])
-        real_obj_z = copy.deepcopy(opti_obj_pos_cur[2])
-        real_obj_pos = [real_obj_x,real_obj_y,real_obj_z]
-        real_obj_x_ang = copy.deepcopy(opti_obj_ang_cur[0])
-        real_obj_y_ang = copy.deepcopy(opti_obj_ang_cur[1])
-        real_obj_z_ang = copy.deepcopy(opti_obj_ang_cur[2])
-        real_obj_ang = [real_obj_x_ang,real_obj_y_ang,real_obj_z_ang]
+        real_obj_pos = copy.deepcopy(opti_obj_pos_cur)
+        real_obj_ang = copy.deepcopy(opti_obj_ang_cur)
         
         nois_obj_x = nois_obj_pos_cur[0]
         nois_obj_y = nois_obj_pos_cur[1]
@@ -1033,6 +1055,8 @@ class PFMovePM():
             weight_y = self.normal_distribution(dis_y, mean, sigma_y)
             weight_z = self.normal_distribution(dis_z, mean, sigma_z)
             weight_pos = weight_x + weight_y + weight_z
+            dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
+            weight_xyz = self.normal_distribution(dis_xyz, mean, 0.025)
             
             #pybullet x,y,z,w
             nois_obj_ang = [nois_obj_pose[3],nois_obj_pose[4],nois_obj_pose[5]]
@@ -1042,14 +1066,14 @@ class PFMovePM():
             #w,x,y,z
             nois_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3])
             par_quat = Quaternion(x=par_ori[0],y=par_ori[1],z=par_ori[2],w=par_ori[3])
-            err_bt_par_dope = nois_obj_quat * par_quat.inverse
+            err_bt_par_dope = par_quat * nois_obj_quat.inverse
             cos_theta_over_2 = err_bt_par_dope.w
             sin_theta_over_2 = math.sqrt(err_bt_par_dope.x ** 2 + err_bt_par_dope.y ** 2 + err_bt_par_dope.z ** 2)
             theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
             theta = theta_over_2 * 2
             weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
-            weight = weight_pos * weight_ang
-            particle.w = weight_pos
+            weight = weight_xyz * weight_ang
+            particle.w = weight
             
         Flag = self.normalize_particles_PM()
         #if Flag is False:
@@ -1162,7 +1186,7 @@ class PFMovePM():
 
     def display_particle_in_visual_model_PM(self, particle_cloud):
         for index, particle in enumerate(particle_cloud):
-            visual_particle_pos = [particle.x, particle.y, 0.057]
+            visual_particle_pos = [particle.x, particle.y, particle.z]
             visual_particle_ang = [particle.x_angle, particle.y_angle, particle.z_angle]
             visual_particle_orientation = p_visualisation.getQuaternionFromEuler(visual_particle_ang)
             p_visualisation.resetBasePositionAndOrientation(self.particle_with_visual_id_collection_PM[index],
@@ -1261,6 +1285,19 @@ def compute_distance_between_2_points_3D(pos1,pos2):
     z_d = z1-z2
     distance = math.sqrt(x_d ** 2 + y_d ** 2 + z_d ** 2)
     return distance
+def compute_ang_err_bt_2_points(object1_ori,object2_ori):
+    #x,y,z,w
+    obj1_ori = copy.deepcopy(object1_ori)
+    obj2_ori = copy.deepcopy(object2_ori)
+    #w,x,y,z
+    obj1_quat = Quaternion(x=obj1_ori[0],y=obj1_ori[1],z=obj1_ori[2],w=obj1_ori[3])
+    obj2_quat = Quaternion(x=obj2_ori[0],y=obj2_ori[1],z=obj2_ori[2],w=obj2_ori[3])
+    diff_bt_o1_o2 = obj2_quat * obj1_quat.inverse
+    cos_theta_over_2 = diff_bt_o1_o2.w
+    sin_theta_over_2 = math.sqrt(diff_bt_o1_o2.x ** 2 + diff_bt_o1_o2.y ** 2 + diff_bt_o1_o2.z ** 2)
+    theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
+    theta = theta_over_2 * 2
+    return theta
 def comp_z_ang(ang1,ang2):
     z1 = ang1[2]
     z2 = ang2[2]
@@ -1310,14 +1347,17 @@ def cheat_dope_obj_ang(angle):
     elif angle > -5 * math.pi/4 and angle < -3 * math.pi/4:
         ang = -math.pi
     return ang
+
+
+
 if __name__ == '__main__':
     t_begin = time.time()
     particle_cloud = []
-    particle_num = 70
+    particle_num = 1
     d_thresh = 0.01
     a_thresh = 0.05
-    d_thresh_PM = 0.01
-    a_thresh_PM = 0.05
+    d_thresh_PM = 10.002
+    a_thresh_PM = 10.01
     #d_thresh = 10.025
     #a_thresh = 10.05
     #d_thresh_PM = 10.025
@@ -1332,10 +1372,11 @@ if __name__ == '__main__':
     boss_sigma_obs_pos = 0.02
     #boss_sigma_obs_ang = 0.08
     
-    rospy.init_node('PF_for_optitrack')
+    rospy.init_node('PF_for_dope')
     
     #build an object of class "Ros_listener"
     ros_listener = Ros_listener()
+    #get pose info from DOPE
     listener = tf.TransformListener()
     while True:
         try:
@@ -1345,9 +1386,8 @@ if __name__ == '__main__':
             continue
     robot_T_obj_dope_pos = list(trans)
     robot_T_obj_dope_ori = list(rot)
-    rob_T_obj_rot_matrix = transformations.quaternion_matrix(robot_T_obj_dope_ori)
-    rob_T_obj_dope = rotation_4_4_to_transformation_4_4(rob_T_obj_rot_matrix,robot_T_obj_dope_pos)
-    
+    rob_T_obj_dope_3_3 = transformations.quaternion_matrix(robot_T_obj_dope_ori)
+    rob_T_obj_dope = rotation_4_4_to_transformation_4_4(rob_T_obj_dope_3_3,robot_T_obj_dope_pos)
     #give some time to update the data
     time.sleep(0.5)
     init_robot_pos = ros_listener.robot_pos
@@ -1355,61 +1395,59 @@ if __name__ == '__main__':
     init_object_pos = ros_listener.object_pos
     init_object_ori = ros_listener.object_ori
     
-    #compute transformation matrix
-    #input('Press [ENTER] to compute transformation matrix')
-    robot_T_object = compute_transformation_matrix(init_robot_pos,init_robot_ori,init_object_pos,init_object_ori)
-
-    pybullet_robot_pos = [0.0, 0.0, 0.025]
+    pybullet_robot_pos = [0.0, 0.0, 0.026]
     pybullet_robot_ori = [0,0,0,1]
-
-    
+    #compute transformation matrix (OptiTrack)
+    #input('Press [ENTER] to compute transformation matrix (OptiTrack)')
+    robot_T_object = compute_transformation_matrix(init_robot_pos,init_robot_ori,init_object_pos,init_object_ori)
     #input('Press [ENTER] to compute the pose of object in the pybullet world')
-    pybullet_robot_transformation_matrix = transformations.quaternion_matrix(pybullet_robot_ori)
-    pw_T_robot = rotation_4_4_to_transformation_4_4(pybullet_robot_transformation_matrix,pybullet_robot_pos)
+    pw_T_robot_3_3 = transformations.quaternion_matrix(pybullet_robot_ori)
+    pw_T_robot = rotation_4_4_to_transformation_4_4(pw_T_robot_3_3,pybullet_robot_pos)
     pw_T_object = np.dot(pw_T_robot,robot_T_object)
     pw_T_object_pos = [pw_T_object[0][3],pw_T_object[1][3],pw_T_object[2][3]]       
     pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
     pw_T_object_ang = p_visualisation.getEulerFromQuaternion(pw_T_object_ori)
     #load the groud truth object
+    
+
     optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_real_obj_with_visual_small_hor.urdf"),
                                                    pw_T_object_pos,
                                                    pw_T_object_ori)
-    
+    #compute pose of object in DOPE
     pw_T_object_dope = np.dot(pw_T_robot,rob_T_obj_dope)
     pw_T_object_pos_dope = [pw_T_object_dope[0][3],pw_T_object_dope[1][3],pw_T_object_dope[2][3]]       
     pw_T_object_ori_dope = transformations.quaternion_from_matrix(pw_T_object_dope) 
     pw_T_object_ang_dope = p_visualisation.getEulerFromQuaternion(pw_T_object_ori_dope)
     pw_T_object_ang_dope = list(pw_T_object_ang_dope)
-    dope_x_ang = pw_T_object_ang_dope[0]
-    dope_y_ang = pw_T_object_ang_dope[1]
-    dope_z_ang = pw_T_object_ang_dope[2]
-    dope_ang = [dope_x_ang,dope_y_ang,dope_z_ang]
+    #load the DOPE object
     dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_dope_obj_with_visual_small_PE_hor.urdf"),
                                               pw_T_object_pos_dope,
                                               pw_T_object_ori_dope)
-    
-    
+    #initialize pose
+    dope_obj_pos_init = copy.deepcopy(pw_T_object_pos_dope)
+    dope_obj_ang_init = copy.deepcopy(pw_T_object_ang_dope)
+    dope_obj_ori_init = copy.deepcopy(pw_T_object_ori_dope)
+    dope_obj_pose_init = [dope_obj_pos_init[0],
+                          dope_obj_pos_init[1],
+                          dope_obj_pos_init[2],
+                          dope_obj_ang_init[0],
+                          dope_obj_ang_init[1],
+                          dope_obj_ang_init[2]]
+    boss_obs_pose_PFPM.append(dope_obj_pose_init)
     #input('test')
     #add noise to OptiTrack pose
-
-    dope_obj_x = pw_T_object_pos_dope[0]
-    dope_obj_y = pw_T_object_pos_dope[1]
-    #dope_obj_z = pw_T_object_pos_dope[2]
-    dope_obj_z = pw_T_object_pos_dope[2]
     #print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     #print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     #print(dope_obj_z)
-    dope_obj_pos_init = [dope_obj_x,dope_obj_y,dope_obj_z]
-    dope_obj_x_ang = dope_ang[0]
-    dope_obj_y_ang = dope_ang[1]
-    dope_obj_z_ang = dope_ang[2]
-    noise_obj_ang_init = [dope_obj_x_ang,dope_obj_y_ang,dope_obj_z_ang]
-    error_opti_obs = compute_distance_between_2_points_3D(pw_T_object_pos,pw_T_object_pos_dope)
-    boss_obser_df[0]=[error_opti_obs]
+    #pose of object from dope
+
+    #compute error
+    err_opti_dope_pos = compute_distance_between_2_points_3D(pw_T_object_pos,pw_T_object_pos_dope)
+    err_opti_dope_ang = compute_ang_err_bt_2_points(pw_T_object_ori,pw_T_object_ori_dope)
+    boss_obse_df[0]=[err_opti_dope_pos + err_opti_dope_ang]
     boss_csv_index_df_obse[0] = [0]
     boss_csv_index_df_obse_index[0] = [0]
-    noise_obj_pose_init = [dope_obj_x,dope_obj_y,dope_obj_z,dope_obj_x_ang,dope_obj_y_ang,dope_obj_z_ang]
-    boss_obs_pose_PFPM.append(noise_obj_pose_init)
+    
     #input('Press [ENTER] to initial real world model')
     #build an object of class "InitialRealworldModel"
     real_world_object = InitialRealworldModel(ros_listener.current_joint_values)
@@ -1421,10 +1459,9 @@ if __name__ == '__main__':
     franka_robot = Franka_robot(real_robot_id)
     
     #input('Press [ENTER] to initial simulation world model')
-    initial_parameter = InitialSimulationModel(particle_num,pybullet_robot_pos,pybullet_robot_ori,dope_obj_pos_init,noise_obj_ang_init,pw_T_object_ori_dope)
+    #initialize sim world
+    initial_parameter = InitialSimulationModel(particle_num, pybullet_robot_pos, pybullet_robot_ori, dope_obj_pos_init, dope_obj_ang_init, dope_obj_ori_init)
     initial_parameter.initial_particle() #only position of particle
-    
-    #initial_parameter.initial_and_set_simulation_env()
     estimated_object_set = initial_parameter.initial_and_set_simulation_env(ros_listener.current_joint_values)
     estimated_object_pos = [estimated_object_set[0],estimated_object_set[1],estimated_object_set[2]]
     estimated_object_ang = [estimated_object_set[3],estimated_object_set[4],estimated_object_set[5]]
@@ -1432,7 +1469,7 @@ if __name__ == '__main__':
     boss_est_pose_PFPM.append(estimated_object_set)
     initial_parameter.display_particle()
     initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
-    initial_parameter.display_particle_PM()
+    #initial_parameter.display_particle_PM()
     
     estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
                                                    estimated_object_pos,
@@ -1441,6 +1478,7 @@ if __name__ == '__main__':
                                                       estimated_object_pos,
                                                       estimated_object_ori)
     #input('test')
+    #compute error
     error = compute_distance(estimated_object_pos,pw_T_object_pos)
     boss_PFPE_df[0]=[error]
     boss_csv_index_df_PFPE[0] = [0]
@@ -1457,22 +1495,22 @@ if __name__ == '__main__':
     #build an object of class "PFMove"
     robot1 = PFMove()
     robot2 = PFMovePM()
-    #get real object pos
-    real_object_last_update_pos = pw_T_object_pos
-    real_object_last_update_ori = pw_T_object_ori
+    #get real object pos cheat
+    #real_object_last_update_pos = pw_T_object_pos
+    #real_object_last_update_ori = pw_T_object_ori
     #run the simulation
     Flag = True
-    
-    noise_obj_pos_old = copy.deepcopy(dope_obj_pos_init)
-    noise_obj_ang_old = copy.deepcopy(noise_obj_ang_init)
-    noise_obj_pos_old_PM = copy.deepcopy(dope_obj_pos_init)
-    noise_obj_ang_old_PM = copy.deepcopy(noise_obj_ang_init)
-    
+    #computer DOPE object old pose
+    dope_obj_pos_old = copy.deepcopy(dope_obj_pos_init)
+    dope_obj_ang_old = copy.deepcopy(dope_obj_ang_init)
+    dope_obj_ori_old = copy.deepcopy(dope_obj_ori_init)
+    dope_obj_pos_old_PM = copy.deepcopy(dope_obj_pos_init)
+    dope_obj_ang_old_PM = copy.deepcopy(dope_obj_ang_init)
+    dope_obj_ori_old_PM = copy.deepcopy(dope_obj_ori_init)
     #input('Press [ENTER] to enter into while loop')
-    flag_pm = 0
     t_end = time.time()
     agl_start_t = time.time()
-    
+    #compute pose of robot arm
     rob_link_9_pose_old_PE = p_visualisation.getLinkState(real_robot_id,9)
     rob_link_9_pose_old_PM = p_visualisation.getLinkState(real_robot_id,9)
     rob_link_9_ang_old_PE = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_old_PE[1])
@@ -1486,11 +1524,13 @@ if __name__ == '__main__':
             t_end = time.time()
             time_consuming = t_end - t_begin
         #for ij in range(240):
+        
+        #for i_ss in range(240):
         franka_robot.fanka_robot_move(ros_listener.current_joint_values)
         #p_visualisation.stepSimulation()
         time.sleep(1./240.)
         
-        
+        #get pose info from DOPE
         listener = tf.TransformListener()
         while True:
             try:
@@ -1502,53 +1542,50 @@ if __name__ == '__main__':
                 continue
         robot_T_obj_dope_pos = list(trans)
         robot_T_obj_dope_ori = list(rot)
-        rob_T_obj_rot_matrix = transformations.quaternion_matrix(robot_T_obj_dope_ori)
-        rob_T_obj_dope = rotation_4_4_to_transformation_4_4(rob_T_obj_rot_matrix,robot_T_obj_dope_pos)
+        rob_T_obj_dope_3_3 = transformations.quaternion_matrix(robot_T_obj_dope_ori)
+        rob_T_obj_dope = rotation_4_4_to_transformation_4_4(rob_T_obj_dope_3_3,robot_T_obj_dope_pos)
+        pw_T_object_dope = np.dot(pw_T_robot,rob_T_obj_dope)
+        pw_T_object_pos_dope = [pw_T_object_dope[0][3],pw_T_object_dope[1][3],pw_T_object_dope[2][3]]       
+        pw_T_object_ori_dope = transformations.quaternion_from_matrix(pw_T_object_dope) 
+        pw_T_object_ang_dope = p_visualisation.getEulerFromQuaternion(pw_T_object_ori_dope)
         
         #Determine if particles need to be updated
         robot_T_object = compute_transformation_matrix(ros_listener.robot_pos,
                                                        ros_listener.robot_ori,
                                                        ros_listener.object_pos,
                                                        ros_listener.object_ori)
-        pybullet_robot_transformation_matrix = transformations.quaternion_matrix(pybullet_robot_ori)
-        pw_T_robot = rotation_4_4_to_transformation_4_4(pybullet_robot_transformation_matrix,pybullet_robot_pos)
+        pw_T_robot_3_3 = transformations.quaternion_matrix(pybullet_robot_ori)
+        pw_T_robot = rotation_4_4_to_transformation_4_4(pw_T_robot_3_3,pybullet_robot_pos)
         pw_T_object = np.dot(pw_T_robot,robot_T_object)
-        
         pw_T_object_pos = [pw_T_object[0][3],pw_T_object[1][3],pw_T_object[2][3]]       
         pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
         pw_T_object_ang = p_visualisation.getEulerFromQuaternion(pw_T_object_ori)
         
-        pw_T_object_dope = np.dot(pw_T_robot,rob_T_obj_dope)
-        pw_T_object_pos_dope = [pw_T_object_dope[0][3],pw_T_object_dope[1][3],pw_T_object_dope[2][3]]       
-        pw_T_object_ori_dope = transformations.quaternion_from_matrix(pw_T_object_dope) 
-        pw_T_object_ang_dope = p_visualisation.getEulerFromQuaternion(pw_T_object_ori_dope)
         
-        dope_x_ang = pw_T_object_ang_dope[0]
-        dope_y_ang = pw_T_object_ang_dope[1]
-        dope_z_ang = pw_T_object_ang_dope[2]
-        cheat_dope_ang = [dope_x_ang,dope_y_ang,dope_z_ang]
         
-        pw_T_obj_pos = copy.deepcopy(pw_T_object_pos)
-        pw_T_obj_ori = copy.deepcopy(pw_T_object_ori)
-        pw_T_obj_ang = copy.deepcopy(pw_T_object_ang)
-        noise_obj_x = pw_T_object_pos_dope[0]
-        noise_obj_y = pw_T_object_pos_dope[1]
-        noise_obj_z = pw_T_object_pos_dope[2]
-        #noise_obj_z = 0.09
-        noise_obj_pos_cur = [noise_obj_x,noise_obj_y,noise_obj_z]
-        noise_obj_x_ang = cheat_dope_ang[0]
-        noise_obj_y_ang = cheat_dope_ang[1]
-        noise_obj_z_ang = cheat_dope_ang[2]
-        noise_obj_ang_cur = [noise_obj_x_ang,noise_obj_y_ang,noise_obj_z_ang]
-        noise_obj_pose_cur = [noise_obj_x,noise_obj_y,noise_obj_z,noise_obj_x_ang,noise_obj_y_ang,noise_obj_z_ang]
-        display_real_object_in_visual_model(dope_object_id,pw_T_object_pos_dope,pw_T_object_ori_dope)
+        dope_obj_pos_cur = copy.deepcopy(pw_T_object_pos_dope)
+        dope_obj_ang_cur = copy.deepcopy(pw_T_object_ang_dope)
+        dope_obj_ori_cur = copy.deepcopy(pw_T_object_ori_dope)
+        dope_obj_pose_cur = [dope_obj_pos_cur[0],
+                             dope_obj_pos_cur[1],
+                             dope_obj_pos_cur[2],
+                             dope_obj_ang_cur[0],
+                             dope_obj_ang_cur[1],
+                             dope_obj_ang_cur[2]]
+        #display DOPE object in visual model
+        display_real_object_in_visual_model(dope_object_id,dope_obj_pos_cur,dope_obj_ori_cur)
         
-        dis_betw_cur_and_old = compute_distance_between_2_points_3D(noise_obj_pos_cur,noise_obj_pos_old)
-        print("dis_betw_cur_and_old:",dis_betw_cur_and_old)
-        ang_betw_cur_and_old = comp_z_ang(noise_obj_ang_cur,noise_obj_ang_old)
-        dis_betw_cur_and_old_PM = compute_distance_between_2_points_3D(noise_obj_pos_cur,noise_obj_pos_old_PM)
-        ang_betw_cur_and_old_PM = comp_z_ang(noise_obj_ang_cur,noise_obj_ang_old_PM)
+        pw_T_obj_pos_opti = copy.deepcopy(pw_T_object_pos)
+        pw_T_obj_ang_opti = copy.deepcopy(pw_T_object_ang)
+        pw_T_obj_ori_opti = copy.deepcopy(pw_T_object_ori)
         
+        #compute distance between old DOPE obj and cur DOPE obj (position and angle)
+        dis_betw_cur_and_old = compute_distance_between_2_points_3D(dope_obj_pos_cur,dope_obj_pos_old)
+        ang_betw_cur_and_old = compute_ang_err_bt_2_points(dope_obj_ori_cur,dope_obj_ori_old)
+        dis_betw_cur_and_old_PM = compute_distance_between_2_points_3D(dope_obj_pos_cur,dope_obj_pos_old_PM)
+        ang_betw_cur_and_old_PM = compute_ang_err_bt_2_points(dope_obj_ori_cur,dope_obj_ori_old_PM)
+
+        #compute distance between old robot arm and cur robot arm (position and angle)
         rob_link_9_pose_cur_PE = p_visualisation.getLinkState(real_robot_id,9)
         rob_link_9_pose_cur_PM = p_visualisation.getLinkState(real_robot_id,9)
         rob_link_9_ang_cur_PE = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_cur_PE[1])
@@ -1557,10 +1594,11 @@ if __name__ == '__main__':
         dis_robcur_robold_PM = compute_distance_between_2_points_3D(rob_link_9_pose_cur_PM[0],rob_link_9_pose_old_PM[0])
         ang_robcur_robold_PE = comp_z_ang(rob_link_9_ang_cur_PE,rob_link_9_ang_old_PE)
         ang_robcur_robold_PM = comp_z_ang(rob_link_9_ang_cur_PM,rob_link_9_ang_old_PM)
+        
         #distance_between_current_and_old = compute_distance(real_object_current_pos,real_object_last_update_pos)#Cheat 
         #print("dis_betw_cur_and_old_PM:",dis_betw_cur_and_old_PM)
-        #or (ang_betw_cur_and_old > a_thresh) 
-        if (dis_betw_cur_and_old > d_thresh) or (dis_robcur_robold_PE > d_thresh):
+        #
+        if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh) or (dis_robcur_robold_PE > d_thresh):
             
             flag_update_num_PE = flag_update_num_PE + 1
             
@@ -1570,8 +1608,8 @@ if __name__ == '__main__':
             #Cheat
             opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos) #get pos of real object
             opti_obj_ori_cur = copy.deepcopy(pw_T_object_ori)
-            nois_obj_pos_cur = copy.deepcopy(noise_obj_pos_cur)
-            nois_obj_ang_cur = copy.deepcopy(noise_obj_ang_cur)
+            nois_obj_pos_cur = copy.deepcopy(dope_obj_pos_cur)
+            nois_obj_ang_cur = copy.deepcopy(dope_obj_ang_cur)
             #execute sim_robot movement 
             
             Flag = robot1.real_robot_control_PE(opti_obj_pos_cur,
@@ -1580,30 +1618,30 @@ if __name__ == '__main__':
                                                 nois_obj_pos_cur,
                                                 nois_obj_ang_cur)
             
-            noise_obj_pos_old = copy.deepcopy(noise_obj_pos_cur)
-            noise_obj_ang_old = copy.deepcopy(noise_obj_ang_cur)           
+            dope_obj_pos_old = copy.deepcopy(dope_obj_pos_cur)
+            dope_obj_ang_old = copy.deepcopy(dope_obj_ang_cur)           
             display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
             
             rob_link_9_pose_old_PE = copy.deepcopy(rob_link_9_pose_cur_PE)
             
                 
-        # or (ang_betw_cur_and_old_PM > a_thresh_PM)         
-        if (dis_betw_cur_and_old_PM > d_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
+        #         
+        if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
             flag_update_num_PM = flag_update_num_PM + 1
-            boss_obs_pose_PFPM.append(noise_obj_pose_cur)
+            boss_obs_pose_PFPM.append(dope_obj_pose_cur)
             #print("+")
             opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object
             opti_obj_ori_cur_PM = copy.deepcopy(pw_T_object_ori)
-            nois_obj_pos_cur_PM = copy.deepcopy(noise_obj_pos_cur)
-            nois_obj_ang_cur_PM = copy.deepcopy(noise_obj_ang_cur)
+            nois_obj_pos_cur_PM = copy.deepcopy(dope_obj_pos_cur)
+            nois_obj_ang_cur_PM = copy.deepcopy(dope_obj_ang_cur)
             
             Flag = robot2.real_robot_control_PM(opti_obj_pos_cur_PM,
                                                 opti_obj_ori_cur_PM,
                                                 nois_obj_pos_cur_PM,
                                                 nois_obj_ang_cur_PM)
             
-            noise_obj_pos_old_PM = copy.deepcopy(noise_obj_pos_cur)
-            noise_obj_ang_old_PM = copy.deepcopy(noise_obj_ang_cur) 
+            dope_obj_pos_old_PM = copy.deepcopy(dope_obj_pos_cur)
+            dope_obj_ang_old_PM = copy.deepcopy(dope_obj_ang_cur) 
             
             rob_link_9_pose_old_PM = copy.deepcopy(rob_link_9_pose_cur_PM)
             #print("=")
@@ -1611,7 +1649,7 @@ if __name__ == '__main__':
             print("write obser file")
             #boss_csv_index_df_obse_index.to_csv('obser_error5.csv',index=0,header=0,mode='a')                   
             boss_csv_index_df_obse.to_csv('obser_error5.csv',index=0,header=0,mode='a')
-            boss_obser_df.to_csv('obser_error5.csv',index=0,header=0,mode='a')        
+            boss_obse_df.to_csv('obser_error5.csv',index=0,header=0,mode='a')        
             boss_update_flag_obse = 1
         if time_consuming >= 100 and boss_update_flag_PFPE == 0:
             print("write PFPE file")

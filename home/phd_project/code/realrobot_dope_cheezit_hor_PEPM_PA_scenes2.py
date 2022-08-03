@@ -44,7 +44,7 @@ planeId = p.loadURDF("plane.urdf")
 
 
 #visualisation_model
-p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
+p_visualisation = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
 p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
 p_visualisation.setGravity(0,0,-9.81)
 p_visualisation.resetDebugVisualizerCamera(cameraDistance=2,cameraYaw=0,cameraPitch=-40,cameraTargetPosition=[0.5,-0.9,0.5])
@@ -358,7 +358,7 @@ class InitialSimulationModel():
         
     def initial_and_set_simulation_env(self,joint_of_robot):
         for index, particle in enumerate(self.particle_cloud):
-            pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
+            pybullet_simulation_env = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
             self.pybullet_particle_env_collection.append(pybullet_simulation_env)
             
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -1353,7 +1353,7 @@ def cheat_dope_obj_ang(angle):
 if __name__ == '__main__':
     t_begin = time.time()
     particle_cloud = []
-    particle_num = 70
+    particle_num = 1
     d_thresh = 0.01
     a_thresh = 0.05
     d_thresh_PM = 10.002

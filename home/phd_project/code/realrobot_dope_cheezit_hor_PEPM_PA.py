@@ -613,13 +613,13 @@ class PFMove():
             self.particle_cloud[index].y = sim_par_cur_pos[1]
             self.particle_cloud[index].z = sim_par_cur_pos[2]
             self.particle_cloud[index].x_angle = sim_par_cur_angle[0]
-            self.particle_cloud[index].x_angle = sim_par_cur_angle[1]
-            self.particle_cloud[index].x_angle = sim_par_cur_angle[2]
+            self.particle_cloud[index].y_angle = sim_par_cur_angle[1]
+            self.particle_cloud[index].z_angle = sim_par_cur_angle[2]
             #self.particle_cloud[index].x = normal_x
             #self.particle_cloud[index].y = normal_y
             #self.particle_cloud[index].x_angle = x_angle
-            #self.particle_cloud[index].x_angle = y_angle
-            #self.particle_cloud[index].x_angle = z_angle
+            #self.particle_cloud[index].y_angle = y_angle
+            #self.particle_cloud[index].z_angle = z_angle
             
             
             #print("particle_x_before:",sim_par_cur_pos[0]," ","particle_y_before:",sim_par_cur_pos[1])

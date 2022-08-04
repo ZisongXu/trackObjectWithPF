@@ -271,11 +271,6 @@ class InitialSimulationModel():
             particle = Particle(x,y,z,x_angle,y_angle,z_angle,w,index=i)
             self.particle_cloud.append(particle)
 
-    def compute_distance(self,object_current_pos,object_last_update_pos):
-        x_distance = object_current_pos[0] - object_last_update_pos[0]
-        y_distance = object_current_pos[1] - object_last_update_pos[1]
-        distance = math.sqrt(x_distance ** 2 + y_distance ** 2)
-        return distance
     def generate_random_pose(self,noise_object_pose, pw_T_object_ori_dope):
         #angle = copy.deepcopy([noise_object_pose[3],noise_object_pose[4],noise_object_pose[5]])
         quat = copy.deepcopy(pw_T_object_ori_dope)#x,y,z,w
@@ -515,7 +510,7 @@ class PFMove():
                                                    pybullet_env.POSITION_CONTROL,
                                                    targetPosition=position[joint_index])  
     
-    def compute_distance_between_2_points_3D(self,pos1,pos2):
+    def compute_pos_err_bt_2_points(self,pos1,pos2):
         x_d = pos1[0]-pos2[0]
         y_d = pos1[1]-pos2[1]
         z_d = pos1[2]-pos2[2]
@@ -545,10 +540,10 @@ class PFMove():
         print("display particle")
         self.display_particle_in_visual_model_PE(self.particle_cloud)
         #self.draw_contrast_figure(estimated_object_pos,observation)
-        
-        err_opti_PFPE_pos = self.compute_distance_between_2_points_3D(estimated_object_pos,opti_obj_pos_cur)
+        #neettochange
+        err_opti_PFPE_pos = compute_pos_err_bt_2_points(estimated_object_pos,opti_obj_pos_cur)
         err_opti_PFPE_ang = compute_ang_err_bt_2_points(estimated_object_ori,opti_obj_ori_cur)
-        err_opti_dope_pos = self.compute_distance_between_2_points_3D(nois_obj_pos_cur,opti_obj_pos_cur)
+        err_opti_dope_pos = compute_pos_err_bt_2_points(nois_obj_pos_cur,opti_obj_pos_cur)
         err_opti_dope_ang = compute_ang_err_bt_2_points(nois_obj_ori_cur,opti_obj_ori_cur)
 
         t_err_generate = time.time()
@@ -570,6 +565,7 @@ class PFMove():
             #time.sleep(1./240.)
             flag_set_sim = 1
             while True:
+                print("I am still moving in sim")
                 if flag_set_sim == 0:
                     break
                 self.set_real_robot_JointPosition(pybullet_env,fake_robot_id[index],real_robot_joint_pos)
@@ -584,7 +580,7 @@ class PFMove():
             #add noise on particle filter
             normal_x = self.add_noise_2_par(sim_par_cur_pos[0])
             normal_y = self.add_noise_2_par(sim_par_cur_pos[1])
-            #normal_z_ang = self.add_noise_2_ang(sim_par_cur_angle[2])
+            normal_z = self.add_noise_2_par(sim_par_cur_pos[2])
             
             quat = copy.deepcopy(sim_par_cur_ori)#x,y,z,w
             quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3])#w,x,y,z
@@ -615,11 +611,12 @@ class PFMove():
             self.particle_cloud[index].x_angle = sim_par_cur_angle[0]
             self.particle_cloud[index].y_angle = sim_par_cur_angle[1]
             self.particle_cloud[index].z_angle = sim_par_cur_angle[2]
-            #self.particle_cloud[index].x = normal_x
-            #self.particle_cloud[index].y = normal_y
-            #self.particle_cloud[index].x_angle = x_angle
-            #self.particle_cloud[index].x_angle = y_angle
-            #self.particle_cloud[index].x_angle = z_angle
+            self.particle_cloud[index].x = normal_x
+            self.particle_cloud[index].y = normal_y
+            self.particle_cloud[index].z = normal_z
+            self.particle_cloud[index].x_angle = x_angle
+            self.particle_cloud[index].x_angle = y_angle
+            self.particle_cloud[index].x_angle = z_angle
             
             
             #print("particle_x_before:",sim_par_cur_pos[0]," ","particle_y_before:",sim_par_cur_pos[1])
@@ -699,16 +696,17 @@ class PFMove():
 
     def compare_rob_joint(self,real_rob_joint_list_cur,real_robot_joint_pos):
         for i in range(self.joint_num):
+            diff = 10
             diff = abs(real_rob_joint_list_cur[i] - real_robot_joint_pos[i])
-            if diff > 0.001:
+            if diff > 0.005:
                 return 1
         return 0
     
     def change_obj_parameters(self,pybullet_env,par_id):
-        mass_a = random.uniform(1.5,3)
-        fricton_b = random.uniform(0.3,0.7)
-        mass_a = 0.351
-        fricton_b = 0.30
+        mass_a = random.uniform(0.2,0.502)
+        fricton_b = random.uniform(0.15,0.45)
+        #mass_a = 0.351
+        #fricton_b = 0.30
         pybullet_env.changeDynamics(par_id, -1, mass = mass_a, lateralFriction = fricton_b)
     
     def get_item_pos(self,pybullet_env,item_id):
@@ -882,19 +880,14 @@ class PFMovePM():
                                               nois_obj_ang_cur)
         if Flag is False:
             return False    
-                
-                                                            
-    def compute_distance(self,object_current_pos,object_last_update_pos):
-        x_distance = object_current_pos[0] - object_last_update_pos[0]
-        y_distance = object_current_pos[1] - object_last_update_pos[1]
-        distance = math.sqrt(x_distance ** 2 + y_distance ** 2)
-        return distance
-    def compute_distance_between_2_points_3D(self,pos1,pos2):
+        
+    def compute_pos_err_bt_2_points(self,pos1,pos2):
         x_d = pos1[0]-pos2[0]
         y_d = pos1[1]-pos2[1]
         z_d = pos1[2]-pos2[2]
         distance = math.sqrt(x_d ** 2 + y_d ** 2 + z_d ** 2)
-        return distance        
+        return distance      
+      
     #executed_control 
     def update_particle_filter_PM(self, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         global boss_update_flag_PFPM
@@ -910,12 +903,10 @@ class PFMovePM():
         #print("motion model2 time consuming:",t2-t1)
         #print("observ model time consuming:",t3-t2)
         #self.draw_contrast_figure(estimated_object_pos,observation)
-        
         estimated_object_ori_PM = p_visualisation.getQuaternionFromEuler(estimated_object_ang_PM)
         self.display_particle_in_visual_model_PM(self.particle_cloud_PM)
-        err_opti_PFPM_pos = self.compute_distance(estimated_object_pos_PM,opti_obj_pos_cur)
+        err_opti_PFPM_pos = compute_pos_err_bt_2_points(estimated_object_pos_PM,opti_obj_pos_cur)
         err_opti_PFPM_ang = compute_ang_err_bt_2_points(estimated_object_ori_PM,opti_obj_ori_cur)
-
         t_err_generate = time.time()
         boss_PFPM_df[flag_update_num_PM] = err_opti_PFPM_pos + err_opti_PFPM_ang
         boss_csv_index_df_PFPM[flag_update_num_PM] = [t_err_generate-agl_start_t]
@@ -924,7 +915,6 @@ class PFMovePM():
         # print debug info of all particles here
         #input('hit enter to continue')
         return
-    
 
     def motion_update_PM(self):
         if flag_update_num_PM < 2:
@@ -1195,12 +1185,7 @@ class PFMovePM():
 #function independent of Class        
 def get_real_object_pos(object_id):
     object_info = p_visualisation.getBasePositionAndOrientation(object_id)
-    return object_info[0] 
-def compute_distance(object_current_pos,object_last_update_pos):
-    x_distance = object_current_pos[0] - object_last_update_pos[0]
-    y_distance = object_current_pos[1] - object_last_update_pos[1]
-    distance = math.sqrt(x_distance ** 2 + y_distance ** 2)
-    return distance        
+    return object_info[0]       
 def get_observation(object_id):
     object_info = get_real_object_pos(object_id)
     return object_info
@@ -1209,7 +1194,7 @@ def rotation_4_4_to_transformation_4_4(rotation_4_4,pos):
     rotation_4_4[1][3] = pos[1]
     rotation_4_4[2][3] = pos[2]
     return rotation_4_4
-def compute_distance_between_2_points_3D(pos1,pos2):
+def compute_pos_err_bt_2_points(pos1,pos2):
     x1=pos1[0]
     y1=pos1[1]
     z1=pos1[2]
@@ -1373,9 +1358,10 @@ if __name__ == '__main__':
     #pose of object from dope
 
     #compute error
-    err_opti_dope_pos = compute_distance_between_2_points_3D(pw_T_object_pos,pw_T_object_pos_dope)
+    err_opti_dope_pos = compute_pos_err_bt_2_points(pw_T_object_pos,pw_T_object_pos_dope)
     err_opti_dope_ang = compute_ang_err_bt_2_points(pw_T_object_ori,pw_T_object_ori_dope)
-    boss_obse_df[0]=[err_opti_dope_pos + err_opti_dope_ang]
+    err_opti_dope_sum = err_opti_dope_pos + err_opti_dope_ang
+    boss_obse_df[0]=[err_opti_dope_sum]
     boss_csv_index_df_obse[0] = [0]
     boss_csv_index_df_obse_index[0] = [0]
     
@@ -1410,13 +1396,16 @@ if __name__ == '__main__':
                                                       estimated_object_ori)
     #input('test')
     #compute error
-    error = compute_distance(estimated_object_pos,pw_T_object_pos)
-    boss_PFPE_df[0]=[error]
+    err_opti_esti_pos = compute_pos_err_bt_2_points(estimated_object_pos,pw_T_object_pos)
+    err_opti_esti_ang = compute_ang_err_bt_2_points(estimated_object_ori,pw_T_object_ori)
+    err_opti_esti_sum = err_opti_esti_pos + err_opti_esti_ang
+    boss_PFPE_df[0]=[err_opti_esti_sum]
+    boss_PFPM_df[0]=[err_opti_esti_sum]
     boss_csv_index_df_PFPE[0] = [0]
-    boss_PFPM_df[0]=[error]
     boss_csv_index_df_PFPM[0] = [0]
-    boss_csv_index_df_PFPM_index[0] = [0]
     boss_csv_index_df_PFPE_index[0] = [0]
+    boss_csv_index_df_PFPM_index[0] = [0]
+    
     #initial_parameter.particle_cloud #parameter of particle
     #initial_parameter.pybullet_particle_env_collection #env of simulation
     #initial_parameter.fake_robot_id_collection #id of robot in simulation
@@ -1448,7 +1437,7 @@ if __name__ == '__main__':
     rob_link_9_ang_old_PM = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_old_PM[1])
     
     while True:
-        
+        print("I am here")
         if t_end == 0 :
             time_consuming = 0
         else:
@@ -1509,9 +1498,9 @@ if __name__ == '__main__':
         pw_T_obj_ori_opti = copy.deepcopy(pw_T_object_ori)
         
         #compute distance between old DOPE obj and cur DOPE obj (position and angle)
-        dis_betw_cur_and_old = compute_distance_between_2_points_3D(dope_obj_pos_cur,dope_obj_pos_old)
+        dis_betw_cur_and_old = compute_pos_err_bt_2_points(dope_obj_pos_cur,dope_obj_pos_old)
         ang_betw_cur_and_old = compute_ang_err_bt_2_points(dope_obj_ori_cur,dope_obj_ori_old)
-        dis_betw_cur_and_old_PM = compute_distance_between_2_points_3D(dope_obj_pos_cur,dope_obj_pos_old_PM)
+        dis_betw_cur_and_old_PM = compute_pos_err_bt_2_points(dope_obj_pos_cur,dope_obj_pos_old_PM)
         ang_betw_cur_and_old_PM = compute_ang_err_bt_2_points(dope_obj_ori_cur,dope_obj_ori_old_PM)
 
         #compute distance between old robot arm and cur robot arm (position and angle)
@@ -1519,8 +1508,8 @@ if __name__ == '__main__':
         rob_link_9_pose_cur_PM = p_visualisation.getLinkState(real_robot_id,9)
         rob_link_9_ang_cur_PE = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_cur_PE[1])
         rob_link_9_ang_cur_PM = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_cur_PM[1])
-        dis_robcur_robold_PE = compute_distance_between_2_points_3D(rob_link_9_pose_cur_PE[0],rob_link_9_pose_old_PE[0])
-        dis_robcur_robold_PM = compute_distance_between_2_points_3D(rob_link_9_pose_cur_PM[0],rob_link_9_pose_old_PM[0])
+        dis_robcur_robold_PE = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PE[0],rob_link_9_pose_old_PE[0])
+        dis_robcur_robold_PM = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PM[0],rob_link_9_pose_old_PM[0])
         ang_robcur_robold_PE = comp_z_ang(rob_link_9_ang_cur_PE,rob_link_9_ang_old_PE)
         ang_robcur_robold_PM = comp_z_ang(rob_link_9_ang_cur_PM,rob_link_9_ang_old_PM)
 

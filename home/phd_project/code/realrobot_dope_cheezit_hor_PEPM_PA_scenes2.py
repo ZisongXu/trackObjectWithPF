@@ -1275,21 +1275,11 @@ def comp_z_ang(ang1,ang2):
     return theta
 def compute_transformation_matrix(init_robot_pos,init_robot_ori,init_object_pos,init_object_ori):
     robot_transformation_matrix = transformations.quaternion_matrix(init_robot_ori)
-    #print("robot_transformation_matrix:")
-    #print(robot_transformation_matrix)
     ow_T_robot = rotation_4_4_to_transformation_4_4(robot_transformation_matrix,init_robot_pos)
-    #print("ow_T_robot:")
-    #print(ow_T_robot)
     object_transformation_matrix = transformations.quaternion_matrix(init_object_ori)
-    #print("object_transformation_matrix:")
-    #print(object_transformation_matrix)
     ow_T_object = rotation_4_4_to_transformation_4_4(object_transformation_matrix,init_object_pos)
-    #print("ow_T_object:")
-    #print(ow_T_object)
     robot_T_ow = np.linalg.inv(ow_T_robot)
     robot_T_object = np.dot(robot_T_ow,ow_T_object)
-    #print("robot_T_object:")
-    #print(robot_T_object)
     return robot_T_object
 def add_noise_to_Opti(current_pos,sigma_obs):
     mean = current_pos
@@ -1328,13 +1318,10 @@ if __name__ == '__main__':
     a_thresh = 0.05
     d_thresh_PM = 0.002
     a_thresh_PM = 0.01
-    #d_thresh = 10.025
-    #a_thresh = 10.05
-    #d_thresh_PM = 10.025
-    #a_thresh_PM = 10.05
     flag_update_num_PM = 0
     flag_update_num_PE = 0
-    #the sigma that is added to optitrack data
+    flag_write_csv_file = 0
+    #error in xyz axis DOPE
     boss_sigma_obs_x = 0.03973017808163751
     boss_sigma_obs_y = 0.01167211468503462
     boss_sigma_obs_z = 0.02820930183351492
@@ -1355,10 +1342,10 @@ if __name__ == '__main__':
             break
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
-    robot_T_obj_dope_pos = list(trans)
-    robot_T_obj_dope_ori = list(rot)
-    rob_T_obj_dope_3_3 = transformations.quaternion_matrix(robot_T_obj_dope_ori)
-    rob_T_obj_dope = rotation_4_4_to_transformation_4_4(rob_T_obj_dope_3_3,robot_T_obj_dope_pos)
+    rob_T_obj_dope_pos = list(trans)
+    rob_T_obj_dope_ori = list(rot)
+    rob_T_obj_dope_3_3 = transformations.quaternion_matrix(rob_T_obj_dope_ori)
+    rob_T_obj_dope = rotation_4_4_to_transformation_4_4(rob_T_obj_dope_3_3,rob_T_obj_dope_pos)
     #give some time to update the data
     time.sleep(0.5)
     init_robot_pos = ros_listener.robot_pos
@@ -1392,7 +1379,7 @@ if __name__ == '__main__':
     dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_dope_obj_with_visual_small_PE_hor.urdf"),
                                               pw_T_object_pos_dope,
                                               pw_T_object_ori_dope)
-    #initialize pose
+    #initialization pose of DOPE
     dope_obj_pos_init = copy.deepcopy(pw_T_object_pos_dope)
     dope_obj_ang_init = copy.deepcopy(pw_T_object_ang_dope)
     dope_obj_ori_init = copy.deepcopy(pw_T_object_ori_dope)
@@ -1404,16 +1391,11 @@ if __name__ == '__main__':
                           dope_obj_ang_init[2]]
     boss_obs_pose_PFPM.append(dope_obj_pose_init)
     #input('test')
-    #add noise to OptiTrack pose
-    #pose of object from dope
-
     #compute error
     err_opti_dope_pos = compute_pos_err_bt_2_points(pw_T_object_pos,pw_T_object_pos_dope)
     err_opti_dope_ang = compute_ang_err_bt_2_points(pw_T_object_ori,pw_T_object_ori_dope)
     err_opti_dope_sum = err_opti_dope_pos + err_opti_dope_ang
     boss_obse_err_sum_df[0] = [err_opti_dope_sum]
-    boss_obse_err_pos_df[0] = [err_opti_dope_pos]
-    boss_obse_err_ang_df[0] = [err_opti_dope_ang]
     boss_obse_err_pos_df[0] = [err_opti_dope_pos]
     boss_obse_err_ang_df[0] = [err_opti_dope_ang]
     boss_obse_time_df[0] = [0]
@@ -1473,12 +1455,9 @@ if __name__ == '__main__':
     #build an object of class "PFMove"
     robot1 = PFMove()
     robot2 = PFMovePM()
-    #get real object pos cheat
-    #real_object_last_update_pos = pw_T_object_pos
-    #real_object_last_update_ori = pw_T_object_ori
     #run the simulation
     Flag = True
-    #computer DOPE object old pose
+    #compute DOPE object old pose
     dope_obj_pos_old = copy.deepcopy(dope_obj_pos_init)
     dope_obj_ang_old = copy.deepcopy(dope_obj_ang_init)
     dope_obj_ori_old = copy.deepcopy(dope_obj_ori_init)
@@ -1495,20 +1474,13 @@ if __name__ == '__main__':
     rob_link_9_ang_old_PM = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_old_PM[1])
             
     while True:
-        if t_end == 0 :
-            time_consuming = 0
-        else:
-            t_end = time.time()
-            time_consuming = t_end - t_begin
-        #for ij in range(240):
-        
+        #panda robot moves in the visualization window
         #for i_ss in range(240):
         franka_robot.fanka_robot_move(ros_listener.current_joint_values)
         #p_visualisation.stepSimulation()
         time.sleep(1./240.)
         
         #get pose info from DOPE
-
         while True:
             try:
                 (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
@@ -1516,29 +1488,14 @@ if __name__ == '__main__':
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 print("can not find tf")
                 continue
-        robot_T_obj_dope_pos = list(trans)
-        robot_T_obj_dope_ori = list(rot)
-        rob_T_obj_dope_3_3 = transformations.quaternion_matrix(robot_T_obj_dope_ori)
-        rob_T_obj_dope = rotation_4_4_to_transformation_4_4(rob_T_obj_dope_3_3,robot_T_obj_dope_pos)
+        rob_T_obj_dope_pos = list(trans)
+        rob_T_obj_dope_ori = list(rot)
+        rob_T_obj_dope_3_3 = transformations.quaternion_matrix(rob_T_obj_dope_ori)
+        rob_T_obj_dope = rotation_4_4_to_transformation_4_4(rob_T_obj_dope_3_3,rob_T_obj_dope_pos)
         pw_T_object_dope = np.dot(pw_T_robot,rob_T_obj_dope)
         pw_T_object_pos_dope = [pw_T_object_dope[0][3],pw_T_object_dope[1][3],pw_T_object_dope[2][3]]       
         pw_T_object_ori_dope = transformations.quaternion_from_matrix(pw_T_object_dope) 
         pw_T_object_ang_dope = p_visualisation.getEulerFromQuaternion(pw_T_object_ori_dope)
-        
-        #Determine if particles need to be updated
-        robot_T_object = compute_transformation_matrix(ros_listener.robot_pos,
-                                                       ros_listener.robot_ori,
-                                                       ros_listener.object_pos,
-                                                       ros_listener.object_ori)
-        pw_T_robot_3_3 = transformations.quaternion_matrix(pybullet_robot_ori)
-        pw_T_robot = rotation_4_4_to_transformation_4_4(pw_T_robot_3_3,pybullet_robot_pos)
-        pw_T_object = np.dot(pw_T_robot,robot_T_object)
-        pw_T_object_pos = [pw_T_object[0][3],pw_T_object[1][3],pw_T_object[2][3]]       
-        pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
-        pw_T_object_ang = p_visualisation.getEulerFromQuaternion(pw_T_object_ori)
-        
-        
-        
         dope_obj_pos_cur = copy.deepcopy(pw_T_object_pos_dope)
         dope_obj_ang_cur = copy.deepcopy(pw_T_object_ang_dope)
         dope_obj_ori_cur = copy.deepcopy(pw_T_object_ori_dope)
@@ -1551,6 +1508,17 @@ if __name__ == '__main__':
         #display DOPE object in visual model
         display_real_object_in_visual_model(dope_object_id,dope_obj_pos_cur,dope_obj_ori_cur)
         
+        #get ground true pose of robot and object
+        robot_T_object = compute_transformation_matrix(ros_listener.robot_pos,
+                                                       ros_listener.robot_ori,
+                                                       ros_listener.object_pos,
+                                                       ros_listener.object_ori)
+        pw_T_robot_3_3 = transformations.quaternion_matrix(pybullet_robot_ori)
+        pw_T_robot = rotation_4_4_to_transformation_4_4(pw_T_robot_3_3,pybullet_robot_pos)
+        pw_T_object = np.dot(pw_T_robot,robot_T_object)
+        pw_T_object_pos = [pw_T_object[0][3],pw_T_object[1][3],pw_T_object[2][3]]       
+        pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object) 
+        pw_T_object_ang = p_visualisation.getEulerFromQuaternion(pw_T_object_ori)
         pw_T_obj_pos_opti = copy.deepcopy(pw_T_object_pos)
         pw_T_obj_ang_opti = copy.deepcopy(pw_T_object_ang)
         pw_T_obj_ori_opti = copy.deepcopy(pw_T_object_ori)
@@ -1570,11 +1538,10 @@ if __name__ == '__main__':
         dis_robcur_robold_PM = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PM[0],rob_link_9_pose_old_PM[0])
         ang_robcur_robold_PE = comp_z_ang(rob_link_9_ang_cur_PE,rob_link_9_ang_old_PE)
         ang_robcur_robold_PM = comp_z_ang(rob_link_9_ang_cur_PM,rob_link_9_ang_old_PM)
-        
+        #Determine if particles need to be updated
         if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh) or (dis_robcur_robold_PE > d_thresh):
-            
             flag_update_num_PE = flag_update_num_PE + 1
-  
+            flag_write_csv_file = flag_write_csv_file + 1
             print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
             #Cheat
             opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos) #get pos of real object
@@ -1598,7 +1565,6 @@ if __name__ == '__main__':
         if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
             flag_update_num_PM = flag_update_num_PM + 1
             boss_obs_pose_PFPM.append(dope_obj_pose_cur)
-            #print("+")
             opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object
             opti_obj_ori_cur_PM = copy.deepcopy(pw_T_object_ori)
             nois_obj_pos_cur_PM = copy.deepcopy(dope_obj_pos_cur)
@@ -1614,30 +1580,27 @@ if __name__ == '__main__':
             dope_obj_ori_old_PM = copy.deepcopy(dope_obj_ori_cur)
             rob_link_9_pose_old_PM = copy.deepcopy(rob_link_9_pose_cur_PM)
             
-        if flag_update_num_PE == 10:
+        if flag_write_csv_file == 10:
             #boss_obse_index_df.to_csv('obser_error5.csv',index=0,header=0,mode='a')                   
             boss_obse_time_df.to_csv('obser_error5.csv',index=0,header=0,mode='a')
             boss_obse_err_sum_df.to_csv('obser_error5.csv',index=0,header=0,mode='a')
             boss_obse_err_pos_df.to_csv('obser_error5.csv',index=0,header=0,mode='a')
             boss_obse_err_ang_df.to_csv('obser_error5.csv',index=0,header=0,mode='a')  
-            boss_update_flag_obse = 1
             print("write obser file")
-        if flag_update_num_PE == 10:
+        if flag_write_csv_file == 10:
             #boss_PFPE_index_df.to_csv('PFPE_error5.csv',index=0,header=0,mode='a')
             boss_PFPE_time_df.to_csv('PFPE_error5.csv',index=0,header=0,mode='a')
             boss_PFPE_err_sum_df.to_csv('PFPE_error5.csv',index=0,header=0,mode='a')
             boss_PFPE_err_pos_df.to_csv('PFPE_error5.csv',index=0,header=0,mode='a')
             boss_PFPE_err_ang_df.to_csv('PFPE_error5.csv',index=0,header=0,mode='a')
-            boss_update_flag_PFPE = 1
             print("write PFPE file")
-        if flag_update_num_PE == 10:
+        if flag_write_csv_file == 10:
             #boss_PFPM_index_df.to_csv('PFPM_error5.csv',index=0,header=0,mode='a')
             boss_PFPM_time_df.to_csv('PFPM_error5.csv',index=0,header=0,mode='a')
             boss_PFPM_err_sum_df.to_csv('PFPM_error5.csv',index=0,header=0,mode='a')
             boss_PFPM_err_pos_df.to_csv('PFPM_error5.csv',index=0,header=0,mode='a')
             boss_PFPM_err_ang_df.to_csv('PFPM_error5.csv',index=0,header=0,mode='a')
-            boss_update_flag_PFPM = 1   
-            flag_update_num_PE = flag_update_num_PE + 1 
+            flag_write_csv_file = flag_write_csv_file + 1 
             print("write PFPM file")
         if Flag is False:
             break

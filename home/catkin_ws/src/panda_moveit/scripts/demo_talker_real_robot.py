@@ -421,7 +421,7 @@ if __name__ == '__main__':
     #sys.exit()
     wpose = panda.moveit_group.get_current_pose().pose
     waypoints = []
-    wpose.position.y += 0.05
+    wpose.position.y += 0.1
     waypoints.append(copy.deepcopy(wpose))    
     panda.move_through_waypoints(waypoints)
     

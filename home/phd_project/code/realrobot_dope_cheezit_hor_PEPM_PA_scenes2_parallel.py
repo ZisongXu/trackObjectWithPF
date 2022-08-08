@@ -10,6 +10,7 @@ import os.path
 from ssl import ALERT_DESCRIPTION_ILLEGAL_PARAMETER
 
 import rospy
+import threading
 import rospkg
 from std_msgs.msg import String
 from std_msgs.msg import Float32
@@ -34,6 +35,7 @@ import copy
 import os
 import matplotlib.pyplot as plt
 import pandas as pd
+import multiprocessing
 '''
 physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
 p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
@@ -529,9 +531,12 @@ class PFMove():
         return distance           
     #executed_control 
     def update_particle_filter_PE(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
+        self.times = []
         t1 = time.time()
-        self.motion_update_PE(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
+        self.motion_update_PE_parallelised(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
         t2 = time.time()
+        self.times.append(t2-t1)
+        
         self.display_particle_in_visual_model_PE(self.particle_cloud)
         time.sleep(1)
         print("Motion model1 time consuming:",t2-t1)
@@ -572,73 +577,92 @@ class PFMove():
         # print debug info of all particles here
         #input('hit enter to continue')
         return
-        
+    
+    def update_partcile_cloud_pose(self, index, x, y, z, x_angle, y_angle, z_angle):
+        self.particle_cloud[index].x = x
+        self.particle_cloud[index].y = y
+        self.particle_cloud[index].z = z
+        self.particle_cloud[index].x_angle = x_angle
+        self.particle_cloud[index].y_angle = y_angle
+        self.particle_cloud[index].z_angle = z_angle     
+              
     def motion_update_PE(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
-        t_sum = 0
+        start = time.time()
         for index, pybullet_env in enumerate(pybullet_sim_env):
-            self.change_obj_parameters(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
-            #execute the control
+            pipe_parent, pipe_child = multiprocessing.Pipe()
+            self.function_to_parallelise(index, pybullet_env,fake_robot_id, real_robot_joint_pos, pipe_child)
+            x, y, z, x_angle, y_angle, z_angle = pipe_parent.recv()
+            self.update_partcile_cloud_pose(index, x, y, z, x_angle, y_angle, z_angle)
+        end = time.time()
+        print(end - start)
+
+        
+    def motion_update_PE_parallelised(self,pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
+        threads = []
+        
+        start = time.time()
+        for index, pybullet_env in enumerate(pybullet_sim_env):
+            thread = threading.Thread(target=self.function_to_parallelise, args=(index, pybullet_env, fake_robot_id, real_robot_joint_pos))
+            thread.start()
+            threads.append(thread)
+        
+        for thread in threads:
+            thread.join()
+             
+        end = time.time()
+        print(end - start)
+    
+        
+    def function_to_parallelise(self, index, pybullet_env,fake_robot_id, real_robot_joint_pos):
+        self.change_obj_parameters(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
+        #execute the control
+        flag_set_sim = 1
+        while True:
+            if flag_set_sim == 0:
+                break
+            self.set_real_robot_JointPosition(pybullet_env,fake_robot_id[index],real_robot_joint_pos)
+            pybullet_env.stepSimulation()
+            real_rob_joint_list_cur = self.get_real_robot_joint(pybullet_env,fake_robot_id[index])
+            flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur,real_robot_joint_pos)
             #time.sleep(1./240.)
-            t_b1 = time.time()
-            flag_set_sim = 1
-            while True:
-                if flag_set_sim == 0:
-                    break
-                self.set_real_robot_JointPosition(pybullet_env,fake_robot_id[index],real_robot_joint_pos)
-                pybullet_env.stepSimulation()
-                real_rob_joint_list_cur = self.get_real_robot_joint(pybullet_env,fake_robot_id[index])
-                flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur,real_robot_joint_pos)
-                time.sleep(1/240)
-            t_b2 = time.time()
-            t_sum = t_sum + t_b2 - t_b1
-            ### ori: x,y,z,w
-            sim_par_cur_pos,sim_par_cur_ori = self.get_item_pos(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
-            sim_par_cur_angle = pybullet_env.getEulerFromQuaternion(sim_par_cur_ori)
-            #add noise on particle filter
-            normal_x = self.add_noise_2_par(sim_par_cur_pos[0])
-            normal_y = self.add_noise_2_par(sim_par_cur_pos[1])
-            normal_z = self.add_noise_2_par(sim_par_cur_pos[2])
+        ### ori: x,y,z,w
+        sim_par_cur_pos,sim_par_cur_ori = self.get_item_pos(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
+        #add noise on pos of each particle
+        normal_x = self.add_noise_2_par(sim_par_cur_pos[0])
+        normal_y = self.add_noise_2_par(sim_par_cur_pos[1])
+        normal_z = self.add_noise_2_par(sim_par_cur_pos[2])
+        #add noise on ang of each particle
+        quat = copy.deepcopy(sim_par_cur_ori)#x,y,z,w
+        quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3])#w,x,y,z
+        random_dir = random.uniform(0, 2*math.pi)
+        z_axis = random.uniform(-1,1)
+        x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
+        y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
+        angle_noise = self.add_noise_to_init_par(0,boss_sigma_obs_ang)
+        w_quat = math.cos(angle_noise/2.0)
+        x_quat = math.sin(angle_noise/2.0) * x_axis
+        y_quat = math.sin(angle_noise/2.0) * y_axis
+        z_quat = math.sin(angle_noise/2.0) * z_axis
+        ###nois_quat(w,x,y,z); new_quat(w,x,y,z)
+        nois_quat = Quaternion(x=x_quat,y=y_quat,z=z_quat,w=w_quat)
+        new_quat = nois_quat * quat_QuatStyle
+        ###pb_quat(x,y,z,w)
+        pb_quat = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
+        new_angle = p_visualisation.getEulerFromQuaternion(pb_quat)
+        x_angle = new_angle[0]
+        y_angle = new_angle[1]
+        z_angle = new_angle[2]
             
-            quat = copy.deepcopy(sim_par_cur_ori)#x,y,z,w
-            quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3])#w,x,y,z
-            random_dir = random.uniform(0, 2*math.pi)
-            z_axis = random.uniform(-1,1)
-            x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
-            y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
-            angle_noise = self.add_noise_to_init_par(0,boss_sigma_obs_ang)
-            w_quat = math.cos(angle_noise/2.0)
-            x_quat = math.sin(angle_noise/2.0) * x_axis
-            y_quat = math.sin(angle_noise/2.0) * y_axis
-            z_quat = math.sin(angle_noise/2.0) * z_axis
-            ###nois_quat(w,x,y,z); new_quat(w,x,y,z)
-            nois_quat = Quaternion(x=x_quat,y=y_quat,z=z_quat,w=w_quat)
-            new_quat = nois_quat * quat_QuatStyle
-            ###pb_quat(x,y,z,w)
-            pb_quat = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
-            new_angle = p_visualisation.getEulerFromQuaternion(pb_quat)
-            x_angle = new_angle[0]
-            y_angle = new_angle[1]
-            z_angle = new_angle[2]
-            
-            
-            
-            self.particle_cloud[index].x = sim_par_cur_pos[0]
-            self.particle_cloud[index].y = sim_par_cur_pos[1]
-            self.particle_cloud[index].z = sim_par_cur_pos[2]
-            self.particle_cloud[index].x_angle = sim_par_cur_angle[0]
-            self.particle_cloud[index].y_angle = sim_par_cur_angle[1]
-            self.particle_cloud[index].z_angle = sim_par_cur_angle[2]
-            self.particle_cloud[index].x = normal_x
-            self.particle_cloud[index].y = normal_y
-            self.particle_cloud[index].z = normal_z
-            self.particle_cloud[index].x_angle = x_angle
-            self.particle_cloud[index].y_angle = y_angle
-            self.particle_cloud[index].z_angle = z_angle
-            
-            
-            #print("particle_x_before:",sim_par_cur_pos[0]," ","particle_y_before:",sim_par_cur_pos[1])
-            #print("particle_x__after:",self.particle_cloud[index].x," ","particle_y__after:",self.particle_cloud[index].y)
-        print("Time robot movement time in the simulation each update: ",t_sum)
+        #self.particle_cloud[index].x = sim_par_cur_pos[0]
+        #self.particle_cloud[index].y = sim_par_cur_pos[1]
+        #self.particle_cloud[index].z = sim_par_cur_pos[2]
+        #self.particle_cloud[index].x_angle = sim_par_cur_angle[0]
+        #self.particle_cloud[index].y_angle = sim_par_cur_angle[1]
+        #self.particle_cloud[index].z_angle = sim_par_cur_angle[2]
+        self.update_partcile_cloud_pose(index, normal_x, normal_y, normal_z, x_angle, y_angle, z_angle)  
+        #self.update_poses[index] = (normal_x, normal_y, normal_z, x_angle, y_angle, z_angle)
+        # pipe.send()
+
         
     def observation_update_PE(self, opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         nois_obj_x = nois_obj_pos_cur[0]
@@ -1561,6 +1585,7 @@ if __name__ == '__main__':
             rob_link_9_pose_old_PE = copy.deepcopy(rob_link_9_pose_cur_PE)  
             display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
             print("PE: Finished")
+            print(np.mean(robot1.times))
 
         if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
             flag_update_num_PM = flag_update_num_PM + 1

@@ -103,7 +103,7 @@ class Franka_robot():
     def __init__(self,franka_robot_id):
         self.franka_robot_id = franka_robot_id
     def fanka_robot_move(self,targetPositionsJoints):
-    	self.setJoinVisual(self.franka_robot_id,targetPositionsJoints)
+        self.setJoinVisual(self.franka_robot_id,targetPositionsJoints)
         
     def setJoinVisual(self,robot, position):
         #position[7] = 0.039916139

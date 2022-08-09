@@ -370,7 +370,7 @@ class Panda:
         self.gripper_move_client.send_goal(move_goal)
 
     def fully_open_gripper(self):
-    	self.set_gripper_openning(0.08)
+        self.set_gripper_openning(0.08)
 
     def fully_close_gripper(self):
         self.set_gripper_openning(0.0)
@@ -421,7 +421,7 @@ if __name__ == '__main__':
     #sys.exit()
     wpose = panda.moveit_group.get_current_pose().pose
     waypoints = []
-    wpose.position.y += 0.01
+    wpose.position.y += 0.1
     waypoints.append(copy.deepcopy(wpose))    
     panda.move_through_waypoints(waypoints)
     

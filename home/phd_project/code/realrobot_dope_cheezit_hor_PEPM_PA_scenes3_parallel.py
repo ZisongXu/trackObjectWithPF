@@ -103,7 +103,7 @@ class Franka_robot():
     def __init__(self,franka_robot_id):
         self.franka_robot_id = franka_robot_id
     def fanka_robot_move(self,targetPositionsJoints):
-    	self.setJoinVisual(self.franka_robot_id,targetPositionsJoints)
+        self.setJoinVisual(self.franka_robot_id,targetPositionsJoints)
         
     def setJoinVisual(self,robot, position):
         #position[7] = 0.039916139
@@ -118,7 +118,7 @@ class Franka_robot():
                 p_visualisation.resetJointState(robot,
                                                 joint_index,
                                                 targetValue=position[joint_index])
-        
+    
     def setJointPosition(self,robot, position):
         #position[7] = 0.039916139
         #position[8] = 0.039916139
@@ -629,6 +629,7 @@ class PFMove():
             time.sleep(1./240.)
         ### ori: x,y,z,w
         sim_par_cur_pos,sim_par_cur_ori = self.get_item_pos(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
+        sim_par_cur_ang = p_visualisation.getEulerFromQuaternion(sim_par_cur_ori)
         #add noise on pos of each particle
         normal_x = self.add_noise_2_par(sim_par_cur_pos[0])
         normal_y = self.add_noise_2_par(sim_par_cur_pos[1])
@@ -654,6 +655,9 @@ class PFMove():
         x_angle = new_angle[0]
         y_angle = new_angle[1]
         z_angle = new_angle[2]
+        #x_angle = sim_par_cur_ang[0]
+        #y_angle = sim_par_cur_ang[1]
+        #z_angle = sim_par_cur_ang[2]
             
         #self.particle_cloud[index].x = sim_par_cur_pos[0]
         #self.particle_cloud[index].y = sim_par_cur_pos[1]
@@ -1637,7 +1641,7 @@ if __name__ == '__main__':
             dope_obj_ori_old_PM = copy.deepcopy(dope_obj_ori_cur)
             rob_link_9_pose_old_PM = copy.deepcopy(rob_link_9_pose_cur_PM)
             
-        if  flag_write_csv_file > 7 and write_file_flag_obse == 0:
+        if  flag_write_csv_file > 15 and write_file_flag_obse == 0:
             #boss_obse_index_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')                   
             boss_obse_time_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')
             boss_obse_err_sum_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')
@@ -1645,7 +1649,7 @@ if __name__ == '__main__':
             boss_obse_err_ang_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')
             print("write obser file")
             write_file_flag_obse = write_file_flag_obse + 1
-        if  flag_write_csv_file > 7 and write_file_flag_PFPE == 0:
+        if  flag_write_csv_file > 15 and write_file_flag_PFPE == 0:
             #boss_PFPE_index_df.to_csv('1PFPE_error_scenes3.csv',index=0,header=0,mode='a')
             boss_PFPE_time_df.to_csv('1PFPE_error_scenes3.csv',index=0,header=0,mode='a')
             boss_PFPE_err_sum_df.to_csv('1PFPE_error_scenes3.csv',index=0,header=0,mode='a')
@@ -1653,7 +1657,7 @@ if __name__ == '__main__':
             boss_PFPE_err_ang_df.to_csv('1PFPE_error_scenes3.csv',index=0,header=0,mode='a')
             print("write PFPE file")
             write_file_flag_PFPE = write_file_flag_PFPE + 1
-        if  flag_write_csv_file > 7 and write_file_flag_PFPM == 0:
+        if  flag_write_csv_file > 15 and write_file_flag_PFPM == 0:
             #boss_PFPM_index_df.to_csv('1PFPM_error_scenes3.csv',index=0,header=0,mode='a')
             boss_PFPM_time_df.to_csv('1PFPM_error_scenes3.csv',index=0,header=0,mode='a')
             boss_PFPM_err_sum_df.to_csv('1PFPM_error_scenes3.csv',index=0,header=0,mode='a')

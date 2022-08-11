@@ -1349,7 +1349,7 @@ def cheat_dope_obj_ang(angle):
         ang = -math.pi
     return ang
 def angle_correction(angle):
-    print("angle before: ",angle)
+    #print("angle before: ",angle)
     if angle >= (math.pi*3.0/2.0):
         angle = angle - 2 * math.pi
     elif math.pi/2.0 <= angle and angle < (math.pi*3.0/2.0):
@@ -1359,7 +1359,7 @@ def angle_correction(angle):
     elif angle <= -(math.pi*3.0/2.0):
         angle = angle + 2 * math.pi 
     angle = abs(angle)
-    print("angle _after: ",angle)
+    #print("angle _after: ",angle)
     return angle
 if __name__ == '__main__':
     t_begin = time.time()
@@ -1374,7 +1374,7 @@ if __name__ == '__main__':
     flag_record_PM_file = 0
     flag_write_csv_file = 0
     #error in xyz axis DOPE
-    boss_pf_update_interval_in_real = 0.5
+    boss_pf_update_interval_in_real = 0.50
     boss_sigma_obs_x = 0.03973017808163751
     boss_sigma_obs_y = 0.01167211468503462
     boss_sigma_obs_z = 0.02820930183351492

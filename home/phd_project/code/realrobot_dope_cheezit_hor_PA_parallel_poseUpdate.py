@@ -565,6 +565,7 @@ class PFMove():
 
         t_err_generate = time.time()
         if flag_update_num_PE % 5 == 0:
+            print("flag_update_num_PE:",flag_update_num_PE)
             boss_obse_err_sum_df[flag_update_num_PE] = err_opti_dope_pos + err_opti_dope_ang
             boss_obse_err_pos_df[flag_update_num_PE] = err_opti_dope_pos
             boss_obse_err_ang_df[flag_update_num_PE] = err_opti_dope_ang
@@ -1351,7 +1352,7 @@ def cheat_dope_obj_ang(angle):
         ang = -math.pi
     return ang
 def angle_correction(angle):
-    print("angle before: ",angle)
+    #print("angle before: ",angle)
     if angle >= (math.pi*3.0/2.0):
         angle = angle - 2 * math.pi
     elif math.pi/2.0 <= angle and angle < (math.pi*3.0/2.0):
@@ -1361,7 +1362,7 @@ def angle_correction(angle):
     elif angle <= -(math.pi*3.0/2.0):
         angle = angle + 2 * math.pi 
     angle = abs(angle)
-    print("angle _after: ",angle)
+    #print("angle _after: ",angle)
     return angle
 if __name__ == '__main__':
     t_begin = time.time()
@@ -1369,8 +1370,8 @@ if __name__ == '__main__':
     particle_num = 100
     d_thresh = 0.002
     a_thresh = 0.01
-    d_thresh_PM = 0.003
-    a_thresh_PM = 0.015
+    d_thresh_PM = 0.002
+    a_thresh_PM = 0.010
     flag_update_num_PM = 0
     flag_update_num_PE = 0
     flag_record_PM_file = 0
@@ -1606,6 +1607,7 @@ if __name__ == '__main__':
         
         #Determine if particles need to be updated
         if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh) or (dis_robcur_robold_PE > d_thresh):
+            t_begin_PFPE = time.time()
             flag_update_num_PE = flag_update_num_PE + 1
             flag_write_csv_file = flag_write_csv_file + 1
             print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
@@ -1628,7 +1630,8 @@ if __name__ == '__main__':
             display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
             print("Average time of updating: ",np.mean(robot1.times))
             print("PE: Finished")
-            
+            t_finish_PFPE = time.time()
+            print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
 
         if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
             flag_update_num_PM = flag_update_num_PM + 1
@@ -1649,27 +1652,27 @@ if __name__ == '__main__':
             rob_link_9_pose_old_PM = copy.deepcopy(rob_link_9_pose_cur_PM)
             
         if  flag_write_csv_file > 15 and write_file_flag_obse == 0:
-            #boss_obse_index_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')                   
-            boss_obse_time_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_obse_err_sum_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_obse_err_pos_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_obse_err_ang_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')
+            #boss_obse_index_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')                   
+            boss_obse_time_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
+            boss_obse_err_sum_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
+            boss_obse_err_pos_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
+            boss_obse_err_ang_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
             print("write obser file")
             write_file_flag_obse = write_file_flag_obse + 1
         if  flag_write_csv_file > 15 and write_file_flag_PFPE == 0:
-            #boss_PFPE_index_df.to_csv('1PFPE_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_PFPE_time_df.to_csv('1PFPE_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_sum_df.to_csv('1PFPE_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_pos_df.to_csv('1PFPE_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_ang_df.to_csv('1PFPE_error_scenes3.csv',index=0,header=0,mode='a')
+            #boss_PFPE_index_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
+            boss_PFPE_time_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_sum_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_pos_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_ang_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
             print("write PFPE file")
             write_file_flag_PFPE = write_file_flag_PFPE + 1
         if  flag_write_csv_file > 15 and write_file_flag_PFPM == 0:
-            #boss_PFPM_index_df.to_csv('1PFPM_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_PFPM_time_df.to_csv('1PFPM_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_sum_df.to_csv('1PFPM_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_pos_df.to_csv('1PFPM_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_ang_df.to_csv('1PFPM_error_scenes3.csv',index=0,header=0,mode='a')
+            #boss_PFPM_index_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
+            boss_PFPM_time_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_sum_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_pos_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_ang_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
             print("write PFPM file")
             write_file_flag_PFPM = write_file_flag_PFPM + 1
         if Flag is False:

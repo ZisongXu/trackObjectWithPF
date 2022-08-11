@@ -285,7 +285,7 @@ class InitialSimulationModel():
             self.particle_cloud.append(particle)
 
     def generate_random_pose(self,noise_object_pose, pw_T_object_ori_dope):
-        #angle = copy.deepcopy([noise_object_pose[3],noise_object_pose[4],noise_object_pose[5]])
+        angle = copy.deepcopy([noise_object_pose[3],noise_object_pose[4],noise_object_pose[5]])
         quat = copy.deepcopy(pw_T_object_ori_dope)#x,y,z,w
         quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3])#w,x,y,z
         x = self.add_noise_to_init_par(noise_object_pose[0],boss_sigma_obs_x)
@@ -980,6 +980,7 @@ class PFMovePM():
 
     def motion_update_PM(self,nois_obj_ang_cur):
         if flag_update_num_PM < 2:
+            print("I am in the obs list")
             length = len(boss_obs_pose_PFPM)
             obs_curr_pose = copy.deepcopy(boss_obs_pose_PFPM[length-1])
             obs_last_pose = copy.deepcopy(boss_obs_pose_PFPM[length-2])
@@ -993,6 +994,7 @@ class PFMovePM():
             parO_T_parN = copy.deepcopy(obsO_T_obsN)
             self.update_particle_in_motion_model_PM(parO_T_parN,nois_obj_ang_cur)
         else:
+            print("I am in the est list")
             length = len(boss_est_pose_PFPM)
             est_curr_pose = copy.deepcopy(boss_est_pose_PFPM[length-1])
             est_last_pose = copy.deepcopy(boss_est_pose_PFPM[length-2])
@@ -1005,7 +1007,7 @@ class PFMovePM():
             estO_T_estN = self.compute_transformation_matrix(est_last_pos, est_last_ori, est_curr_pos, est_curr_ori)
             parO_T_parN = copy.deepcopy(estO_T_estN)
             self.update_particle_in_motion_model_PM(parO_T_parN,nois_obj_ang_cur)
-            
+        #input("test")    
         return
 
     def observation_update_PM(self,opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
@@ -1045,7 +1047,7 @@ class PFMovePM():
             weight_z = self.normal_distribution(dis_z, mean, sigma_z)
             weight_pos = weight_x + weight_y + weight_z
             dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
-            weight_xyz = self.normal_distribution(dis_xyz, mean, 0.025)
+            weight_xyz = self.normal_distribution(dis_xyz, mean, 0.05)
             
             #pybullet x,y,z,w
             nois_obj_ang = [nois_obj_pose[3],nois_obj_pose[4],nois_obj_pose[5]]
@@ -1061,7 +1063,7 @@ class PFMovePM():
             theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
             theta = theta_over_2 * 2
             weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
-            weight = weight_xyz * weight_ang *10000
+            weight = weight_xyz * weight_ang
             particle.w = weight
             
         Flag = self.normalize_particles_PM()
@@ -1078,7 +1080,10 @@ class PFMovePM():
         return object_estimate_pose
  
     def update_particle_in_motion_model_PM(self,parO_T_parN,nois_obj_ang_cur):
+        #print("test_parO_T_parN0:")
+        #print(parO_T_parN)
         for index, pybullet_env in enumerate(self.pybullet_env_id_collection_PM):
+            #print("=================================================")
             pw_T_parO_x = self.particle_cloud_PM[index].x
             pw_T_parO_y = self.particle_cloud_PM[index].y
             pw_T_parO_z = self.particle_cloud_PM[index].z
@@ -1092,13 +1097,26 @@ class PFMovePM():
             pw_T_parO_3_3 = transformations.quaternion_matrix(pw_T_parO_ori)
             pw_T_parO = self.rotation_4_4_to_transformation_4_4(pw_T_parO_3_3,pw_T_parO_pos)
             pw_T_parN = np.dot(pw_T_parO,parO_T_parN)
-            pw_T_parN_pos = [pw_T_parN[0][3], pw_T_parN[1][3], pw_T_parN[2][3]]               
+            pw_T_parN_pos = [pw_T_parN[0][3], pw_T_parN[1][3], pw_T_parN[2][3]]        
             pw_T_parN_ori = transformations.quaternion_from_matrix(pw_T_parN) 
             pw_T_parN_ang = pybullet_env.getEulerFromQuaternion(pw_T_parN_ori)
+            #test
+            par_curr_pos = copy.deepcopy(pw_T_parN_pos)
+            par_curr_ori = copy.deepcopy(pw_T_parN_ori)
+            par_last_pos = copy.deepcopy(pw_T_parO_pos)
+            par_last_ori = copy.deepcopy(pw_T_parO_ori)
+            test_parO_T_parN = self.compute_transformation_matrix(par_last_pos, par_last_ori, par_curr_pos, par_curr_ori)
+            #print("test_parO_T_parN"+str(index+1)+":")
+            #print(test_parO_T_parN)
+            
+
             #add noise on particle filter
-            normal_x = self.add_noise_2_par(pw_T_parN_pos[0])
-            normal_y = self.add_noise_2_par(pw_T_parN_pos[1])
-            normal_z = self.add_noise_2_par(pw_T_parN_pos[2])
+            #normal_x = self.add_noise_2_par(pw_T_parN_pos[0])
+            #normal_y = self.add_noise_2_par(pw_T_parN_pos[1])
+            #normal_z = self.add_noise_2_par(pw_T_parN_pos[2])
+            normal_x = pw_T_parN_pos[0]
+            normal_y = pw_T_parN_pos[1]
+            normal_z = pw_T_parN_pos[2]
             
             quat = copy.deepcopy(pw_T_parN_ori)#x,y,z,w
             quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3])#w,x,y,z
@@ -1107,6 +1125,7 @@ class PFMovePM():
             x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
             y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
             angle_noise = self.add_noise_to_init_par(0,boss_sigma_obs_ang)
+            #angle_noise = self.add_noise_to_init_par(0,0.03)
             w_quat = math.cos(angle_noise/2.0)
             x_quat = math.sin(angle_noise/2.0) * x_axis
             y_quat = math.sin(angle_noise/2.0) * y_axis
@@ -1120,7 +1139,9 @@ class PFMovePM():
             x_angle = nois_obj_ang_cur[0]
             y_angle = nois_obj_ang_cur[1]
             z_angle = nois_obj_ang_cur[2]
-            
+            #x_angle = pw_T_parN_ang[0]
+            #y_angle = pw_T_parN_ang[1]
+            #z_angle = pw_T_parN_ang[2]+angle_noise
             
             self.particle_cloud_PM[index].x = pw_T_parN_pos[0]
             self.particle_cloud_PM[index].y = pw_T_parN_pos[1]
@@ -1367,9 +1388,9 @@ def angle_correction(angle):
 if __name__ == '__main__':
     t_begin = time.time()
     particle_cloud = []
-    particle_num = 100
-    d_thresh = 0.002
-    a_thresh = 0.01
+    particle_num = 50
+    d_thresh = 2
+    a_thresh = 10
     d_thresh_PM = 0.002
     a_thresh_PM = 0.010
     flag_update_num_PM = 0
@@ -1476,7 +1497,7 @@ if __name__ == '__main__':
     estimated_object_ang = [estimated_object_set[3],estimated_object_set[4],estimated_object_set[5]]
     estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
     boss_est_pose_PFPM.append(estimated_object_set)
-    initial_parameter.display_particle()
+    #initial_parameter.display_particle()
     initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
     initial_parameter.display_particle_PM()
     

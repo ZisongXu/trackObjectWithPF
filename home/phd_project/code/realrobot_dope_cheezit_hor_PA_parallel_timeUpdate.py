@@ -622,15 +622,13 @@ class PFMove():
     def function_to_parallelise(self, index, pybullet_env,fake_robot_id, real_robot_joint_pos):
         self.change_obj_parameters(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
         #execute the control
-        flag_set_sim = 1
-        while True:
-            if flag_set_sim == 0:
-                break
+
+        pf_update_interval_in_sim = boss_pf_update_interval_in_real * 240
+        #boss_pf_update_interval_in_real
+        for time_index in range(int(pf_update_interval_in_sim)):
             self.set_real_robot_JointPosition(pybullet_env,fake_robot_id[index],real_robot_joint_pos)
             pybullet_env.stepSimulation()
-            real_rob_joint_list_cur = self.get_real_robot_joint(pybullet_env,fake_robot_id[index])
-            flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur,real_robot_joint_pos)
-            #time.sleep(1./240.)
+
         ### ori: x,y,z,w
         sim_par_cur_pos,sim_par_cur_ori = self.get_item_pos(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
         sim_par_cur_ang = p_visualisation.getEulerFromQuaternion(sim_par_cur_ori)
@@ -1376,7 +1374,7 @@ if __name__ == '__main__':
     flag_record_PM_file = 0
     flag_write_csv_file = 0
     #error in xyz axis DOPE
-    pf_update_interval = 0.5
+    boss_pf_update_interval_in_real = 0.5
     boss_sigma_obs_x = 0.03973017808163751
     boss_sigma_obs_y = 0.01167211468503462
     boss_sigma_obs_z = 0.02820930183351492
@@ -1534,7 +1532,7 @@ if __name__ == '__main__':
     write_file_flag_obse = 0
     write_file_flag_PFPE = 0
     write_file_flag_PFPM = 0
-    pf_update_rate = rospy.Rate(1.0/pf_update_interval)
+    pf_update_rate = rospy.Rate(1.0/boss_pf_update_interval_in_real)
     print("Welcome to Our Approach !")
     
     while True:
@@ -1588,22 +1586,22 @@ if __name__ == '__main__':
         pw_T_obj_ori_opti = copy.deepcopy(pw_T_object_ori)
         
         #compute distance between old DOPE obj and cur DOPE obj (position and angle)
-        dis_betw_cur_and_old = compute_pos_err_bt_2_points(dope_obj_pos_cur,dope_obj_pos_old)
-        ang_betw_cur_and_old = compute_ang_err_bt_2_points(dope_obj_ori_cur,dope_obj_ori_old)
-        dis_betw_cur_and_old_PM = compute_pos_err_bt_2_points(dope_obj_pos_cur,dope_obj_pos_old_PM)
-        ang_betw_cur_and_old_PM = compute_ang_err_bt_2_points(dope_obj_ori_cur,dope_obj_ori_old_PM)
+        #dis_betw_cur_and_old = compute_pos_err_bt_2_points(dope_obj_pos_cur,dope_obj_pos_old)
+        #ang_betw_cur_and_old = compute_ang_err_bt_2_points(dope_obj_ori_cur,dope_obj_ori_old)
+        #dis_betw_cur_and_old_PM = compute_pos_err_bt_2_points(dope_obj_pos_cur,dope_obj_pos_old_PM)
+        #ang_betw_cur_and_old_PM = compute_ang_err_bt_2_points(dope_obj_ori_cur,dope_obj_ori_old_PM)
 
         #compute distance between old robot arm and cur robot arm (position and angle)
         rob_link_9_pose_cur_PE = p_visualisation.getLinkState(real_robot_id,9)
         rob_link_9_pose_cur_PM = p_visualisation.getLinkState(real_robot_id,9)
         rob_link_9_ang_cur_PE = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_cur_PE[1])
         rob_link_9_ang_cur_PM = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_cur_PM[1])
-        dis_robcur_robold_PE = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PE[0],rob_link_9_pose_old_PE[0])
-        dis_robcur_robold_PM = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PM[0],rob_link_9_pose_old_PM[0])
-        ang_robcur_robold_PE = comp_z_ang(rob_link_9_ang_cur_PE,rob_link_9_ang_old_PE)
-        ang_robcur_robold_PM = comp_z_ang(rob_link_9_ang_cur_PM,rob_link_9_ang_old_PM)
+        #dis_robcur_robold_PE = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PE[0],rob_link_9_pose_old_PE[0])
+        #dis_robcur_robold_PM = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PM[0],rob_link_9_pose_old_PM[0])
+        #ang_robcur_robold_PE = comp_z_ang(rob_link_9_ang_cur_PE,rob_link_9_ang_old_PE)
+        #ang_robcur_robold_PM = comp_z_ang(rob_link_9_ang_cur_PM,rob_link_9_ang_old_PM)
         
-        write_file_judgement = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PE[0],rob_pose_init[0])
+        #write_file_judgement = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PE[0],rob_pose_init[0])
         
         #Determine if particles need to be updated
         while True:
@@ -1622,10 +1620,10 @@ if __name__ == '__main__':
                                                 ros_listener.current_joint_values,
                                                 nois_obj_pos_cur,
                                                 nois_obj_ang_cur)
-            dope_obj_pos_old = copy.deepcopy(dope_obj_pos_cur)
-            dope_obj_ang_old = copy.deepcopy(dope_obj_ang_cur)
-            dope_obj_ori_old = copy.deepcopy(dope_obj_ori_cur)
-            rob_link_9_pose_old_PE = copy.deepcopy(rob_link_9_pose_cur_PE)  
+            #dope_obj_pos_old = copy.deepcopy(dope_obj_pos_cur)
+            #dope_obj_ang_old = copy.deepcopy(dope_obj_ang_cur)
+            #dope_obj_ori_old = copy.deepcopy(dope_obj_ori_cur)
+            #rob_link_9_pose_old_PE = copy.deepcopy(rob_link_9_pose_cur_PE)  
             display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
             print("Average time of updating: ",np.mean(robot1.times))
             print("PE: Finished")
@@ -1641,12 +1639,13 @@ if __name__ == '__main__':
                                                 opti_obj_ori_cur_PM,
                                                 nois_obj_pos_cur_PM,
                                                 nois_obj_ang_cur_PM)
-            dope_obj_pos_old_PM = copy.deepcopy(dope_obj_pos_cur)
-            dope_obj_ang_old_PM = copy.deepcopy(dope_obj_ang_cur) 
-            dope_obj_ori_old_PM = copy.deepcopy(dope_obj_ori_cur)
-            rob_link_9_pose_old_PM = copy.deepcopy(rob_link_9_pose_cur_PM)
+            #dope_obj_pos_old_PM = copy.deepcopy(dope_obj_pos_cur)
+            #dope_obj_ang_old_PM = copy.deepcopy(dope_obj_ang_cur) 
+            #dope_obj_ori_old_PM = copy.deepcopy(dope_obj_ori_cur)
+            #rob_link_9_pose_old_PM = copy.deepcopy(rob_link_9_pose_cur_PM)
             
             pf_update_rate.sleep()
+            break
             
         if  flag_write_csv_file > 15 and write_file_flag_obse == 0:
             #boss_obse_index_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')                   

@@ -1376,6 +1376,7 @@ if __name__ == '__main__':
     flag_record_PM_file = 0
     flag_write_csv_file = 0
     #error in xyz axis DOPE
+    pf_update_interval = 0.5
     boss_sigma_obs_x = 0.03973017808163751
     boss_sigma_obs_y = 0.01167211468503462
     boss_sigma_obs_z = 0.02820930183351492
@@ -1533,7 +1534,7 @@ if __name__ == '__main__':
     write_file_flag_obse = 0
     write_file_flag_PFPE = 0
     write_file_flag_PFPM = 0
-    
+    pf_update_rate = rospy.Rate(1.0/pf_update_interval)
     print("Welcome to Our Approach !")
     
     while True:
@@ -1605,7 +1606,8 @@ if __name__ == '__main__':
         write_file_judgement = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PE[0],rob_pose_init[0])
         
         #Determine if particles need to be updated
-        if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh) or (dis_robcur_robold_PE > d_thresh):
+        while True:
+        #if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh) or (dis_robcur_robold_PE > d_thresh):
             flag_update_num_PE = flag_update_num_PE + 1
             flag_write_csv_file = flag_write_csv_file + 1
             print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
@@ -1620,7 +1622,6 @@ if __name__ == '__main__':
                                                 ros_listener.current_joint_values,
                                                 nois_obj_pos_cur,
                                                 nois_obj_ang_cur)
-            
             dope_obj_pos_old = copy.deepcopy(dope_obj_pos_cur)
             dope_obj_ang_old = copy.deepcopy(dope_obj_ang_cur)
             dope_obj_ori_old = copy.deepcopy(dope_obj_ori_cur)
@@ -1629,24 +1630,23 @@ if __name__ == '__main__':
             print("Average time of updating: ",np.mean(robot1.times))
             print("PE: Finished")
             
-
-        if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
+        #if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
             flag_update_num_PM = flag_update_num_PM + 1
             boss_obs_pose_PFPM.append(dope_obj_pose_cur)
             opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object
             opti_obj_ori_cur_PM = copy.deepcopy(pw_T_object_ori)
             nois_obj_pos_cur_PM = copy.deepcopy(dope_obj_pos_cur)
             nois_obj_ang_cur_PM = copy.deepcopy(dope_obj_ang_cur)
-            
             Flag = robot2.real_robot_control_PM(opti_obj_pos_cur_PM,
                                                 opti_obj_ori_cur_PM,
                                                 nois_obj_pos_cur_PM,
                                                 nois_obj_ang_cur_PM)
-            
             dope_obj_pos_old_PM = copy.deepcopy(dope_obj_pos_cur)
             dope_obj_ang_old_PM = copy.deepcopy(dope_obj_ang_cur) 
             dope_obj_ori_old_PM = copy.deepcopy(dope_obj_ori_cur)
             rob_link_9_pose_old_PM = copy.deepcopy(rob_link_9_pose_cur_PM)
+            
+            pf_update_rate.sleep()
             
         if  flag_write_csv_file > 15 and write_file_flag_obse == 0:
             #boss_obse_index_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')                   

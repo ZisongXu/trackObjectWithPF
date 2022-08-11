@@ -531,6 +531,7 @@ class PFMove():
         return distance           
     #executed_control 
     def update_particle_filter_PE(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
+        global flag_record_PM_file
         self.times = []
         t1 = time.time()
         self.motion_update_PE_parallelised(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
@@ -563,17 +564,20 @@ class PFMove():
         err_opti_PFPE_ang = angle_correction(err_opti_PFPE_ang)
 
         t_err_generate = time.time()
-        boss_obse_err_sum_df[flag_update_num_PE] = err_opti_dope_pos + err_opti_dope_ang
-        boss_obse_err_pos_df[flag_update_num_PE] = err_opti_dope_pos
-        boss_obse_err_ang_df[flag_update_num_PE] = err_opti_dope_ang
-        boss_obse_time_df[flag_update_num_PE] = [t_err_generate-agl_start_t]
-        boss_obse_index_df[flag_update_num_PE] = [flag_update_num_PE]
-        
-        boss_PFPE_err_sum_df[flag_update_num_PE] = err_opti_PFPE_pos + err_opti_PFPE_ang
-        boss_PFPE_err_pos_df[flag_update_num_PE] = err_opti_PFPE_pos
-        boss_PFPE_err_ang_df[flag_update_num_PE] = err_opti_PFPE_ang
-        boss_PFPE_time_df[flag_update_num_PE] = [t_err_generate-agl_start_t]
-        boss_PFPE_index_df[flag_update_num_PE] = [flag_update_num_PE]
+        if flag_update_num_PE % 5 == 0:
+            boss_obse_err_sum_df[flag_update_num_PE] = err_opti_dope_pos + err_opti_dope_ang
+            boss_obse_err_pos_df[flag_update_num_PE] = err_opti_dope_pos
+            boss_obse_err_ang_df[flag_update_num_PE] = err_opti_dope_ang
+            boss_obse_time_df[flag_update_num_PE] = [t_err_generate-agl_start_t]
+            boss_obse_index_df[flag_update_num_PE] = [flag_update_num_PE]
+            
+            boss_PFPE_err_sum_df[flag_update_num_PE] = err_opti_PFPE_pos + err_opti_PFPE_ang
+            boss_PFPE_err_pos_df[flag_update_num_PE] = err_opti_PFPE_pos
+            boss_PFPE_err_ang_df[flag_update_num_PE] = err_opti_PFPE_ang
+            boss_PFPE_time_df[flag_update_num_PE] = [t_err_generate-agl_start_t]
+            boss_PFPE_index_df[flag_update_num_PE] = [flag_update_num_PE]
+            
+            flag_record_PM_file = 1
         
         
         # print debug info of all particles here
@@ -944,6 +948,7 @@ class PFMovePM():
       
     #executed_control 
     def update_particle_filter_PM(self, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
+        global flag_record_PM_file
         t1 = time.time()
         self.motion_update_PM(nois_obj_ang_cur)
         t2 = time.time()
@@ -961,12 +966,13 @@ class PFMovePM():
         err_opti_PFPM_ang = compute_ang_err_bt_2_points(estimated_object_ori_PM,opti_obj_ori_cur)
         err_opti_PFPM_ang = angle_correction(err_opti_PFPM_ang)
         t_err_generate = time.time()
-        boss_PFPM_err_sum_df[flag_update_num_PM] = err_opti_PFPM_pos + err_opti_PFPM_ang
-        boss_PFPM_err_pos_df[flag_update_num_PM] = err_opti_PFPM_pos
-        boss_PFPM_err_ang_df[flag_update_num_PM] = err_opti_PFPM_ang
-        boss_PFPM_time_df[flag_update_num_PM] = [t_err_generate-agl_start_t]
-        boss_PFPM_index_df[flag_update_num_PM] = [flag_update_num_PM]
-        
+        if flag_record_PM_file == 1:
+            boss_PFPM_err_sum_df[flag_update_num_PM] = err_opti_PFPM_pos + err_opti_PFPM_ang
+            boss_PFPM_err_pos_df[flag_update_num_PM] = err_opti_PFPM_pos
+            boss_PFPM_err_ang_df[flag_update_num_PM] = err_opti_PFPM_ang
+            boss_PFPM_time_df[flag_update_num_PM] = [t_err_generate-agl_start_t]
+            boss_PFPM_index_df[flag_update_num_PM] = [flag_update_num_PM]
+            flag_record_PM_file = 0
         # print debug info of all particles here
         #input('hit enter to continue')
         return
@@ -1360,13 +1366,14 @@ def angle_correction(angle):
 if __name__ == '__main__':
     t_begin = time.time()
     particle_cloud = []
-    particle_num = 75
-    d_thresh = 0.01
-    a_thresh = 0.05
+    particle_num = 100
+    d_thresh = 0.002
+    a_thresh = 0.01
     d_thresh_PM = 0.003
     a_thresh_PM = 0.015
     flag_update_num_PM = 0
     flag_update_num_PE = 0
+    flag_record_PM_file = 0
     flag_write_csv_file = 0
     #error in xyz axis DOPE
     boss_sigma_obs_x = 0.03973017808163751

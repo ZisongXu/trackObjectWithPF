@@ -36,6 +36,9 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 import multiprocessing
+#from sksurgerycore.algorithms.averagequaternions import average_quaternions
+from quaternion_averaging import weightedAverageQuaternions
+
 '''
 physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
 p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
@@ -314,20 +317,31 @@ class InitialSimulationModel():
         x_set = 0
         y_set = 0
         z_set = 0
-        x_angle_set = 0
-        y_angle_set = 0
-        z_angle_set = 0
+        # x_angle_set = 0
+        # y_angle_set = 0
+        # z_angle_set = 0
         w_set = 0
+
+        quaternions = []
+        qws = []
         for index,particle in enumerate(particle_cloud):
             x_set = x_set + particle.x * particle.w
             y_set = y_set + particle.y * particle.w
             z_set = z_set + particle.z * particle.w
-            x_angle_set = x_angle_set + particle.x_angle * particle.w
-            y_angle_set = y_angle_set + particle.y_angle * particle.w
-            z_angle_set = z_angle_set + particle.z_angle * particle.w
+            # x_angle_set = x_angle_set + particle.x_angle * particle.w
+            # y_angle_set = y_angle_set + particle.y_angle * particle.w
+            # z_angle_set = z_angle_set + particle.z_angle * particle.w
+            q = p_visualisation.getQuaternionFromEuler([particle.x_angle, particle.y_angle, particle.z_angle])
+            qws.append(particle.w)
+            quaternions.append([q[0], q[1], q[2], q[3]])
             w_set = w_set + particle.w
-        return x_set/w_set,y_set/w_set,z_set/w_set,x_angle_set/w_set,y_angle_set/w_set,z_angle_set/w_set
-        
+
+        # q = average_quaternions(np.array(quaternions))
+        q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
+        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[3], q[0], q[1], q[2]])
+
+        return x_set/w_set,y_set/w_set,z_set/w_set,x_angle,y_angle,z_angle
+
     
     def display_particle(self):
         for index, particle in enumerate(self.particle_cloud):
@@ -876,19 +890,30 @@ class PFMove():
         x_set = 0
         y_set = 0
         z_set = 0
-        x_angle_set = 0
-        y_angle_set = 0
-        z_angle_set = 0
+        # x_angle_set = 0
+        # y_angle_set = 0
+        # z_angle_set = 0
         w_set = 0
-        for index,particle in enumerate(particle_cloud):
+
+        quaternions = []
+        qws = []
+        for index, particle in enumerate(particle_cloud):
             x_set = x_set + particle.x * particle.w
             y_set = y_set + particle.y * particle.w
             z_set = z_set + particle.z * particle.w
-            x_angle_set = x_angle_set + particle.x_angle * particle.w
-            y_angle_set = y_angle_set + particle.y_angle * particle.w
-            z_angle_set = z_angle_set + particle.z_angle * particle.w
+            # x_angle_set = x_angle_set + particle.x_angle * particle.w
+            # y_angle_set = y_angle_set + particle.y_angle * particle.w
+            # z_angle_set = z_angle_set + particle.z_angle * particle.w
+            q = p_visualisation.getQuaternionFromEuler([particle.x_angle, particle.y_angle, particle.z_angle])
+            qws.append(particle.w)
+            quaternions.append([q[0], q[1], q[2], q[3]])
             w_set = w_set + particle.w
-        return x_set/w_set,y_set/w_set,z_set/w_set,x_angle_set/w_set,y_angle_set/w_set,z_angle_set/w_set
+
+        # q = average_quaternions(np.array(quaternions))
+        q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
+        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[3], q[0], q[1], q[2]])
+
+        return x_set / w_set, y_set / w_set, z_set / w_set, x_angle, y_angle, z_angle
     
     def compute_transformation_matrix(self, init_robot_pos,init_robot_ori,init_object_pos,init_object_ori):
         robot_transformation_matrix = transformations.quaternion_matrix(init_robot_ori)
@@ -983,7 +1008,7 @@ class PFMovePM():
             print("I am in the obs list")
             length = len(boss_obs_pose_PFPM)
             obs_curr_pose = copy.deepcopy(boss_obs_pose_PFPM[length-1])
-            obs_last_pose = copy.deepcopy(boss_obs_pose_PFPM[length-2])
+            obs_last_pose = copy.deepcopy(boss_obs_pose_PFPM[length-1])
             obs_curr_pos = [obs_curr_pose[0],obs_curr_pose[1],obs_curr_pose[2]]
             obs_curr_ang = [obs_curr_pose[3],obs_curr_pose[4],obs_curr_pose[5]]
             obs_curr_ori = p_visualisation.getQuaternionFromEuler(obs_curr_ang)
@@ -1117,7 +1142,7 @@ class PFMovePM():
             normal_x = pw_T_parN_pos[0]
             normal_y = pw_T_parN_pos[1]
             normal_z = pw_T_parN_pos[2]
-            
+            '''
             quat = copy.deepcopy(pw_T_parN_ori)#x,y,z,w
             quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3])#w,x,y,z
             random_dir = random.uniform(0, 2*math.pi)
@@ -1136,11 +1161,14 @@ class PFMovePM():
             ###pb_quat(x,y,z,w)
             pb_quat = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
             new_angle = p_visualisation.getEulerFromQuaternion(pb_quat)
-            x_angle = nois_obj_ang_cur[0]
-            y_angle = nois_obj_ang_cur[1]
-            z_angle = nois_obj_ang_cur[2]
-            #x_angle = pw_T_parN_ang[0]
-            #y_angle = pw_T_parN_ang[1]
+            '''
+
+            #x_angle = nois_obj_ang_cur[0]
+            #y_angle = nois_obj_ang_cur[1]
+            #z_angle = nois_obj_ang_cur[2]
+            x_angle = pw_T_parN_ang[0]
+            y_angle = pw_T_parN_ang[1]
+            z_angle = pw_T_parN_ang[2]
             #z_angle = pw_T_parN_ang[2]+angle_noise
             
             self.particle_cloud_PM[index].x = pw_T_parN_pos[0]
@@ -1199,7 +1227,7 @@ class PFMovePM():
                 particle_w = particle.w/tot_weight
                 particle.w = particle_w
             else:
-                particle.w = 1/particle_num
+                particle.w = 1.0/particle_num
 
     def resample_particles_PM(self):
         particles_w = []
@@ -1265,19 +1293,30 @@ class PFMovePM():
         x_set = 0
         y_set = 0
         z_set = 0
-        x_angle_set = 0
-        y_angle_set = 0
-        z_angle_set = 0
+        # x_angle_set = 0
+        # y_angle_set = 0
+        # z_angle_set = 0
         w_set = 0
-        for index,particle in enumerate(particle_cloud):
+
+        quaternions = []
+        qws = []
+        for index, particle in enumerate(particle_cloud):
             x_set = x_set + particle.x * particle.w
             y_set = y_set + particle.y * particle.w
             z_set = z_set + particle.z * particle.w
-            x_angle_set = x_angle_set + particle.x_angle * particle.w
-            y_angle_set = y_angle_set + particle.y_angle * particle.w
-            z_angle_set = z_angle_set + particle.z_angle * particle.w
+            # x_angle_set = x_angle_set + particle.x_angle * particle.w
+            # y_angle_set = y_angle_set + particle.y_angle * particle.w
+            # z_angle_set = z_angle_set + particle.z_angle * particle.w
+            q = p_visualisation.getQuaternionFromEuler([particle.x_angle, particle.y_angle, particle.z_angle])
+            qws.append(particle.w)
+            quaternions.append([q[0], q[1], q[2], q[3]])
             w_set = w_set + particle.w
-        return x_set/w_set,y_set/w_set,z_set/w_set,x_angle_set/w_set,y_angle_set/w_set,z_angle_set/w_set
+
+        # q = average_quaternions(np.array(quaternions))
+        q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
+        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[3], q[0], q[1], q[2]])
+
+        return x_set / w_set, y_set / w_set, z_set / w_set, x_angle, y_angle, z_angle
     
     def compute_transformation_matrix(self, a_pos,a_ori,b_pos,b_ori):
         ow_T_a_3_3 = transformations.quaternion_matrix(a_ori)
@@ -1391,8 +1430,8 @@ if __name__ == '__main__':
     particle_num = 50
     d_thresh = 2
     a_thresh = 10
-    d_thresh_PM = 0.002
-    a_thresh_PM = 0.010
+    d_thresh_PM = 0.0002
+    a_thresh_PM = 0.0010
     flag_update_num_PM = 0
     flag_update_num_PE = 0
     flag_record_PM_file = 0

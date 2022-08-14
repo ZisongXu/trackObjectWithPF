@@ -144,25 +144,16 @@ class Ros_listener():
         self.joint_subscriber = rospy.Subscriber('/joint_states', JointState, self.joint_values_callback,queue_size=1)
         self.robot_pose = rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose',PoseStamped, self.robot_pose_callback,queue_size=10)
         self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/cheezit/pose',PoseStamped, self.object_pose_callback,queue_size=10)
+        self.base_pose = rospy.Subscriber('/mocap/rigid_bodies/baseofcheezit/pose', PoseStamped, self.base_of_cheezit_callback,queue_size=10)
         self.current_joint_values = [-1.57,0.0,0.0,-2.8,1.7,1.57,1.1]
-        self.robot_pos = [ 0.139080286026,
-                          -0.581342339516,
-                           0.0238141193986]
+        self.robot_pos = [0.139080286026, -0.581342339516,  0.0238141193986]
         #x,y,z,w
-        self.robot_ori = [ 0.707254290581,
-                           0.0115503482521,
-                          -0.0140119809657,
-                          -0.706726074219]
-
-        self.object_pos = [ 0.504023790359,
-                           -0.214561194181,
-                            0.0601389780641]
+        self.robot_ori = [0.707254290581, 0.0115503482521, -0.0140119809657, -0.706726074219]
+        self.object_pos = [0.504023790359, -0.214561194181, 0.0601389780641]
         #x,y,z,w
-        self.object_ori = [-0.51964700222,
-                           -0.476704657078,
-                            0.490200251342,
-                            0.512272834778]
-
+        self.object_ori = [-0.51964700222, -0.476704657078, 0.490200251342, 0.512272834778]
+        self.base_pos = [0, 0, 0]
+        self.base_ori = [0, 0, 0, 1]
         #self.object_ori = [0,0,0,1]
         rospy.spin
     def joint_values_callback(self, msg):
@@ -191,6 +182,19 @@ class Ros_listener():
         z_ori = data.pose.orientation.z
         w_ori = data.pose.orientation.w
         self.object_ori = [x_ori,y_ori,z_ori,w_ori]
+    def base_of_cheezit_callback(self,data):
+        # pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.base_pos = [x_pos, y_pos, z_pos]
+        # ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.base_ori = [x_ori, y_ori, z_ori, w_ori]
+
 
 #Class of particle's structure
 class Particle(object):
@@ -318,7 +322,6 @@ class InitialSimulationModel():
         y_set = 0
         z_set = 0
         w_set = 0
-
         quaternions = []
         qws = []
         for index,particle in enumerate(particle_cloud):
@@ -329,13 +332,10 @@ class InitialSimulationModel():
             qws.append(particle.w)
             quaternions.append([q[0], q[1], q[2], q[3]])
             w_set = w_set + particle.w
-
         # q = average_quaternions(np.array(quaternions))
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
-        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[3], q[0], q[1], q[2]])
-
+        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[0], q[1], q[2], q[3]])
         return x_set/w_set,y_set/w_set,z_set/w_set,x_angle,y_angle,z_angle
-
 
     def display_particle(self):
         for index, particle in enumerate(self.particle_cloud):
@@ -364,6 +364,11 @@ class InitialSimulationModel():
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0,0,-9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
+            sim_base_id = pybullet_simulation_env.loadURDF(
+                os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
+                pw_T_base_pos,
+                pw_T_base_ori,
+                useFixedBase=1)
             fake_robot_start_pos = self.real_robot_start_pos
             fake_robot_start_orientation = self.real_robot_start_ori
             fake_robot_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
@@ -572,7 +577,7 @@ class PFMove():
         err_opti_PFPE_ang = angle_correction(err_opti_PFPE_ang)
 
         t_err_generate = time.time()
-        if flag_update_num_PE % 3 == 0:
+        if flag_update_num_PE % 1 == 0:
             print("flag_update_num_PE:",flag_update_num_PE)
             boss_obse_err_sum_df[flag_update_num_PE] = err_opti_dope_pos + err_opti_dope_ang
             boss_obse_err_pos_df[flag_update_num_PE] = err_opti_dope_pos
@@ -884,29 +889,20 @@ class PFMove():
         x_set = 0
         y_set = 0
         z_set = 0
-        # x_angle_set = 0
-        # y_angle_set = 0
-        # z_angle_set = 0
         w_set = 0
-
         quaternions = []
         qws = []
         for index, particle in enumerate(particle_cloud):
             x_set = x_set + particle.x * particle.w
             y_set = y_set + particle.y * particle.w
             z_set = z_set + particle.z * particle.w
-            # x_angle_set = x_angle_set + particle.x_angle * particle.w
-            # y_angle_set = y_angle_set + particle.y_angle * particle.w
-            # z_angle_set = z_angle_set + particle.z_angle * particle.w
             q = p_visualisation.getQuaternionFromEuler([particle.x_angle, particle.y_angle, particle.z_angle])
             qws.append(particle.w)
             quaternions.append([q[0], q[1], q[2], q[3]])
             w_set = w_set + particle.w
-
         # q = average_quaternions(np.array(quaternions))
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
-        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[3], q[0], q[1], q[2]])
-
+        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[0], q[1], q[2], q[3]])
         return x_set / w_set, y_set / w_set, z_set / w_set, x_angle, y_angle, z_angle
 
     def compute_transformation_matrix(self, init_robot_pos,init_robot_ori,init_object_pos,init_object_ori):
@@ -1280,29 +1276,20 @@ class PFMovePM():
         x_set = 0
         y_set = 0
         z_set = 0
-        # x_angle_set = 0
-        # y_angle_set = 0
-        # z_angle_set = 0
         w_set = 0
-
         quaternions = []
         qws = []
         for index, particle in enumerate(particle_cloud):
             x_set = x_set + particle.x * particle.w
             y_set = y_set + particle.y * particle.w
             z_set = z_set + particle.z * particle.w
-            # x_angle_set = x_angle_set + particle.x_angle * particle.w
-            # y_angle_set = y_angle_set + particle.y_angle * particle.w
-            # z_angle_set = z_angle_set + particle.z_angle * particle.w
             q = p_visualisation.getQuaternionFromEuler([particle.x_angle, particle.y_angle, particle.z_angle])
             qws.append(particle.w)
             quaternions.append([q[0], q[1], q[2], q[3]])
             w_set = w_set + particle.w
-
         # q = average_quaternions(np.array(quaternions))
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
-        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[3], q[0], q[1], q[2]])
-
+        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[0], q[1], q[2], q[3]])
         return x_set / w_set, y_set / w_set, z_set / w_set, x_angle, y_angle, z_angle
 
     def compute_transformation_matrix(self, a_pos,a_ori,b_pos,b_ori):
@@ -1458,6 +1445,9 @@ if __name__ == '__main__':
     init_robot_ori = ros_listener.robot_ori
     init_object_pos = ros_listener.object_pos
     init_object_ori = ros_listener.object_ori
+    base_of_cheezit_pos = ros_listener.base_pos
+    base_of_cheezit_ori = ros_listener.base_ori
+
 
     pybullet_robot_pos = [0.0, 0.0, 0.026]
     pybullet_robot_ori = [0,0,0,1]
@@ -1475,6 +1465,20 @@ if __name__ == '__main__':
     optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_real_obj_with_visual_small_hor.urdf"),
                                                    pw_T_object_pos,
                                                    pw_T_object_ori)
+
+    robot_T_base = compute_transformation_matrix(init_robot_pos, init_robot_ori, base_of_cheezit_pos, base_of_cheezit_ori)
+    # input('Press [ENTER] to compute the pose of object in the pybullet world')
+    pw_T_robot_3_3 = transformations.quaternion_matrix(pybullet_robot_ori)
+    pw_T_robot = rotation_4_4_to_transformation_4_4(pw_T_robot_3_3, pybullet_robot_pos)
+    pw_T_base = np.dot(pw_T_robot, robot_T_base)
+    pw_T_base_pos = [pw_T_base[0][3], pw_T_base[1][3], pw_T_base[2][3]]
+    pw_T_base_ori = transformations.quaternion_from_matrix(pw_T_base)
+    pw_T_base_ang = p_visualisation.getEulerFromQuaternion(pw_T_base_ori)
+    optitrack_base_id = p_visualisation.loadURDF(
+        os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
+        pw_T_base_pos,
+        pw_T_base_ori)
+
     #compute pose of object in DOPE
     pw_T_object_dope = np.dot(pw_T_robot,rob_T_obj_dope)
     pw_T_object_pos_dope = [pw_T_object_dope[0][3],pw_T_object_dope[1][3],pw_T_object_dope[2][3]]
@@ -1682,7 +1686,7 @@ if __name__ == '__main__':
             # print("Average time of updating: ",np.mean(robot1.times))
             print("PE: Finished")
             t_finish_PFPE = time.time()
-            # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
+            print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
 
         if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
             flag_update_num_PM = flag_update_num_PM + 1
@@ -1702,28 +1706,28 @@ if __name__ == '__main__':
             dope_obj_ori_old_PM = copy.deepcopy(dope_obj_ori_cur)
             rob_link_9_pose_old_PM = copy.deepcopy(rob_link_9_pose_cur_PM)
 
-        if flag_write_csv_file > 29 and write_file_flag_obse == 0:
+        if flag_write_csv_file > 22 and write_file_flag_obse == 0:
             # boss_obse_index_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_obse_time_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_obse_err_sum_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
-            boss_obse_err_pos_df.to_csv('obse_err_scene3_0_2.csv',index=0,header=0,mode='a')
-            boss_obse_err_ang_df.to_csv('obse_err_scene3_0_2.csv',index=0,header=0,mode='a')
+            boss_obse_err_pos_df.to_csv('scene3_obse_err_0_2.csv',index=0,header=0,mode='a')
+            boss_obse_err_ang_df.to_csv('scene3_obse_err_0_2.csv',index=0,header=0,mode='a')
             print("write obser file")
             write_file_flag_obse = write_file_flag_obse + 1
-        if flag_write_csv_file > 29 and write_file_flag_PFPE == 0:
+        if flag_write_csv_file > 22 and write_file_flag_PFPE == 0:
             # boss_PFPE_index_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPE_time_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPE_err_sum_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_pos_df.to_csv('PFPE_err_scene3_0_2.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_ang_df.to_csv('PFPE_err_scene3_0_2.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_pos_df.to_csv('scene3_PFPE_err_0_2.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_ang_df.to_csv('scene3_PFPE_err_0_2.csv',index=0,header=0,mode='a')
             print("write PFPE file")
             write_file_flag_PFPE = write_file_flag_PFPE + 1
-        if flag_write_csv_file > 29 and write_file_flag_PFPM == 0:
+        if flag_write_csv_file > 22 and write_file_flag_PFPM == 0:
             # boss_PFPM_index_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPM_time_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPM_err_sum_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_pos_df.to_csv('PFPM_err_scene3_0_2.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_ang_df.to_csv('PFPM_err_scene3_0_2.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_pos_df.to_csv('scene3_PFPM_err_0_2.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_ang_df.to_csv('scene3_PFPM_err_0_2.csv',index=0,header=0,mode='a')
             print("write PFPM file")
             write_file_flag_PFPM = write_file_flag_PFPM + 1
         if Flag is False:

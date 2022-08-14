@@ -12,6 +12,7 @@ if [ ! -d "$HOME/catkin_ws/devel" ]; then
     pip install pyquaternion
     pip3 install pybullet
     pip3 install pandas
+    pip3 install scikit-surgerycore
 fi
 
 source $HOME/catkin_ws/devel/setup.bash

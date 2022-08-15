@@ -332,7 +332,7 @@ class InitialSimulationModel():
 
         # q = average_quaternions(np.array(quaternions))
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
-        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[0], q[1], q[2], q[3]])
+        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[3], q[0], q[1], q[2]])
 
         return x_set/w_set,y_set/w_set,z_set/w_set,x_angle,y_angle,z_angle
 
@@ -561,7 +561,7 @@ class PFMove():
         #    return False
 
         print("Display particle")
-        self.display_particle_in_visual_model_PE(self.particle_cloud)
+        #self.display_particle_in_visual_model_PE(self.particle_cloud)
         #self.draw_contrast_figure(estimated_object_pos,observation)
         #neettochange
         err_opti_dope_pos = compute_pos_err_bt_2_points(nois_obj_pos_cur,opti_obj_pos_cur)
@@ -572,7 +572,7 @@ class PFMove():
         err_opti_PFPE_ang = angle_correction(err_opti_PFPE_ang)
 
         t_err_generate = time.time()
-        if flag_update_num_PE % 10 == 0:
+        if flag_update_num_PE % 6 == 0:
             print("flag_update_num_PE:",flag_update_num_PE)
             boss_obse_err_sum_df[flag_update_num_PE] = err_opti_dope_pos + err_opti_dope_ang
             boss_obse_err_pos_df[flag_update_num_PE] = err_opti_dope_pos
@@ -899,9 +899,7 @@ class PFMove():
 
         # q = average_quaternions(np.array(quaternions))
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
-        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[0], q[1], q[2], q[3]])
-
-        return x_set / w_set, y_set / w_set, z_set / w_set, x_angle, y_angle, z_angle
+        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[3], q[0], q[1], q[2]])
 
         return x_set / w_set, y_set / w_set, z_set / w_set, x_angle, y_angle, z_angle
 
@@ -977,7 +975,7 @@ class PFMovePM():
         #print("observ model time consuming:",t3-t2)
         #self.draw_contrast_figure(estimated_object_pos,observation)
         estimated_object_ori_PM = p_visualisation.getQuaternionFromEuler(estimated_object_ang_PM)
-        self.display_particle_in_visual_model_PM(self.particle_cloud_PM)
+        #self.display_particle_in_visual_model_PM(self.particle_cloud_PM)
         err_opti_PFPM_pos = compute_pos_err_bt_2_points(estimated_object_pos_PM,opti_obj_pos_cur)
         err_opti_PFPM_ang = compute_ang_err_bt_2_points(estimated_object_ori_PM,opti_obj_ori_cur)
         err_opti_PFPM_ang = angle_correction(err_opti_PFPM_ang)
@@ -1289,7 +1287,7 @@ class PFMovePM():
             w_set = w_set + particle.w
         # q = average_quaternions(np.array(quaternions))
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
-        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[0], q[1], q[2], q[3]])
+        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[3], q[0], q[1], q[2]])
         return x_set / w_set, y_set / w_set, z_set / w_set, x_angle, y_angle, z_angle
 
     def compute_transformation_matrix(self, a_pos,a_ori,b_pos,b_ori):
@@ -1514,9 +1512,9 @@ if __name__ == '__main__':
     estimated_object_ang = [estimated_object_set[3],estimated_object_set[4],estimated_object_set[5]]
     estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
     boss_est_pose_PFPM.append(estimated_object_set)
-    initial_parameter.display_particle()
+    #initial_parameter.display_particle()
     initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
-    initial_parameter.display_particle_PM()
+    #initial_parameter.display_particle_PM()
 
     estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
                                                    estimated_object_pos,
@@ -1645,6 +1643,7 @@ if __name__ == '__main__':
 
         # Determine if particles need to be updated
         if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh) or (dis_robcur_robold_PE > d_thresh):
+            print("dis_robcur_robold_PE:", dis_robcur_robold_PE)
             t_begin_PFPE = time.time()
             flag_update_num_PE = flag_update_num_PE + 1
             flag_write_csv_file = flag_write_csv_file + 1
@@ -1689,7 +1688,7 @@ if __name__ == '__main__':
             dope_obj_ori_old_PM = copy.deepcopy(dope_obj_ori_cur)
             rob_link_9_pose_old_PM = copy.deepcopy(rob_link_9_pose_cur_PM)
 
-        if flag_write_csv_file > 99 and write_file_flag_obse == 0:
+        if flag_write_csv_file > 65 and write_file_flag_obse == 0:
             # boss_obse_index_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_obse_time_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_obse_err_sum_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
@@ -1697,7 +1696,7 @@ if __name__ == '__main__':
             boss_obse_err_ang_df.to_csv('obse_err_scene3_0_2.csv',index=0,header=0,mode='a')
             print("write obser file")
             write_file_flag_obse = write_file_flag_obse + 1
-        if flag_write_csv_file > 99 and write_file_flag_PFPE == 0:
+        if flag_write_csv_file > 65 and write_file_flag_PFPE == 0:
             # boss_PFPE_index_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPE_time_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPE_err_sum_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
@@ -1705,7 +1704,7 @@ if __name__ == '__main__':
             boss_PFPE_err_ang_df.to_csv('PFPE_err_scene3_0_2.csv',index=0,header=0,mode='a')
             print("write PFPE file")
             write_file_flag_PFPE = write_file_flag_PFPE + 1
-        if flag_write_csv_file > 99 and write_file_flag_PFPM == 0:
+        if flag_write_csv_file > 65 and write_file_flag_PFPM == 0:
             # boss_PFPM_index_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPM_time_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPM_err_sum_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')

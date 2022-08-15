@@ -419,6 +419,15 @@ if __name__ == '__main__':
     for index in range(5):
         wpose = panda.moveit_group.get_current_pose().pose
         waypoints = []
+        wpose.position.y += 0.1
+        # wpose.position.z += 0.08
+        # #wpose.position.y += 0.15
+        waypoints.append(copy.deepcopy(wpose))    
+        panda.move_through_waypoints(waypoints)
+        
+    for index in range(5):
+        wpose = panda.moveit_group.get_current_pose().pose
+        waypoints = []
         wpose.position.y -= 0.1
         # wpose.position.z += 0.08
         # #wpose.position.y += 0.15

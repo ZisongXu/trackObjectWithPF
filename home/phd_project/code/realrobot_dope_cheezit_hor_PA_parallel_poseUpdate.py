@@ -52,7 +52,7 @@ planeId = p.loadURDF("plane.urdf")
 p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
 p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
 p_visualisation.setGravity(0,0,-9.81)
-p_visualisation.resetDebugVisualizerCamera(cameraDistance=2,cameraYaw=0,cameraPitch=-40,cameraTargetPosition=[0.5,-0.9,0.5])
+p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.5,0.3,0.2])
 plane_id = p_visualisation.loadURDF("plane.urdf")
 
 boss_obse_err_sum_df = pd.DataFrame()
@@ -360,7 +360,8 @@ class InitialSimulationModel():
         for index, particle in enumerate(self.particle_cloud):
             pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
             self.pybullet_particle_env_collection.append(pybullet_simulation_env)
-
+            pybullet_simulation_env.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85,
+                                                       cameraTargetPosition=[0.5, 0.3, 0.2])
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0,0,-9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
@@ -832,7 +833,7 @@ class PFMove():
                                 self.particle_cloud[i].x_angle,
                                 self.particle_cloud[i].y_angle,
                                 self.particle_cloud[i].z_angle,
-                                self.particle_cloud[i].w,index)
+                                self.particle_cloud[i].w, index)
             newParticles.append(particle)
         self.particle_cloud = copy.deepcopy(newParticles)
 
@@ -1516,13 +1517,14 @@ if __name__ == '__main__':
     initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
     #initial_parameter.display_particle_PM()
 
+    # input('test')
     estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
                                                    estimated_object_pos,
                                                    estimated_object_ori)
     estimated_object_id_PM = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PM_hor.urdf"),
                                                       estimated_object_pos,
                                                       estimated_object_ori)
-    # input('test')
+
     # compute error
     err_opti_esti_pos = compute_pos_err_bt_2_points(estimated_object_pos,pw_T_object_pos)
     err_opti_esti_ang = compute_ang_err_bt_2_points(estimated_object_ori,pw_T_object_ori)

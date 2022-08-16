@@ -566,7 +566,8 @@ class PFMove():
         #    return False
 
         print("Display particle")
-        self.display_particle_in_visual_model_PE(self.particle_cloud)
+        if visualisation_particle_flag == True:
+            self.display_particle_in_visual_model_PE(self.particle_cloud)
         #self.draw_contrast_figure(estimated_object_pos,observation)
         #neettochange
         err_opti_dope_pos = compute_pos_err_bt_2_points(nois_obj_pos_cur,opti_obj_pos_cur)
@@ -757,7 +758,8 @@ class PFMove():
         object_estimate_pose = self.compute_estimate_pos_of_object(self.particle_cloud)
         estimated_object_pos = [object_estimate_pose[0],object_estimate_pose[1],object_estimate_pose[2]]
         estimated_object_ang = [object_estimate_pose[3],object_estimate_pose[4],object_estimate_pose[5]]
-        self.display_estimated_robot_in_visual_model(estimated_object_pos,estimated_object_ang)
+        if visualisation_flag == True:
+            self.display_estimated_robot_in_visual_model(estimated_object_pos,estimated_object_ang)
         return estimated_object_pos,estimated_object_ang
 
     def compare_rob_joint(self,real_rob_joint_list_cur,real_robot_joint_pos):
@@ -977,7 +979,8 @@ class PFMovePM():
         #print("observ model time consuming:",t3-t2)
         #self.draw_contrast_figure(estimated_object_pos,observation)
         estimated_object_ori_PM = p_visualisation.getQuaternionFromEuler(estimated_object_ang_PM)
-        self.display_particle_in_visual_model_PM(self.particle_cloud_PM)
+        if visualisation_particle_flag == True:
+            self.display_particle_in_visual_model_PM(self.particle_cloud_PM)
         err_opti_PFPM_pos = compute_pos_err_bt_2_points(estimated_object_pos_PM,opti_obj_pos_cur)
         err_opti_PFPM_ang = compute_ang_err_bt_2_points(estimated_object_ori_PM,opti_obj_ori_cur)
         err_opti_PFPM_ang = angle_correction(err_opti_PFPM_ang)
@@ -1089,7 +1092,8 @@ class PFMovePM():
         object_estimate_pose = self.compute_estimate_pos_of_object(self.particle_cloud_PM)
         estimated_object_pos = [object_estimate_pose[0],object_estimate_pose[1],object_estimate_pose[2]]
         estimated_object_ang = [object_estimate_pose[3],object_estimate_pose[4],object_estimate_pose[5]]
-        self.display_estimated_robot_in_visual_model(estimated_object_pos,estimated_object_ang)
+        if visualisation_flag == True:
+            self.display_estimated_robot_in_visual_model(estimated_object_pos,estimated_object_ang)
         return object_estimate_pose
 
     def update_particle_in_motion_model_PM(self,parO_T_parN):
@@ -1406,6 +1410,8 @@ if __name__ == '__main__':
     t_begin = time.time()
     particle_cloud = []
     particle_num = 100
+    visualisation_flag = True
+    visualisation_particle_flag = False
     d_thresh = 0.002
     a_thresh = 0.010
     d_thresh_PM = 0.0002
@@ -1462,9 +1468,10 @@ if __name__ == '__main__':
     pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object)
     pw_T_object_ang = p_visualisation.getEulerFromQuaternion(pw_T_object_ori)
     #load the groud truth object
-    optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_real_obj_with_visual_small_hor.urdf"),
-                                                   pw_T_object_pos,
-                                                   pw_T_object_ori)
+    if visualisation_flag == True:
+        optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_real_obj_with_visual_small_hor.urdf"),
+                                                       pw_T_object_pos,
+                                                       pw_T_object_ori)
 
     robot_T_base = compute_transformation_matrix(init_robot_pos, init_robot_ori, base_of_cheezit_pos, base_of_cheezit_ori)
     # input('Press [ENTER] to compute the pose of object in the pybullet world')
@@ -1474,10 +1481,11 @@ if __name__ == '__main__':
     pw_T_base_pos = [pw_T_base[0][3], pw_T_base[1][3], pw_T_base[2][3]]
     pw_T_base_ori = transformations.quaternion_from_matrix(pw_T_base)
     pw_T_base_ang = p_visualisation.getEulerFromQuaternion(pw_T_base_ori)
-    optitrack_base_id = p_visualisation.loadURDF(
-        os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
-        pw_T_base_pos,
-        pw_T_base_ori)
+    if visualisation_flag == True:
+        optitrack_base_id = p_visualisation.loadURDF(
+            os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
+            pw_T_base_pos,
+            pw_T_base_ori)
 
     #compute pose of object in DOPE
     pw_T_object_dope = np.dot(pw_T_robot,rob_T_obj_dope)
@@ -1486,9 +1494,10 @@ if __name__ == '__main__':
     pw_T_object_ang_dope = p_visualisation.getEulerFromQuaternion(pw_T_object_ori_dope)
     pw_T_object_ang_dope = list(pw_T_object_ang_dope)
     #load the DOPE object
-    dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_dope_obj_with_visual_small_PE_hor.urdf"),
-                                              pw_T_object_pos_dope,
-                                              pw_T_object_ori_dope)
+    if visualisation_flag == True:
+        dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_dope_obj_with_visual_small_PE_hor.urdf"),
+                                                  pw_T_object_pos_dope,
+                                                  pw_T_object_ori_dope)
     #initialization pose of DOPE
     dope_obj_pos_init = copy.deepcopy(pw_T_object_pos_dope)
     dope_obj_ang_init = copy.deepcopy(pw_T_object_ang_dope)
@@ -1531,16 +1540,18 @@ if __name__ == '__main__':
     estimated_object_ang = [estimated_object_set[3],estimated_object_set[4],estimated_object_set[5]]
     estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
     boss_est_pose_PFPM.append(estimated_object_set)
-    initial_parameter.display_particle()
+    if visualisation_particle_flag == True:
+        initial_parameter.display_particle()
     initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
-    initial_parameter.display_particle_PM()
-
-    estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
-                                                   estimated_object_pos,
-                                                   estimated_object_ori)
-    estimated_object_id_PM = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PM_hor.urdf"),
-                                                      estimated_object_pos,
-                                                      estimated_object_ori)
+    if visualisation_particle_flag == True:
+        initial_parameter.display_particle_PM()
+    if visualisation_flag == True:
+        estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
+                                                       estimated_object_pos,
+                                                       estimated_object_ori)
+        estimated_object_id_PM = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PM_hor.urdf"),
+                                                          estimated_object_pos,
+                                                          estimated_object_ori)
     # input('test')
     # compute error
     err_opti_esti_pos = compute_pos_err_bt_2_points(estimated_object_pos,pw_T_object_pos)
@@ -1625,7 +1636,8 @@ if __name__ == '__main__':
                              dope_obj_ang_cur[1],
                              dope_obj_ang_cur[2]]
         #display DOPE object in visual model
-        display_real_object_in_visual_model(dope_object_id,dope_obj_pos_cur,dope_obj_ori_cur)
+        if visualisation_flag == True:
+            display_real_object_in_visual_model(dope_object_id,dope_obj_pos_cur,dope_obj_ori_cur)
 
         #get ground true pose of robot and object
         robot_T_object = compute_transformation_matrix(ros_listener.robot_pos,
@@ -1682,7 +1694,8 @@ if __name__ == '__main__':
             dope_obj_ang_old = copy.deepcopy(dope_obj_ang_cur)
             dope_obj_ori_old = copy.deepcopy(dope_obj_ori_cur)
             rob_link_9_pose_old_PE = copy.deepcopy(rob_link_9_pose_cur_PE)
-            display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
+            if visualisation_flag == True:
+                display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
             # print("Average time of updating: ",np.mean(robot1.times))
             print("PE: Finished")
             t_finish_PFPE = time.time()

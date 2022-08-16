@@ -1385,16 +1385,20 @@ def cheat_dope_obj_ang(angle):
     return ang
 def angle_correction(angle):
     #print("angle before: ",angle)
-    if angle >= (math.pi*3.0/2.0):
+    # if angle >= (math.pi*3.0/2.0):
+    #     angle = angle - 2 * math.pi
+    # elif math.pi/2.0 <= angle and angle < (math.pi*3.0/2.0):
+    #     angle = angle - math.pi
+    # elif -(math.pi*3.0/2.0) < angle and angle <= -math.pi/2.0:
+    #     angle = angle + math.pi
+    # elif angle <= -(math.pi*3.0/2.0):
+    #     angle = angle + 2 * math.pi
+    if math.pi <= angle <= (3.0 * math.pi):
         angle = angle - 2 * math.pi
-    elif math.pi/2.0 <= angle and angle < (math.pi*3.0/2.0):
-        angle = angle - math.pi
-    elif -(math.pi*3.0/2.0) < angle and angle <= -math.pi/2.0:
-        angle = angle + math.pi
-    elif angle <= -(math.pi*3.0/2.0):
-        angle = angle + 2 * math.pi 
+    elif -(3.0 * math.pi) <= angle <= -math.pi:
+        angle = angle + 2 * math.pi
     angle = abs(angle)
-    #print("angle _after: ",angle)
+    # print("angle _after: ",angle)
     return angle
 if __name__ == '__main__':
     t_begin = time.time()

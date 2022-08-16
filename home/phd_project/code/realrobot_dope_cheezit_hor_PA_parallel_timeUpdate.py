@@ -329,7 +329,7 @@ class InitialSimulationModel():
             w_set = w_set + particle.w
         # q = average_quaternions(np.array(quaternions))
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
-        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[3], q[0], q[1], q[2]])
+        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[0], q[1], q[2], q[3]])
         return x_set / w_set, y_set / w_set, z_set / w_set, x_angle, y_angle, z_angle
         
     
@@ -890,7 +890,7 @@ class PFMove():
             w_set = w_set + particle.w
         # q = average_quaternions(np.array(quaternions))
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
-        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[3], q[0], q[1], q[2]])
+        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[0], q[1], q[2], q[3]])
         return x_set / w_set, y_set / w_set, z_set / w_set, x_angle, y_angle, z_angle
     
     def compute_transformation_matrix(self, init_robot_pos,init_robot_ori,init_object_pos,init_object_ori):
@@ -1278,7 +1278,7 @@ class PFMovePM():
             w_set = w_set + particle.w
         # q = average_quaternions(np.array(quaternions))
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
-        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[3], q[0], q[1], q[2]])
+        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[0], q[1], q[2], q[3]])
         return x_set / w_set, y_set / w_set, z_set / w_set, x_angle, y_angle, z_angle
     
     def compute_transformation_matrix(self, a_pos,a_ori,b_pos,b_ori):
@@ -1376,16 +1376,20 @@ def cheat_dope_obj_ang(angle):
     return ang
 def angle_correction(angle):
     #print("angle before: ",angle)
-    if angle >= (math.pi*3.0/2.0):
+    # if angle >= (math.pi*3.0/2.0):
+    #     angle = angle - 2 * math.pi
+    # elif math.pi/2.0 <= angle and angle < (math.pi*3.0/2.0):
+    #     angle = angle - math.pi
+    # elif -(math.pi*3.0/2.0) < angle and angle <= -math.pi/2.0:
+    #     angle = angle + math.pi
+    # elif angle <= -(math.pi*3.0/2.0):
+    #     angle = angle + 2 * math.pi
+    if math.pi <= angle <= (3.0 * math.pi):
         angle = angle - 2 * math.pi
-    elif math.pi/2.0 <= angle and angle < (math.pi*3.0/2.0):
-        angle = angle - math.pi
-    elif -(math.pi*3.0/2.0) < angle and angle <= -math.pi/2.0:
-        angle = angle + math.pi
-    elif angle <= -(math.pi*3.0/2.0):
-        angle = angle + 2 * math.pi 
+    elif -(3.0 * math.pi) <= angle <= -math.pi:
+        angle = angle + 2 * math.pi
     angle = abs(angle)
-    #print("angle _after: ",angle)
+    # print("angle _after: ",angle)
     return angle
 if __name__ == '__main__':
     t_begin = time.time()
@@ -1679,24 +1683,24 @@ if __name__ == '__main__':
             # boss_obse_index_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')
             # boss_obse_time_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')
             # boss_obse_err_sum_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_obse_err_pos_df.to_csv('time_scene1_obse_err.csv',index=0,header=0,mode='a')
-            boss_obse_err_ang_df.to_csv('time_scene1_obse_err.csv',index=0,header=0,mode='a')
+            boss_obse_err_pos_df.to_csv('time_scene1_obse_err_pos.csv',index=0,header=0,mode='a')
+            boss_obse_err_ang_df.to_csv('time_scene1_obse_err_ang.csv',index=0,header=0,mode='a')
             print("write obser file")
             write_file_flag_obse = write_file_flag_obse + 1
         if flag_write_csv_file > 59 and write_file_flag_PFPE == 0:
             # boss_PFPE_index_df.to_csv('1PFPE_error_scenes3.csv',index=0,header=0,mode='a')
             # boss_PFPE_time_df.to_csv('1PFPE_error_scenes3.csv',index=0,header=0,mode='a')
             # boss_PFPE_err_sum_df.to_csv('1PFPE_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_pos_df.to_csv('time_scene1_PFPE_err.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_ang_df.to_csv('time_scene1_PFPE_err.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_pos_df.to_csv('time_scene1_PFPE_err_pos.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_ang_df.to_csv('time_scene1_PFPE_err_ang.csv',index=0,header=0,mode='a')
             print("write PFPE file")
             write_file_flag_PFPE = write_file_flag_PFPE + 1
         if flag_write_csv_file > 59 and write_file_flag_PFPM == 0:
             # boss_PFPM_index_df.to_csv('1PFPM_error_scenes3.csv',index=0,header=0,mode='a')
             # boss_PFPM_time_df.to_csv('1PFPM_error_scenes3.csv',index=0,header=0,mode='a')
             # boss_PFPM_err_sum_df.to_csv('1PFPM_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_pos_df.to_csv('time_scene1_PFPM_err.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_ang_df.to_csv('time_scene1_PFPM_err.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_pos_df.to_csv('time_scene1_PFPM_err_pos.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_ang_df.to_csv('time_scene1_PFPM_err_ang.csv',index=0,header=0,mode='a')
             print("write PFPM file")
             write_file_flag_PFPM = write_file_flag_PFPM + 1
         if Flag is False:

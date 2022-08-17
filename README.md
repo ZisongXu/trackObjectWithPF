@@ -15,7 +15,13 @@ How to run the panda robot in the real world:
   7. [TrackObjectWithPF] xterm
   8. [TrackObjectWithPF xterm3] cd ~/phd_project/code
   9. [TrackObjectWithPF xterm3] python3 franka_robot_realrobot_test.py
-  
+
+How to run the OptiTrack:
+  1. In the VM16: rosrun natnet_ros ...
+  2. In the server [DOPE]: rosrun dope_utilities read_dope_objects_to_param_server.py
+  3. In the VM16: roslaunch dope_utilities dope_convertions.launch
+
+
 How to run the DOPE:
   1. Enter into the container
   2. [realsense] roslaunch panda_calibration with_ar_markers.launch 

@@ -236,7 +236,7 @@ class InitialRealworldModel():
         #p_visualisation.changeDynamics(real_object_id,-1,mass=0.351,lateralFriction = 0.2)
         return real_object_id
     def set_real_robot_JointPosition(self,pybullet_simulation_env,robot, position):
-        print("Preparing the joint pose of the panda robot!")
+        # print("Preparing the joint pose of the panda robot!")
         #position[7] = 0.039916139
         #position[8] = 0.039916139
         #num_joints = 7
@@ -560,12 +560,12 @@ class PFMove():
         nois_obj_ori_cur = p_visualisation.getQuaternionFromEuler(nois_obj_ang_cur)
 
 
-        #print("observ model time consuming:",t3-t2)
+        # print("observ model time consuming:",t3-t2)
 
         #if Flag is False:
         #    return False
 
-        print("Display particle")
+        # print("Display particle")
         if visualisation_particle_flag == True:
             self.display_particle_in_visual_model_PE(self.particle_cloud)
         #self.draw_contrast_figure(estimated_object_pos,observation)
@@ -579,7 +579,7 @@ class PFMove():
 
         t_err_generate = time.time()
         if flag_update_num_PE % 1 == 0:
-            print("flag_update_num_PE:",flag_update_num_PE)
+            # print("flag_update_num_PE:",flag_update_num_PE)
             boss_obse_err_sum_df[flag_update_num_PE] = err_opti_dope_pos + err_opti_dope_ang
             boss_obse_err_pos_df[flag_update_num_PE] = err_opti_dope_pos
             boss_obse_err_ang_df[flag_update_num_PE] = err_opti_dope_ang
@@ -615,7 +615,7 @@ class PFMove():
             x, y, z, x_angle, y_angle, z_angle = pipe_parent.recv()
             self.update_partcile_cloud_pose_PE(index, x, y, z, x_angle, y_angle, z_angle)
         end = time.time()
-        print(end - start)
+        # print(end - start)
 
 
     def motion_update_PE_parallelised(self,pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
@@ -631,10 +631,11 @@ class PFMove():
             thread.join()
 
         end = time.time()
-        print(end - start)
+        # print(end - start)
 
 
     def function_to_parallelise(self, index, pybullet_env,fake_robot_id, real_robot_joint_pos):
+        start = time.time()
         self.change_obj_parameters(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
         #execute the control
         flag_set_sim = 1
@@ -687,6 +688,8 @@ class PFMove():
         self.update_partcile_cloud_pose_PE(index, normal_x, normal_y, normal_z, x_angle, y_angle, z_angle)
         #self.update_poses[index] = (normal_x, normal_y, normal_z, x_angle, y_angle, z_angle)
         # pipe.send()
+        end = time.time()
+        # print(end - start)
 
 
     def observation_update_PE(self, opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
@@ -811,7 +814,7 @@ class PFMove():
         flag_1 = 0
         tot_weight = sum([particle.w for particle in self.particle_cloud])
         if tot_weight == 0:
-            print("Error!,PFPE particles total weight is 0")
+            # print("Error!,PFPE particles total weight is 0")
             tot_weight = 1
             flag_1 = 1
         for particle in self.particle_cloud:
@@ -873,7 +876,7 @@ class PFMove():
                                                         esti_obj_ori)
 
     def draw_contrast_figure(self,estimated_object_pos,observation):
-        print("Begin to draw contrast figure!")
+        # print("Begin to draw contrast figure!")
         self.object_estimate_pose_x.append(estimated_object_pos[0])
         self.object_estimate_pose_y.append(estimated_object_pos[1])
         self.object_real_____pose_x.append(observation[0])
@@ -1262,7 +1265,7 @@ class PFMovePM():
                                                         esti_obj_ori)
 
     def draw_contrast_figure(self,estimated_object_pos,observation):
-        print("Begin to draw contrast figure!")
+        # print("Begin to draw contrast figure!")
         self.object_estimate_pose_x.append(estimated_object_pos[0])
         self.object_estimate_pose_y.append(estimated_object_pos[1])
         self.object_real_____pose_x.append(observation[0])
@@ -1677,7 +1680,7 @@ if __name__ == '__main__':
             t_begin_PFPE = time.time()
             flag_update_num_PE = flag_update_num_PE + 1
             flag_write_csv_file = flag_write_csv_file + 1
-            print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
+            # print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
             # Cheat
             opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos)  # get pos of real object
             opti_obj_ori_cur = copy.deepcopy(pw_T_object_ori)
@@ -1697,9 +1700,9 @@ if __name__ == '__main__':
             if visualisation_flag == True:
                 display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
             # print("Average time of updating: ",np.mean(robot1.times))
-            print("PE: Finished")
+            # print("PE: Finished")
             t_finish_PFPE = time.time()
-            print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
+            # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
 
         if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
             flag_update_num_PM = flag_update_num_PM + 1

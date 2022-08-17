@@ -235,7 +235,7 @@ class InitialRealworldModel():
         #p_visualisation.changeDynamics(real_object_id,-1,mass=0.351,lateralFriction = 0.2)
         return real_object_id
     def set_real_robot_JointPosition(self,pybullet_simulation_env,robot, position):
-        print("Preparing the joint pose of the panda robot!")
+        # print("Preparing the joint pose of the panda robot!")
         #position[7] = 0.039916139
         #position[8] = 0.039916139
         #num_joints = 7
@@ -553,19 +553,17 @@ class PFMove():
         print("Motion model1 time consuming:",t2-t1)
         #self.display_particle_in_visual_model_PE(self.particle_cloud)
         #time.sleep(1)
-        
-        
+
         estimated_object_pos,estimated_object_ang = self.observation_update_PE(opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur)
         estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
         nois_obj_ori_cur = p_visualisation.getQuaternionFromEuler(nois_obj_ang_cur)
 
-        
-        #print("observ model time consuming:",t3-t2)
+        # print("observ model time consuming:", t3-t2)
 
         #if Flag is False:
         #    return False
         
-        print("Display particle")
+        # print("Display particle")
         if visualisation_particle_flag == True:
             self.display_particle_in_visual_model_PE(self.particle_cloud)
         #self.draw_contrast_figure(estimated_object_pos,observation)
@@ -614,7 +612,7 @@ class PFMove():
             x, y, z, x_angle, y_angle, z_angle = pipe_parent.recv()
             self.update_partcile_cloud_pose_PE(index, x, y, z, x_angle, y_angle, z_angle)
         end = time.time()
-        print(end - start)
+        # print(end - start)
 
         
     def motion_update_PE_parallelised(self,pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
@@ -630,7 +628,7 @@ class PFMove():
             thread.join()
              
         end = time.time()
-        print(end - start)
+        # print(end - start)
     
         
     def function_to_parallelise(self, index, pybullet_env,fake_robot_id, real_robot_joint_pos):
@@ -808,7 +806,7 @@ class PFMove():
         flag_1 = 0
         tot_weight = sum([particle.w for particle in self.particle_cloud])
         if tot_weight == 0:
-            print("Error!,PFPE particles total weight is 0")
+            # print("Error!,PFPE particles total weight is 0")
             tot_weight = 1
             flag_1 = 1
         for particle in self.particle_cloud:
@@ -870,7 +868,7 @@ class PFMove():
                                                         esti_obj_ori)    
 
     def draw_contrast_figure(self,estimated_object_pos,observation):
-        print("Begin to draw contrast figure!")
+        # print("Begin to draw contrast figure!")
         self.object_estimate_pose_x.append(estimated_object_pos[0])
         self.object_estimate_pose_y.append(estimated_object_pos[1])
         self.object_real_____pose_x.append(observation[0])
@@ -907,14 +905,14 @@ class PFMove():
     def compute_transformation_matrix(self, init_robot_pos,init_robot_ori,init_object_pos,init_object_ori):
         robot_transformation_matrix = transformations.quaternion_matrix(init_robot_ori)
         ow_T_robot = self.rotation_4_4_to_transformation_4_4(robot_transformation_matrix,init_robot_pos)
-        #print("ow_T_robot:",ow_T_robot)
+        # print("ow_T_robot:",ow_T_robot)
         object_transformation_matrix = transformations.quaternion_matrix(init_object_ori)
         ow_T_object = self.rotation_4_4_to_transformation_4_4(object_transformation_matrix,init_object_pos)
-        #print("ow_T_object:",ow_T_object)
+        # print("ow_T_object:",ow_T_object)
         robot_T_ow = np.linalg.inv(ow_T_robot)
         robot_T_object = np.dot(robot_T_ow,ow_T_object)
-        #print("robot_T_object:")
-        #print(robot_T_object)
+        # print("robot_T_object:")
+        # print(robot_T_object)
         return robot_T_object
     
     def rotation_4_4_to_transformation_4_4(self, rotation_4_4,pos):
@@ -972,8 +970,8 @@ class PFMovePM():
         estimated_object_ang_PM = [estimated_object_pose_PM[3],estimated_object_pose_PM[4],estimated_object_pose_PM[5]]
         boss_est_pose_PFPM.append(estimated_object_pose_PM)
         t3 = time.time()
-        #print("motion model2 time consuming:",t2-t1)
-        #print("observ model time consuming:",t3-t2)
+        # print("motion model2 time consuming:",t2-t1)
+        # print("observ model time consuming:",t3-t2)
         #self.draw_contrast_figure(estimated_object_pos,observation)
         estimated_object_ori_PM = p_visualisation.getQuaternionFromEuler(estimated_object_ang_PM)
         if visualisation_particle_flag == True:
@@ -1204,7 +1202,7 @@ class PFMovePM():
         flag_1 = 0
         tot_weight = sum([particle.w for particle in self.particle_cloud_PM])
         if tot_weight == 0:
-            print("Error!,PFPM particles total weight is 0")
+            # print("Error!,PFPM particles total weight is 0")
             tot_weight = 1
             flag_1 = 1
         for particle in self.particle_cloud_PM:
@@ -1260,7 +1258,7 @@ class PFMovePM():
                                                         esti_obj_ori)    
 
     def draw_contrast_figure(self,estimated_object_pos,observation):
-        print("Begin to draw contrast figure!")
+        # print("Begin to draw contrast figure!")
         self.object_estimate_pose_x.append(estimated_object_pos[0])
         self.object_estimate_pose_y.append(estimated_object_pos[1])
         self.object_real_____pose_x.append(observation[0])
@@ -1388,7 +1386,7 @@ def cheat_dope_obj_ang(angle):
         ang = -math.pi
     return ang
 def angle_correction(angle):
-    #print("angle before: ",angle)
+    # print("angle before: ",angle)
     # if angle >= (math.pi*3.0/2.0):
     #     angle = angle - 2 * math.pi
     # elif math.pi/2.0 <= angle and angle < (math.pi*3.0/2.0):
@@ -1568,11 +1566,11 @@ if __name__ == '__main__':
     boss_PFPE_index_df[0] = [0]
     boss_PFPM_index_df[0] = [0]
     
-    #initial_parameter.particle_cloud #parameter of particle
-    #initial_parameter.pybullet_particle_env_collection #env of simulation
-    #initial_parameter.fake_robot_id_collection #id of robot in simulation
-    #initial_parameter.particle_no_visual_id_collection #id of particle in simulation
-    #print(initial_parameter.pybullet_particle_env_collection)
+    # initial_parameter.particle_cloud #parameter of particle
+    # initial_parameter.pybullet_particle_env_collection #env of simulation
+    # initial_parameter.fake_robot_id_collection #id of robot in simulation
+    # initial_parameter.particle_no_visual_id_collection #id of particle in simulation
+    # print(initial_parameter.pybullet_particle_env_collection)
 
     #build an object of class "PFMove"
     robot1 = PFMove()
@@ -1676,7 +1674,7 @@ if __name__ == '__main__':
         #if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh) or (dis_robcur_robold_PE > d_thresh):
             flag_update_num_PE = flag_update_num_PE + 1
             flag_write_csv_file = flag_write_csv_file + 1
-            print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
+            # print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
             #Cheat
             opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos) #get pos of real object
             opti_obj_ori_cur = copy.deepcopy(pw_T_object_ori)
@@ -1694,8 +1692,8 @@ if __name__ == '__main__':
             # rob_link_9_pose_old_PE = copy.deepcopy(rob_link_9_pose_cur_PE)
             if visualisation_flag == True:
                 display_real_object_in_visual_model(optitrack_object_id, pw_T_object_pos, pw_T_object_ori)
-            print("Average time of updating: ",np.mean(robot1.times))
-            print("PE: Finished")
+            # print("Average time of updating: ",np.mean(robot1.times))
+            # print("PE: Finished")
             
         #if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
             flag_update_num_PM = flag_update_num_PM + 1

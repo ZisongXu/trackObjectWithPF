@@ -232,7 +232,7 @@ class InitialRealworldModel():
         #p_visualisation.changeDynamics(real_object_id,-1,mass=0.351,lateralFriction = 0.2)
         return real_object_id
     def set_real_robot_JointPosition(self,pybullet_simulation_env,robot, position):
-        print("Preparing the joint pose of the panda robot!")
+        # print("Preparing the joint pose of the panda robot!")
         #position[7] = 0.039916139
         #position[8] = 0.039916139
         #num_joints = 7
@@ -561,7 +561,7 @@ class PFMove():
         #if Flag is False:
         #    return False
 
-        print("Display particle")
+        # print("Display particle")
         if visualisation_particle_flag == True:
             self.display_particle_in_visual_model_PE(self.particle_cloud)
         #self.draw_contrast_figure(estimated_object_pos,observation)
@@ -575,7 +575,7 @@ class PFMove():
 
         t_err_generate = time.time()
         if flag_update_num_PE % 6 == 0:
-            print("flag_update_num_PE:",flag_update_num_PE)
+            # print("flag_update_num_PE:",flag_update_num_PE)
             boss_obse_err_sum_df[flag_update_num_PE] = err_opti_dope_pos + err_opti_dope_ang
             boss_obse_err_pos_df[flag_update_num_PE] = err_opti_dope_pos
             boss_obse_err_ang_df[flag_update_num_PE] = err_opti_dope_ang
@@ -611,7 +611,7 @@ class PFMove():
             x, y, z, x_angle, y_angle, z_angle = pipe_parent.recv()
             self.update_partcile_cloud_pose_PE(index, x, y, z, x_angle, y_angle, z_angle)
         end = time.time()
-        print(end - start)
+        # print(end - start)
 
 
     def motion_update_PE_parallelised(self,pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
@@ -627,7 +627,7 @@ class PFMove():
             thread.join()
 
         end = time.time()
-        print(end - start)
+        # print(end - start)
 
 
     def function_to_parallelise(self, index, pybullet_env,fake_robot_id, real_robot_joint_pos):
@@ -683,7 +683,6 @@ class PFMove():
         self.update_partcile_cloud_pose_PE(index, normal_x, normal_y, normal_z, x_angle, y_angle, z_angle)
         #self.update_poses[index] = (normal_x, normal_y, normal_z, x_angle, y_angle, z_angle)
         # pipe.send()
-
 
     def observation_update_PE(self, opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         nois_obj_x = nois_obj_pos_cur[0]
@@ -807,7 +806,7 @@ class PFMove():
         flag_1 = 0
         tot_weight = sum([particle.w for particle in self.particle_cloud])
         if tot_weight == 0:
-            print("Error!,PFPE particles total weight is 0")
+            # print("Error!,PFPE particles total weight is 0")
             tot_weight = 1
             flag_1 = 1
         for particle in self.particle_cloud:
@@ -869,7 +868,7 @@ class PFMove():
                                                         esti_obj_ori)
 
     def draw_contrast_figure(self,estimated_object_pos,observation):
-        print("Begin to draw contrast figure!")
+        # print("Begin to draw contrast figure!")
         self.object_estimate_pose_x.append(estimated_object_pos[0])
         self.object_estimate_pose_y.append(estimated_object_pos[1])
         self.object_real_____pose_x.append(observation[0])
@@ -944,8 +943,6 @@ class PFMovePM():
         self.noise_object_ang = []
         self.noise_object_pose = []
 
-
-
     #new structure
     def real_robot_control_PM(self,opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         #Cheat
@@ -967,7 +964,7 @@ class PFMovePM():
     def update_particle_filter_PM(self, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         global flag_record_PM_file
         t1 = time.time()
-        self.motion_update_PM()
+        self.motion_update_PM(nois_obj_ang_cur)
         t2 = time.time()
         estimated_object_pose_PM= self.observation_update_PM(opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur)
         estimated_object_pos_PM = [estimated_object_pose_PM[0],estimated_object_pose_PM[1],estimated_object_pose_PM[2]]
@@ -995,7 +992,7 @@ class PFMovePM():
         #input('hit enter to continue')
         return
 
-    def motion_update_PM(self):
+    def motion_update_PM(self, nois_obj_ang_cur):
         if flag_update_num_PM < 2:
             length = len(boss_obs_pose_PFPM)
             obs_curr_pose = copy.deepcopy(boss_obs_pose_PFPM[length-1])
@@ -1008,7 +1005,7 @@ class PFMovePM():
             obs_last_ori = p_visualisation.getQuaternionFromEuler(obs_last_ang)
             obsO_T_obsN = self.compute_transformation_matrix(obs_last_pos, obs_last_ori, obs_curr_pos, obs_curr_ori)
             parO_T_parN = copy.deepcopy(obsO_T_obsN)
-            self.update_particle_in_motion_model_PM(parO_T_parN)
+            self.update_particle_in_motion_model_PM(parO_T_parN, nois_obj_ang_cur)
         else:
             length = len(boss_est_pose_PFPM)
             est_curr_pose = copy.deepcopy(boss_est_pose_PFPM[length-1])
@@ -1021,7 +1018,7 @@ class PFMovePM():
             est_last_ori = p_visualisation.getQuaternionFromEuler(est_last_ang)
             estO_T_estN = self.compute_transformation_matrix(est_last_pos, est_last_ori, est_curr_pos, est_curr_ori)
             parO_T_parN = copy.deepcopy(estO_T_estN)
-            self.update_particle_in_motion_model_PM(parO_T_parN)
+            self.update_particle_in_motion_model_PM(parO_T_parN, nois_obj_ang_cur)
         #input("test")
         return
 
@@ -1095,9 +1092,9 @@ class PFMovePM():
             self.display_estimated_robot_in_visual_model(estimated_object_pos,estimated_object_ang)
         return object_estimate_pose
 
-    def update_particle_in_motion_model_PM(self,parO_T_parN):
+    def update_particle_in_motion_model_PM(self, parO_T_parN, nois_obj_ang_cur):
         for index, pybullet_env in enumerate(self.pybullet_env_id_collection_PM):
-            #print("=================================================")
+            # print("=================================================")
             pw_T_parO_x = self.particle_cloud_PM[index].x
             pw_T_parO_y = self.particle_cloud_PM[index].y
             pw_T_parO_z = self.particle_cloud_PM[index].z
@@ -1130,7 +1127,8 @@ class PFMovePM():
             # normal_x = pw_T_parN_pos[0]
             # normal_y = pw_T_parN_pos[1]
             # normal_z = pw_T_parN_pos[2]
-
+            # nois_obj_ang_cur
+            #  = pybullet_env.getQuaternionFromEuler(nois_obj_ang_cur)
             quat = copy.deepcopy(pw_T_parN_ori)#x,y,z,w
             quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3])#w,x,y,z
             random_dir = random.uniform(0, 2*math.pi)
@@ -1147,7 +1145,7 @@ class PFMovePM():
             nois_quat = Quaternion(x=x_quat,y=y_quat,z=z_quat,w=w_quat)
             new_quat = nois_quat * quat_QuatStyle
             ###pb_quat(x,y,z,w)
-            pb_quat = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
+            pb_quat = [new_quat[1], new_quat[2], new_quat[3], new_quat[0]]
             new_angle = p_visualisation.getEulerFromQuaternion(pb_quat)
 
             x_angle = new_angle[0]
@@ -1157,12 +1155,6 @@ class PFMovePM():
             # y_angle = pw_T_parN_ang[1]
             # z_angle = pw_T_parN_ang[2]
 
-            # self.particle_cloud_PM[index].x = pw_T_parN_pos[0]
-            # self.particle_cloud_PM[index].y = pw_T_parN_pos[1]
-            # self.particle_cloud_PM[index].z = pw_T_parN_pos[2]
-            # self.particle_cloud_PM[index].x_angle = pw_T_parN_ang[0]
-            # self.particle_cloud_PM[index].y_angle = pw_T_parN_ang[1]
-            # self.particle_cloud_PM[index].z_angle = pw_T_parN_ang[2]
             self.particle_cloud_PM[index].x = normal_x
             self.particle_cloud_PM[index].y = normal_y
             self.particle_cloud_PM[index].z = normal_z
@@ -1261,7 +1253,7 @@ class PFMovePM():
                                                         esti_obj_ori)
 
     def draw_contrast_figure(self,estimated_object_pos,observation):
-        print("Begin to draw contrast figure!")
+        # print("Begin to draw contrast figure!")
         self.object_estimate_pose_x.append(estimated_object_pos[0])
         self.object_estimate_pose_y.append(estimated_object_pos[1])
         self.object_real_____pose_x.append(observation[0])
@@ -1389,7 +1381,7 @@ def cheat_dope_obj_ang(angle):
         ang = -math.pi
     return ang
 def angle_correction(angle):
-    #print("angle before: ",angle)
+    # print("angle before: ",angle)
     # if angle >= (math.pi*3.0/2.0):
     #     angle = angle - 2 * math.pi
     # elif math.pi/2.0 <= angle and angle < (math.pi*3.0/2.0):
@@ -1406,6 +1398,7 @@ def angle_correction(angle):
     # print("angle _after: ",angle)
     return angle
 if __name__ == '__main__':
+    print("test")
     t_begin = time.time()
     particle_cloud = []
     particle_num = 100
@@ -1444,7 +1437,7 @@ if __name__ == '__main__':
     rob_T_obj_dope_ori = list(rot)
     rob_T_obj_dope_3_3 = transformations.quaternion_matrix(rob_T_obj_dope_ori)
     rob_T_obj_dope = rotation_4_4_to_transformation_4_4(rob_T_obj_dope_3_3,rob_T_obj_dope_pos)
-    #give some time to update the data
+    # give some time to update the data
     time.sleep(0.5)
     init_robot_pos = ros_listener.robot_pos
     init_robot_ori = ros_listener.robot_ori
@@ -1468,6 +1461,7 @@ if __name__ == '__main__':
         optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_real_obj_with_visual_small_hor.urdf"),
                                                        pw_T_object_pos,
                                                        pw_T_object_ori)
+    # input("test")
     #compute pose of object in DOPE
     pw_T_object_dope = np.dot(pw_T_robot,rob_T_obj_dope)
     pw_T_object_pos_dope = [pw_T_object_dope[0][3],pw_T_object_dope[1][3],pw_T_object_dope[2][3]]
@@ -1596,6 +1590,7 @@ if __name__ == '__main__':
         #get pose info from DOPE
         while True:
             try:
+                # ?
                 (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
                 break
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
@@ -1657,11 +1652,11 @@ if __name__ == '__main__':
 
         # Determine if particles need to be updated
         if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh) or (dis_robcur_robold_PE > d_thresh):
-            print("dis_robcur_robold_PE:", dis_robcur_robold_PE)
+            # print("dis_robcur_robold_PE:", dis_robcur_robold_PE)
             t_begin_PFPE = time.time()
             flag_update_num_PE = flag_update_num_PE + 1
             flag_write_csv_file = flag_write_csv_file + 1
-            print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
+            # print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
             # Cheat
             opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos)  # get pos of real object
             opti_obj_ori_cur = copy.deepcopy(pw_T_object_ori)
@@ -1681,7 +1676,7 @@ if __name__ == '__main__':
             if visualisation_flag == True:
                 display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
             # print("Average time of updating: ",np.mean(robot1.times))
-            print("PE: Finished")
+            # print("PE: Finished")
             t_finish_PFPE = time.time()
             # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
 

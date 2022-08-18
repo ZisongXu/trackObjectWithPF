@@ -4,6 +4,23 @@ Ubuntu20; ROS:noetic; Pybullet
   2. Run ./build.sh in the terminal
   3. Run ./run.sh in the terminal
 
+
+The whole process:
+  Control real robot
+  1. (server) Desk 
+  2. (server) ssh to WORKSTATION: roscore 
+  3. (server) ssh to WORKSTATION: roslaunch leeds_panda_launchers position_joint_trajectory_controller.launch 
+  3. (server) [TrackObjectWithPF]: roslaunch panda_moveit moveit.launch 
+  4. (server) [TrackObjectWithPF]: rosrun panda_moveit demo_talker_real_robot.py 
+  DOPE
+  5. (server) [realsense]: roslaunch panda_camera_launchers realsense.launch 
+  6. (server) [DOPE]: roslaunch dope dope.launch 
+  7. (server) [DOPE]: rosrun dope_utilities read_dope_objects_to_param_server.py
+  8. (Ubuntu16VM) natnet
+  9. (Ubuntu16VM) roslaunch dope_utilities dope_convertion.launch
+  TrackObjectWithPF Code
+  10. (server) [TrackObjectWithPF]: cd /home/phd_code/python3 code.py
+
 How to run the panda robot in the real world:
   1. Go into the container
   2. [TrackObjectWithPF] xterm

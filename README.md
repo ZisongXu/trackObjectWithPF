@@ -21,17 +21,7 @@ The whole process:
   TrackObjectWithPF Code
   10. (server) [TrackObjectWithPF]: cd /home/phd_code/python3 code.py
 
-How to run the panda robot in the real world:
-  1. Go into the container
-  2. [TrackObjectWithPF] xterm
-  3. [TrackObjectWithPF xterm1] roslaunch panda_moveit moveit_with_rviz.launch
-  4. [TrackObjectWithPF] xterm
-  5. [TrackObjectWithPF xterm2] cd ~/catkin_ws/src/panda_moveit/scripts
-  6. [TrackObjectWithPF xterm2] python3 demo_talker_real_robot.py
-  How to run the PF code
-  7. [TrackObjectWithPF] xterm
-  8. [TrackObjectWithPF xterm3] cd ~/phd_project/code
-  9. [TrackObjectWithPF xterm3] python3 franka_robot_realrobot_test.py
+
 
 How to run the OptiTrack:
   1. In the VM16: rosrun natnet_ros ...

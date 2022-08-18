@@ -354,9 +354,9 @@ class InitialSimulationModel():
         
     def initial_and_set_simulation_env(self,joint_of_robot):
         for index, particle in enumerate(self.particle_cloud):
-            pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
+            pybullet_simulation_env = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
             self.pybullet_particle_env_collection.append(pybullet_simulation_env)
-            
+            # pybullet_simulation_env.setTimeStep(1.0/100)
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0,0,-9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
@@ -640,6 +640,9 @@ class PFMove():
         normal_x = self.add_noise_2_par(sim_par_cur_pos[0])
         normal_y = self.add_noise_2_par(sim_par_cur_pos[1])
         normal_z = self.add_noise_2_par(sim_par_cur_pos[2])
+        # normal_x = sim_par_cur_pos[0]
+        # normal_y = sim_par_cur_pos[1]
+        # normal_z = sim_par_cur_pos[2]
         #add noise on ang of each particle
         quat = copy.deepcopy(sim_par_cur_ori)#x,y,z,w
         quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3])#w,x,y,z
@@ -661,9 +664,9 @@ class PFMove():
         x_angle = new_angle[0]
         y_angle = new_angle[1]
         z_angle = new_angle[2]
-        #x_angle = sim_par_cur_ang[0]
-        #y_angle = sim_par_cur_ang[1]
-        #z_angle = sim_par_cur_ang[2]
+        # x_angle = sim_par_cur_ang[0]
+        # y_angle = sim_par_cur_ang[1]
+        # z_angle = sim_par_cur_ang[2]
             
         #self.particle_cloud[index].x = sim_par_cur_pos[0]
         #self.particle_cloud[index].y = sim_par_cur_pos[1]
@@ -1397,9 +1400,9 @@ def angle_correction(angle):
 if __name__ == '__main__':
     t_begin = time.time()
     particle_cloud = []
-    particle_num = 50
-    visualisation_flag = False
-    visualisation_particle_flag = False
+    particle_num = 1
+    visualisation_flag = True
+    visualisation_particle_flag = True
     d_thresh = 0.002
     a_thresh = 0.01
     d_thresh_PM = 0.003
@@ -1409,7 +1412,7 @@ if __name__ == '__main__':
     flag_record_PM_file = 0
     flag_write_csv_file = 0
     #error in xyz axis DOPE
-    boss_pf_update_interval_in_real = 0.1
+    boss_pf_update_interval_in_real = 0.13
     boss_sigma_obs_x = 0.03973017808163751
     boss_sigma_obs_y = 0.01167211468503462
     boss_sigma_obs_z = 0.02820930183351492

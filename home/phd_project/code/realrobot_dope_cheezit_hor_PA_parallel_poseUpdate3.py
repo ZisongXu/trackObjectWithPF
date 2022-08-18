@@ -550,7 +550,7 @@ class PFMove():
         self.motion_update_PE_parallelised(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
         t2 = time.time()
         self.times.append(t2-t1)
-        print("Motion model1 time consuming:",t2-t1)
+        # print("Motion model1 time consuming:",t2-t1)
         #self.display_particle_in_visual_model_PE(self.particle_cloud)
         #time.sleep(1)
 
@@ -1412,7 +1412,7 @@ def angle_correction(angle):
 if __name__ == '__main__':
     t_begin = time.time()
     particle_cloud = []
-    particle_num = 100
+    particle_num = 25
     visualisation_flag = True
     visualisation_particle_flag = True
     d_thresh = 0.002
@@ -1702,7 +1702,7 @@ if __name__ == '__main__':
             # print("Average time of updating: ",np.mean(robot1.times))
             # print("PE: Finished")
             t_finish_PFPE = time.time()
-            # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
+            print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
 
         if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
             flag_update_num_PM = flag_update_num_PM + 1

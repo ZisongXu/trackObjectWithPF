@@ -48,7 +48,7 @@ planeId = p.loadURDF("plane.urdf")
 
 
 #visualisation_model
-p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
+p_visualisation = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
 p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
 p_visualisation.setGravity(0,0,-9.81)
 p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.5,0.3,0.2])
@@ -541,7 +541,7 @@ class PFMove():
         self.motion_update_PE_parallelised(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
         t2 = time.time()
         self.times.append(t2-t1)
-        print("Motion model1 time consuming:",t2-t1)
+        # print("Motion model1 time consuming:", t2-t1)
 
         
         
@@ -1397,8 +1397,8 @@ def angle_correction(angle):
 if __name__ == '__main__':
     t_begin = time.time()
     particle_cloud = []
-    particle_num = 25
-    visualisation_flag = True
+    particle_num = 50
+    visualisation_flag = False
     visualisation_particle_flag = False
     d_thresh = 0.002
     a_thresh = 0.01
@@ -1409,7 +1409,7 @@ if __name__ == '__main__':
     flag_record_PM_file = 0
     flag_write_csv_file = 0
     #error in xyz axis DOPE
-    boss_pf_update_interval_in_real = 0.50
+    boss_pf_update_interval_in_real = 0.1
     boss_sigma_obs_x = 0.03973017808163751
     boss_sigma_obs_y = 0.01167211468503462
     boss_sigma_obs_z = 0.02820930183351492
@@ -1670,7 +1670,7 @@ if __name__ == '__main__':
             # print("Average time of updating: ",np.mean(robot1.times))
             # print("PE: Finished")
             t_finish_PFPE = time.time()
-            # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
+            print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
         #if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
             flag_update_num_PM = flag_update_num_PM + 1
             boss_obs_pose_PFPM.append(dope_obj_pose_cur)
@@ -1694,24 +1694,24 @@ if __name__ == '__main__':
             # boss_obse_index_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')
             # boss_obse_time_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')
             # boss_obse_err_sum_df.to_csv('1obser_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_obse_err_pos_df.to_csv('time_scene1_obse_err_pos.csv',index=0,header=0,mode='a')
-            boss_obse_err_ang_df.to_csv('time_scene1_obse_err_ang.csv',index=0,header=0,mode='a')
+            boss_obse_err_pos_df.to_csv('error_file/time_scene1_obse_err_pos.csv',index=0,header=0,mode='a')
+            boss_obse_err_ang_df.to_csv('error_file/time_scene1_obse_err_ang.csv',index=0,header=0,mode='a')
             print("write obser file")
             write_file_flag_obse = write_file_flag_obse + 1
         if flag_write_csv_file > 59 and write_file_flag_PFPE == 0:
             # boss_PFPE_index_df.to_csv('1PFPE_error_scenes3.csv',index=0,header=0,mode='a')
             # boss_PFPE_time_df.to_csv('1PFPE_error_scenes3.csv',index=0,header=0,mode='a')
             # boss_PFPE_err_sum_df.to_csv('1PFPE_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_pos_df.to_csv('time_scene1_PFPE_err_pos.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_ang_df.to_csv('time_scene1_PFPE_err_ang.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_pos_df.to_csv('error_file/time_scene1_PFPE_err_pos.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_ang_df.to_csv('error_file/time_scene1_PFPE_err_ang.csv',index=0,header=0,mode='a')
             print("write PFPE file")
             write_file_flag_PFPE = write_file_flag_PFPE + 1
         if flag_write_csv_file > 59 and write_file_flag_PFPM == 0:
             # boss_PFPM_index_df.to_csv('1PFPM_error_scenes3.csv',index=0,header=0,mode='a')
             # boss_PFPM_time_df.to_csv('1PFPM_error_scenes3.csv',index=0,header=0,mode='a')
             # boss_PFPM_err_sum_df.to_csv('1PFPM_error_scenes3.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_pos_df.to_csv('time_scene1_PFPM_err_pos.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_ang_df.to_csv('time_scene1_PFPM_err_ang.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_pos_df.to_csv('error_file/time_scene1_PFPM_err_pos.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_ang_df.to_csv('error_file/time_scene1_PFPM_err_ang.csv',index=0,header=0,mode='a')
             print("write PFPM file")
             write_file_flag_PFPM = write_file_flag_PFPM + 1
         if Flag is False:

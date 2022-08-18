@@ -56,8 +56,12 @@ Some commands:
   
   rosbag:
   1. rosbag record -a
-  2. rosbag play "file_name".bag
+  2. rosbag record /tf /mocap/rigid_bodies/RealSense/pose /mocap/rigid_bodies/baseofcheezit/pose /mocap/rigid_bodies/cheezit/pose /mocap/rigid_bodies/pandaRobot/pose /joint_states -o test.bag
+  3. rosbag play "file_name".bag
   
   rosparam:
   1. rosparam list
   2. rosparam get /DOPE_object_names
+  
+  kill:
+  1. kill -9 %1

@@ -1414,7 +1414,7 @@ if __name__ == '__main__':
     particle_cloud = []
     particle_num = 100
     visualisation_flag = True
-    visualisation_particle_flag = False
+    visualisation_particle_flag = True
     d_thresh = 0.002
     a_thresh = 0.010
     d_thresh_PM = 0.0002

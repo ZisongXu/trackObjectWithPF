@@ -49,7 +49,7 @@ planeId = p.loadURDF("plane.urdf")
 
 
 #visualisation_model
-p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
+p_visualisation = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
 p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
 p_visualisation.setGravity(0,0,-9.81)
 p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.5,0.3,0.2])
@@ -413,7 +413,7 @@ class InitialSimulationModel():
     def initial_and_set_simulation_env_PM(self,joint_of_robot):
         self.particle_cloud_PM = copy.deepcopy(self.particle_cloud)
         for index, particle in enumerate(self.particle_cloud_PM):
-            pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT)
+            pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT) # GUI_SERVER, DIRECT
             self.pybullet_particle_env_collection_PM.append(pybullet_simulation_env)
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0,0,-9.81)
@@ -1403,8 +1403,8 @@ if __name__ == '__main__':
     t_begin = time.time()
     particle_cloud = []
     particle_num = 100
-    visualisation_flag = True
-    visualisation_particle_flag = True
+    visualisation_flag = False
+    visualisation_particle_flag = False
     d_thresh = 0.002
     a_thresh = 0.01
     d_thresh_PM = 0.0002
@@ -1430,7 +1430,7 @@ if __name__ == '__main__':
     listener = tf.TransformListener()
     while True:
         try:
-            (trans,rot) = listener.lookupTransform('/pandaRobot', '/cracker', rospy.Time(0))
+            (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
             break
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
@@ -1586,7 +1586,7 @@ if __name__ == '__main__':
         #for i_ss in range(240):
         franka_robot.fanka_robot_move(ros_listener.current_joint_values)
         #p_visualisation.stepSimulation()
-        time.sleep(1./240.)
+        # time.sleep(1./240.)
 
         #get pose info from DOPE
         while True:
@@ -1650,14 +1650,14 @@ if __name__ == '__main__':
         ang_robcur_robold_PM = comp_z_ang(rob_link_9_ang_cur_PM,rob_link_9_ang_old_PM)
 
         write_file_judgement = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PE[0],rob_pose_init[0])
-
+        # print(dis_robcur_robold_PE)
         # Determine if particles need to be updated
         if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh) or (dis_robcur_robold_PE > d_thresh):
             # print("dis_robcur_robold_PE:", dis_robcur_robold_PE)
             t_begin_PFPE = time.time()
             flag_update_num_PE = flag_update_num_PE + 1
             flag_write_csv_file = flag_write_csv_file + 1
-            print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
+            # print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
             # Cheat
             opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos)  # get pos of real object
             opti_obj_ori_cur = copy.deepcopy(pw_T_object_ori)

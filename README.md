@@ -16,10 +16,16 @@ The whole process:
   5. (server) [realsense]: roslaunch panda_camera_launchers realsense.launch 
   6. (server) [DOPE]: roslaunch dope dope.launch 
   7. (server) [DOPE]: rosrun dope_utilities read_dope_objects_to_param_server.py
-  8. (Ubuntu16VM) natnet
+  8. (Ubuntu16VM) rosrun natnet_ros client _server:=192.168.131.103
   9. (Ubuntu16VM) roslaunch dope_utilities dope_convertion.launch
+  (maybe not)
+  10. (server) [DOPE]: rosrun rviz rviz 
+  RViz:
+    [Global Options]: pandaRobot
+    [Image]: /dope/rgb_points
+    [TF]: cracker/cheezit
   TrackObjectWithPF Code
-  10. (server) [TrackObjectWithPF]: cd /home/phd_code/python3 code.py
+  11. (server) [TrackObjectWithPF]: cd /home/phd_code/python3 code.py
 
 
 

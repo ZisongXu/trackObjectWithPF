@@ -1127,7 +1127,6 @@ class PFMovePM():
             # normal_x = pw_T_parN_pos[0]
             # normal_y = pw_T_parN_pos[1]
             # normal_z = pw_T_parN_pos[2]
-            # nois_obj_ang_cur
 
             nois_obj_ori_cur = pybullet_env.getQuaternionFromEuler(nois_obj_ang_cur)
             quat = copy.deepcopy(nois_obj_ori_cur)#x,y,z,w

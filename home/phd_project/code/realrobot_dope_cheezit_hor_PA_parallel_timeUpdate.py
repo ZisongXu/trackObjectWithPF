@@ -958,7 +958,7 @@ class PFMovePM():
     def update_particle_filter_PM(self, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         global flag_record_PM_file
         t1 = time.time()
-        self.motion_update_PM()
+        self.motion_update_PM(nois_obj_ang_cur)
         t2 = time.time()
         estimated_object_pose_PM= self.observation_update_PM(opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur)
         estimated_object_pos_PM = [estimated_object_pose_PM[0],estimated_object_pose_PM[1],estimated_object_pose_PM[2]]
@@ -986,7 +986,7 @@ class PFMovePM():
         #input('hit enter to continue')
         return
 
-    def motion_update_PM(self):
+    def motion_update_PM(self, nois_obj_ang_cur):
         if flag_update_num_PM < 2:
             length = len(boss_obs_pose_PFPM)
             obs_curr_pose = copy.deepcopy(boss_obs_pose_PFPM[length-1])
@@ -999,7 +999,7 @@ class PFMovePM():
             obs_last_ori = p_visualisation.getQuaternionFromEuler(obs_last_ang)
             obsO_T_obsN = self.compute_transformation_matrix(obs_last_pos, obs_last_ori, obs_curr_pos, obs_curr_ori)
             parO_T_parN = copy.deepcopy(obsO_T_obsN)
-            self.update_particle_in_motion_model_PM(parO_T_parN)
+            self.update_particle_in_motion_model_PM(parO_T_parN, nois_obj_ang_cur)
         else:
             length = len(boss_est_pose_PFPM)
             est_curr_pose = copy.deepcopy(boss_est_pose_PFPM[length-1])
@@ -1012,7 +1012,7 @@ class PFMovePM():
             est_last_ori = p_visualisation.getQuaternionFromEuler(est_last_ang)
             estO_T_estN = self.compute_transformation_matrix(est_last_pos, est_last_ori, est_curr_pos, est_curr_ori)
             parO_T_parN = copy.deepcopy(estO_T_estN)
-            self.update_particle_in_motion_model_PM(parO_T_parN)
+            self.update_particle_in_motion_model_PM(parO_T_parN, nois_obj_ang_cur)
             
         return
 
@@ -1086,7 +1086,7 @@ class PFMovePM():
             self.display_estimated_robot_in_visual_model(estimated_object_pos,estimated_object_ang)
         return object_estimate_pose
 
-    def update_particle_in_motion_model_PM(self, parO_T_parN):
+    def update_particle_in_motion_model_PM(self, parO_T_parN, nois_obj_ang_cur):
         for index, pybullet_env in enumerate(self.pybullet_env_id_collection_PM):
             # print("=================================================")
             pw_T_parO_x = self.particle_cloud_PM[index].x
@@ -1122,8 +1122,9 @@ class PFMovePM():
             # normal_x = pw_T_parN_pos[0]
             # normal_y = pw_T_parN_pos[1]
             # normal_z = pw_T_parN_pos[2]
-
-            quat = copy.deepcopy(pw_T_parN_ori)  # x,y,z,w
+            
+            nois_obj_ori_cur = pybullet_env.getQuaternionFromEuler(nois_obj_ang_cur)
+            quat = copy.deepcopy(nois_obj_ori_cur)  # x,y,z,w
             quat_QuatStyle = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])  # w,x,y,z
             random_dir = random.uniform(0, 2 * math.pi)
             z_axis = random.uniform(-1, 1)

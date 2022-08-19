@@ -354,9 +354,9 @@ class InitialSimulationModel():
         
     def initial_and_set_simulation_env(self,joint_of_robot):
         for index, particle in enumerate(self.particle_cloud):
-            pybullet_simulation_env = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
+            pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
             self.pybullet_particle_env_collection.append(pybullet_simulation_env)
-            # pybullet_simulation_env.setTimeStep(1.0/100)
+            pybullet_simulation_env.setTimeStep(change_sim_time)
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0,0,-9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
@@ -408,7 +408,7 @@ class InitialSimulationModel():
     def initial_and_set_simulation_env_PM(self,joint_of_robot):
         self.particle_cloud_PM = copy.deepcopy(self.particle_cloud)
         for index, particle in enumerate(self.particle_cloud_PM):
-            pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT)
+            pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT) # GUI_SERVER, DIRECT
             self.pybullet_particle_env_collection_PM.append(pybullet_simulation_env)
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0,0,-9.81)
@@ -627,7 +627,7 @@ class PFMove():
         self.change_obj_parameters(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
         #execute the control
 
-        pf_update_interval_in_sim = boss_pf_update_interval_in_real * 240
+        pf_update_interval_in_sim = boss_pf_update_interval_in_real / change_sim_time
         #boss_pf_update_interval_in_real
         for time_index in range(int(pf_update_interval_in_sim)):
             self.set_real_robot_JointPosition(pybullet_env,fake_robot_id[index],real_robot_joint_pos)
@@ -1401,7 +1401,7 @@ def angle_correction(angle):
 if __name__ == '__main__':
     t_begin = time.time()
     particle_cloud = []
-    particle_num = 1
+    particle_num = 85
     visualisation_flag = True
     visualisation_particle_flag = True
     d_thresh = 0.002
@@ -1413,7 +1413,8 @@ if __name__ == '__main__':
     flag_record_PM_file = 0
     flag_write_csv_file = 0
     #error in xyz axis DOPE
-    boss_pf_update_interval_in_real = 0.13
+    boss_pf_update_interval_in_real = 0.135
+    change_sim_time = 1.0/90
     boss_sigma_obs_x = 0.03973017808163751
     boss_sigma_obs_y = 0.01167211468503462
     boss_sigma_obs_z = 0.02820930183351492

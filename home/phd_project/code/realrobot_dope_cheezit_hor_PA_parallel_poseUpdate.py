@@ -49,7 +49,7 @@ planeId = p.loadURDF("plane.urdf")
 
 
 #visualisation_model
-p_visualisation = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
+p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
 p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
 p_visualisation.setGravity(0,0,-9.81)
 p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.5,0.3,0.2])
@@ -1401,9 +1401,9 @@ if __name__ == '__main__':
     print("test")
     t_begin = time.time()
     particle_cloud = []
-    particle_num = 100
-    visualisation_flag = False
-    visualisation_particle_flag = False
+    particle_num = 85
+    visualisation_flag = True
+    visualisation_particle_flag = True
     d_thresh = 0.002
     a_thresh = 0.01
     d_thresh_PM = 0.0002

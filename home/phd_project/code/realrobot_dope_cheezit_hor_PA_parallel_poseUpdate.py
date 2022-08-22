@@ -1715,24 +1715,24 @@ if __name__ == '__main__':
             # boss_obse_index_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_obse_time_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_obse_err_sum_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
-            boss_obse_err_pos_df.to_csv('error_file/02_scene1_obse_err_pos.csv',index=0,header=0,mode='a')
-            boss_obse_err_ang_df.to_csv('error_file/02_scene1_obse_err_ang.csv',index=0,header=0,mode='a')
+            boss_obse_err_pos_df.to_csv('error_file/02_scene4_obse_err_pos.csv',index=0,header=0,mode='a')
+            boss_obse_err_ang_df.to_csv('error_file/02_scene4_obse_err_ang.csv',index=0,header=0,mode='a')
             print("write obser file")
             write_file_flag_obse = write_file_flag_obse + 1
         # if flag_write_csv_file > 65 and write_file_flag_PFPE == 0:
             # boss_PFPE_index_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPE_time_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPE_err_sum_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_pos_df.to_csv('error_file/02_scene1_PFPE_err_pos.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_ang_df.to_csv('error_file/02_scene1_PFPE_err_ang.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_pos_df.to_csv('error_file/02_scene4_PFPE_err_pos.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_ang_df.to_csv('error_file/02_scene4_PFPE_err_ang.csv',index=0,header=0,mode='a')
             print("write PFPE file")
             write_file_flag_PFPE = write_file_flag_PFPE + 1
         # if flag_write_csv_file > 65 and write_file_flag_PFPM == 0:
             # boss_PFPM_index_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPM_time_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPM_err_sum_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_pos_df.to_csv('error_file/02_scene1_PFPM_err_pos.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_ang_df.to_csv('error_file/02_scene1_PFPM_err_ang.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_pos_df.to_csv('error_file/02_scene4_PFPM_err_pos.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_ang_df.to_csv('error_file/02_scene4_PFPM_err_ang.csv',index=0,header=0,mode='a')
             print("write PFPM file")
             write_file_flag_PFPM = write_file_flag_PFPM + 1
             print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))

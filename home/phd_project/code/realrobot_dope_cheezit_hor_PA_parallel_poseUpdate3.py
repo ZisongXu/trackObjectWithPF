@@ -545,6 +545,7 @@ class PFMove():
     #executed_control
     def update_particle_filter_PE(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         global flag_record_PM_file
+        global t_begin_while
         self.times = []
         t1 = time.time()
         self.motion_update_PE_parallelised(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
@@ -578,8 +579,9 @@ class PFMove():
         err_opti_PFPE_ang = angle_correction(err_opti_PFPE_ang)
 
         t_err_generate = time.time()
-        if flag_update_num_PE % 1 == 0:
-            # print("flag_update_num_PE:",flag_update_num_PE)
+        if t_decide_write > 1:
+            t_begin_while = t_begin_PFPE
+        # print("flag_update_num_PE:",flag_update_num_PE)
             boss_obse_err_sum_df[flag_update_num_PE] = err_opti_dope_pos + err_opti_dope_ang
             boss_obse_err_pos_df[flag_update_num_PE] = err_opti_dope_pos
             boss_obse_err_ang_df[flag_update_num_PE] = err_opti_dope_ang
@@ -970,6 +972,7 @@ class PFMovePM():
     #executed_control
     def update_particle_filter_PM(self, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         global flag_record_PM_file
+        global t_begin_while
         t1 = time.time()
         self.motion_update_PM(nois_obj_ang_cur)
         t2 = time.time()
@@ -988,7 +991,8 @@ class PFMovePM():
         err_opti_PFPM_ang = compute_ang_err_bt_2_points(estimated_object_ori_PM,opti_obj_ori_cur)
         err_opti_PFPM_ang = angle_correction(err_opti_PFPM_ang)
         t_err_generate = time.time()
-        if flag_record_PM_file == 1:
+        if t_decide_write > 1:
+            t_begin_while = t_begin_PFPM
             boss_PFPM_err_sum_df[flag_update_num_PM] = err_opti_PFPM_pos + err_opti_PFPM_ang
             boss_PFPM_err_pos_df[flag_update_num_PM] = err_opti_PFPM_pos
             boss_PFPM_err_ang_df[flag_update_num_PM] = err_opti_PFPM_ang
@@ -1136,7 +1140,7 @@ class PFMovePM():
             # normal_z = pw_T_parN_pos[2]
             
             nois_obj_ori_cur = pybullet_env.getQuaternionFromEuler(nois_obj_ang_cur)
-            quat = copy.deepcopy(pw_T_parN_ori)#x,y,z,w
+            quat = copy.deepcopy(nois_obj_ori_cur)#x,y,z,w
             quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3])#w,x,y,z
             random_dir = random.uniform(0, 2*math.pi)
             z_axis = random.uniform(-1,1)
@@ -1413,13 +1417,17 @@ def angle_correction(angle):
 if __name__ == '__main__':
     t_begin = time.time()
     particle_cloud = []
-    particle_num = 90
+    particle_num = 100
     visualisation_flag = True
     visualisation_particle_flag = True
     d_thresh = 0.002
-    a_thresh = 0.010
+    a_thresh = 0.01
+    # d_thresh = 200
+    # a_thresh = 1000
     d_thresh_PM = 0.0002
     a_thresh_PM = 0.0010
+    d_thresh_PM = 200
+    a_thresh_PM = 1000
     flag_update_num_PM = 0
     flag_update_num_PE = 0
     flag_record_PM_file = 0
@@ -1534,7 +1542,7 @@ if __name__ == '__main__':
     # real_object_id = real_world_object.initial_target_object(object_pos = pw_T_object_pos,object_orientation = pw_T_object_ori)
     # build an object of class "Franka_robot"
     franka_robot = Franka_robot(real_robot_id)
-
+    print(1)
     # input('Press [ENTER] to initial simulation world model')
     # initialize sim world
     initial_parameter = InitialSimulationModel(particle_num, pybullet_robot_pos, pybullet_robot_ori, dope_obj_pos_init, dope_obj_ang_init, dope_obj_ori_init)
@@ -1606,7 +1614,7 @@ if __name__ == '__main__':
     write_file_flag_PFPM = 0
 
     print("Welcome to Our Approach !")
-
+    t_begin_while = time.time()
     while True:
         #panda robot moves in the visualization window
         #for i_ss in range(240):
@@ -1679,6 +1687,7 @@ if __name__ == '__main__':
         # Determine if particles need to be updated
         if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh) or (dis_robcur_robold_PE > d_thresh):
             t_begin_PFPE = time.time()
+            t_decide_write = t_begin_PFPE - t_begin_while
             flag_update_num_PE = flag_update_num_PE + 1
             flag_write_csv_file = flag_write_csv_file + 1
             # print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
@@ -1706,6 +1715,8 @@ if __name__ == '__main__':
             print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
 
         if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
+            t_begin_PFPM = time.time()
+            t_decide_write = t_begin_PFPM - t_begin_while
             flag_update_num_PM = flag_update_num_PM + 1
             boss_obs_pose_PFPM.append(dope_obj_pose_cur)
             opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object
@@ -1722,31 +1733,33 @@ if __name__ == '__main__':
             dope_obj_ang_old_PM = copy.deepcopy(dope_obj_ang_cur)
             dope_obj_ori_old_PM = copy.deepcopy(dope_obj_ori_cur)
             rob_link_9_pose_old_PM = copy.deepcopy(rob_link_9_pose_cur_PM)
-
-        if flag_write_csv_file > 22 and write_file_flag_obse == 0:
+        t_end_while = time.time()
+        if t_end_while - t_begin > 39:
             # boss_obse_index_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_obse_time_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_obse_err_sum_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
-            boss_obse_err_pos_df.to_csv('scene3_obse_err_0_2.csv',index=0,header=0,mode='a')
-            boss_obse_err_ang_df.to_csv('scene3_obse_err_0_2.csv',index=0,header=0,mode='a')
+            boss_obse_err_pos_df.to_csv('error_file/02_scene2_obse_err_pos.csv',index=0,header=0,mode='a')
+            boss_obse_err_ang_df.to_csv('error_file/02_scene2_obse_err_ang.csv',index=0,header=0,mode='a')
             print("write obser file")
             write_file_flag_obse = write_file_flag_obse + 1
-        if flag_write_csv_file > 22 and write_file_flag_PFPE == 0:
+        # if flag_write_csv_file > 65 and write_file_flag_PFPE == 0:
             # boss_PFPE_index_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPE_time_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPE_err_sum_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_pos_df.to_csv('scene3_PFPE_err_0_2.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_ang_df.to_csv('scene3_PFPE_err_0_2.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_pos_df.to_csv('error_file/02_scene2_PFPE_err_pos.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_ang_df.to_csv('error_file/02_scene2_PFPE_err_ang.csv',index=0,header=0,mode='a')
             print("write PFPE file")
             write_file_flag_PFPE = write_file_flag_PFPE + 1
-        if flag_write_csv_file > 22 and write_file_flag_PFPM == 0:
+        # if flag_write_csv_file > 65 and write_file_flag_PFPM == 0:
             # boss_PFPM_index_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPM_time_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPM_err_sum_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_pos_df.to_csv('scene3_PFPM_err_0_2.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_ang_df.to_csv('scene3_PFPM_err_0_2.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_pos_df.to_csv('error_file/02_scene2_PFPM_err_pos.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_ang_df.to_csv('error_file/02_scene2_PFPM_err_ang.csv',index=0,header=0,mode='a')
             print("write PFPM file")
             write_file_flag_PFPM = write_file_flag_PFPM + 1
+            print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
+            break
         if Flag is False:
             break
 

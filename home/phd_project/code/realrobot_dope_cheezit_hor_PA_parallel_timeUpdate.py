@@ -1658,31 +1658,31 @@ if __name__ == '__main__':
         #if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh) or (dis_robcur_robold_PE > d_thresh):
         
         
-            # t_begin_PFPE = time.time()
-            # t_decide_write = t_begin_PFPE - t_begin_while
-            # flag_update_num_PE = flag_update_num_PE + 1
-            # flag_write_csv_file = flag_write_csv_file + 1
-            # # print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
-            # #Cheat
-            # opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos) #get pos of real object
-            # opti_obj_ori_cur = copy.deepcopy(pw_T_object_ori)
-            # nois_obj_pos_cur = copy.deepcopy(dope_obj_pos_cur)
-            # nois_obj_ang_cur = copy.deepcopy(dope_obj_ang_cur)
-            # #execute sim_robot movement 
-            # robot1.real_robot_control_PE(opti_obj_pos_cur,
-            #                              opti_obj_ori_cur,
-            #                              ros_listener.current_joint_values,
-            #                              nois_obj_pos_cur,
-            #                              nois_obj_ang_cur)
-            # # dope_obj_pos_old = copy.deepcopy(dope_obj_pos_cur)
-            # # dope_obj_ang_old = copy.deepcopy(dope_obj_ang_cur)
-            # # dope_obj_ori_old = copy.deepcopy(dope_obj_ori_cur)
-            # # rob_link_9_pose_old_PE = copy.deepcopy(rob_link_9_pose_cur_PE)
-            # if visualisation_flag == True:
-            #     display_real_object_in_visual_model(optitrack_object_id, pw_T_object_pos, pw_T_object_ori)
-            # # print("Average time of updating: ",np.mean(robot1.times))
-            # # print("PE: Finished")
-            # t_finish_PFPE = time.time()
+            t_begin_PFPE = time.time()
+            t_decide_write = t_begin_PFPE - t_begin_while
+            flag_update_num_PE = flag_update_num_PE + 1
+            flag_write_csv_file = flag_write_csv_file + 1
+            # print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
+            #Cheat
+            opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos) #get pos of real object
+            opti_obj_ori_cur = copy.deepcopy(pw_T_object_ori)
+            nois_obj_pos_cur = copy.deepcopy(dope_obj_pos_cur)
+            nois_obj_ang_cur = copy.deepcopy(dope_obj_ang_cur)
+            #execute sim_robot movement 
+            robot1.real_robot_control_PE(opti_obj_pos_cur,
+                                         opti_obj_ori_cur,
+                                         ros_listener.current_joint_values,
+                                         nois_obj_pos_cur,
+                                         nois_obj_ang_cur)
+            # dope_obj_pos_old = copy.deepcopy(dope_obj_pos_cur)
+            # dope_obj_ang_old = copy.deepcopy(dope_obj_ang_cur)
+            # dope_obj_ori_old = copy.deepcopy(dope_obj_ori_cur)
+            # rob_link_9_pose_old_PE = copy.deepcopy(rob_link_9_pose_cur_PE)
+            if visualisation_flag == True:
+                display_real_object_in_visual_model(optitrack_object_id, pw_T_object_pos, pw_T_object_ori)
+            # print("Average time of updating: ",np.mean(robot1.times))
+            # print("PE: Finished")
+            t_finish_PFPE = time.time()
             
             
             

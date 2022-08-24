@@ -49,7 +49,7 @@ planeId = p.loadURDF("plane.urdf")
 
 
 #visualisation_model
-p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
+p_visualisation = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
 p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
 p_visualisation.setGravity(0,0,-9.81)
 p_visualisation.resetDebugVisualizerCamera(cameraDistance=2,cameraYaw=0,cameraPitch=-40,cameraTargetPosition=[0.5,-0.9,0.5])
@@ -1003,7 +1003,7 @@ class PFMovePM():
         #input('hit enter to continue')
         return
 
-    def motion_update_PM(self):
+    def motion_update_PM(self, nois_obj_ang_cur):
         if flag_update_num_PM < 2:
             length = len(boss_obs_pose_PFPM)
             obs_curr_pose = copy.deepcopy(boss_obs_pose_PFPM[length-1])
@@ -1422,12 +1422,12 @@ if __name__ == '__main__':
     visualisation_particle_flag = True
     d_thresh = 0.002
     a_thresh = 0.01
-    # d_thresh = 200
-    # a_thresh = 1000
+    d_thresh = 200
+    a_thresh = 1000
     d_thresh_PM = 0.0002
     a_thresh_PM = 0.0010
-    d_thresh_PM = 200
-    a_thresh_PM = 1000
+    # d_thresh_PM = 200
+    # a_thresh_PM = 1000
     flag_update_num_PM = 0
     flag_update_num_PE = 0
     flag_record_PM_file = 0
@@ -1712,7 +1712,7 @@ if __name__ == '__main__':
             # print("Average time of updating: ",np.mean(robot1.times))
             # print("PE: Finished")
             t_finish_PFPE = time.time()
-            print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
+            # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
 
         if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
             t_begin_PFPM = time.time()
@@ -1734,7 +1734,7 @@ if __name__ == '__main__':
             dope_obj_ori_old_PM = copy.deepcopy(dope_obj_ori_cur)
             rob_link_9_pose_old_PM = copy.deepcopy(rob_link_9_pose_cur_PM)
         t_end_while = time.time()
-        if t_end_while - t_begin > 39:
+        if t_end_while - t_begin > 32:
             # boss_obse_index_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_obse_time_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_obse_err_sum_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')

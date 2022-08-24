@@ -1,0 +1,4 @@
+scene1a: rotate the target object (not obscured)
+scene1b: rotate the target object (did obscured)
+scene2: lift the target object
+scene3: make tilted object become upright

@@ -59,11 +59,11 @@ boss_obse_err_sum_df = pd.DataFrame()
 boss_PFPE_err_sum_df = pd.DataFrame()
 boss_PFPM_err_sum_df = pd.DataFrame()
 
-boss_obse_err_pos_df = pd.DataFrame()
+boss_obse_err_pos_df = pd.DataFrame(columns=['step','time','pos'],index=[])
 boss_PFPE_err_pos_df = pd.DataFrame()
 boss_PFPM_err_pos_df = pd.DataFrame()
 
-boss_obse_err_ang_df = pd.DataFrame()
+boss_obse_err_ang_df = pd.DataFrame(columns=['step','time','ang'],index=[])
 boss_PFPE_err_ang_df = pd.DataFrame()
 boss_PFPM_err_ang_df = pd.DataFrame()
 
@@ -1408,12 +1408,13 @@ if __name__ == '__main__':
     visualisation_particle_flag = True
     d_thresh = 0.002
     a_thresh = 0.01
-    # d_thresh = 200
-    # a_thresh = 1000
+    d_thresh = 200
+    a_thresh = 1000
     d_thresh_PM = 0.0002
     a_thresh_PM = 0.0010
     d_thresh_PM = 200
     a_thresh_PM = 1000
+    flag_record_dope = 0
     flag_update_num_PM = 0
     flag_update_num_PE = 0
     flag_record_PM_file = 0
@@ -1496,9 +1497,10 @@ if __name__ == '__main__':
     err_opti_dope_ang = compute_ang_err_bt_2_points(pw_T_object_ori,pw_T_object_ori_dope)
     err_opti_dope_ang = angle_correction(err_opti_dope_ang)
     err_opti_dope_sum = err_opti_dope_pos + err_opti_dope_ang
-    boss_obse_err_sum_df[0] = [err_opti_dope_sum]
-    boss_obse_err_pos_df[0] = [err_opti_dope_pos]
-    boss_obse_err_ang_df[0] = [err_opti_dope_ang]
+    t_before_record = time.time()
+    boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos]
+    boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang]
+    flag_record_dope = flag_record_dope + 1
     boss_obse_time_df[0] = [0]
     boss_obse_index_df[0] = [0]
 
@@ -1658,6 +1660,24 @@ if __name__ == '__main__':
         write_file_judgement = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PE[0],rob_pose_init[0])
         # print(dis_robcur_robold_PE)
         # Determine if particles need to be updated
+        
+        err_opti_dope_pos = compute_pos_err_bt_2_points(pw_T_object_pos_dope, pw_T_obj_pos_opti)
+        err_opti_dope_ang = compute_ang_err_bt_2_points(pw_T_object_ori_dope, pw_T_obj_ori_opti)
+        err_opti_dope_ang = angle_correction(err_opti_dope_ang)
+        
+        t_in_while = time.time()
+        
+        
+        t_before_record = time.time()
+        boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos]
+        boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang]
+        flag_record_dope = flag_record_dope + 1
+        
+        boss_obse_time_df[flag_update_num_PE] = [t_in_while - t_begin_while]
+        boss_obse_index_df[flag_update_num_PE] = [flag_update_num_PE]
+        
+        
+        
         if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh) or (dis_robcur_robold_PE > d_thresh):
             t_begin_PFPE = time.time()
             # print("dis_robcur_robold_PE:", dis_robcur_robold_PE)

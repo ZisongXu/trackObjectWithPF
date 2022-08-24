@@ -541,7 +541,7 @@ class PFMove():
     #executed_control
     def update_particle_filter_PE(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         global flag_record_PM_file
-        global t_begin_while
+
         self.times = []
         t1 = time.time()
         self.motion_update_PE_parallelised(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
@@ -551,11 +551,9 @@ class PFMove():
         #self.display_particle_in_visual_model_PE(self.particle_cloud)
         #time.sleep(1)
 
-
         estimated_object_pos,estimated_object_ang = self.observation_update_PE(opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur)
         estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
         nois_obj_ori_cur = p_visualisation.getQuaternionFromEuler(nois_obj_ang_cur)
-
 
         #print("observ model time consuming:",t3-t2)
 
@@ -575,22 +573,21 @@ class PFMove():
         err_opti_PFPE_ang = angle_correction(err_opti_PFPE_ang)
 
         t_err_generate = time.time()
-        if t_decide_write > 1:
-            t_begin_while = t_begin_PFPE
+
         # print("flag_update_num_PE:",flag_update_num_PE)
-            boss_obse_err_sum_df[flag_update_num_PE] = err_opti_dope_pos + err_opti_dope_ang
-            boss_obse_err_pos_df[flag_update_num_PE] = err_opti_dope_pos
-            boss_obse_err_ang_df[flag_update_num_PE] = err_opti_dope_ang
-            boss_obse_time_df[flag_update_num_PE] = [t_err_generate-agl_start_t]
-            boss_obse_index_df[flag_update_num_PE] = [flag_update_num_PE]
+        boss_obse_err_sum_df[flag_update_num_PE] = err_opti_dope_pos + err_opti_dope_ang
+        boss_obse_err_pos_df[flag_update_num_PE] = err_opti_dope_pos
+        boss_obse_err_ang_df[flag_update_num_PE] = err_opti_dope_ang
+        boss_obse_time_df[flag_update_num_PE] = [t_err_generate-agl_start_t]
+        boss_obse_index_df[flag_update_num_PE] = [flag_update_num_PE]
+        
+        boss_PFPE_err_sum_df[flag_update_num_PE] = err_opti_PFPE_pos + err_opti_PFPE_ang
+        boss_PFPE_err_pos_df[flag_update_num_PE] = err_opti_PFPE_pos
+        boss_PFPE_err_ang_df[flag_update_num_PE] = err_opti_PFPE_ang
+        boss_PFPE_time_df[flag_update_num_PE] = [t_err_generate-agl_start_t]
+        boss_PFPE_index_df[flag_update_num_PE] = [flag_update_num_PE]
 
-            boss_PFPE_err_sum_df[flag_update_num_PE] = err_opti_PFPE_pos + err_opti_PFPE_ang
-            boss_PFPE_err_pos_df[flag_update_num_PE] = err_opti_PFPE_pos
-            boss_PFPE_err_ang_df[flag_update_num_PE] = err_opti_PFPE_ang
-            boss_PFPE_time_df[flag_update_num_PE] = [t_err_generate-agl_start_t]
-            boss_PFPE_index_df[flag_update_num_PE] = [flag_update_num_PE]
-
-            flag_record_PM_file = 1
+        flag_record_PM_file = 1
 
 
         # print debug info of all particles here
@@ -984,14 +981,14 @@ class PFMovePM():
         err_opti_PFPM_ang = compute_ang_err_bt_2_points(estimated_object_ori_PM,opti_obj_ori_cur)
         err_opti_PFPM_ang = angle_correction(err_opti_PFPM_ang)
         t_err_generate = time.time()
-        if t_decide_write > 1:
-            t_begin_while = t_begin_PFPM
-            boss_PFPM_err_sum_df[flag_update_num_PM] = err_opti_PFPM_pos + err_opti_PFPM_ang
-            boss_PFPM_err_pos_df[flag_update_num_PM] = err_opti_PFPM_pos
-            boss_PFPM_err_ang_df[flag_update_num_PM] = err_opti_PFPM_ang
-            boss_PFPM_time_df[flag_update_num_PM] = [t_err_generate-agl_start_t]
-            boss_PFPM_index_df[flag_update_num_PM] = [flag_update_num_PM]
-            flag_record_PM_file = 0
+
+        t_begin_while = t_begin_PFPM
+        boss_PFPM_err_sum_df[flag_update_num_PM] = err_opti_PFPM_pos + err_opti_PFPM_ang
+        boss_PFPM_err_pos_df[flag_update_num_PM] = err_opti_PFPM_pos
+        boss_PFPM_err_ang_df[flag_update_num_PM] = err_opti_PFPM_ang
+        boss_PFPM_time_df[flag_update_num_PM] = [t_err_generate-agl_start_t]
+        boss_PFPM_index_df[flag_update_num_PM] = [flag_update_num_PM]
+        flag_record_PM_file = 0
         # print debug info of all particles here
         #input('hit enter to continue')
         return
@@ -1661,8 +1658,6 @@ if __name__ == '__main__':
         # Determine if particles need to be updated
         if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh) or (dis_robcur_robold_PE > d_thresh):
             # print("dis_robcur_robold_PE:", dis_robcur_robold_PE)
-            t_begin_PFPE = time.time()
-            t_decide_write = t_begin_PFPE - t_begin_while
             flag_update_num_PE = flag_update_num_PE + 1
             # flag_write_csv_file = flag_write_csv_file + 1
             # print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
@@ -1690,8 +1685,6 @@ if __name__ == '__main__':
             # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
 
         if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
-            t_begin_PFPM = time.time()
-            t_decide_write = t_begin_PFPM - t_begin_while
             flag_update_num_PM = flag_update_num_PM + 1
             boss_obs_pose_PFPM.append(dope_obj_pose_cur)
             opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object
@@ -1715,24 +1708,24 @@ if __name__ == '__main__':
             # boss_obse_index_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_obse_time_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_obse_err_sum_df.to_csv('obse_err_scene1_0_2.csv',index=0,header=0,mode='a')
-            boss_obse_err_pos_df.to_csv('error_file/02_scene2_obse_err_pos.csv',index=0,header=0,mode='a')
-            boss_obse_err_ang_df.to_csv('error_file/02_scene2_obse_err_ang.csv',index=0,header=0,mode='a')
+            boss_obse_err_pos_df.to_csv('error_file/02_scene1b_obse_err_pos.csv',index=0,header=0,mode='a')
+            boss_obse_err_ang_df.to_csv('error_file/02_scene1b_obse_err_ang.csv',index=0,header=0,mode='a')
             print("write obser file")
             write_file_flag_obse = write_file_flag_obse + 1
         # if flag_write_csv_file > 65 and write_file_flag_PFPE == 0:
             # boss_PFPE_index_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPE_time_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPE_err_sum_df.to_csv('PFPE_err_scene1_0_2.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_pos_df.to_csv('error_file/02_scene2_PFPE_err_pos.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_ang_df.to_csv('error_file/02_scene2_PFPE_err_ang.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_pos_df.to_csv('error_file/02_scene1b_PFPE_err_pos.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_ang_df.to_csv('error_file/02_scene1b_PFPE_err_ang.csv',index=0,header=0,mode='a')
             print("write PFPE file")
             write_file_flag_PFPE = write_file_flag_PFPE + 1
         # if flag_write_csv_file > 65 and write_file_flag_PFPM == 0:
             # boss_PFPM_index_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPM_time_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
             # boss_PFPM_err_sum_df.to_csv('PFPM_err_scene1_0_2.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_pos_df.to_csv('error_file/02_scene2_PFPM_err_pos.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_ang_df.to_csv('error_file/02_scene2_PFPM_err_ang.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_pos_df.to_csv('error_file/02_scene1b_PFPM_err_pos.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_ang_df.to_csv('error_file/02_scene1b_PFPM_err_ang.csv',index=0,header=0,mode='a')
             print("write PFPM file")
             write_file_flag_PFPM = write_file_flag_PFPM + 1
             print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))

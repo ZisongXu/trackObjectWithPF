@@ -1398,7 +1398,7 @@ def angle_correction(angle):
     # print("angle _after: ",angle)
     return angle
 if __name__ == '__main__':
-    t_begin = time.time()
+    t_begin_whole_thing = time.time()
     particle_cloud = []
     particle_num = 85
     visualisation_flag = True
@@ -1539,9 +1539,9 @@ if __name__ == '__main__':
     err_opti_esti_ang = compute_ang_err_bt_2_points(estimated_object_ori,pw_T_object_ori)
     err_opti_esti_ang = angle_correction(err_opti_esti_ang)
     err_opti_esti_sum = err_opti_esti_pos + err_opti_esti_ang
+    
     t_begin = time.time()
     t_before_record = time.time()
-    
     boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
     boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
     boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
@@ -1554,14 +1554,13 @@ if __name__ == '__main__':
     boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
     flag_record = flag_record + 1
     flag_record_PFPE = flag_record_PFPE + 1
-    '''
     boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
     boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
     boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
     boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
     flag_record = flag_record + 1
     flag_record_PFPM = flag_record_PFPM + 1
-    '''
+    
 
     # initial_parameter.particle_cloud #parameter of particle
     # initial_parameter.pybullet_particle_env_collection #env of simulation
@@ -1717,22 +1716,23 @@ if __name__ == '__main__':
         t_end_while = time.time()
         # print(t_end_while - t_begin)
         # if flag_write_csv_file > 65 and write_file_flag_obse == 0:
-        if t_end_while - t_begin > 39:
-            boss_err_pos_df.to_csv('error_file/02_scene1b_err_pos.csv',index=0,header=0,mode='a')
-            boss_err_ang_df.to_csv('error_file/02_scene1b_err_ang.csv',index=0,header=0,mode='a')
-            print("write pos and ang file")
-            boss_obse_err_pos_df.to_csv('error_file/02_scene1b_obse_err_pos.csv',index=0,header=0,mode='a')
-            boss_obse_err_ang_df.to_csv('error_file/02_scene1b_obse_err_ang.csv',index=0,header=0,mode='a')
-            print("write obser file")
-            write_file_flag_obse = write_file_flag_obse + 1
-        # if flag_write_csv_file > 65 and write_file_flag_PFPE == 0:
-            boss_PFPE_err_pos_df.to_csv('error_file/02_scene1b_PFPE_err_pos.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_ang_df.to_csv('error_file/02_scene1b_PFPE_err_ang.csv',index=0,header=0,mode='a')
-            print("write PFPE file")
-            write_file_flag_PFPE = write_file_flag_PFPE + 1
+        file_name = 25
+        if t_end_while - t_begin_whole_thing > 40:
+            # boss_err_pos_df.to_csv('error_file/02_scene1b_err_pos.csv',index=0,header=0,mode='a')
+            # boss_err_ang_df.to_csv('error_file/02_scene1b_err_ang.csv',index=0,header=0,mode='a')
+            # print("write pos and ang file")
+        #     boss_obse_err_pos_df.to_csv('error_file/'+str(file_name)+'02_scene1b_obse_err_pos.csv',index=0,header=0,mode='a')
+        #     boss_obse_err_ang_df.to_csv('error_file/'+str(file_name)+'02_scene1b_obse_err_ang.csv',index=0,header=0,mode='a')
+        #     print("write obser file")
+        #     write_file_flag_obse = write_file_flag_obse + 1
+        # # if flag_write_csv_file > 65 and write_file_flag_PFPE == 0:
+        #     boss_PFPE_err_pos_df.to_csv('error_file/'+str(file_name)+'02_scene1b_PFPE_err_pos.csv',index=0,header=0,mode='a')
+        #     boss_PFPE_err_ang_df.to_csv('error_file/'+str(file_name)+'02_scene1b_PFPE_err_ang.csv',index=0,header=0,mode='a')
+        #     print("write PFPE file")
+        #     write_file_flag_PFPE = write_file_flag_PFPE + 1
         # if flag_write_csv_file > 65 and write_file_flag_PFPM == 0:
-            boss_PFPM_err_pos_df.to_csv('error_file/02_scene1b_PFPM_err_pos.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_ang_df.to_csv('error_file/02_scene1b_PFPM_err_ang.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_pos_df.to_csv('error_file/'+str(file_name)+'02_scene1b_PFPM_err_pos.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_ang_df.to_csv('error_file/'+str(file_name)+'02_scene1b_PFPM_err_ang.csv',index=0,header=0,mode='a')
             print("write PFPM file")
             write_file_flag_PFPM = write_file_flag_PFPM + 1
             print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))

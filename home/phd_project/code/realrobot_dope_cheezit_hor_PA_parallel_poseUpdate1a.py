@@ -1551,7 +1551,6 @@ if __name__ == '__main__':
     
     t_begin = time.time()
     t_before_record = time.time()
-    
     boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
     boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
     boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
@@ -1564,14 +1563,13 @@ if __name__ == '__main__':
     boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
     flag_record = flag_record + 1
     flag_record_PFPE = flag_record_PFPE + 1
-    '''
     boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
     boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
     boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
     boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
     flag_record = flag_record + 1
     flag_record_PFPM = flag_record_PFPM + 1
-    '''
+    
 
     # initial_parameter.particle_cloud #parameter of particle
     # initial_parameter.pybullet_particle_env_collection #env of simulation

@@ -18,4 +18,3 @@ singularity run \
     --bind=scripts:/scripts \
     --home=home:${HOME} \
     trackObjectWithPF
-

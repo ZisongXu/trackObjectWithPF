@@ -720,7 +720,7 @@ class PFMove():
             #weight_pos = math.sqrt(weight_x ** 2 + weight_y ** 2 + weight_z ** 2)
             #weight_pos = weight_x + weight_y + weight_z
             dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
-            weight_xyz = self.normal_distribution(dis_xyz, mean, 0.025)
+            weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
             
             #pybullet x,y,z,w
             nois_obj_ang = [nois_obj_pose[3],nois_obj_pose[4],nois_obj_pose[5]]
@@ -783,6 +783,7 @@ class PFMove():
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
+        sigma = 0.1
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
     
@@ -1057,7 +1058,7 @@ class PFMovePM():
             weight_z = self.normal_distribution(dis_z, mean, sigma_z)
             weight_pos = weight_x + weight_y + weight_z
             dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
-            weight_xyz = self.normal_distribution(dis_xyz, mean, 0.025)
+            weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
             
             #pybullet x,y,z,w
             nois_obj_ang = [nois_obj_pose[3],nois_obj_pose[4],nois_obj_pose[5]]
@@ -1182,6 +1183,7 @@ class PFMovePM():
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
+        sigma = 0.1
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
     
@@ -1426,10 +1428,11 @@ if __name__ == '__main__':
     boss_sigma_obs_x = 0.03973017808163751
     boss_sigma_obs_y = 0.01167211468503462
     boss_sigma_obs_z = 0.02820930183351492
-    #boss_sigma_obs_ang = 0.1927180068546701
-    boss_sigma_obs_ang = 0.0927180068546701
-    boss_sigma_obs_pos = 0.02
-    #boss_sigma_obs_ang = 0.08
+    boss_sigma_obs_x = 0.032860982
+    boss_sigma_obs_y = 0.012899399
+    boss_sigma_obs_z = 0.01
+    boss_sigma_obs_ang = 0.216773873
+    boss_sigma_obs_pos = 0.038226405
     
     rospy.init_node('PF_for_dope')
     

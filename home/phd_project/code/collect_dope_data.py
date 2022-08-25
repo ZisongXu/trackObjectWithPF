@@ -59,7 +59,7 @@ boss_obse_err_sum_df = pd.DataFrame()
 boss_PFPE_err_sum_df = pd.DataFrame()
 boss_PFPM_err_sum_df = pd.DataFrame()
 
-boss_obse_err_pos_df = pd.DataFrame(columns=['step','time','pos'],index=[])
+boss_obse_err_pos_df = pd.DataFrame(columns=['step','time','pos','x','y','z'],index=[])
 boss_PFPE_err_pos_df = pd.DataFrame()
 boss_PFPM_err_pos_df = pd.DataFrame()
 
@@ -1498,7 +1498,10 @@ if __name__ == '__main__':
     err_opti_dope_ang = angle_correction(err_opti_dope_ang)
     err_opti_dope_sum = err_opti_dope_pos + err_opti_dope_ang
     t_before_record = time.time()
-    boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos]
+    boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos,
+                            abs(pw_T_object_pos[0] - pw_T_object_pos_dope[0]),
+                            abs(pw_T_object_pos[1] - pw_T_object_pos_dope[1]),
+                            abs(pw_T_object_pos[2] - pw_T_object_pos_dope[2])]
     boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang]
     flag_record_dope = flag_record_dope + 1
     boss_obse_time_df[0] = [0]
@@ -1669,7 +1672,10 @@ if __name__ == '__main__':
         
         
         t_before_record = time.time()
-        boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos]
+        boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos,
+                            abs(pw_T_obj_pos_opti[0] - pw_T_object_pos_dope[0]),
+                            abs(pw_T_obj_pos_opti[1] - pw_T_object_pos_dope[1]),
+                            abs(pw_T_obj_pos_opti[2] - pw_T_object_pos_dope[2])]
         boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang]
         flag_record_dope = flag_record_dope + 1
         

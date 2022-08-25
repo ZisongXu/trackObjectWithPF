@@ -13,6 +13,7 @@ if [ ! -d "$HOME/catkin_ws/devel" ]; then
     pip3 install pybullet
     pip3 install pandas
     pip3 install scikit-surgerycore
+    pip3 install seaborn
 fi
 
 source $HOME/catkin_ws/devel/setup.bash

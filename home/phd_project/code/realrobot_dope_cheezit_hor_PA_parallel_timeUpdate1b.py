@@ -1681,12 +1681,9 @@ if __name__ == '__main__':
                 # print("Average time of updating: ",np.mean(robot1.times))
                 # print("PE: Finished")
                 t_finish_PFPE = time.time()
-            
-            
-            
-            # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
+                # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
+                
         #if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
-        
             if run_PFPM_flag == True:
                 flag_update_num_PM = flag_update_num_PM + 1
                 boss_obs_pose_PFPM.append(dope_obj_pose_cur)

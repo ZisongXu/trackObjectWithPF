@@ -1707,26 +1707,33 @@ if __name__ == '__main__':
             pf_update_rate.sleep()
             break
         t_end_while = time.time()
-        file_name = 25
         if t_end_while - t_begin_whole_thing > 39:
-            # boss_err_pos_df.to_csv('error_file/time_scene1a_err_pos.csv',index=0,header=0,mode='a')
-            # boss_err_ang_df.to_csv('error_file/time_scene1a_err_ang.csv',index=0,header=0,mode='a')
+            file_time = 25
+            file_name_obse_pos = 'time_scene1a_obse_err_pos.csv'
+            file_name_PFPE_pos = 'time_scene1a_PFPE_err_pos.csv'
+            file_name_PFPM_pos = 'time_scene1a_PFPM_err_pos.csv'
+            file_name_obse_ang = 'time_scene1a_obse_err_ang.csv'
+            file_name_PFPE_ang = 'time_scene1a_PFPE_err_ang.csv'
+            file_name_PFPM_ang = 'time_scene1a_PFPM_err_ang.csv'
+            # boss_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_pos,index=0,header=0,mode='a')
+            # boss_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_ang,index=0,header=0,mode='a')
             # print("write pos and ang file")
-        #     boss_obse_err_pos_df.to_csv('error_file/'+str(file_name)+'time_scene1a_obse_err_pos.csv',index=0,header=0,mode='a')
-        #     boss_obse_err_ang_df.to_csv('error_file/'+str(file_name)+'time_scene1a_obse_err_ang.csv',index=0,header=0,mode='a')
-        #     print("write obser file")
-        #     write_file_flag_obse = write_file_flag_obse + 1
-        # # if flag_write_csv_file > 65 and write_file_flag_PFPE == 0:
-        #     boss_PFPE_err_pos_df.to_csv('error_file/'+str(file_name)+'time_scene1a_PFPE_err_pos.csv',index=0,header=0,mode='a')
-        #     boss_PFPE_err_ang_df.to_csv('error_file/'+str(file_name)+'time_scene1a_PFPE_err_ang.csv',index=0,header=0,mode='a')
-        #     print("write PFPE file")
-        #     write_file_flag_PFPE = write_file_flag_PFPE + 1
+            boss_obse_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_obse_pos,index=0,header=0,mode='a')
+            boss_obse_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_obse_ang,index=0,header=0,mode='a')
+            print("write obser file")
+            write_file_flag_obse = write_file_flag_obse + 1
+        # if flag_write_csv_file > 65 and write_file_flag_PFPE == 0:
+            boss_PFPE_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_PFPE_pos,index=0,header=0,mode='a')
+            boss_PFPE_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_PFPE_ang,index=0,header=0,mode='a')
+            print("write PFPE file")
+            write_file_flag_PFPE = write_file_flag_PFPE + 1
         # if flag_write_csv_file > 65 and write_file_flag_PFPM == 0:
-            boss_PFPM_err_pos_df.to_csv('error_file/'+str(file_name)+'time_scene1a_PFPM_err_pos.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_ang_df.to_csv('error_file/'+str(file_name)+'time_scene1a_PFPM_err_ang.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_PFPM_pos,index=0,header=0,mode='a')
+            boss_PFPM_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_PFPM_ang,index=0,header=0,mode='a')
             print("write PFPM file")
             write_file_flag_PFPM = write_file_flag_PFPM + 1
-            # print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
+            print("PE: Update frequency is: " + str(flag_update_num_PE))
+            print("PM: Update frequency is: " + str(flag_update_num_PM))
             break
         if Flag is False:
             break

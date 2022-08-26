@@ -1526,7 +1526,7 @@ if __name__ == '__main__':
     err_opti_esti_sum = err_opti_esti_pos + err_opti_esti_ang
     
     t_before_record = time.time()
-    '''
+    
     boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
     boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
     boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
@@ -1539,7 +1539,6 @@ if __name__ == '__main__':
     boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
     flag_record = flag_record + 1
     flag_record_PFPE = flag_record_PFPE + 1
-    '''
     boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
     boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
     boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
@@ -1709,24 +1708,32 @@ if __name__ == '__main__':
             break
         t_end_while = time.time() 
         if t_end_while - t_begin > 31:
-            boss_err_pos_df.to_csv('error_file/02_scene1b_err_pos.csv',index=0,header=0,mode='a')
-            boss_err_ang_df.to_csv('error_file/02_scene1b_err_ang.csv',index=0,header=0,mode='a')
-            print("write pos and ang file")
-            boss_obse_err_pos_df.to_csv('error_file/02_scene1b_obse_err_pos.csv',index=0,header=0,mode='a')
-            boss_obse_err_ang_df.to_csv('error_file/02_scene1b_obse_err_ang.csv',index=0,header=0,mode='a')
+            file_time = 25
+            file_name_obse_pos = 'time_scene3_obse_err_pos.csv'
+            file_name_PFPE_pos = 'time_scene3_PFPE_err_pos.csv'
+            file_name_PFPM_pos = 'time_scene3_PFPM_err_pos.csv'
+            file_name_obse_ang = 'time_scene3_obse_err_ang.csv'
+            file_name_PFPE_ang = 'time_scene3_PFPE_err_ang.csv'
+            file_name_PFPM_ang = 'time_scene3_PFPM_err_ang.csv'
+            # boss_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_pos,index=0,header=0,mode='a')
+            # boss_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_ang,index=0,header=0,mode='a')
+            # print("write pos and ang file")
+            boss_obse_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_obse_pos,index=0,header=0,mode='a')
+            boss_obse_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_obse_ang,index=0,header=0,mode='a')
             print("write obser file")
             write_file_flag_obse = write_file_flag_obse + 1
         # if flag_write_csv_file > 65 and write_file_flag_PFPE == 0:
-            boss_PFPE_err_pos_df.to_csv('error_file/02_scene1b_PFPE_err_pos.csv',index=0,header=0,mode='a')
-            boss_PFPE_err_ang_df.to_csv('error_file/02_scene1b_PFPE_err_ang.csv',index=0,header=0,mode='a')
+            boss_PFPE_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_PFPE_pos,index=0,header=0,mode='a')
+            boss_PFPE_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_PFPE_ang,index=0,header=0,mode='a')
             print("write PFPE file")
             write_file_flag_PFPE = write_file_flag_PFPE + 1
         # if flag_write_csv_file > 65 and write_file_flag_PFPM == 0:
-            boss_PFPM_err_pos_df.to_csv('error_file/02_scene1b_PFPM_err_pos.csv',index=0,header=0,mode='a')
-            boss_PFPM_err_ang_df.to_csv('error_file/02_scene1b_PFPM_err_ang.csv',index=0,header=0,mode='a')
+            boss_PFPM_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_PFPM_pos,index=0,header=0,mode='a')
+            boss_PFPM_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_PFPM_ang,index=0,header=0,mode='a')
             print("write PFPM file")
             write_file_flag_PFPM = write_file_flag_PFPM + 1
-            print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
+            print("PE: Update frequency is: " + str(flag_update_num_PE))
+            print("PM: Update frequency is: " + str(flag_update_num_PM))
             break
         if Flag is False:
             break

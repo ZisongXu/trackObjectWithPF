@@ -647,7 +647,7 @@ class PFMove():
         z_axis = random.uniform(-1,1)
         x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
         y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
-        angle_noise = self.add_noise_2_ang(0,boss_sigma_obs_ang)
+        angle_noise = self.add_noise_2_ang(0)
         w_quat = math.cos(angle_noise/2.0)
         x_quat = math.sin(angle_noise/2.0) * x_axis
         y_quat = math.sin(angle_noise/2.0) * y_axis
@@ -1125,7 +1125,7 @@ class PFMovePM():
             z_axis = random.uniform(-1, 1)
             x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
             y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
-            angle_noise = self.add_noise_2_ang(0, boss_sigma_obs_ang)
+            angle_noise = self.add_noise_2_ang(0)
             w_quat = math.cos(angle_noise / 2.0)
             x_quat = math.sin(angle_noise / 2.0) * x_axis
             y_quat = math.sin(angle_noise / 2.0) * y_axis
@@ -1578,6 +1578,9 @@ if __name__ == '__main__':
     write_file_flag_PFPE = 0
     write_file_flag_PFPM = 0
     pf_update_rate = rospy.Rate(1.0/boss_pf_update_interval_in_real)
+    file_time = 25
+    run_PFPE_flag = False
+    run_PFPM_flag = True
     print("Welcome to Our Approach !")
     t_begin_while = time.time()
     while True:
@@ -1652,49 +1655,47 @@ if __name__ == '__main__':
         #Determine if particles need to be updated
         while True:
         #if (dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh) or (dis_robcur_robold_PE > d_thresh):
-        
-        
-            t_begin_PFPE = time.time()
-            flag_update_num_PE = flag_update_num_PE + 1
-            flag_write_csv_file = flag_write_csv_file + 1
-            # print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
-            #Cheat
-            opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos) #get pos of real object
-            opti_obj_ori_cur = copy.deepcopy(pw_T_object_ori)
-            nois_obj_pos_cur = copy.deepcopy(dope_obj_pos_cur)
-            nois_obj_ang_cur = copy.deepcopy(dope_obj_ang_cur)
-            #execute sim_robot movement 
-            robot1.real_robot_control_PE(opti_obj_pos_cur,
-                                         opti_obj_ori_cur,
-                                         ros_listener.current_joint_values,
-                                         nois_obj_pos_cur,
-                                         nois_obj_ang_cur)
-            # dope_obj_pos_old = copy.deepcopy(dope_obj_pos_cur)
-            # dope_obj_ang_old = copy.deepcopy(dope_obj_ang_cur)
-            # dope_obj_ori_old = copy.deepcopy(dope_obj_ori_cur)
-            # rob_link_9_pose_old_PE = copy.deepcopy(rob_link_9_pose_cur_PE)
-            if visualisation_flag == True:
-                display_real_object_in_visual_model(optitrack_object_id, pw_T_object_pos, pw_T_object_ori)
-            # print("Average time of updating: ",np.mean(robot1.times))
-            # print("PE: Finished")
-            t_finish_PFPE = time.time()
+            if run_PFPE_flag == True:
+                t_begin_PFPE = time.time()
+                flag_update_num_PE = flag_update_num_PE + 1
+                flag_write_csv_file = flag_write_csv_file + 1
+                # print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
+                #Cheat
+                opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos) #get pos of real object
+                opti_obj_ori_cur = copy.deepcopy(pw_T_object_ori)
+                nois_obj_pos_cur = copy.deepcopy(dope_obj_pos_cur)
+                nois_obj_ang_cur = copy.deepcopy(dope_obj_ang_cur)
+                #execute sim_robot movement 
+                robot1.real_robot_control_PE(opti_obj_pos_cur,
+                                             opti_obj_ori_cur,
+                                             ros_listener.current_joint_values,
+                                             nois_obj_pos_cur,
+                                             nois_obj_ang_cur)
+                # dope_obj_pos_old = copy.deepcopy(dope_obj_pos_cur)
+                # dope_obj_ang_old = copy.deepcopy(dope_obj_ang_cur)
+                # dope_obj_ori_old = copy.deepcopy(dope_obj_ori_cur)
+                # rob_link_9_pose_old_PE = copy.deepcopy(rob_link_9_pose_cur_PE)
+                if visualisation_flag == True:
+                    display_real_object_in_visual_model(optitrack_object_id, pw_T_object_pos, pw_T_object_ori)
+                # print("Average time of updating: ",np.mean(robot1.times))
+                # print("PE: Finished")
+                t_finish_PFPE = time.time()
             
             
             
             # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
         #if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
-        
-
-            flag_update_num_PM = flag_update_num_PM + 1
-            boss_obs_pose_PFPM.append(dope_obj_pose_cur)
-            opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object
-            opti_obj_ori_cur_PM = copy.deepcopy(pw_T_object_ori)
-            nois_obj_pos_cur_PM = copy.deepcopy(dope_obj_pos_cur)
-            nois_obj_ang_cur_PM = copy.deepcopy(dope_obj_ang_cur)
-            robot2.real_robot_control_PM(opti_obj_pos_cur_PM,
-                                         opti_obj_ori_cur_PM,
-                                         nois_obj_pos_cur_PM,
-                                         nois_obj_ang_cur_PM)
+            if run_PFPM_flag == True:
+                flag_update_num_PM = flag_update_num_PM + 1
+                boss_obs_pose_PFPM.append(dope_obj_pose_cur)
+                opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object
+                opti_obj_ori_cur_PM = copy.deepcopy(pw_T_object_ori)
+                nois_obj_pos_cur_PM = copy.deepcopy(dope_obj_pos_cur)
+                nois_obj_ang_cur_PM = copy.deepcopy(dope_obj_ang_cur)
+                robot2.real_robot_control_PM(opti_obj_pos_cur_PM,
+                                             opti_obj_ori_cur_PM,
+                                             nois_obj_pos_cur_PM,
+                                             nois_obj_ang_cur_PM)
             
             
             
@@ -1718,22 +1719,24 @@ if __name__ == '__main__':
             # boss_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_pos,index=0,header=0,mode='a')
             # boss_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_ang,index=0,header=0,mode='a')
             # print("write pos and ang file")
-            boss_obse_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_obse_pos,index=0,header=0,mode='a')
-            boss_obse_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_obse_ang,index=0,header=0,mode='a')
-            print("write obser file")
-            write_file_flag_obse = write_file_flag_obse + 1
-        # if flag_write_csv_file > 65 and write_file_flag_PFPE == 0:
-            boss_PFPE_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_PFPE_pos,index=0,header=0,mode='a')
-            boss_PFPE_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_PFPE_ang,index=0,header=0,mode='a')
-            print("write PFPE file")
-            write_file_flag_PFPE = write_file_flag_PFPE + 1
+            if run_PFPE_flag == True:
+                boss_obse_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_obse_pos,index=0,header=0,mode='a')
+                boss_obse_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_obse_ang,index=0,header=0,mode='a')
+                print("write obser file")
+                write_file_flag_obse = write_file_flag_obse + 1
+            # if flag_write_csv_file > 65 and write_file_flag_PFPE == 0:
+                boss_PFPE_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_PFPE_pos,index=0,header=0,mode='a')
+                boss_PFPE_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_PFPE_ang,index=0,header=0,mode='a')
+                print("write PFPE file")
+                write_file_flag_PFPE = write_file_flag_PFPE + 1
+                print("PE: Update frequency is: " + str(flag_update_num_PE))
         # if flag_write_csv_file > 65 and write_file_flag_PFPM == 0:
-            boss_PFPM_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_PFPM_pos,index=0,header=0,mode='a')
-            boss_PFPM_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_PFPM_ang,index=0,header=0,mode='a')
-            print("write PFPM file")
-            write_file_flag_PFPM = write_file_flag_PFPM + 1
-            print("PE: Update frequency is: " + str(flag_update_num_PE))
-            print("PM: Update frequency is: " + str(flag_update_num_PM))
+            if run_PFPM_flag == True:
+                boss_PFPM_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_PFPM_pos,index=0,header=0,mode='a')
+                boss_PFPM_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_PFPM_ang,index=0,header=0,mode='a')
+                print("write PFPM file")
+                write_file_flag_PFPM = write_file_flag_PFPM + 1
+                print("PM: Update frequency is: " + str(flag_update_num_PM))
             break
         if Flag is False:
             break

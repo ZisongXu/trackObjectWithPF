@@ -10,10 +10,11 @@ import pandas as pd
 import seaborn as sns
 import copy
 
-flag_plot = 1
+flag_plot_ang = True
+flag_plot_pos = False
 file_name_ang = "dis_scene1a_ang"
 file_name_pos = "dis_scene1a_pos"
-if flag_plot == 0:
+if flag_plot_ang == True:
     print("Ready to plot the figure of ang")
     dataset_ang = pd.read_csv(file_name_ang+'.csv')
     dataset_ang.columns=["index","time","ang_error","alg"]
@@ -21,7 +22,7 @@ if flag_plot == 0:
     svg_fig_ang = figure_ang.get_figure()
     plt.title("Comparison of Rotation Errors Based on Distance Update in Scene 1a")
     svg_fig_ang.savefig(file_name_ang+".svg",format="svg")
-else:
+if flag_plot_pos ==True:
     print("Ready to plot the figure of pos")
     dataset_pos = pd.read_csv(file_name_pos+'.csv')
     dataset_pos.columns=["index","time","pos_error","alg"]

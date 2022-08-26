@@ -782,7 +782,7 @@ class PFMove():
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
-        sigma  = 0.1
+        sigma = 0.1
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
 
@@ -825,7 +825,7 @@ class PFMove():
                                 self.particle_cloud[i].x_angle,
                                 self.particle_cloud[i].y_angle,
                                 self.particle_cloud[i].z_angle,
-                                self.particle_cloud[i].w, index)
+                                1.0/particle_num, index)
             newParticles.append(particle)
         self.particle_cloud = copy.deepcopy(newParticles)
 
@@ -1209,7 +1209,7 @@ class PFMovePM():
                                 self.particle_cloud_PM[i].x_angle,
                                 self.particle_cloud_PM[i].y_angle,
                                 self.particle_cloud_PM[i].z_angle,
-                                self.particle_cloud_PM[i].w,index)
+                                1.0/particle_num, index)
             newParticles.append(particle)
         self.particle_cloud_PM = copy.deepcopy(newParticles)
 
@@ -1581,8 +1581,8 @@ if __name__ == '__main__':
     write_file_flag_PFPE = 0
     write_file_flag_PFPM = 0
     file_time = 25
-    run_PFPE_flag = True
-    run_PFPM_flag = False
+    run_PFPE_flag = False
+    run_PFPM_flag = True
     print("Welcome to Our Approach !")
     t_begin_while = time.time()
     while True:

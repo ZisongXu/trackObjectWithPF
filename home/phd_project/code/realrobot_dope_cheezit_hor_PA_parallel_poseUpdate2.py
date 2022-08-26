@@ -832,7 +832,7 @@ class PFMove():
                                 self.particle_cloud[i].x_angle,
                                 self.particle_cloud[i].y_angle,
                                 self.particle_cloud[i].z_angle,
-                                self.particle_cloud[i].w,index)
+                                1.0/particle_num,index)
             newParticles.append(particle)
         self.particle_cloud = copy.deepcopy(newParticles)
 
@@ -1221,7 +1221,7 @@ class PFMovePM():
                                 self.particle_cloud_PM[i].x_angle,
                                 self.particle_cloud_PM[i].y_angle,
                                 self.particle_cloud_PM[i].z_angle,
-                                self.particle_cloud_PM[i].w,index)
+                                1.0/particle_num,index)
             newParticles.append(particle)
         self.particle_cloud_PM = copy.deepcopy(newParticles)
 

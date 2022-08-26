@@ -11,12 +11,12 @@ import seaborn as sns
 import copy
 flag_pos = True
 flag_ang = True
-file_name_obse_pos = '02_scene1a_obse_err_pos.csv'
-file_name_PFPE_pos = '02_scene1a_PFPE_err_pos.csv'
-file_name_PFPM_pos = '02_scene1a_PFPM_err_pos.csv'
-file_name_obse_ang = '02_scene1a_obse_err_ang.csv'
-file_name_PFPE_ang = '02_scene1a_PFPE_err_ang.csv'
-file_name_PFPM_ang = '02_scene1a_PFPM_err_ang.csv'
+file_name_obse_pos = 'dis_scene1a_obse_err_pos.csv'
+file_name_PFPE_pos = 'dis_scene1a_PFPE_err_pos.csv'
+file_name_PFPM_pos = 'dis_scene1a_PFPM_err_pos.csv'
+file_name_obse_ang = 'dis_scene1a_obse_err_ang.csv'
+file_name_PFPE_ang = 'dis_scene1a_PFPE_err_ang.csv'
+file_name_PFPM_ang = 'dis_scene1a_PFPM_err_ang.csv'
 file_name_pos = 'dis_scene1a_pos.csv'
 file_name_ang = 'dis_scene1a_ang.csv'
 # pos
@@ -129,7 +129,7 @@ if flag_ang == True:
                                  datasetcopy.loc[newdata.idxmin(),'time'],
                                  datasetcopy.loc[newdata.idxmin(),'error'],
                                  datasetcopy.loc[newdata.idxmin(),'alg']]
-        print("obse_ang ",j)
+        print("PFPE_ang ",j)
         newdataset.to_csv(file_name_ang,index=0,header=0,mode='a')
     print("finished")
     for j in range(25):     
@@ -151,7 +151,7 @@ if flag_ang == True:
                                  datasetcopy.loc[newdata.idxmin(),'time'],
                                  datasetcopy.loc[newdata.idxmin(),'error'],
                                  datasetcopy.loc[newdata.idxmin(),'alg']]
-        print("obse_ang ",j)
+        print("PFPM_ang ",j)
         newdataset.to_csv(file_name_ang,index=0,header=0,mode='a')
     print("finished")
 

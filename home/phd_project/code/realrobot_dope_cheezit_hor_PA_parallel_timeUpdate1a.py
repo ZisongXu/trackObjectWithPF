@@ -821,7 +821,7 @@ class PFMove():
                                 self.particle_cloud[i].x_angle,
                                 self.particle_cloud[i].y_angle,
                                 self.particle_cloud[i].z_angle,
-                                self.particle_cloud[i].w,index)
+                                1.0/particle_num,index)
             newParticles.append(particle)
         self.particle_cloud = copy.deepcopy(newParticles)
         
@@ -1211,7 +1211,7 @@ class PFMovePM():
                                 self.particle_cloud_PM[i].x_angle,
                                 self.particle_cloud_PM[i].y_angle,
                                 self.particle_cloud_PM[i].z_angle,
-                                self.particle_cloud_PM[i].w,index)
+                                1.0/particle_num,index)
             newParticles.append(particle)
         self.particle_cloud_PM = copy.deepcopy(newParticles)
         
@@ -1577,7 +1577,7 @@ if __name__ == '__main__':
     write_file_flag_PFPE = 0
     write_file_flag_PFPM = 0
     pf_update_rate = rospy.Rate(1.0/boss_pf_update_interval_in_real)
-    file_time = 25
+    file_time = 1
     run_PFPE_flag = True
     run_PFPM_flag = False
     print("Welcome to Our Approach !")

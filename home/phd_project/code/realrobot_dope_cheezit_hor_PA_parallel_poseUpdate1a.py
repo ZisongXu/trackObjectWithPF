@@ -1393,7 +1393,7 @@ def angle_correction(angle):
 if __name__ == '__main__':
     t_begin_whole_thing = time.time()
     particle_cloud = []
-    particle_num = 85
+    particle_num = 100
     visualisation_flag = True
     visualisation_particle_flag = True
     d_thresh = 0.002
@@ -1410,7 +1410,6 @@ if __name__ == '__main__':
     flag_record_PFPM = 0
     flag_update_num_PM = 0
     flag_update_num_PE = 0
-    flag_record_PM_file = 0
     flag_write_csv_file = 0
     #error in xyz axis DOPE
     boss_sigma_obs_x = 0.03973017808163751 / 2.0

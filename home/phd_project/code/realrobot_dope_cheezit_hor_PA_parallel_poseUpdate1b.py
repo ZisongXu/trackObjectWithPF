@@ -1387,7 +1387,7 @@ def angle_correction(angle):
 if __name__ == '__main__':
     t_begin_whole_thing = time.time()
     particle_cloud = []
-    particle_num = 85
+    particle_num = 100
     visualisation_flag = True
     visualisation_particle_flag = True
     d_thresh = 0.002

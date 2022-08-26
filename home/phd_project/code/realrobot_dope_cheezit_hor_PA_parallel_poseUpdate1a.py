@@ -656,7 +656,7 @@ class PFMove():
         z_axis = random.uniform(-1,1)
         x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
         y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
-        angle_noise = self.add_noise_to_init_par(0,boss_sigma_obs_ang)
+        angle_noise = self.add_noise_2_ang(0,boss_sigma_obs_ang)
         w_quat = math.cos(angle_noise/2.0)
         x_quat = math.sin(angle_noise/2.0) * x_axis
         y_quat = math.sin(angle_noise/2.0) * y_axis
@@ -787,15 +787,9 @@ class PFMove():
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
+        sigma = 0.1
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
-
-    def add_noise_to_init_par(self,current_pos,sigma_init):
-        mean = current_pos
-        sigma = sigma_init
-        sigma = 0.1
-        new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
-        return new_pos_is_added_noise
 
     def take_easy_gaussian_value(self,mean,sigma):
         normal = random.normalvariate(mean, sigma)
@@ -1140,7 +1134,7 @@ class PFMovePM():
             z_axis = random.uniform(-1,1)
             x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
             y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
-            angle_noise = self.add_noise_to_init_par(0,boss_sigma_obs_ang)
+            angle_noise = self.add_noise_2_ang(0,boss_sigma_obs_ang)
             w_quat = math.cos(angle_noise/2.0)
             x_quat = math.sin(angle_noise/2.0) * x_axis
             y_quat = math.sin(angle_noise/2.0) * y_axis
@@ -1178,19 +1172,12 @@ class PFMovePM():
         new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_pos_is_added_noise
     
-    # del
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
+        sigma = 0.1
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
-
-    def add_noise_to_init_par(self,current_pos,sigma_init):
-        mean = current_pos
-        sigma = sigma_init
-        sigma = 0.1
-        new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
-        return new_pos_is_added_noise
 
     def take_easy_gaussian_value(self,mean,sigma):
         normal = random.normalvariate(mean, sigma)

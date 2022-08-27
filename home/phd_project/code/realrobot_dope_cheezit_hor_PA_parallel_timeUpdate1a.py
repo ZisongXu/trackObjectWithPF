@@ -778,7 +778,7 @@ class PFMove():
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
-        sigma = 0.1
+        sigma = 0.05
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
     
@@ -1171,7 +1171,7 @@ class PFMovePM():
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
-        sigma = 0.1
+        sigma = 0.05
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise   
     
@@ -1577,9 +1577,9 @@ if __name__ == '__main__':
     write_file_flag_PFPE = 0
     write_file_flag_PFPM = 0
     pf_update_rate = rospy.Rate(1.0/boss_pf_update_interval_in_real)
-    file_time = 1
-    run_PFPE_flag = True
-    run_PFPM_flag = False
+    file_time = 25
+    run_PFPE_flag = False
+    run_PFPM_flag = True
     print("Welcome to Our Approach !")
     t_begin_while = time.time()
     while True:

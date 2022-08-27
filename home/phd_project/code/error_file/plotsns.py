@@ -10,17 +10,19 @@ import pandas as pd
 import seaborn as sns
 import copy
 
-flag_plot_ang = True
-flag_plot_pos = False
-file_name_ang = "dis_scene1a_ang"
-file_name_pos = "dis_scene1a_pos"
+flag_plot_ang = False
+flag_plot_pos = True
+file_name_ang = "time_scene1b_ang"
+file_name_pos = "time_scene1b_pos"
+title_ang = "Comparison of Rotation Errors Based on Time Update in Scene 1b"
+title_pos = "Comparison of Position Errors Based on Time Update in Scene 1b"
 if flag_plot_ang == True:
     print("Ready to plot the figure of ang")
     dataset_ang = pd.read_csv(file_name_ang+'.csv')
     dataset_ang.columns=["index","time","ang_error","alg"]
     figure_ang = sns.lineplot(x="time", y="ang_error", data=dataset_ang, hue = 'alg', ci=95)
     svg_fig_ang = figure_ang.get_figure()
-    plt.title("Comparison of Rotation Errors Based on Distance Update in Scene 1a")
+    plt.title(title_ang)
     svg_fig_ang.savefig(file_name_ang+".svg",format="svg")
 if flag_plot_pos ==True:
     print("Ready to plot the figure of pos")
@@ -28,5 +30,5 @@ if flag_plot_pos ==True:
     dataset_pos.columns=["index","time","pos_error","alg"]
     figure_pos = sns.lineplot(x="time", y="pos_error", data=dataset_pos, hue = 'alg', ci=95)
     svg_fig_pos = figure_pos.get_figure()
-    plt.title("Comparison of Position Errors Based on Distance Update in Scene 1a")
+    plt.title(title_pos)
     svg_fig_pos.savefig(file_name_pos+".svg",format="svg")

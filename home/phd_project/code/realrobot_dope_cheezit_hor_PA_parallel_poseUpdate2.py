@@ -789,7 +789,7 @@ class PFMove():
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
-        sigma = 0.1
+        sigma = 0.05
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
 
@@ -1181,7 +1181,7 @@ class PFMovePM():
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
-        sigma = 0.1
+        sigma = 0.05
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
 
@@ -1397,7 +1397,7 @@ def angle_correction(angle):
     # print("angle _after: ",angle)
     return angle
 if __name__ == '__main__':
-    t_begin = time.time()
+    t_begin_whole_thing = time.time()
     particle_cloud = []
     particle_num = 100
     visualisation_flag = True
@@ -1554,6 +1554,7 @@ if __name__ == '__main__':
     err_opti_esti_ang = angle_correction(err_opti_esti_ang)
     err_opti_esti_sum = err_opti_esti_pos + err_opti_esti_ang
     
+    t_begin = time.time()
     t_before_record = time.time()
     boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
     boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
@@ -1727,7 +1728,7 @@ if __name__ == '__main__':
                 dope_obj_ori_old_PM = copy.deepcopy(dope_obj_ori_cur)
                 rob_link_9_pose_old_PM = copy.deepcopy(rob_link_9_pose_cur_PM)
         t_end_while = time.time()
-        if t_end_while - t_begin > 32:
+        if t_end_while - t_begin_whole_thing > 32:
             file_name_obse_pos = 'dis_scene2_obse_err_pos.csv'
             file_name_PFPE_pos = 'dis_scene2_PFPE_err_pos.csv'
             file_name_PFPM_pos = 'dis_scene2_PFPM_err_pos.csv'

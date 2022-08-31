@@ -1420,7 +1420,9 @@ if __name__ == '__main__':
     boss_sigma_obs_y = 0.012899399
     boss_sigma_obs_z = 0.01
     boss_sigma_obs_ang = 0.216773873
+    #boss_sigma_obs_ang = 0.0216773873
     boss_sigma_obs_pos = 0.038226405
+    #boss_sigma_obs_pos = 0.004
 
     rospy.init_node('PF_for_dope')
 
@@ -1712,7 +1714,7 @@ if __name__ == '__main__':
         t_end_while = time.time()
         # print(t_end_while - t_begin)
         # if flag_write_csv_file > 65 and write_file_flag_obse == 0:
-        if t_end_while - t_begin_whole_thing > 40:
+        if rospy.is_shutdown():
             file_name_obse_pos = 'dis_scene1b_obse_err_pos.csv'
             file_name_PFPE_pos = 'dis_scene1b_PFPE_err_pos.csv'
             file_name_PFPM_pos = 'dis_scene1b_PFPM_err_pos.csv'

@@ -12,10 +12,10 @@ import copy
 
 flag_plot_ang = False
 flag_plot_pos = True
-file_name_ang = "time_scene1b_ang"
-file_name_pos = "time_scene1b_pos"
-title_ang = "Comparison of Rotation Errors Based on Time Update in Scene 1b"
-title_pos = "Comparison of Position Errors Based on Time Update in Scene 1b"
+file_name_ang = "dis_scene1b_ang"
+file_name_pos = "dis_scene1b_pos"
+title_ang = "Comparison of Rotation Errors Based on Distance Update in Scene 1b"
+title_pos = "Comparison of Position Errors Based on Distance Update in Scene 1b"
 if flag_plot_ang == True:
     print("Ready to plot the figure of ang")
     dataset_ang = pd.read_csv(file_name_ang+'.csv')

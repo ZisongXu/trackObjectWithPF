@@ -11,28 +11,28 @@ import seaborn as sns
 import copy
 flag_pos = True
 flag_ang = True
-flag_PFPM = True
-file_name_obse_pos = 'time_scene1b_obse_err_pos.csv'
-file_name_PFPE_pos = 'time_scene1b_PFPE_err_pos.csv'
-file_name_PFPM_pos = 'time_scene1b_PFPM_err_pos.csv'
-file_name_obse_ang = 'time_scene1b_obse_err_ang.csv'
-file_name_PFPE_ang = 'time_scene1b_PFPE_err_ang.csv'
-file_name_PFPM_ang = 'time_scene1b_PFPM_err_ang.csv'
-file_name_pos = 'time_scene1b_pos.csv'
-file_name_ang = 'time_scene1b_ang.csv'
+flag_PFPM = False
+file_name_obse_pos = 'dis_scene1b_obse_err_pos.csv'
+file_name_PFPE_pos = 'dis_scene1b_PFPE_err_pos.csv'
+file_name_PFPM_pos = 'dis_scene1b_PFPM_err_pos.csv'
+file_name_obse_ang = 'dis_scene1b_obse_err_ang.csv'
+file_name_PFPE_ang = 'dis_scene1b_PFPE_err_ang.csv'
+file_name_PFPM_ang = 'dis_scene1b_PFPM_err_ang.csv'
+file_name_pos = 'dis_scene1b_pos.csv'
+file_name_ang = 'dis_scene1b_ang.csv'
 # pos
 if flag_pos == True:
     print("Ready to integrate the data of pos")
-    for j in range(25):
+    for j in range(8,9,1):
         dataset = pd.read_csv(str(j+1)+file_name_obse_pos)
         dataset.columns=["index","time","error","alg"]
         datasetcopy = copy.deepcopy(dataset)
         newdataset = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
         timedf = dataset['time']
         timestep_list = []
-        for timestep in range(320):
-            timestep_list.append(timestep/10.0)
-        for i in range(320):
+        for timestep in range(3200):
+            timestep_list.append(timestep/100.0)
+        for i in range(3200):
             newdata = (timedf - timestep_list[int(i)]).abs()
             #print(newdata)
             #print(newdata.idxmin())
@@ -44,16 +44,16 @@ if flag_pos == True:
         print("obse_pos ",j)
         newdataset.to_csv(file_name_pos,index=0,header=0,mode='a')
     print("finished")
-    for j in range(25):
+    for j in range(8,9,1):
         dataset = pd.read_csv(str(j+1)+file_name_PFPE_pos)
         dataset.columns=["index","time","error","alg"]
         datasetcopy = copy.deepcopy(dataset)
         newdataset = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
         timedf = dataset['time']
         timestep_list = []
-        for timestep in range(320):
-            timestep_list.append(timestep/10.0)
-        for i in range(320):
+        for timestep in range(3200):
+            timestep_list.append(timestep/100.0)
+        for i in range(3200):
             newdata = (timedf - timestep_list[int(i)]).abs()
             #print(newdata)
             #print(newdata.idxmin())
@@ -67,16 +67,16 @@ if flag_pos == True:
         newdataset.to_csv(file_name_pos,index=0,header=0,mode='a')
     print("finished")
     if flag_PFPM == True:
-        for j in range(25):     
+        for j in range(8,9,1):     
             dataset = pd.read_csv(str(j+1)+file_name_PFPM_pos)
             dataset.columns=["index","time","error","alg"]
             datasetcopy = copy.deepcopy(dataset)
             newdataset = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
             timedf = dataset['time']
             timestep_list = []
-            for timestep in range(320):
-                timestep_list.append(timestep/10.0)
-            for i in range(320):
+            for timestep in range(3200):
+                timestep_list.append(timestep/100.0)
+            for i in range(3200):
                 newdata = (timedf - timestep_list[int(i)]).abs()
                 #print(newdata)
                 #print(newdata.idxmin())
@@ -91,16 +91,16 @@ if flag_pos == True:
 # ang
 if flag_ang == True:
     print("Ready to integrate the data of ang")
-    for j in range(25):
+    for j in range(8,9,1):
         dataset = pd.read_csv(str(j+1)+file_name_obse_ang)
         dataset.columns=["index","time","error","alg"]
         datasetcopy = copy.deepcopy(dataset)
         newdataset = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
         timedf = dataset['time']
         timestep_list = []
-        for timestep in range(320):
-            timestep_list.append(timestep/10.0)
-        for i in range(320):
+        for timestep in range(3200):
+            timestep_list.append(timestep/100.0)
+        for i in range(3200):
             newdata = (timedf - timestep_list[i]).abs()
             #print(newdata)
             #print(newdata.idxmin())
@@ -113,16 +113,16 @@ if flag_ang == True:
         print("obse_ang ",j)
         newdataset.to_csv(file_name_ang,index=0,header=0,mode='a')
     print("finished")
-    for j in range(25):
+    for j in range(8,9,1):
         dataset = pd.read_csv(str(j+1)+file_name_PFPE_ang)
         dataset.columns=["index","time","error","alg"]
         datasetcopy = copy.deepcopy(dataset)
         newdataset = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
         timedf = dataset['time']
         timestep_list = []
-        for timestep in range(320):
-            timestep_list.append(timestep/10.0)
-        for i in range(320):
+        for timestep in range(3200):
+            timestep_list.append(timestep/100.0)
+        for i in range(3200):
             newdata = (timedf - timestep_list[i]).abs()
             #print(newdata)
             #print(newdata.idxmin())
@@ -135,16 +135,16 @@ if flag_ang == True:
         newdataset.to_csv(file_name_ang,index=0,header=0,mode='a')
     print("finished")
     if flag_PFPM == True:
-        for j in range(25):     
+        for j in range(8,9,1):     
             dataset = pd.read_csv(str(j+1)+file_name_PFPM_ang)
             dataset.columns=["index","time","error","alg"]
             datasetcopy = copy.deepcopy(dataset)
             newdataset = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
             timedf = dataset['time']
             timestep_list = []
-            for timestep in range(320):
-                timestep_list.append(timestep/10.0)
-            for i in range(320):
+            for timestep in range(3200):
+                timestep_list.append(timestep/100.0)
+            for i in range(3200):
                 newdata = (timedf - timestep_list[i]).abs()
                 #print(newdata)
                 #print(newdata.idxmin())

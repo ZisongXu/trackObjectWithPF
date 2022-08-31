@@ -373,15 +373,17 @@ class InitialSimulationModel():
                                                                      particle_no_visual_start_orientation)
                 
             while True:
+                pybullet_simulation_env.stepSimulation()
                 flag = 0
-                pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
-                collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
-                length = len(collide_ids)
-                for t_i in range(length):
-                    if collide_ids[t_i][1] == 8:
+                contacts = pybullet_simulation_env.getContactPoints(bodyA=fake_robot_id, bodyB=particle_no_visual_id)
+                # pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
+                # collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
+                # length = len(collide_ids)
+                for contact in contacts:
+                    contact_dis = contact[8]
+                    if contact_dis < -0.001:
+                        print("collision")
                         Px,Py,Pz,Px_angle,Py_angle,Pz_angle,P_quat = self.generate_random_pose(self.noise_object_pose,self.pw_T_object_ori_dope)
-                        particle_no_visual_angle = [Px_angle,Py_angle,Pz_angle]
-                        particle_no_visual_ori = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_angle)
                         pybullet_simulation_env.resetBasePositionAndOrientation(particle_no_visual_id,
                                                                                 [Px,Py,Pz],
                                                                                 P_quat)
@@ -394,7 +396,7 @@ class InitialSimulationModel():
                         particle.z_angle = Pz_angle
                         break
                 if flag == 0:
-                    break    
+                    break
             #pybullet_simulation_env.changeDynamics(particle_no_visual_id,-1,mass=3,lateralFriction = 0.75)
             self.particle_no_visual_id_collection.append(particle_no_visual_id)  
         obj_est_set = self.compute_estimate_pos_of_object(self.particle_cloud)

@@ -373,15 +373,17 @@ class InitialSimulationModel():
                                                                      particle_no_visual_start_orientation)
                 
             while True:
+                pybullet_simulation_env.stepSimulation()
                 flag = 0
-                pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
-                collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
-                length = len(collide_ids)
-                for t_i in range(length):
-                    if collide_ids[t_i][1] == 8:
+                contacts = pybullet_simulation_env.getContactPoints(bodyA=fake_robot_id, bodyB=particle_no_visual_id)
+                # pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
+                # collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
+                # length = len(collide_ids)
+                for contact in contacts:
+                    contact_dis = contact[8]
+                    if contact_dis < -0.001:
+                        print("collision")
                         Px,Py,Pz,Px_angle,Py_angle,Pz_angle,P_quat = self.generate_random_pose(self.noise_object_pose,self.pw_T_object_ori_dope)
-                        particle_no_visual_angle = [Px_angle,Py_angle,Pz_angle]
-                        particle_no_visual_ori = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_angle)
                         pybullet_simulation_env.resetBasePositionAndOrientation(particle_no_visual_id,
                                                                                 [Px,Py,Pz],
                                                                                 P_quat)
@@ -394,7 +396,7 @@ class InitialSimulationModel():
                         particle.z_angle = Pz_angle
                         break
                 if flag == 0:
-                    break    
+                    break
             #pybullet_simulation_env.changeDynamics(particle_no_visual_id,-1,mass=3,lateralFriction = 0.75)
             self.particle_no_visual_id_collection.append(particle_no_visual_id)  
         obj_est_set = self.compute_estimate_pos_of_object(self.particle_cloud)
@@ -778,7 +780,7 @@ class PFMove():
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
-        sigma = 0.05
+        sigma = 0.1
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
     
@@ -821,7 +823,7 @@ class PFMove():
                                 self.particle_cloud[i].x_angle,
                                 self.particle_cloud[i].y_angle,
                                 self.particle_cloud[i].z_angle,
-                                1.0/particle_num,index)
+                                self.particle_cloud[i].w,index)
             newParticles.append(particle)
         self.particle_cloud = copy.deepcopy(newParticles)
         
@@ -1172,7 +1174,7 @@ class PFMovePM():
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
-        sigma = 0.05
+        sigma = 0.1
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise   
     
@@ -1212,7 +1214,7 @@ class PFMovePM():
                                 self.particle_cloud_PM[i].x_angle,
                                 self.particle_cloud_PM[i].y_angle,
                                 self.particle_cloud_PM[i].z_angle,
-                                1.0/particle_num,index)
+                                self.particle_cloud_PM[i].w,index)
             newParticles.append(particle)
         self.particle_cloud_PM = copy.deepcopy(newParticles)
         
@@ -1388,7 +1390,7 @@ def angle_correction(angle):
     # print("angle _after: ",angle)
     return angle
 if __name__ == '__main__':
-    t_begin_whole_thing = time.time()
+    t_begin = time.time()
     particle_cloud = []
     particle_num = 80
     visualisation_flag = True
@@ -1525,8 +1527,8 @@ if __name__ == '__main__':
     err_opti_esti_ang = angle_correction(err_opti_esti_ang)
     err_opti_esti_sum = err_opti_esti_pos + err_opti_esti_ang
     
-    t_begin = time.time()
     t_before_record = time.time()
+    
     boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
     boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
     boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
@@ -1708,7 +1710,8 @@ if __name__ == '__main__':
             pf_update_rate.sleep()
             break
         t_end_while = time.time() 
-        if t_end_while - t_begin_whole_thing > 31:
+        if t_end_while - t_begin > 31:
+            file_time = 25
             file_name_obse_pos = 'time_scene3_obse_err_pos.csv'
             file_name_PFPE_pos = 'time_scene3_PFPE_err_pos.csv'
             file_name_PFPM_pos = 'time_scene3_PFPM_err_pos.csv'

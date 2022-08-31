@@ -382,15 +382,17 @@ class InitialSimulationModel():
                                                                      particle_no_visual_start_orientation)
 
             while True:
+                pybullet_simulation_env.stepSimulation()
                 flag = 0
-                pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
-                collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
-                length = len(collide_ids)
-                for t_i in range(length):
-                    if collide_ids[t_i][1] == 8:
+                contacts = pybullet_simulation_env.getContactPoints(bodyA=fake_robot_id, bodyB=particle_no_visual_id)
+                # pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
+                # collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
+                # length = len(collide_ids)
+                for contact in contacts:
+                    contact_dis = contact[8]
+                    if contact_dis < -0.001:
+                        print("collision")
                         Px,Py,Pz,Px_angle,Py_angle,Pz_angle,P_quat = self.generate_random_pose(self.noise_object_pose,self.pw_T_object_ori_dope)
-                        particle_no_visual_angle = [Px_angle,Py_angle,Pz_angle]
-                        particle_no_visual_ori = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_angle)
                         pybullet_simulation_env.resetBasePositionAndOrientation(particle_no_visual_id,
                                                                                 [Px,Py,Pz],
                                                                                 P_quat)
@@ -1419,12 +1421,12 @@ if __name__ == '__main__':
     flag_record_PM_file = 0
     flag_write_csv_file = 0
     #error in xyz axis DOPE
-    boss_sigma_obs_x = 0.03973017808163751
-    boss_sigma_obs_y = 0.01167211468503462
-    boss_sigma_obs_z = 0.02820930183351492
-    # boss_sigma_obs_x = 0.032860982
-    # boss_sigma_obs_y = 0.012899399
-    # boss_sigma_obs_z = 0.01
+    # boss_sigma_obs_x = 0.03973017808163751
+    # boss_sigma_obs_y = 0.01167211468503462
+    # boss_sigma_obs_z = 0.02820930183351492
+    boss_sigma_obs_x = 0.032860982
+    boss_sigma_obs_y = 0.012899399
+    boss_sigma_obs_z = 0.01
     boss_sigma_obs_ang = 0.216773873
     boss_sigma_obs_pos = 0.038226405
 
@@ -1607,8 +1609,8 @@ if __name__ == '__main__':
     write_file_flag_PFPE = 0
     write_file_flag_PFPM = 0
     file_time = 25
-    run_PFPE_flag = False
-    run_PFPM_flag = True
+    run_PFPE_flag = True
+    run_PFPM_flag = False
     print("Welcome to Our Approach !")
     t_begin_while = time.time()
     while True:

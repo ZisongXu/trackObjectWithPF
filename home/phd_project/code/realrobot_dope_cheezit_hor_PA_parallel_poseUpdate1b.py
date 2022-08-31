@@ -378,15 +378,17 @@ class InitialSimulationModel():
                                                                      particle_no_visual_start_orientation)
 
             while True:
+                pybullet_simulation_env.stepSimulation()
                 flag = 0
-                pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
-                collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
-                length = len(collide_ids)
-                for t_i in range(length):
-                    if collide_ids[t_i][1] == 8:
+                contacts = pybullet_simulation_env.getContactPoints(bodyA=fake_robot_id, bodyB=particle_no_visual_id)
+                # pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
+                # collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
+                # length = len(collide_ids)
+                for contact in contacts:
+                    contact_dis = contact[8]
+                    if contact_dis < -0.001:
+                        print("collision")
                         Px,Py,Pz,Px_angle,Py_angle,Pz_angle,P_quat = self.generate_random_pose(self.noise_object_pose,self.pw_T_object_ori_dope)
-                        particle_no_visual_angle = [Px_angle,Py_angle,Pz_angle]
-                        particle_no_visual_ori = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_angle)
                         pybullet_simulation_env.resetBasePositionAndOrientation(particle_no_visual_id,
                                                                                 [Px,Py,Pz],
                                                                                 P_quat)
@@ -782,7 +784,7 @@ class PFMove():
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
-        sigma = 0.05
+        sigma  = 0.1
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
 
@@ -825,7 +827,7 @@ class PFMove():
                                 self.particle_cloud[i].x_angle,
                                 self.particle_cloud[i].y_angle,
                                 self.particle_cloud[i].z_angle,
-                                1.0/particle_num, index)
+                                self.particle_cloud[i].w, index)
             newParticles.append(particle)
         self.particle_cloud = copy.deepcopy(newParticles)
 
@@ -1169,7 +1171,7 @@ class PFMovePM():
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
-        sigma = 0.05
+        sigma = 0.1
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
 
@@ -1209,7 +1211,7 @@ class PFMovePM():
                                 self.particle_cloud_PM[i].x_angle,
                                 self.particle_cloud_PM[i].y_angle,
                                 self.particle_cloud_PM[i].z_angle,
-                                1.0/particle_num, index)
+                                self.particle_cloud_PM[i].w,index)
             newParticles.append(particle)
         self.particle_cloud_PM = copy.deepcopy(newParticles)
 
@@ -1389,7 +1391,7 @@ if __name__ == '__main__':
     particle_cloud = []
     particle_num = 100
     visualisation_flag = True
-    visualisation_particle_flag = False
+    visualisation_particle_flag = True
     d_thresh = 0.002
     a_thresh = 0.01
     #d_thresh = 200
@@ -1581,8 +1583,8 @@ if __name__ == '__main__':
     write_file_flag_PFPE = 0
     write_file_flag_PFPM = 0
     file_time = 25
-    run_PFPE_flag = False
-    run_PFPM_flag = True
+    run_PFPE_flag = True
+    run_PFPM_flag = False
     print("Welcome to Our Approach !")
     t_begin_while = time.time()
     while True:

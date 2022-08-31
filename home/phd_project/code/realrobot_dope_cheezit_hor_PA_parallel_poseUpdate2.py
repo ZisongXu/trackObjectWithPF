@@ -227,7 +227,7 @@ class InitialRealworldModel():
         real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_obj_small_hor.urdf"),
                                                   object_pos,
                                                   object_orientation)
-        #p_visualisation.changeDynamics(real_object_id,-1,mass=0.351,lateralFriction = 0.2)
+        p_visualisation.changeDynamics(real_object_id,-1,mass=0.380,lateralFriction = 0.5)
         return real_object_id
     def set_real_robot_JointPosition(self,pybullet_simulation_env,robot, position):
         # print("Preparing the joint pose of the panda robot!")
@@ -771,11 +771,15 @@ class PFMove():
         return 0
 
     def change_obj_parameters(self,pybullet_env,par_id):
-        mass_a = random.uniform(0.251,0.451)
-        fricton_b = random.uniform(0.25,0.35)
+        mean_mass = 0.380
+        mean_friction = 0.5
+        mass_a = random.uniform(0.330,0.430)
+        friction_b = random.uniform(0.4,0.6)
+        # mass_a = self.take_easy_gaussian_value(mean_mass, 0.05)
+        # friction_b = self.take_easy_gaussian_value(mean_friction, 0.1)
         #mass_a = 0.351
         #fricton_b = 0.30
-        pybullet_env.changeDynamics(par_id, -1, mass = mass_a, lateralFriction = fricton_b)
+        pybullet_env.changeDynamics(par_id, -1, mass = mass_a, lateralFriction = friction_b)
 
     def get_item_pos(self,pybullet_env,item_id):
         item_info = pybullet_env.getBasePositionAndOrientation(item_id)

@@ -5,6 +5,7 @@ Created on Wed Mar 10 10:57:49 2021
 @author: 12106
 """
 #ROS
+from concurrent.futures.process import _threads_wakeups
 import itertools
 import os.path
 from ssl import ALERT_DESCRIPTION_ILLEGAL_PARAMETER
@@ -33,6 +34,7 @@ import math
 import random
 import copy
 import os
+import signal
 import matplotlib.pyplot as plt
 import pandas as pd
 import multiprocessing

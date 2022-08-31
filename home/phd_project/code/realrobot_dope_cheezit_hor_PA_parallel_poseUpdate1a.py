@@ -549,8 +549,6 @@ class PFMove():
         t2 = time.time()
         self.times.append(t2-t1)
         # print("Motion model1 time consuming:",t2-t1)
-        #self.display_particle_in_visual_model_PE(self.particle_cloud)
-        #time.sleep(1)
 
         if do_obs_update:
             self.observation_update_PE(opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur)
@@ -586,11 +584,7 @@ class PFMove():
         err_opti_PFPE_ang = angle_correction(err_opti_PFPE_ang)
 
         t_err_generate = time.time()
-        # if t_decide_write > 1:
-        # print("flag_update_num_PE:",flag_update_num_PE)
 
-
-        
         t_before_record = time.time()
         boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
         boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
@@ -609,17 +603,6 @@ class PFMove():
         # print debug info of all particles here
         #input('hit enter to continue')
         return
-    
-    # def computeContactState(self):
-    #     for index, particle in enumerate(self.particle_cloud):
-    #         pmin,pmax = self.pybullet_env_id_collection[index].getAABB(self.particle_no_visual_id_collection[index])
-    #         collide_ids = self.pybullet_env_id_collection[index].getOverlappingObjects(pmin,pmax)
-    #         length = len(collide_ids)
-    #         for t_i in range(length):
-    #             if collide_ids[t_i][1] == 8:
-    #                 particle.in_contact = True
-    #             else:
-    #                 particle.in_contact = False
     
     def isAnyParticleInContact(self):
         for index, particle in enumerate(self.particle_cloud):
@@ -805,8 +788,8 @@ class PFMove():
         return 0
 
     def change_obj_parameters(self,pybullet_env,par_id):
-        #mean_mass = 0.380
-        #mean_friction = 0.5
+        # mean_mass = 0.380
+        # mean_friction = 0.5
         mass_a = random.uniform(0.330,0.430)
         friction_b = random.uniform(0.2,0.3)
         # mass_a = self.take_easy_gaussian_value(mean_mass, 0.05)
@@ -983,12 +966,13 @@ class PFMovePM():
         self.noise_object_pose = []
 
     #new structure
-    def real_robot_control_PM(self,opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
+    def real_robot_control_PM(self,opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur,do_obs_update):
         #Cheat
         self.update_particle_filter_PM(opti_obj_pos_cur,
                                        opti_obj_ori_cur,
                                        nois_obj_pos_cur,
-                                       nois_obj_ang_cur)
+                                       nois_obj_ang_cur,
+                                       do_obs_update)
         # if Flag is False:
         #     return False
 
@@ -1000,21 +984,23 @@ class PFMovePM():
         return distance
 
     #executed_control
-    def update_particle_filter_PM(self, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
+    def update_particle_filter_PM(self, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur,do_obs_update):
         global flag_record_PFPM
         global flag_record
         t1 = time.time()
         self.motion_update_PM(nois_obj_ang_cur)
         t2 = time.time()
-        estimated_object_pose_PM= self.observation_update_PM(opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur)
+        if do_obs_update:
+            self.observation_update_PM(opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur)
+            
+        # Compute mean of particles
+        estimated_object_pose_PM = self.compute_estimate_pos_of_object(self.particle_cloud_PM)
         estimated_object_pos_PM = [estimated_object_pose_PM[0],estimated_object_pose_PM[1],estimated_object_pose_PM[2]]
         estimated_object_ang_PM = [estimated_object_pose_PM[3],estimated_object_pose_PM[4],estimated_object_pose_PM[5]]
-        boss_est_pose_PFPM.append(estimated_object_pose_PM)
-        t3 = time.time()
-        #print("motion model2 time consuming:",t2-t1)
-        #print("observ model time consuming:",t3-t2)
-        #self.draw_contrast_figure(estimated_object_pos,observation)
         estimated_object_ori_PM = p_visualisation.getQuaternionFromEuler(estimated_object_ang_PM)
+        boss_est_pose_PFPM.append(estimated_object_pose_PM)
+        if visualisation_flag == True:
+            self.display_estimated_robot_in_visual_model(estimated_object_pos_PM,estimated_object_ang_PM)
         if visualisation_particle_flag == True:
             self.display_particle_in_visual_model_PM(self.particle_cloud_PM)
         err_opti_PFPM_pos = compute_pos_err_bt_2_points(estimated_object_pos_PM,opti_obj_pos_cur)
@@ -1033,6 +1019,25 @@ class PFMovePM():
         # print debug info of all particles here
         #input('hit enter to continue')
         return
+
+    def isAnyParticleInContact(self):
+        for index, particle in enumerate(self.particle_cloud_PM):
+            # get pose from particle
+            sim_par_cur_pos,sim_par_cur_ori = self.get_item_pos(self.pybullet_env_id_collection_PM[index], initial_parameter.particle_no_visual_id_collection_PM[index])
+            # reset pose of object in pybullet vis to the pose
+            p_visualisation.resetBasePositionAndOrientation(contact_particle_id,
+                                                            sim_par_cur_pos,
+                                                            sim_par_cur_ori)
+            # check contact 
+            pmin,pmax = p_visualisation.getAABB(contact_particle_id)
+            collide_ids = p_visualisation.getOverlappingObjects(pmin,pmax)
+            length = len(collide_ids)
+            for t_i in range(length):
+                # print("body id: ",collide_ids[t_i][1])
+                if collide_ids[t_i][1] == 8 or collide_ids[t_i][1] == 9 or collide_ids[t_i][1] == 10 or collide_ids[t_i][1] == 11:
+                    return True
+        return False
+
 
     def motion_update_PM(self, nois_obj_ang_cur):
         if flag_update_num_PM < 2:
@@ -1126,13 +1131,7 @@ class PFMovePM():
 
         self.resample_particles_PM()
         self.set_paticle_in_each_sim_env_PM()
-
-        object_estimate_pose = self.compute_estimate_pos_of_object(self.particle_cloud_PM)
-        estimated_object_pos = [object_estimate_pose[0],object_estimate_pose[1],object_estimate_pose[2]]
-        estimated_object_ang = [object_estimate_pose[3],object_estimate_pose[4],object_estimate_pose[5]]
-        if visualisation_flag == True:
-            self.display_estimated_robot_in_visual_model(estimated_object_pos,estimated_object_ang)
-        return object_estimate_pose
+        return
 
     def update_particle_in_motion_model_PM(self, parO_T_parN, nois_obj_ang_cur):
         for index, pybullet_env in enumerate(self.pybullet_env_id_collection_PM):
@@ -1442,7 +1441,6 @@ if __name__ == '__main__':
     particle_num = 100
     visualisation_flag = True
     visualisation_particle_flag = True
-    flag_robot_contact_particle = False
     d_thresh = 0.0002
     a_thresh = 0.01
     # d_thresh = 200
@@ -1565,14 +1563,12 @@ if __name__ == '__main__':
     estimated_object_ang = [estimated_object_set[3],estimated_object_set[4],estimated_object_set[5]]
     estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
     boss_est_pose_PFPM.append(estimated_object_set)
-    
-    
-   
-    if visualisation_particle_flag == True:
-        initial_parameter.display_particle()
-    initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
     # if visualisation_particle_flag == True:
-    #     initial_parameter.display_particle_PM()
+    #     initial_parameter.display_particle()
+        
+    initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
+    if visualisation_particle_flag == True:
+        initial_parameter.display_particle_PM()
 
     # input('test')
     if visualisation_flag == True:
@@ -1639,8 +1635,8 @@ if __name__ == '__main__':
     write_file_flag_PFPE = 0
     write_file_flag_PFPM = 0
     file_time = 9
-    run_PFPE_flag = True
-    run_PFPM_flag = False
+    run_PFPE_flag = False
+    run_PFPM_flag = True
     print("Welcome to Our Approach !")
     t_begin_while = time.time()
     robot1 = PFMove()
@@ -1658,7 +1654,6 @@ if __name__ == '__main__':
         dope_is_fresh = True
         #while True:
         try:
-            # ?
             latest_dope_time = listener.getLatestCommonTime('/panda_link0', '/cracker')
             #print("latest_dope_time: ",latest_dope_time.to_sec())
             #print("rospy.get_time: ",rospy.get_time())
@@ -1731,7 +1726,6 @@ if __name__ == '__main__':
         # Determine if particles need to be updated
         if run_PFPE_flag == True:
             # if ((dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh)) and (dis_robcur_robold_PE > d_thresh):
-            # 
             if (dis_robcur_robold_PE > d_thresh) and robot1.isAnyParticleInContact():
                 t_begin_PFPE = time.time()
                 # print("dis_robcur_robold_PE:", dis_robcur_robold_PE)
@@ -1762,7 +1756,8 @@ if __name__ == '__main__':
                 t_finish_PFPE = time.time()
                 # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
         if run_PFPM_flag == True:
-            if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
+            # if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
+            if (dis_robcur_robold_PM > d_thresh_PM) and robot2.isAnyParticleInContact():
                 flag_update_num_PM = flag_update_num_PM + 1
                 boss_obs_pose_PFPM.append(dope_obj_pose_cur)
                 opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object
@@ -1773,12 +1768,15 @@ if __name__ == '__main__':
                 robot2.real_robot_control_PM(opti_obj_pos_cur_PM,
                                              opti_obj_ori_cur_PM,
                                              nois_obj_pos_cur_PM,
-                                             nois_obj_ang_cur_PM)
+                                             nois_obj_ang_cur_PM,
+                                             do_obs_update=dope_is_fresh)
     
                 dope_obj_pos_old_PM = copy.deepcopy(dope_obj_pos_cur)
                 dope_obj_ang_old_PM = copy.deepcopy(dope_obj_ang_cur)
                 dope_obj_ori_old_PM = copy.deepcopy(dope_obj_ori_cur)
                 rob_link_9_pose_old_PM = copy.deepcopy(rob_link_9_pose_cur_PM)
+                if visualisation_flag == True:
+                    display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
         t_end_while = time.time()
         # print(t_end_while - t_begin)
         # if flag_write_csv_file > 65 and write_file_flag_obse == 0:

@@ -1526,7 +1526,7 @@ if __name__ == '__main__':
     rospy.init_node('PF_for_dope')
     signal.signal(signal.SIGINT, signal_handler)
     visualisation_flag = True
-    visualisation_particle_flag = False
+    visualisation_particle_flag = True
     file_time = 9
     run_PFPE_flag = True
     run_PFPM_flag = False
@@ -1564,7 +1564,7 @@ if __name__ == '__main__':
     boss_sigma_obs_z = 0.01 
     # standard deviation of computing the weight
     boss_sigma_obs_ang = 0.216773873
-    boss_sigma_obs_ang = 0.0216773873
+    # boss_sigma_obs_ang = 0.0216773873
     boss_sigma_obs_pos = 0.038226405
     boss_sigma_obs_pos = 0.004
     #build an object of class "Ros_listener"

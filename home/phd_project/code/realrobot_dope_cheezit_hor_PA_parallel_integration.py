@@ -1468,7 +1468,7 @@ if __name__ == '__main__':
     run_PFPE_flag = True
     run_PFPM_flag = False
     task_flag = "1a"
-    update_style_flag = "time"
+    update_style_flag = "pose"
     
     particle_cloud = []
     if update_style_flag == "pose":

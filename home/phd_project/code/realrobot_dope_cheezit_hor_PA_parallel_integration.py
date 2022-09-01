@@ -1526,16 +1526,16 @@ if __name__ == '__main__':
     rospy.init_node('PF_for_dope')
     signal.signal(signal.SIGINT, signal_handler)
     visualisation_flag = True
-    visualisation_particle_flag = True
+    visualisation_particle_flag = False
     file_time = 9
     run_PFPE_flag = True
     run_PFPM_flag = False
-    task_flag = "1a"
+    task_flag = "3"
     update_style_flag = "time"
     
     particle_cloud = []
     if update_style_flag == "pose":
-        particle_num = 40
+        particle_num = 100
     elif update_style_flag == "time":
         particle_num = 80
         
@@ -1560,6 +1560,7 @@ if __name__ == '__main__':
     # new dope error
     boss_sigma_obs_x = 0.032860982
     boss_sigma_obs_y = 0.012899399
+    boss_sigma_obs_y = 0.022899399
     boss_sigma_obs_z = 0.01 
     # standard deviation of computing the weight
     boss_sigma_obs_ang = 0.216773873
@@ -1868,7 +1869,8 @@ if __name__ == '__main__':
         elif update_style_flag == "time":
             while True:
                 if run_PFPE_flag == True:
-                    if robot1.isAnyParticleInContact():
+                    # if robot1.isAnyParticleInContact():
+                    if True:
                         t_begin_PFPE = time.time()
                         flag_update_num_PE = flag_update_num_PE + 1
                         # print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
@@ -1891,7 +1893,8 @@ if __name__ == '__main__':
                         t_finish_PFPE = time.time()
                 # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
                 if run_PFPM_flag == True:
-                    if robot2.isAnyParticleInContact(): 
+                    # if robot2.isAnyParticleInContact():
+                    if True:  
                         flag_update_num_PM = flag_update_num_PM + 1
                         boss_obs_pose_PFPM.append(dope_obj_pose_cur)
                         opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object

@@ -9,13 +9,21 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import copy
+flag_plot_ang = True
+flag_plot_pos = False
+task_flag = "2"
+update_style_flag = "pose"
 
-flag_plot_ang = False
-flag_plot_pos = True
-file_name_ang = "dis_scene1b_ang"
-file_name_pos = "dis_scene1b_pos"
-title_ang = "Comparison of Rotation Errors Based on Distance Update in Scene 1b"
-title_pos = "Comparison of Position Errors Based on Distance Update in Scene 1b"
+if update_style_flag == "pose":
+    title_name = "Pose"
+elif update_style_flag == "time":
+    title_name = "Time"
+
+file_name_ang = "pose_scene"+task_flag+"_ang"
+file_name_pos = "pose_scene"+task_flag+"_pos"
+title_ang = "Comparison of Rotation Errors Based on "+title_name+" Update in Scene "+task_flag
+title_pos = "Comparison of Position Errors Based on "+title_name+" Update in Scene "+task_flag
+
 if flag_plot_ang == True:
     print("Ready to plot the figure of ang")
     dataset_ang = pd.read_csv(file_name_ang+'.csv')

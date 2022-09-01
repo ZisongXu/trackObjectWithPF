@@ -3,16 +3,19 @@
    <material name="silver">
      <color rgba="0.75294118 0.75294118 0.75294118 1"/>
    </material>
+   <material name="box_size">
+     <color rgba="0.220 0.1902 0.0732 1"/>
+   </material>
    <link name="right_leg">
      <visual>
        <geometry>
-         <box size="0.251 0.1902 0.0732"/>
+         <box size="0.207 0.2185 0.1006"/>
        </geometry>
        <material name="silver"/>
      </visual>
      <collision>
        <geometry>
-         <box size="0.16 0.21343700408935547 0.061"/>
+         <box size="0.207 0.2185 0.1006"/>
        </geometry>
      </collision>
      <inertial>

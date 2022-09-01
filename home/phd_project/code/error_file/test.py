@@ -12,14 +12,16 @@ import copy
 flag_pos = True
 flag_ang = True
 flag_PFPM = False
-file_name_obse_pos = 'dis_scene1b_obse_err_pos.csv'
-file_name_PFPE_pos = 'dis_scene1b_PFPE_err_pos.csv'
-file_name_PFPM_pos = 'dis_scene1b_PFPM_err_pos.csv'
-file_name_obse_ang = 'dis_scene1b_obse_err_ang.csv'
-file_name_PFPE_ang = 'dis_scene1b_PFPE_err_ang.csv'
-file_name_PFPM_ang = 'dis_scene1b_PFPM_err_ang.csv'
-file_name_pos = 'dis_scene1b_pos.csv'
-file_name_ang = 'dis_scene1b_ang.csv'
+task_flag = "2"
+update_style_flag = "pose"
+file_name_obse_pos = update_style_flag+'_scene'+task_flag+'_obse_err_pos.csv'
+file_name_PFPE_pos = update_style_flag+'_scene'+task_flag+'_PFPE_err_pos.csv'
+file_name_PFPM_pos = update_style_flag+'_scene'+task_flag+'_PFPM_err_pos.csv'
+file_name_obse_ang = update_style_flag+'_scene'+task_flag+'_obse_err_ang.csv'
+file_name_PFPE_ang = update_style_flag+'_scene'+task_flag+'_PFPE_err_ang.csv'
+file_name_PFPM_ang = update_style_flag+'_scene'+task_flag+'_PFPM_err_ang.csv'
+file_name_pos = update_style_flag+'_scene'+task_flag+'_pos.csv'
+file_name_ang = update_style_flag+'_scene'+task_flag+'_ang.csv'
 # pos
 if flag_pos == True:
     print("Ready to integrate the data of pos")

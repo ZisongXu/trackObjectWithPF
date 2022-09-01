@@ -5,10 +5,14 @@ Created on Wed Mar 10 10:57:49 2021
 @author: 12106
 """
 #ROS
+#ROS
+from concurrent.futures.process import _threads_wakeups
 import itertools
 import os.path
+from ssl import ALERT_DESCRIPTION_ILLEGAL_PARAMETER
 
 import rospy
+import threading
 import rospkg
 from std_msgs.msg import String
 from std_msgs.msg import Float32
@@ -21,6 +25,7 @@ import tf.transformations as transformations
 from visualization_msgs.msg import Marker
 
 #pybullet
+from pyquaternion import Quaternion
 import pybullet as p
 import time
 import pybullet_data
@@ -30,20 +35,60 @@ import math
 import random
 import copy
 import os
+import signal
+import matplotlib.pyplot as plt
+import pandas as pd
+import multiprocessing
+#from sksurgerycore.algorithms.averagequaternions import average_quaternions
+from quaternion_averaging import weightedAverageQuaternions
 
+rospy.init_node('rate_test')
+rate = rospy.Rate(10)
+try:
+    while not rospy.is_shutdown():
+        print("rate")
+        rate.sleep()
+except KeyboardInterrupt:
+    print('stopping.....')
+
+'''
 def print_(b):
     print(b)
     
 rospy.init_node('rate_test')
-rate = rospy.Rate(1)
+rate = rospy.Rate(10)
 a0 = time.time()
 while True:
     print("test")
     a = time.time()
     print(a - a0)
+    rate.sleep()
+    
+    while True:
+        b = time.time()
+        print(b - a0)
+        # rate.sleep()
+        # break
+'''
+          
+    
+        
+'''
+rospy.init_node('rate_test')
+rate = rospy.Rate(1/2)
+a0 = time.time()
+while True:
+    print("test")
+    a = time.time()
+    print(a - a0)
+    
     while True:
         b = time.time()
         print(b - a0)
         rate.sleep()
         break
     
+    if rospy.is_shutdown():
+        print("I am here")
+        break
+'''    

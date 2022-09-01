@@ -41,15 +41,21 @@ import pandas as pd
 import multiprocessing
 #from sksurgerycore.algorithms.averagequaternions import average_quaternions
 from quaternion_averaging import weightedAverageQuaternions
+import signal
+import sys
+
+def signal_handler(sig, frame):
+    with open('test.txt', 'w') as f:
+        f.write('hello')
+    sys.exit()
 
 rospy.init_node('rate_test')
+signal.signal(signal.SIGINT, signal_handler)
 rate = rospy.Rate(10)
-try:
-    while not rospy.is_shutdown():
-        print("rate")
-        rate.sleep()
-except KeyboardInterrupt:
-    print('stopping.....')
+while not rospy.is_shutdown():
+    print('Running')
+    rate.sleep()
+#print('stopping.....')
 
 '''
 def print_(b):

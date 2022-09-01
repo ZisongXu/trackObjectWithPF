@@ -1852,6 +1852,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         # write the error file
         # if rospy.is_shutdown():
+        print("++++++++++++++++++++++++++++++++++++++++++++++++")
         if update_style_flag == "pose":
             if task_flag == "1a":
                 file_name_obse_pos = 'pose_scene1a_obse_err_pos.csv'

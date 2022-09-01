@@ -35,6 +35,7 @@ import random
 import copy
 import os
 import signal
+import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 import multiprocessing
@@ -51,7 +52,7 @@ planeId = p.loadURDF("plane.urdf")
 
 
 #visualisation_model
-p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
+p_visualisation = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
 p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
 p_visualisation.setGravity(0,0,-9.81)
 p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.5,0.3,0.2])
@@ -604,16 +605,16 @@ class PFMove():
         t_err_generate = time.time()
 
         t_before_record = time.time()
-        boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
-        boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
-        boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
-        boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
+        boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_pos, 'dope']
+        boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_ang, 'dope']
+        boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_pos, 'dope']
+        boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_ang, 'dope']
         flag_record = flag_record + 1
         flag_record_dope = flag_record_dope + 1
-        boss_PFPE_err_pos_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_PFPE_pos, 'PFPE']
-        boss_PFPE_err_ang_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_PFPE_ang, 'PFPE']
-        boss_err_pos_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_PFPE_pos, 'PFPE']
-        boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_PFPE_ang, 'PFPE']
+        boss_PFPE_err_pos_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_pos, 'PFPE']
+        boss_PFPE_err_ang_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_ang, 'PFPE']
+        boss_err_pos_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_pos, 'PFPE']
+        boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_ang, 'PFPE']
         flag_record = flag_record + 1
         flag_record_PFPE = flag_record_PFPE + 1
 
@@ -1033,10 +1034,10 @@ class PFMovePM():
 
         # if t_decide_write > 1:
         t_before_record = time.time()
-        boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_PFPM_pos, 'PFPM']
-        boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_PFPM_ang, 'PFPM']
-        boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_PFPM_pos, 'PFPM']
-        boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_PFPM_ang, 'PFPM']
+        boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_pos, 'PFPM']
+        boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_ang, 'PFPM']
+        boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_pos, 'PFPM']
+        boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_ang, 'PFPM']
         flag_record = flag_record + 1
         flag_record_PFPM = flag_record_PFPM + 1
 
@@ -1527,12 +1528,31 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     visualisation_flag = True
     visualisation_particle_flag = True
-    file_time = 9
+    file_time = 1
     run_PFPE_flag = True
     run_PFPM_flag = False
-    task_flag = "3"
-    update_style_flag = "time"
-    
+    task_flag = "2"
+    update_style_flag = "pose"
+    if task_flag == "1a":
+        if update_style_flag == "pose":
+            prepare_time = 6
+        else:
+            prepare_time = 0
+    elif task_flag == "1b":
+        if update_style_flag == "pose":
+            prepare_time = 7
+        else:
+            prepare_time = 0
+    elif task_flag == "2":
+        if update_style_flag == "pose":
+            prepare_time = 0
+        else:
+            prepare_time = 0
+    else:
+        if update_style_flag == "pose":
+            prepare_time = 0
+        else:
+            prepare_time = 0
     particle_cloud = []
     if update_style_flag == "pose":
         particle_num = 100
@@ -1564,7 +1584,7 @@ if __name__ == '__main__':
     boss_sigma_obs_z = 0.01 
     # standard deviation of computing the weight
     boss_sigma_obs_ang = 0.216773873
-    # boss_sigma_obs_ang = 0.0216773873
+    boss_sigma_obs_ang = 0.0216773873
     boss_sigma_obs_pos = 0.038226405
     boss_sigma_obs_pos = 0.004
     #build an object of class "Ros_listener"

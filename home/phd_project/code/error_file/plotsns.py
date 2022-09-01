@@ -9,18 +9,18 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import copy
-flag_plot_ang = True
-flag_plot_pos = False
-task_flag = "2"
-update_style_flag = "pose"
+flag_plot_ang = False
+flag_plot_pos = True
+task_flag = "1b"
+update_style_flag = "time"
 
 if update_style_flag == "pose":
     title_name = "Pose"
 elif update_style_flag == "time":
     title_name = "Time"
 
-file_name_ang = "pose_scene"+task_flag+"_ang"
-file_name_pos = "pose_scene"+task_flag+"_pos"
+file_name_ang = update_style_flag+"_scene"+task_flag+"_ang"
+file_name_pos = update_style_flag+"_scene"+task_flag+"_pos"
 title_ang = "Comparison of Rotation Errors Based on "+title_name+" Update in Scene "+task_flag
 title_pos = "Comparison of Position Errors Based on "+title_name+" Update in Scene "+task_flag
 

@@ -5,6 +5,7 @@ Created on Wed Mar 10 10:57:49 2021
 @author: 12106
 """
 #ROS
+from concurrent.futures.process import _threads_wakeups
 import itertools
 import os.path
 from ssl import ALERT_DESCRIPTION_ILLEGAL_PARAMETER
@@ -33,6 +34,7 @@ import math
 import random
 import copy
 import os
+import signal
 import matplotlib.pyplot as plt
 import pandas as pd
 import multiprocessing
@@ -358,11 +360,10 @@ class InitialSimulationModel():
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0,0,-9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
-            sim_base_id = pybullet_simulation_env.loadURDF(
-                os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
-                pw_T_base_pos,
-                pw_T_base_ori,
-                useFixedBase=1)
+            sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
+                                                           pw_T_base_pos,
+                                                           pw_T_base_ori,
+                                                           useFixedBase=1)
             fake_robot_start_pos = self.real_robot_start_pos
             fake_robot_start_orientation = self.real_robot_start_ori
             fake_robot_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
@@ -1435,7 +1436,6 @@ if __name__ == '__main__':
     boss_sigma_obs_pos = 0.038226405
 
     rospy.init_node('PF_for_dope')
-
     #build an object of class "Ros_listener"
     ros_listener = Ros_listener()
     #get pose info from DOPE
@@ -1477,7 +1477,7 @@ if __name__ == '__main__':
         optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_real_obj_with_visual_small_hor.urdf"),
                                                        pw_T_object_pos,
                                                        pw_T_object_ori)
-
+    #compute and load the pose of optitrack_base
     robot_T_base = compute_transformation_matrix(init_robot_pos, init_robot_ori, base_of_cheezit_pos, base_of_cheezit_ori)
     # input('Press [ENTER] to compute the pose of object in the pybullet world')
     pw_T_robot_3_3 = transformations.quaternion_matrix(pybullet_robot_ori)
@@ -1491,7 +1491,6 @@ if __name__ == '__main__':
             os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
             pw_T_base_pos,
             pw_T_base_ori)
-
     #compute pose of object in DOPE
     pw_T_object_dope = np.dot(pw_T_robot,rob_T_obj_dope)
     pw_T_object_pos_dope = [pw_T_object_dope[0][3],pw_T_object_dope[1][3],pw_T_object_dope[2][3]]
@@ -1536,6 +1535,7 @@ if __name__ == '__main__':
     # initialize sim world
     initial_parameter = InitialSimulationModel(particle_num, pybullet_robot_pos, pybullet_robot_ori, dope_obj_pos_init, dope_obj_ang_init, dope_obj_ori_init)
     initial_parameter.initial_particle() #only position of particle
+    
     estimated_object_set = initial_parameter.initial_and_set_simulation_env(ros_listener.current_joint_values)
     estimated_object_pos = [estimated_object_set[0],estimated_object_set[1],estimated_object_set[2]]
     estimated_object_ang = [estimated_object_set[3],estimated_object_set[4],estimated_object_set[5]]

@@ -71,7 +71,6 @@ boss_PFPE_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[]
 boss_PFPM_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
 boss_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
 
-
 boss_obs_pose_PFPM = []
 boss_est_pose_PFPM = []
 boss_update_flag_obse = 0

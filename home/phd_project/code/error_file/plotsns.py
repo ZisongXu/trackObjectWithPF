@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import copy
-flag_plot_ang = False
-flag_plot_pos = True
-task_flag = "1b"
+flag_plot_ang = True
+flag_plot_pos = False
+task_flag = "3"
 update_style_flag = "time"
 
 if update_style_flag == "pose":

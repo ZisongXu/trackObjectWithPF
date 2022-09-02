@@ -8,7 +8,9 @@ Created on Wed Mar 10 10:57:49 2021
 from concurrent.futures.process import _threads_wakeups
 import itertools
 import os.path
+from pickle import TRUE
 from ssl import ALERT_DESCRIPTION_ILLEGAL_PARAMETER
+from tkinter.tix import Tree
 
 import rospy
 import threading
@@ -52,7 +54,7 @@ planeId = p.loadURDF("plane.urdf")
 
 
 #visualisation_model
-p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
+p_visualisation = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
 p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
 p_visualisation.setGravity(0,0,-9.81)
 p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.5,0.3,0.2])
@@ -847,7 +849,7 @@ class PFMove():
     def add_noise_2_par(self,current_pos):
         mean = current_pos
         sigma = boss_sigma_obs_x
-        sigma = 0.01
+        sigma = pos_noise
         new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_pos_is_added_noise
     
@@ -855,7 +857,7 @@ class PFMove():
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
-        sigma = 0.05
+        sigma = ang_noise
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
 
@@ -1252,14 +1254,14 @@ class PFMovePM():
     def add_noise_2_par(self,current_pos):
         mean = current_pos
         sigma = boss_sigma_obs_x
-        sigma = 0.01
+        sigma = pos_noise
         new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_pos_is_added_noise
     
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
-        sigma = 0.05
+        sigma = ang_noise
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
 
@@ -1537,6 +1539,7 @@ def signal_handler(sig, frame):
         boss_PFPM_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_PFPM_ang,index=0,header=0,mode='a')
         print("write PFPM file")
         print("PM: Update frequency is: " + str(flag_update_num_PM))
+    print("file_time:", file_time)
     sys.exit()
     
 if __name__ == '__main__':
@@ -1545,12 +1548,13 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     visualisation_flag = True
     visualisation_particle_flag = True
-    file_time = 1
-    run_PFPE_flag = True
-    run_PFPM_flag = False
-    task_flag = "1b"
+    file_time = 10
+    run_PFPE_flag = False
+    run_PFPM_flag = True
+    task_flag = "3"
     update_style_flag = "time"
     simRobot_touch_par_flag = 0
+    first_write_flag = 0
     if task_flag == "1a":
         if update_style_flag == "pose":
             prepare_time = 0
@@ -1563,7 +1567,7 @@ if __name__ == '__main__':
             prepare_time = 0
     elif task_flag == "2":
         if update_style_flag == "pose":
-            prepare_time = 7
+            prepare_time = 0
         else:
             prepare_time = 0
     else:
@@ -1598,13 +1602,16 @@ if __name__ == '__main__':
     # new dope error
     boss_sigma_obs_x = 0.032860982
     boss_sigma_obs_y = 0.012899399
-    boss_sigma_obs_y = 0.022899399
+    # boss_sigma_obs_y = 0.022899399
     boss_sigma_obs_z = 0.01 
+    # Motion model Noise
+    pos_noise = 0.01
+    ang_noise = 0.1
     # standard deviation of computing the weight
     boss_sigma_obs_ang = 0.216773873
-    boss_sigma_obs_ang = 0.0216773873
+    # boss_sigma_obs_ang = 0.0216773873
     boss_sigma_obs_pos = 0.038226405
-    boss_sigma_obs_pos = 0.004
+    # boss_sigma_obs_pos = 0.004
     #build an object of class "Ros_listener"
     ros_listener = Ros_listener()
     #get pose info from DOPE
@@ -1731,28 +1738,6 @@ if __name__ == '__main__':
     err_opti_esti_ang = compute_ang_err_bt_2_points(estimated_object_ori,pw_T_object_ori)
     err_opti_esti_ang = angle_correction(err_opti_esti_ang)
     
-    #record the error
-    t_begin = time.time()
-    t_before_record = time.time()
-    boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
-    boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
-    boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
-    boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
-    flag_record = flag_record + 1
-    flag_record_dope = flag_record_dope + 1
-    boss_PFPE_err_pos_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
-    boss_PFPE_err_ang_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
-    boss_err_pos_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
-    boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
-    flag_record = flag_record + 1
-    flag_record_PFPE = flag_record_PFPE + 1
-    boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
-    boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
-    boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
-    boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
-    flag_record = flag_record + 1
-    flag_record_PFPM = flag_record_PFPM + 1
-    
     # initial_parameter.particle_cloud #parameter of particle
     # initial_parameter.pybullet_particle_env_collection #env of simulation
     # initial_parameter.fake_robot_id_collection #id of robot in simulation
@@ -1778,6 +1763,7 @@ if __name__ == '__main__':
     print("Welcome to Our Approach !")
     robot1 = PFMove()
     robot2 = PFMovePM()
+
     while not rospy.is_shutdown():
     # while True:
         #panda robot moves in the visualization window
@@ -1861,6 +1847,29 @@ if __name__ == '__main__':
                 # if ((dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh)) and (dis_robcur_robold_PE > d_thresh):
                 if (dis_robcur_robold_PE > d_thresh):
                     if robot1.isAnyParticleInContact():
+                        if first_write_flag == 0:
+                            #record the error
+                            t_begin = time.time()
+                            t_before_record = time.time()
+                            boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
+                            boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
+                            boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
+                            boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
+                            flag_record = flag_record + 1
+                            flag_record_dope = flag_record_dope + 1
+                            boss_PFPE_err_pos_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
+                            boss_PFPE_err_ang_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
+                            boss_err_pos_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
+                            boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
+                            flag_record = flag_record + 1
+                            flag_record_PFPE = flag_record_PFPE + 1
+                            boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
+                            boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
+                            boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
+                            boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
+                            flag_record = flag_record + 1
+                            flag_record_PFPM = flag_record_PFPM + 1
+                            first_write_flag = 1
                         simRobot_touch_par_flag = 1
                         t_begin_PFPE = time.time()
                         flag_update_num_PE = flag_update_num_PE + 1
@@ -1895,6 +1904,29 @@ if __name__ == '__main__':
             if run_PFPM_flag == True:
                 # if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
                 if (dis_robcur_robold_PM > d_thresh_PM) and robot2.isAnyParticleInContact():
+                    if first_write_flag == 0:
+                        #record the error
+                        t_begin = time.time()
+                        t_before_record = time.time()
+                        boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
+                        boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
+                        boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
+                        boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
+                        flag_record = flag_record + 1
+                        flag_record_dope = flag_record_dope + 1
+                        boss_PFPE_err_pos_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
+                        boss_PFPE_err_ang_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
+                        boss_err_pos_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
+                        boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
+                        flag_record = flag_record + 1
+                        flag_record_PFPE = flag_record_PFPE + 1
+                        boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
+                        boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
+                        boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
+                        boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
+                        flag_record = flag_record + 1
+                        flag_record_PFPM = flag_record_PFPM + 1
+                        first_write_flag = 1
                     flag_update_num_PM = flag_update_num_PM + 1
                     boss_obs_pose_PFPM.append(dope_obj_pose_cur)
                     opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object
@@ -1918,6 +1950,29 @@ if __name__ == '__main__':
                 if run_PFPE_flag == True:
                     if robot1.isAnyParticleInContact():
                     # if True:
+                        if first_write_flag == 0:
+                            #record the error
+                            t_begin = time.time()
+                            t_before_record = time.time()
+                            boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
+                            boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
+                            boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
+                            boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
+                            flag_record = flag_record + 1
+                            flag_record_dope = flag_record_dope + 1
+                            boss_PFPE_err_pos_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
+                            boss_PFPE_err_ang_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
+                            boss_err_pos_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
+                            boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
+                            flag_record = flag_record + 1
+                            flag_record_PFPE = flag_record_PFPE + 1
+                            boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
+                            boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
+                            boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
+                            boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
+                            flag_record = flag_record + 1
+                            flag_record_PFPM = flag_record_PFPM + 1
+                            first_write_flag = 1
                         simRobot_touch_par_flag = 1
                         t_begin_PFPE = time.time()
                         flag_update_num_PE = flag_update_num_PE + 1
@@ -1948,7 +2003,30 @@ if __name__ == '__main__':
                                                              ros_listener.current_joint_values)
                 if run_PFPM_flag == True:
                     if robot2.isAnyParticleInContact():
-                    # if True:  
+                    # if True:
+                        if first_write_flag == 0:
+                            #record the error
+                            t_begin = time.time()
+                            t_before_record = time.time()
+                            boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
+                            boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
+                            boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
+                            boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
+                            flag_record = flag_record + 1
+                            flag_record_dope = flag_record_dope + 1
+                            boss_PFPE_err_pos_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
+                            boss_PFPE_err_ang_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
+                            boss_err_pos_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
+                            boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
+                            flag_record = flag_record + 1
+                            flag_record_PFPE = flag_record_PFPE + 1
+                            boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
+                            boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
+                            boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
+                            boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
+                            flag_record = flag_record + 1
+                            flag_record_PFPM = flag_record_PFPM + 1
+                            first_write_flag = 1
                         flag_update_num_PM = flag_update_num_PM + 1
                         boss_obs_pose_PFPM.append(dope_obj_pose_cur)
                         opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object

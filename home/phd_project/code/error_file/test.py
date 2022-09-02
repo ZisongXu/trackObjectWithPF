@@ -11,30 +11,28 @@ import seaborn as sns
 import copy
 flag_pos = True
 flag_ang = True
-flag_PFPM = False
+flag_PFPM = True
 update_style_flag = "time"
-task_flag = "1b"
-loop_flag = 1
+task_flag = "3"
+loop_flag = 10
 if task_flag == "1a":
     if update_style_flag == "pose":
-        prepare_time = 2200
+        prepare_time = 1900
     else:
         prepare_time = 1900
 elif task_flag == "1b":
     if update_style_flag == "pose":
-        prepare_time = 2400
+        prepare_time = 1900
     else:
-        prepare_time = 3100
+        prepare_time = 1900
 elif task_flag == "2":
     if update_style_flag == "pose":
-        prepare_time = 1100
+        prepare_time = 1000
     else:
-        prepare_time = 3000
+        prepare_time = 2100
 else:
-    if update_style_flag == "pose":
-        prepare_time = 1100
-    else:
-        prepare_time = 3000
+    if update_style_flag == "time":
+        prepare_time = 1600
 
 file_name_obse_pos = update_style_flag+'_scene'+task_flag+'_obse_err_pos.csv'
 file_name_PFPE_pos = update_style_flag+'_scene'+task_flag+'_PFPE_err_pos.csv'

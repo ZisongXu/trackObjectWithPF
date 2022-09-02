@@ -833,11 +833,11 @@ class PFMove():
 
     def change_obj_parameters(self,pybullet_env,par_id):
         # mean_mass = 0.380
-        # mean_friction = 0.5
+        # mean_friction = 0.25
         mass_a = random.uniform(0.330,0.430)
-        friction_b = random.uniform(0.2,0.3)
+        friction_b = random.uniform(0.20,0.30)
         # mass_a = self.take_easy_gaussian_value(mean_mass, 0.05)
-        # friction_b = self.take_easy_gaussian_value(mean_friction, 0.1)
+        # friction_b = self.take_easy_gaussian_value(mean_friction, 0.05)
         #mass_a = 0.351
         #fricton_b = 0.30
         pybullet_env.changeDynamics(par_id, -1, mass = mass_a, lateralFriction = friction_b)
@@ -1549,10 +1549,10 @@ if __name__ == '__main__':
     visualisation_flag = True
     visualisation_particle_flag = True
     file_time = 10
-    run_PFPE_flag = False
-    run_PFPM_flag = True
-    task_flag = "3"
-    update_style_flag = "time"
+    run_PFPE_flag = True
+    run_PFPM_flag = False
+    task_flag = "1a"
+    update_style_flag = "pose"
     simRobot_touch_par_flag = 0
     first_write_flag = 0
     if task_flag == "1a":
@@ -1606,12 +1606,14 @@ if __name__ == '__main__':
     boss_sigma_obs_z = 0.01 
     # Motion model Noise
     pos_noise = 0.01
-    ang_noise = 0.1
+    ang_noise = 0.10
     # standard deviation of computing the weight
     boss_sigma_obs_ang = 0.216773873
-    # boss_sigma_obs_ang = 0.0216773873
+    boss_sigma_obs_ang = 0.0216773873
+    boss_sigma_obs_ang = 0.0216773873 * 3
     boss_sigma_obs_pos = 0.038226405
-    # boss_sigma_obs_pos = 0.004
+    boss_sigma_obs_pos = 0.004
+    boss_sigma_obs_pos = 0.004 * 3
     #build an object of class "Ros_listener"
     ros_listener = Ros_listener()
     #get pose info from DOPE
@@ -1994,7 +1996,7 @@ if __name__ == '__main__':
                         # print("Average time of updating: ",np.mean(robot1.times))
                         # print("PE: Finished")
                         t_finish_PFPE = time.time()
-                        # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
+                        # print("Time consuming:", t_finish_PFPE - t_begin)
                         simRobot_touch_par_flag = 0
                     else:
                         # print("robot does not touch the particle")

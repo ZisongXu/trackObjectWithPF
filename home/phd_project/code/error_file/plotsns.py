@@ -11,8 +11,8 @@ import seaborn as sns
 import copy
 flag_plot_ang = True
 flag_plot_pos = False
-task_flag = "3"
-update_style_flag = "time"
+task_flag = "1a"
+update_style_flag = "pose"
 
 if update_style_flag == "pose":
     title_name = "Pose"

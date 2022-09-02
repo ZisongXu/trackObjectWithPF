@@ -52,7 +52,7 @@ planeId = p.loadURDF("plane.urdf")
 
 
 #visualisation_model
-p_visualisation = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
+p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
 p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
 p_visualisation.setGravity(0,0,-9.81)
 p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.5,0.3,0.2])
@@ -661,33 +661,50 @@ class PFMove():
 
 
     def motion_update_PE_parallelised(self,pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
+        global simRobot_touch_par_flag
         threads = []
-
         start = time.time()
         for index, pybullet_env in enumerate(pybullet_sim_env):
-            thread = threading.Thread(target=self.function_to_parallelise, args=(index, pybullet_env, fake_robot_id, real_robot_joint_pos))
+            if simRobot_touch_par_flag == 1:
+                thread = threading.Thread(target=self.function_to_parallelise, args=(index, pybullet_env, fake_robot_id, real_robot_joint_pos))
+            else:
+                thread = threading.Thread(target=self.sim_robot_move_direct, args=(index, pybullet_env, fake_robot_id, real_robot_joint_pos))
             thread.start()
             threads.append(thread)
-
         for thread in threads:
             thread.join()
-
         end = time.time()
+        if simRobot_touch_par_flag == 0:
+            return
         # print(end - start)
-
-
+    def sim_robot_move_direct(self, index, pybullet_env, robot_id, position):
+        #position[7] = 0.039916139
+        #position[8] = 0.039916139
+        num_joints = 9
+        for joint_index in range(num_joints):
+            if joint_index == 7 or joint_index == 8:
+                pybullet_env.resetJointState(robot_id[index],
+                                             joint_index+2,
+                                             targetValue=position[joint_index])
+            else:
+                pybullet_env.resetJointState(robot_id[index],
+                                             joint_index,
+                                             targetValue=position[joint_index])
+    def pose_sim_robot_move(self, index, pybullet_env,fake_robot_id, real_robot_joint_pos):
+        flag_set_sim = 1
+        while True:
+            if flag_set_sim == 0:
+                break
+            self.set_real_robot_JointPosition(pybullet_env,fake_robot_id[index],real_robot_joint_pos)
+            pybullet_env.stepSimulation()
+            real_rob_joint_list_cur = self.get_real_robot_joint(pybullet_env,fake_robot_id[index])
+            flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur,real_robot_joint_pos)
+            
     def function_to_parallelise(self, index, pybullet_env,fake_robot_id, real_robot_joint_pos):
         self.change_obj_parameters(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
         #execute the control
         if update_style_flag == "pose":
-            flag_set_sim = 1
-            while True:
-                if flag_set_sim == 0:
-                    break
-                self.set_real_robot_JointPosition(pybullet_env,fake_robot_id[index],real_robot_joint_pos)
-                pybullet_env.stepSimulation()
-                real_rob_joint_list_cur = self.get_real_robot_joint(pybullet_env,fake_robot_id[index])
-                flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur,real_robot_joint_pos)
+            self.pose_sim_robot_move(index, pybullet_env,fake_robot_id, real_robot_joint_pos)
         elif update_style_flag == "time":
             pf_update_interval_in_sim = boss_pf_update_interval_in_real / change_sim_time
             #boss_pf_update_interval_in_real
@@ -1528,19 +1545,20 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     visualisation_flag = True
     visualisation_particle_flag = True
-    file_time = 9
-    run_PFPE_flag = False
-    run_PFPM_flag = True
-    task_flag = "2"
-    update_style_flag = "pose"
+    file_time = 1
+    run_PFPE_flag = True
+    run_PFPM_flag = False
+    task_flag = "1b"
+    update_style_flag = "time"
+    simRobot_touch_par_flag = 0
     if task_flag == "1a":
         if update_style_flag == "pose":
-            prepare_time = 6
+            prepare_time = 0
         else:
             prepare_time = 0
     elif task_flag == "1b":
         if update_style_flag == "pose":
-            prepare_time = 7
+            prepare_time = 0
         else:
             prepare_time = 0
     elif task_flag == "2":
@@ -1841,30 +1859,39 @@ if __name__ == '__main__':
         if update_style_flag == "pose":
             if run_PFPE_flag == True:
                 # if ((dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh)) and (dis_robcur_robold_PE > d_thresh):
-                if (dis_robcur_robold_PE > d_thresh) and robot1.isAnyParticleInContact():
-                    t_begin_PFPE = time.time()
-                    flag_update_num_PE = flag_update_num_PE + 1
-                    # Cheat
-                    opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos)  # get pos of real object
-                    opti_obj_ori_cur = copy.deepcopy(pw_T_object_ori)
-                    nois_obj_pos_cur = copy.deepcopy(dope_obj_pos_cur)
-                    nois_obj_ang_cur = copy.deepcopy(dope_obj_ang_cur)
-                    # execute sim_robot movement
-                    robot1.real_robot_control_PE(opti_obj_pos_cur,
-                                                 opti_obj_ori_cur,
-                                                 ros_listener.current_joint_values,
-                                                 nois_obj_pos_cur,
-                                                 nois_obj_ang_cur,
-                                                 do_obs_update=dope_is_fresh)
-                    # dope_obj_pos_old = copy.deepcopy(dope_obj_pos_cur)
-                    # dope_obj_ang_old = copy.deepcopy(dope_obj_ang_cur)
-                    # dope_obj_ori_old = copy.deepcopy(dope_obj_ori_cur)
-                    rob_link_9_pose_old_PE = copy.deepcopy(rob_link_9_pose_cur_PE)
-                    if visualisation_flag == True:
-                        display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
-                    # print("Average time of updating: ",np.mean(robot1.times))
-                    t_finish_PFPE = time.time()
-                    # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
+                if (dis_robcur_robold_PE > d_thresh):
+                    if robot1.isAnyParticleInContact():
+                        simRobot_touch_par_flag = 1
+                        t_begin_PFPE = time.time()
+                        flag_update_num_PE = flag_update_num_PE + 1
+                        # Cheat
+                        opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos)  # get pos of real object
+                        opti_obj_ori_cur = copy.deepcopy(pw_T_object_ori)
+                        nois_obj_pos_cur = copy.deepcopy(dope_obj_pos_cur)
+                        nois_obj_ang_cur = copy.deepcopy(dope_obj_ang_cur)
+                        # execute sim_robot movement
+                        robot1.real_robot_control_PE(opti_obj_pos_cur,
+                                                     opti_obj_ori_cur,
+                                                     ros_listener.current_joint_values,
+                                                     nois_obj_pos_cur,
+                                                     nois_obj_ang_cur,
+                                                     do_obs_update=dope_is_fresh)
+                        # dope_obj_pos_old = copy.deepcopy(dope_obj_pos_cur)
+                        # dope_obj_ang_old = copy.deepcopy(dope_obj_ang_cur)
+                        # dope_obj_ori_old = copy.deepcopy(dope_obj_ori_cur)
+                        rob_link_9_pose_old_PE = copy.deepcopy(rob_link_9_pose_cur_PE)
+                        if visualisation_flag == True:
+                            display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
+                        # print("Average time of updating: ",np.mean(robot1.times))
+                        t_finish_PFPE = time.time()
+                        # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
+                        simRobot_touch_par_flag = 0
+                    else:
+                        # print("robot does not touch the particle")
+                        robot1.motion_update_PE_parallelised(initial_parameter.pybullet_particle_env_collection,
+                                                             initial_parameter.fake_robot_id_collection,
+                                                             ros_listener.current_joint_values)
+                        # continue 
             if run_PFPM_flag == True:
                 # if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
                 if (dis_robcur_robold_PM > d_thresh_PM) and robot2.isAnyParticleInContact():
@@ -1889,8 +1916,9 @@ if __name__ == '__main__':
         elif update_style_flag == "time":
             while True:
                 if run_PFPE_flag == True:
-                    # if robot1.isAnyParticleInContact():
-                    if True:
+                    if robot1.isAnyParticleInContact():
+                    # if True:
+                        simRobot_touch_par_flag = 1
                         t_begin_PFPE = time.time()
                         flag_update_num_PE = flag_update_num_PE + 1
                         # print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
@@ -1911,10 +1939,16 @@ if __name__ == '__main__':
                         # print("Average time of updating: ",np.mean(robot1.times))
                         # print("PE: Finished")
                         t_finish_PFPE = time.time()
-                # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
+                        # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
+                        simRobot_touch_par_flag = 0
+                    else:
+                        # print("robot does not touch the particle")
+                        robot1.motion_update_PE_parallelised(initial_parameter.pybullet_particle_env_collection,
+                                                             initial_parameter.fake_robot_id_collection,
+                                                             ros_listener.current_joint_values)
                 if run_PFPM_flag == True:
-                    # if robot2.isAnyParticleInContact():
-                    if True:  
+                    if robot2.isAnyParticleInContact():
+                    # if True:  
                         flag_update_num_PM = flag_update_num_PM + 1
                         boss_obs_pose_PFPM.append(dope_obj_pose_cur)
                         opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object

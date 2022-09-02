@@ -11,19 +11,20 @@ import seaborn as sns
 import copy
 flag_pos = True
 flag_ang = True
-flag_PFPM = True
-update_style_flag = "pose"
-task_flag = "2"
+flag_PFPM = False
+update_style_flag = "time"
+task_flag = "1b"
+loop_flag = 1
 if task_flag == "1a":
     if update_style_flag == "pose":
-        prepare_time = 1900
+        prepare_time = 2200
     else:
         prepare_time = 1900
 elif task_flag == "1b":
     if update_style_flag == "pose":
-        prepare_time = 2000
+        prepare_time = 2400
     else:
-        prepare_time = 3000
+        prepare_time = 3100
 elif task_flag == "2":
     if update_style_flag == "pose":
         prepare_time = 1100
@@ -46,7 +47,7 @@ file_name_ang = update_style_flag+'_scene'+task_flag+'_ang.csv'
 # pos
 if flag_pos == True:
     print("Ready to integrate the data of pos")
-    for j in range(10):
+    for j in range(loop_flag):
         dataset = pd.read_csv(str(j+1)+file_name_obse_pos)
         dataset.columns=["index","time","error","alg"]
         datasetcopy = copy.deepcopy(dataset)
@@ -67,7 +68,7 @@ if flag_pos == True:
         print("obse_pos ",j)
         newdataset.to_csv(file_name_pos,index=0,header=0,mode='a')
     print("finished")
-    for j in range(10):
+    for j in range(loop_flag):
         dataset = pd.read_csv(str(j+1)+file_name_PFPE_pos)
         dataset.columns=["index","time","error","alg"]
         datasetcopy = copy.deepcopy(dataset)
@@ -90,7 +91,7 @@ if flag_pos == True:
         newdataset.to_csv(file_name_pos,index=0,header=0,mode='a')
     print("finished")
     if flag_PFPM == True:
-        for j in range(10):     
+        for j in range(loop_flag):     
             dataset = pd.read_csv(str(j+1)+file_name_PFPM_pos)
             dataset.columns=["index","time","error","alg"]
             datasetcopy = copy.deepcopy(dataset)
@@ -114,7 +115,7 @@ if flag_pos == True:
 # ang
 if flag_ang == True:
     print("Ready to integrate the data of ang")
-    for j in range(10):
+    for j in range(loop_flag):
         dataset = pd.read_csv(str(j+1)+file_name_obse_ang)
         dataset.columns=["index","time","error","alg"]
         datasetcopy = copy.deepcopy(dataset)
@@ -136,7 +137,7 @@ if flag_ang == True:
         print("obse_ang ",j)
         newdataset.to_csv(file_name_ang,index=0,header=0,mode='a')
     print("finished")
-    for j in range(10):
+    for j in range(loop_flag):
         dataset = pd.read_csv(str(j+1)+file_name_PFPE_ang)
         dataset.columns=["index","time","error","alg"]
         datasetcopy = copy.deepcopy(dataset)
@@ -158,7 +159,7 @@ if flag_ang == True:
         newdataset.to_csv(file_name_ang,index=0,header=0,mode='a')
     print("finished")
     if flag_PFPM == True:
-        for j in range(10):     
+        for j in range(loop_flag):     
             dataset = pd.read_csv(str(j+1)+file_name_PFPM_ang)
             dataset.columns=["index","time","error","alg"]
             datasetcopy = copy.deepcopy(dataset)

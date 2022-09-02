@@ -1531,7 +1531,7 @@ if __name__ == '__main__':
     file_time = 1
     run_PFPE_flag = True
     run_PFPM_flag = False
-    task_flag = "2"
+    task_flag = "1a"
     update_style_flag = "pose"
     if task_flag == "1a":
         if update_style_flag == "pose":

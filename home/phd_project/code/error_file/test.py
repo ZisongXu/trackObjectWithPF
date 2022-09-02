@@ -12,19 +12,28 @@ import copy
 flag_pos = True
 flag_ang = True
 flag_PFPM = True
-update_style_flag = "time"
-task_flag = "1b"
+update_style_flag = "pose"
+task_flag = "2"
 if task_flag == "1a":
-    prepare_time = 1900
+    if update_style_flag == "pose":
+        prepare_time = 1900
+    else:
+        prepare_time = 1900
 elif task_flag == "1b":
     if update_style_flag == "pose":
         prepare_time = 2000
     else:
         prepare_time = 3000
 elif task_flag == "2":
-    prepare_time = 0
+    if update_style_flag == "pose":
+        prepare_time = 1100
+    else:
+        prepare_time = 3000
 else:
-    prepare_time = 0
+    if update_style_flag == "pose":
+        prepare_time = 1100
+    else:
+        prepare_time = 3000
 
 file_name_obse_pos = update_style_flag+'_scene'+task_flag+'_obse_err_pos.csv'
 file_name_PFPE_pos = update_style_flag+'_scene'+task_flag+'_PFPE_err_pos.csv'

@@ -1528,10 +1528,10 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     visualisation_flag = True
     visualisation_particle_flag = True
-    file_time = 1
-    run_PFPE_flag = True
-    run_PFPM_flag = False
-    task_flag = "1a"
+    file_time = 9
+    run_PFPE_flag = False
+    run_PFPM_flag = True
+    task_flag = "2"
     update_style_flag = "pose"
     if task_flag == "1a":
         if update_style_flag == "pose":
@@ -1545,7 +1545,7 @@ if __name__ == '__main__':
             prepare_time = 0
     elif task_flag == "2":
         if update_style_flag == "pose":
-            prepare_time = 0
+            prepare_time = 7
         else:
             prepare_time = 0
     else:

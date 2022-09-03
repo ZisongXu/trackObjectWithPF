@@ -1549,10 +1549,10 @@ if __name__ == '__main__':
     visualisation_flag = True
     visualisation_particle_flag = True
     file_time = 10
-    run_PFPE_flag = True
-    run_PFPM_flag = False
-    task_flag = "1a"
-    update_style_flag = "pose"
+    run_PFPE_flag = False
+    run_PFPM_flag = True
+    task_flag = "3"
+    update_style_flag = "time"
     simRobot_touch_par_flag = 0
     first_write_flag = 0
     if task_flag == "1a":
@@ -1610,10 +1610,10 @@ if __name__ == '__main__':
     # standard deviation of computing the weight
     boss_sigma_obs_ang = 0.216773873
     boss_sigma_obs_ang = 0.0216773873
-    boss_sigma_obs_ang = 0.0216773873 * 3
+    boss_sigma_obs_ang = 0.0216773873 * 1.0
     boss_sigma_obs_pos = 0.038226405
     boss_sigma_obs_pos = 0.004
-    boss_sigma_obs_pos = 0.004 * 3
+    boss_sigma_obs_pos = 0.004 * 1.0
     #build an object of class "Ros_listener"
     ros_listener = Ros_listener()
     #get pose info from DOPE

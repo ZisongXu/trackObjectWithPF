@@ -11,9 +11,9 @@ import seaborn as sns
 import copy
 flag_pos = True
 flag_ang = True
-flag_PFPM = False
-update_style_flag = "pose"
-task_flag = "1a"
+flag_PFPM = True
+update_style_flag = "time"
+task_flag = "3"
 loop_flag = 10
 if task_flag == "1a":
     if update_style_flag == "pose":

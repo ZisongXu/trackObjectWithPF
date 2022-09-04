@@ -1548,10 +1548,10 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     visualisation_flag = True
     visualisation_particle_flag = True
-    file_time = 10
-    run_PFPE_flag = False
-    run_PFPM_flag = True
-    task_flag = "3"
+    file_time = 1
+    run_PFPE_flag = True
+    run_PFPM_flag = False
+    task_flag = "2"
     update_style_flag = "time"
     simRobot_touch_par_flag = 0
     first_write_flag = 0
@@ -1605,8 +1605,8 @@ if __name__ == '__main__':
     # boss_sigma_obs_y = 0.022899399
     boss_sigma_obs_z = 0.01 
     # Motion model Noise
-    pos_noise = 0.01
-    ang_noise = 0.10
+    pos_noise = 0.001
+    ang_noise = 0.05
     # standard deviation of computing the weight
     boss_sigma_obs_ang = 0.216773873
     boss_sigma_obs_ang = 0.0216773873

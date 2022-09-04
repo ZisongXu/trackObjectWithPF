@@ -12,9 +12,9 @@ import copy
 flag_pos = True
 flag_ang = True
 flag_PFPM = True
-update_style_flag = "time"
-task_flag = "3"
-loop_flag = 10
+update_style_flag = "pose"
+task_flag = "2"
+loop_flag = 5
 if task_flag == "1a":
     if update_style_flag == "pose":
         prepare_time = 1900
@@ -27,7 +27,7 @@ elif task_flag == "1b":
         prepare_time = 1950
 elif task_flag == "2":
     if update_style_flag == "pose":
-        prepare_time = 1000
+        prepare_time = 1100
     else:
         prepare_time = 2100
 else:

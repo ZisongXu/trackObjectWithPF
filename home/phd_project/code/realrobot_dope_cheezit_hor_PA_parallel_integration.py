@@ -54,7 +54,7 @@ planeId = p.loadURDF("plane.urdf")
 
 
 #visualisation_model
-p_visualisation = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
+p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
 p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
 p_visualisation.setGravity(0,0,-9.81)
 p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.5,0.3,0.2])
@@ -1551,8 +1551,8 @@ if __name__ == '__main__':
     file_time = 1
     run_PFPE_flag = True
     run_PFPM_flag = False
-    task_flag = "2"
-    update_style_flag = "time"
+    task_flag = "1b"
+    update_style_flag = "pose"
     simRobot_touch_par_flag = 0
     first_write_flag = 0
     if task_flag == "1a":
@@ -1579,7 +1579,11 @@ if __name__ == '__main__':
     if update_style_flag == "pose":
         particle_num = 100
     elif update_style_flag == "time":
-        particle_num = 80
+        if task_flag == "1a":
+            particle_num = 70
+        else:
+            particle_num = 80
+        
         
     d_thresh = 0.0002
     a_thresh = 0.01
@@ -1603,17 +1607,17 @@ if __name__ == '__main__':
     boss_sigma_obs_x = 0.032860982
     boss_sigma_obs_y = 0.012899399
     # boss_sigma_obs_y = 0.022899399
-    boss_sigma_obs_z = 0.01 
+    boss_sigma_obs_z = 0.01
     # Motion model Noise
-    pos_noise = 0.001
+    pos_noise = 0.01
     ang_noise = 0.05
     # standard deviation of computing the weight
     boss_sigma_obs_ang = 0.216773873
     boss_sigma_obs_ang = 0.0216773873
-    boss_sigma_obs_ang = 0.0216773873 * 1.0
+    boss_sigma_obs_ang = 0.0216773873 * 2
     boss_sigma_obs_pos = 0.038226405
     boss_sigma_obs_pos = 0.004
-    boss_sigma_obs_pos = 0.004 * 1.0
+    boss_sigma_obs_pos = 0.004 * 2
     #build an object of class "Ros_listener"
     ros_listener = Ros_listener()
     #get pose info from DOPE

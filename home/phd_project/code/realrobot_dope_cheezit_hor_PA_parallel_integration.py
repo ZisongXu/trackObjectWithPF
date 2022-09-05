@@ -854,10 +854,9 @@ class PFMove():
             weight = weight_xyz * weight_ang
             particle.w = weight
 
-        Flag = self.normalize_particles()
-        #if Flag is False:
-        #    return False
-        self.resample_particles()
+        # Flag = self.normalize_particles()
+        # self.resample_particles()
+        self.resample_particles_update()
         self.set_paticle_in_each_sim_env()
         #for index, pybullet_env in enumerate(self.pybullet_env_id_collection):
          #   part_pos = pybullet_env.getBasePositionAndOrientation(self.particle_no_visual_id_collection[index])
@@ -968,7 +967,43 @@ class PFMove():
                                 1.0/particle_num, index)
             newParticles.append(particle)
         self.particle_cloud = copy.deepcopy(newParticles)
-
+        
+    def resample_particles_update(self):
+        particles_w = []
+        newParticles = []
+        base_w = 0
+        base_w_list = []
+        base_w_list.append(base_w)
+        particle_array_list = []
+        n_particle = len(self.particle_cloud)
+        for particle in self.particle_cloud:
+            particles_w.append(particle.w)
+            base_w = base_w + particle.w
+            base_w_list.append(base_w)
+        w_sum = sum(particles_w)
+        r = random.uniform(0, w_sum)
+        for index in range(n_particle):
+            position = (r + index * w_sum / particle_num) % w_sum
+            position_index = self.compute_position(position, base_w_list)
+            particle_array_list.append(position_index)
+        for index,i in enumerate(particle_array_list):
+            particle = Particle(self.particle_cloud[i].x,
+                                self.particle_cloud[i].y,
+                                self.particle_cloud[i].z,
+                                self.particle_cloud[i].x_angle,
+                                self.particle_cloud[i].y_angle,
+                                self.particle_cloud[i].z_angle,
+                                1.0/particle_num, index)
+            newParticles.append(particle)
+        self.particle_cloud = copy.deepcopy(newParticles)
+        
+    def compute_position(self, position, base_w_list):
+        for index in range(1, len(base_w_list)):
+            if position <= base_w_list[index] and position > base_w_list[index - 1]:
+                return index - 1
+            else:
+                continue
+               
     def set_paticle_in_each_sim_env(self):
         for index, pybullet_env in enumerate(self.pybullet_env_id_collection):
             visual_particle_pos = [self.particle_cloud[index].x, self.particle_cloud[index].y, self.particle_cloud[index].z]
@@ -1234,11 +1269,9 @@ class PFMovePM():
             weight = weight_xyz * weight_ang
             particle.w = weight
 
-        Flag = self.normalize_particles_PM()
-        #if Flag is False:
-        #    return False
-
-        self.resample_particles_PM()
+        # Flag = self.normalize_particles_PM()
+        # self.resample_particles_PM()
+        self.resample_particles_PM_update()
         self.set_paticle_in_each_sim_env_PM()
         return
 
@@ -1369,7 +1402,42 @@ class PFMovePM():
                                 1.0/particle_num,index)
             newParticles.append(particle)
         self.particle_cloud_PM = copy.deepcopy(newParticles)
-
+        
+    def resample_particles_PM_update(self):
+        particles_w = []
+        newParticles = []
+        base_w = 0
+        base_w_list = []
+        base_w_list.append(base_w)
+        particle_array_list = []
+        n_particle = len(self.particle_cloud)
+        for particle in self.particle_cloud:
+            particles_w.append(particle.w)
+            base_w = base_w + particle.w
+            base_w_list.append(base_w)
+        w_sum = sum(particles_w)
+        r = random.uniform(0, w_sum)
+        for index in range(n_particle):
+            position = (r + index * w_sum / particle_num) % w_sum
+            position_index = self.compute_position_PM(position, base_w_list)
+            particle_array_list.append(position_index)
+        for index,i in enumerate(particle_array_list):
+            particle = Particle(self.particle_cloud[i].x,
+                                self.particle_cloud[i].y,
+                                self.particle_cloud[i].z,
+                                self.particle_cloud[i].x_angle,
+                                self.particle_cloud[i].y_angle,
+                                self.particle_cloud[i].z_angle,
+                                1.0/particle_num, index)
+            newParticles.append(particle)
+        self.particle_cloud = copy.deepcopy(newParticles)
+        
+    def compute_position_PM(self, position, base_w_list):
+        for index in range(1, len(base_w_list)):
+            if position <= base_w_list[index] and position > base_w_list[index - 1]:
+                return index - 1
+            else:
+                continue
     def set_paticle_in_each_sim_env_PM(self):
         for index, pybullet_env in enumerate(self.pybullet_env_id_collection_PM):
             visual_particle_pos = [self.particle_cloud_PM[index].x, self.particle_cloud_PM[index].y, self.particle_cloud_PM[index].z]
@@ -1616,7 +1684,7 @@ if __name__ == '__main__':
     file_time = 1
     run_PFPE_flag = True
     run_PFPM_flag = False
-    task_flag = "2"
+    task_flag = "1b"
     update_style_flag = "pose"
     simRobot_touch_par_flag = 0
     first_write_flag = 0

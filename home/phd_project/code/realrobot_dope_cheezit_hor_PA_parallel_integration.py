@@ -310,7 +310,7 @@ class InitialSimulationModel():
         z_axis = random.uniform(-1,1)
         x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
         y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
-        angle_noise = self.add_noise_to_init_par(0,boss_sigma_obs_ang)
+        angle_noise = self.add_noise_to_init_par(0,boss_sigma_obs_ang_init)
         w_quat = math.cos(angle_noise/2.0)
         x_quat = math.sin(angle_noise/2.0) * x_axis
         y_quat = math.sin(angle_noise/2.0) * y_axis
@@ -412,6 +412,7 @@ class InitialSimulationModel():
                 for contact in contacts:
                     contact_dis = contact[8]
                     if contact_dis < -0.001:
+                        #print("detected contact during initialization. BodyA: %d, BodyB: %d, LinkOfA: %d, LinkOfB: %d", contact[1], contact[2], contact[3], contact[4])
                         Px,Py,Pz,Px_angle,Py_angle,Pz_angle,P_quat = self.generate_random_pose(self.noise_object_pose,self.pw_T_object_ori_dope)
                         pybullet_simulation_env.resetBasePositionAndOrientation(particle_no_visual_id,
                                                                                 [Px,Py,Pz],
@@ -455,21 +456,32 @@ class InitialSimulationModel():
         #position[7] = 0.039916139
         #position[8] = 0.039916139
         #num_joints = 7
+        # num_joints = 9
+        # for joint_index in range(num_joints):
+        #     if joint_index == 7 or joint_index == 8:
+        #         pybullet_simulation_env.setJointMotorControl2(robot,
+        #                                                       joint_index+2,
+        #                                                       pybullet_simulation_env.POSITION_CONTROL,
+        #                                                       targetPosition=position[joint_index])
+        #     else:
+        #         pybullet_simulation_env.setJointMotorControl2(robot,
+        #                                                       joint_index,
+        #                                                       pybullet_simulation_env.POSITION_CONTROL,
+        #                                                       targetPosition=position[joint_index])
+        # for i in range(240):
+        #     pybullet_simulation_env.stepSimulation()
+            #time.sleep(1./240.)
         num_joints = 9
         for joint_index in range(num_joints):
             if joint_index == 7 or joint_index == 8:
-                pybullet_simulation_env.setJointMotorControl2(robot,
-                                                              joint_index+2,
-                                                              pybullet_simulation_env.POSITION_CONTROL,
-                                                              targetPosition=position[joint_index])
+                pybullet_simulation_env.resetJointState(robot,
+                                                joint_index+2,
+                                                targetValue=position[joint_index])
             else:
-                pybullet_simulation_env.setJointMotorControl2(robot,
-                                                              joint_index,
-                                                              pybullet_simulation_env.POSITION_CONTROL,
-                                                              targetPosition=position[joint_index])
-        for i in range(240):
-            pybullet_simulation_env.stepSimulation()
-            #time.sleep(1./240.)
+                pybullet_simulation_env.resetJointState(robot,
+                                                joint_index,
+                                                targetValue=position[joint_index])
+                
     def add_noise_to_init_par(self,current_pos,sigma_init):
         mean = current_pos
         sigma = sigma_init
@@ -650,7 +662,8 @@ class PFMove():
         self.particle_cloud[index].x_angle = x_angle
         self.particle_cloud[index].y_angle = y_angle
         self.particle_cloud[index].z_angle = z_angle
-
+        
+    # have been replaced
     def motion_update_PE(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
         start = time.time()
         for index, pybullet_env in enumerate(pybullet_sim_env):
@@ -692,7 +705,7 @@ class PFMove():
                 pybullet_env.resetJointState(robot_id[index],
                                              joint_index,
                                              targetValue=position[joint_index])
-    def pose_sim_robot_move(self, index, pybullet_env,fake_robot_id, real_robot_joint_pos):
+    def pose_sim_robot_move(self, index, pybullet_env, fake_robot_id, real_robot_joint_pos):
         flag_set_sim = 1
         while True:
             if flag_set_sim == 0:
@@ -706,7 +719,7 @@ class PFMove():
         self.change_obj_parameters(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
         #execute the control
         if update_style_flag == "pose":
-            self.pose_sim_robot_move(index, pybullet_env,fake_robot_id, real_robot_joint_pos)
+            self.pose_sim_robot_move(index, pybullet_env, fake_robot_id, real_robot_joint_pos)
         elif update_style_flag == "time":
             pf_update_interval_in_sim = boss_pf_update_interval_in_real / change_sim_time
             #boss_pf_update_interval_in_real
@@ -717,6 +730,34 @@ class PFMove():
         sim_par_cur_pos,sim_par_cur_ori = self.get_item_pos(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
         sim_par_cur_ang = p_visualisation.getEulerFromQuaternion(sim_par_cur_ori)
         #add noise on pos of each particle
+        normal_x, normal_y, normal_z, x_angle, y_angle, z_angle, P_quat = self.add_noise_pose(sim_par_cur_pos, sim_par_cur_ori)
+        pybullet_env.resetBasePositionAndOrientation(initial_parameter.particle_no_visual_id_collection[index],
+                                                     [normal_x, normal_y, normal_z],
+                                                     P_quat)
+        # check collision
+        while True:
+            pybullet_env.stepSimulation()
+            flag = 0
+            contacts = pybullet_env.getContactPoints(bodyA=fake_robot_id[index], bodyB=initial_parameter.particle_no_visual_id_collection[index])
+            # pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
+            # collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
+            # length = len(collide_ids)
+            for contact in contacts:
+                contact_dis = contact[8]
+                if contact_dis < -0.001:
+                    #print("detected contact during initialization. BodyA: %d, BodyB: %d, LinkOfA: %d, LinkOfB: %d", contact[1], contact[2], contact[3], contact[4])
+                    normal_x, normal_y, normal_z, x_angle, y_angle, z_angle, P_quat = self.add_noise_pose(sim_par_cur_pos, sim_par_cur_ori)
+                    pybullet_env.resetBasePositionAndOrientation(initial_parameter.particle_no_visual_id_collection[index],
+                                                                 [normal_x, normal_y, normal_z],
+                                                                 P_quat)
+                    flag = 1
+                    break
+            if flag == 0:
+                break
+        self.update_partcile_cloud_pose_PE(index, normal_x, normal_y, normal_z, x_angle, y_angle, z_angle)
+        # pipe.send()
+        
+    def add_noise_pose(self, sim_par_cur_pos, sim_par_cur_ori):
         normal_x = self.add_noise_2_par(sim_par_cur_pos[0])
         normal_y = self.add_noise_2_par(sim_par_cur_pos[1])
         normal_z = self.add_noise_2_par(sim_par_cur_pos[2])
@@ -741,6 +782,7 @@ class PFMove():
         x_angle = new_angle[0]
         y_angle = new_angle[1]
         z_angle = new_angle[2]
+        P_quat = p_visualisation.getQuaternionFromEuler([x_angle, y_angle, z_angle])
         #x_angle = sim_par_cur_ang[0]
         #y_angle = sim_par_cur_ang[1]
         #z_angle = sim_par_cur_ang[2]
@@ -751,10 +793,9 @@ class PFMove():
         #self.particle_cloud[index].x_angle = sim_par_cur_angle[0]
         #self.particle_cloud[index].y_angle = sim_par_cur_angle[1]
         #self.particle_cloud[index].z_angle = sim_par_cur_angle[2]
-        self.update_partcile_cloud_pose_PE(index, normal_x, normal_y, normal_z, x_angle, y_angle, z_angle)
-        #self.update_poses[index] = (normal_x, normal_y, normal_z, x_angle, y_angle, z_angle)
         # pipe.send()
-
+        return normal_x, normal_y, normal_z, x_angle, y_angle, z_angle, P_quat
+    
     def observation_update_PE(self, opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur):
         nois_obj_x = nois_obj_pos_cur[0]
         nois_obj_y = nois_obj_pos_cur[1]
@@ -832,15 +873,39 @@ class PFMove():
         return 0
 
     def change_obj_parameters(self,pybullet_env,par_id):
-        # mean_mass = 0.380
-        # mean_friction = 0.25
-        mass_a = random.uniform(0.330,0.430)
-        friction_b = random.uniform(0.20,0.30)
-        # mass_a = self.take_easy_gaussian_value(mean_mass, 0.05)
-        # friction_b = self.take_easy_gaussian_value(mean_friction, 0.05)
+        mean_mass = 0.380
+        mean_friction = 0.1
+        mean_restitution = 0.9
+        mean_damping = 0.4
+        mean_stiffness = 0.9
+        #mass_a = random.uniform(0.330,0.430)
+        #lateralFriction = random.uniform(0.20,0.30)
+        mass_a = self.take_easy_gaussian_value(mean_mass, 0.5)
+        if mass_a < 0.001:
+            mass_a = 0.05
+        lateralFriction = self.take_easy_gaussian_value(mean_friction, 0.3)
+        spinningFriction = self.take_easy_gaussian_value(mean_friction, 0.3)
+        rollingFriction = self.take_easy_gaussian_value(mean_friction, 0.3)
+        if lateralFriction < 0.001:
+            lateralFriction = 0.001
+        if spinningFriction < 0.001:
+            spinningFriction = 0.001
+        if rollingFriction < 0.001:
+            rollingFriction = 0.001
+        restitution = self.take_easy_gaussian_value(mean_restitution, 0.2)
+        # if restitution > 1:
         #mass_a = 0.351
         #fricton_b = 0.30
-        pybullet_env.changeDynamics(par_id, -1, mass = mass_a, lateralFriction = friction_b)
+        #contactStiffness = self.take_easy_gaussian_value(mean_stiffness, 0.3)
+        #contactDamping = self.take_easy_gaussian_value(mean_damping, 0.1)
+        
+        pybullet_env.changeDynamics(par_id, -1, mass = mass_a, 
+                                    lateralFriction = lateralFriction, 
+                                    spinningFriction = spinningFriction, 
+                                    rollingFriction = rollingFriction, 
+                                    restitution = restitution)
+                                    #contactStiffness=contactStiffness,
+                                    #contactDamping=contactDamping)
 
     def get_item_pos(self,pybullet_env,item_id):
         item_info = pybullet_env.getBasePositionAndOrientation(item_id)
@@ -1551,7 +1616,7 @@ if __name__ == '__main__':
     file_time = 1
     run_PFPE_flag = True
     run_PFPM_flag = False
-    task_flag = "1b"
+    task_flag = "2"
     update_style_flag = "pose"
     simRobot_touch_par_flag = 0
     first_write_flag = 0
@@ -1580,12 +1645,12 @@ if __name__ == '__main__':
         particle_num = 100
     elif update_style_flag == "time":
         if task_flag == "1a":
-            particle_num = 70
+            particle_num = 80
         else:
             particle_num = 80
         
         
-    d_thresh = 0.0002
+    d_thresh = 0.005
     a_thresh = 0.01
     d_thresh_PM = 0.0002
     a_thresh_PM = 0.0010
@@ -1604,20 +1669,21 @@ if __name__ == '__main__':
     boss_sigma_obs_y = 0.01167211468503462 / 2.0
     boss_sigma_obs_z = 0.02820930183351492 / 2.0
     # new dope error
-    boss_sigma_obs_x = 0.032860982
-    boss_sigma_obs_y = 0.012899399
+    boss_sigma_obs_x = 0.032860982 *2.0
+    boss_sigma_obs_y = 0.012899399 *2.0
     # boss_sigma_obs_y = 0.022899399
     boss_sigma_obs_z = 0.01
+    boss_sigma_obs_ang_init = 0.0216773873 * 2.0
     # Motion model Noise
-    pos_noise = 0.01
-    ang_noise = 0.05
+    pos_noise = 0.001 * 5
+    ang_noise = 0.05 * 1
     # standard deviation of computing the weight
     boss_sigma_obs_ang = 0.216773873
     boss_sigma_obs_ang = 0.0216773873
-    boss_sigma_obs_ang = 0.0216773873 * 2
+    boss_sigma_obs_ang = 0.0216773873 * 70 
     boss_sigma_obs_pos = 0.038226405
     boss_sigma_obs_pos = 0.004
-    boss_sigma_obs_pos = 0.004 * 2
+    boss_sigma_obs_pos = 0.005 * 100 
     #build an object of class "Ros_listener"
     ros_listener = Ros_listener()
     #get pose info from DOPE

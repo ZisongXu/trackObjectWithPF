@@ -9,13 +9,13 @@
    <link name="right_leg">
      <visual>
        <geometry>
-         <box size="0.207 0.2185 0.1006"/>
+         <box size="0.207 0.2185 0.1681"/>
        </geometry>
        <material name="silver"/>
      </visual>
      <collision>
        <geometry>
-         <box size="0.207 0.2185 0.1006"/>
+         <box size="0.207 0.2185 0.1681"/>
        </geometry>
      </collision>
      <inertial>

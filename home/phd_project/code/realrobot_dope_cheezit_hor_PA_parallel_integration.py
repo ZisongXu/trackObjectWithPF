@@ -54,7 +54,7 @@ planeId = p.loadURDF("plane.urdf")
 
 
 #visualisation_model
-p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
+p_visualisation = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
 p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
 p_visualisation.setGravity(0,0,-9.81)
 p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.5,0.3,0.2])
@@ -214,7 +214,6 @@ class Particle(object):
         self.z_angle = z_angle
         self.w = w
         self.index = index
-        self.in_contact = False
     def as_pose(self):
         return True
 
@@ -596,9 +595,6 @@ class PFMove():
         estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
         nois_obj_ori_cur = p_visualisation.getQuaternionFromEuler(nois_obj_ang_cur)
         
-        #self.computeContactState()
-
-
         #print("observ model time consuming:",t3-t2)
 
         #if Flag is False:
@@ -616,8 +612,6 @@ class PFMove():
         err_opti_PFPE_ang = compute_ang_err_bt_2_points(estimated_object_ori,opti_obj_ori_cur)
         err_opti_PFPE_ang = angle_correction(err_opti_PFPE_ang)
 
-        t_err_generate = time.time()
-
         t_before_record = time.time()
         boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_pos, 'dope']
         boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_ang, 'dope']
@@ -631,7 +625,6 @@ class PFMove():
         boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_ang, 'PFPE']
         flag_record = flag_record + 1
         flag_record_PFPE = flag_record_PFPE + 1
-
 
         # print debug info of all particles here
         #input('hit enter to continue')
@@ -782,17 +775,10 @@ class PFMove():
         x_angle = new_angle[0]
         y_angle = new_angle[1]
         z_angle = new_angle[2]
-        P_quat = p_visualisation.getQuaternionFromEuler([x_angle, y_angle, z_angle])
         #x_angle = sim_par_cur_ang[0]
         #y_angle = sim_par_cur_ang[1]
         #z_angle = sim_par_cur_ang[2]
-
-        #self.particle_cloud[index].x = sim_par_cur_pos[0]
-        #self.particle_cloud[index].y = sim_par_cur_pos[1]
-        #self.particle_cloud[index].z = sim_par_cur_pos[2]
-        #self.particle_cloud[index].x_angle = sim_par_cur_angle[0]
-        #self.particle_cloud[index].y_angle = sim_par_cur_angle[1]
-        #self.particle_cloud[index].z_angle = sim_par_cur_angle[2]
+        P_quat = p_visualisation.getQuaternionFromEuler([x_angle, y_angle, z_angle])
         # pipe.send()
         return normal_x, normal_y, normal_z, x_angle, y_angle, z_angle, P_quat
     
@@ -877,8 +863,8 @@ class PFMove():
         mean_restitution = 0.9
         mean_damping = 0.4
         mean_stiffness = 0.9
-        #mass_a = random.uniform(0.330,0.430)
-        #lateralFriction = random.uniform(0.20,0.30)
+        # mass_a = random.uniform(0.330,0.430)
+        # lateralFriction = random.uniform(0.20,0.30)
         mass_a = self.take_easy_gaussian_value(mean_mass, 0.5)
         if mass_a < 0.001:
             mass_a = 0.05
@@ -983,9 +969,14 @@ class PFMove():
         w_sum = sum(particles_w)
         r = random.uniform(0, w_sum)
         for index in range(n_particle):
-            position = (r + index * w_sum / particle_num) % w_sum
-            position_index = self.compute_position(position, base_w_list)
-            particle_array_list.append(position_index)
+            if w_sum != 0:
+                position = (r + index * w_sum / particle_num) % w_sum
+                position_index = self.compute_position(position, base_w_list)
+                particle_array_list.append(position_index)
+            elif w_sum == 0:
+                particle_array_list.append(index)
+        # print("w_sum:", w_sum)
+        # print("particle_array_list:", particle_array_list)
         for index,i in enumerate(particle_array_list):
             particle = Particle(self.particle_cloud[i].x,
                                 self.particle_cloud[i].y,
@@ -996,7 +987,7 @@ class PFMove():
                                 1.0/particle_num, index)
             newParticles.append(particle)
         self.particle_cloud = copy.deepcopy(newParticles)
-        
+
     def compute_position(self, position, base_w_list):
         for index in range(1, len(base_w_list)):
             if position <= base_w_list[index] and position > base_w_list[index - 1]:
@@ -1410,27 +1401,32 @@ class PFMovePM():
         base_w_list = []
         base_w_list.append(base_w)
         particle_array_list = []
-        n_particle = len(self.particle_cloud)
-        for particle in self.particle_cloud:
+        n_particle = len(self.particle_cloud_PM)
+        for particle in self.particle_cloud_PM:
             particles_w.append(particle.w)
             base_w = base_w + particle.w
             base_w_list.append(base_w)
         w_sum = sum(particles_w)
         r = random.uniform(0, w_sum)
         for index in range(n_particle):
-            position = (r + index * w_sum / particle_num) % w_sum
-            position_index = self.compute_position_PM(position, base_w_list)
-            particle_array_list.append(position_index)
+            if w_sum != 0:
+                position = (r + index * w_sum / particle_num) % w_sum
+                position_index = self.compute_position_PM(position, base_w_list)
+                particle_array_list.append(position_index)
+            elif w_sum == 0:
+                particle_array_list.append(index)
+        # print("w_sum:", w_sum)
+        # print("particle_array_list:", particle_array_list)
         for index,i in enumerate(particle_array_list):
-            particle = Particle(self.particle_cloud[i].x,
-                                self.particle_cloud[i].y,
-                                self.particle_cloud[i].z,
-                                self.particle_cloud[i].x_angle,
-                                self.particle_cloud[i].y_angle,
-                                self.particle_cloud[i].z_angle,
+            particle = Particle(self.particle_cloud_PM[i].x,
+                                self.particle_cloud_PM[i].y,
+                                self.particle_cloud_PM[i].z,
+                                self.particle_cloud_PM[i].x_angle,
+                                self.particle_cloud_PM[i].y_angle,
+                                self.particle_cloud_PM[i].z_angle,
                                 1.0/particle_num, index)
             newParticles.append(particle)
-        self.particle_cloud = copy.deepcopy(newParticles)
+        self.particle_cloud_PM = copy.deepcopy(newParticles)
         
     def compute_position_PM(self, position, base_w_list):
         for index in range(1, len(base_w_list)):
@@ -1677,46 +1673,23 @@ def signal_handler(sig, frame):
     
 if __name__ == '__main__':
     # ros node
+    prepare_time = 0
     rospy.init_node('PF_for_dope')
     signal.signal(signal.SIGINT, signal_handler)
     visualisation_flag = True
     visualisation_particle_flag = True
-    file_time = 1
+    file_time = 10
     run_PFPE_flag = True
     run_PFPM_flag = False
-    task_flag = "1b"
-    update_style_flag = "pose"
+    task_flag = "2"
+    update_style_flag = "time"
     simRobot_touch_par_flag = 0
     first_write_flag = 0
-    if task_flag == "1a":
-        if update_style_flag == "pose":
-            prepare_time = 0
-        else:
-            prepare_time = 0
-    elif task_flag == "1b":
-        if update_style_flag == "pose":
-            prepare_time = 0
-        else:
-            prepare_time = 0
-    elif task_flag == "2":
-        if update_style_flag == "pose":
-            prepare_time = 0
-        else:
-            prepare_time = 0
-    else:
-        if update_style_flag == "pose":
-            prepare_time = 0
-        else:
-            prepare_time = 0
     particle_cloud = []
     if update_style_flag == "pose":
         particle_num = 100
     elif update_style_flag == "time":
-        if task_flag == "1a":
-            particle_num = 80
-        else:
-            particle_num = 80
-        
+        particle_num = 80
         
     d_thresh = 0.005
     a_thresh = 0.01
@@ -1737,9 +1710,8 @@ if __name__ == '__main__':
     boss_sigma_obs_y = 0.01167211468503462 / 2.0
     boss_sigma_obs_z = 0.02820930183351492 / 2.0
     # new dope error
-    boss_sigma_obs_x = 0.032860982 *2.0
-    boss_sigma_obs_y = 0.012899399 *2.0
-    # boss_sigma_obs_y = 0.022899399
+    boss_sigma_obs_x = 0.032860982 * 2.0
+    boss_sigma_obs_y = 0.012899399 * 2.0
     boss_sigma_obs_z = 0.01
     boss_sigma_obs_ang_init = 0.0216773873 * 2.0
     # Motion model Noise
@@ -1748,10 +1720,10 @@ if __name__ == '__main__':
     # standard deviation of computing the weight
     boss_sigma_obs_ang = 0.216773873
     boss_sigma_obs_ang = 0.0216773873
-    boss_sigma_obs_ang = 0.0216773873 * 70 
+    boss_sigma_obs_ang = 0.0216773873 * 1
     boss_sigma_obs_pos = 0.038226405
     boss_sigma_obs_pos = 0.004
-    boss_sigma_obs_pos = 0.005 * 100 
+    boss_sigma_obs_pos = 0.005 * 1
     #build an object of class "Ros_listener"
     ros_listener = Ros_listener()
     #get pose info from DOPE

@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import copy
-flag_plot_ang = True
-flag_plot_pos = False
-task_flag = "1b"
+flag_plot_ang = False
+flag_plot_pos = True
+task_flag = "1a"
 update_style_flag = "pose"
 
 if update_style_flag == "pose":
@@ -32,7 +32,7 @@ if flag_plot_ang == True:
     svg_fig_ang = figure_ang.get_figure()
     plt.title(title_ang)
     svg_fig_ang.savefig(file_name_ang+".svg",format="svg")
-if flag_plot_pos ==True:
+if flag_plot_pos == True:
     print("Ready to plot the figure of pos")
     dataset_pos = pd.read_csv(file_name_pos+'.csv')
     dataset_pos.columns=["index","time","pos_error","alg"]

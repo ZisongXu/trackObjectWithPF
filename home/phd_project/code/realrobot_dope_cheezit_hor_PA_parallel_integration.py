@@ -52,14 +52,6 @@ p.resetDebugVisualizerCamera(cameraDistance=2,cameraYaw=0,cameraPitch=-40,camera
 planeId = p.loadURDF("plane.urdf")
 '''
 
-
-#visualisation_model
-p_visualisation = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
-p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
-p_visualisation.setGravity(0,0,-9.81)
-p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.5,0.3,0.2])
-plane_id = p_visualisation.loadURDF("plane.urdf")
-
 boss_obse_err_sum_df = pd.DataFrame()
 boss_PFPE_err_sum_df = pd.DataFrame()
 boss_PFPM_err_sum_df = pd.DataFrame()
@@ -514,6 +506,7 @@ class PFMove():
     #new structure
     def real_robot_control_PE(self,opti_obj_pos_cur,opti_obj_ori_cur,real_robot_joint_pos,nois_obj_pos_cur,nois_obj_ang_cur,do_obs_update):
         # Cheat
+        # print("real_robot_control_PE")
         self.update_particle_filter_PE(self.pybullet_env_id_collection,  # simulation environment per particle
                                        self.pybullet_sim_fake_robot_id_collection,  # fake robot id per sim_env
                                        real_robot_joint_pos,  # execution actions of the fake robot
@@ -572,6 +565,7 @@ class PFMove():
         return distance
     #executed_control
     def update_particle_filter_PE(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur,do_obs_update):
+        # print("update_particle_filter_PE")
         global flag_record_dope
         global flag_record_PFPE
         global flag_record
@@ -646,6 +640,13 @@ class PFMove():
                 # print("body id: ",collide_ids[t_i][1])
                 if collide_ids[t_i][1] == 8 or collide_ids[t_i][1] == 9 or collide_ids[t_i][1] == 10 or collide_ids[t_i][1] == 11:
                     return True
+            # print("check collision")
+            # p_visualisation.stepSimulation()
+            # contacts = p_visualisation.getContactPoints(bodyA=real_robot_id, bodyB=contact_particle_id)
+            # for contact in contacts:
+            #     contact_dis = contact[8]
+            #     if contact_dis < 0.001:
+            #         return True
         return False
         
     def update_partcile_cloud_pose_PE(self, index, x, y, z, x_angle, y_angle, z_angle):
@@ -669,6 +670,7 @@ class PFMove():
 
 
     def motion_update_PE_parallelised(self,pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
+        # print("motion_update_PE_parallelised")
         global simRobot_touch_par_flag
         threads = []
         start = time.time()
@@ -858,26 +860,24 @@ class PFMove():
         return 0
 
     def change_obj_parameters(self,pybullet_env,par_id):
-        mean_mass = 0.380
-        mean_friction = 0.1
-        mean_restitution = 0.9
+        
         mean_damping = 0.4
         mean_stiffness = 0.9
         # mass_a = random.uniform(0.330,0.430)
         # lateralFriction = random.uniform(0.20,0.30)
-        mass_a = self.take_easy_gaussian_value(mean_mass, 0.5)
+        mass_a = self.take_easy_gaussian_value(mass_mean, mass_sigma)
         if mass_a < 0.001:
             mass_a = 0.05
-        lateralFriction = self.take_easy_gaussian_value(mean_friction, 0.3)
-        spinningFriction = self.take_easy_gaussian_value(mean_friction, 0.3)
-        rollingFriction = self.take_easy_gaussian_value(mean_friction, 0.3)
+        lateralFriction = self.take_easy_gaussian_value(friction_mean, friction_sigma)
+        spinningFriction = self.take_easy_gaussian_value(friction_mean, friction_sigma)
+        rollingFriction = self.take_easy_gaussian_value(friction_mean, friction_sigma)
         if lateralFriction < 0.001:
             lateralFriction = 0.001
         if spinningFriction < 0.001:
             spinningFriction = 0.001
         if rollingFriction < 0.001:
             rollingFriction = 0.001
-        restitution = self.take_easy_gaussian_value(mean_restitution, 0.2)
+        restitution = self.take_easy_gaussian_value(restitution_mean, restitution_sigma)
         # if restitution > 1:
         #mass_a = 0.351
         #fricton_b = 0.30
@@ -969,11 +969,11 @@ class PFMove():
         w_sum = sum(particles_w)
         r = random.uniform(0, w_sum)
         for index in range(n_particle):
-            if w_sum != 0:
+            if w_sum > 0.00000001:
                 position = (r + index * w_sum / particle_num) % w_sum
                 position_index = self.compute_position(position, base_w_list)
                 particle_array_list.append(position_index)
-            elif w_sum == 0:
+            else:
                 particle_array_list.append(index)
         # print("w_sum:", w_sum)
         # print("particle_array_list:", particle_array_list)
@@ -1171,6 +1171,13 @@ class PFMovePM():
                 # print("body id: ",collide_ids[t_i][1])
                 if collide_ids[t_i][1] == 8 or collide_ids[t_i][1] == 9 or collide_ids[t_i][1] == 10 or collide_ids[t_i][1] == 11:
                     return True
+            # p_visualisation.stepSimulation()
+            # contacts = p_visualisation.getContactPoints(bodyA=real_robot_id, bodyB=contact_particle_id)
+            # for contact in contacts:
+            #     contact_dis = contact[8]
+            #     if contact_dis > 0.001:
+            #         return True
+                
         return False
 
 
@@ -1663,6 +1670,7 @@ def signal_handler(sig, frame):
         boss_PFPE_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_PFPE_ang,index=0,header=0,mode='a')
         print("write PFPE file")
         print("PE: Update frequency is: " + str(flag_update_num_PE))
+        print("max time:", max(PFPE_time_cosuming_list))
     if run_PFPM_flag == True:
         boss_PFPM_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_PFPM_pos,index=0,header=0,mode='a')
         boss_PFPM_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_PFPM_ang,index=0,header=0,mode='a')
@@ -1676,21 +1684,22 @@ if __name__ == '__main__':
     prepare_time = 0
     rospy.init_node('PF_for_dope')
     signal.signal(signal.SIGINT, signal_handler)
+    visualisation_all = True
     visualisation_flag = True
     visualisation_particle_flag = True
-    file_time = 10
+    file_time = 1
     run_PFPE_flag = True
     run_PFPM_flag = False
-    task_flag = "2"
-    update_style_flag = "time"
+    task_flag = "1a"
+    update_style_flag = "pose"
     simRobot_touch_par_flag = 0
     first_write_flag = 0
     particle_cloud = []
     if update_style_flag == "pose":
-        particle_num = 100
+        particle_num =150
     elif update_style_flag == "time":
-        particle_num = 80
-        
+        particle_num = 70
+    print("This is "+update_style_flag+" update in scene"+task_flag)    
     d_thresh = 0.005
     a_thresh = 0.01
     d_thresh_PM = 0.0002
@@ -1703,7 +1712,7 @@ if __name__ == '__main__':
     flag_update_num_PE = 0
     
     change_sim_time = 1.0/90
-    boss_pf_update_interval_in_real = 0.13
+    boss_pf_update_interval_in_real = 0.16
     pf_update_rate = rospy.Rate(1.0/boss_pf_update_interval_in_real)
     # error in xyz axis DOPE before recalibrating
     boss_sigma_obs_x = 0.03973017808163751 / 2.0
@@ -1711,19 +1720,37 @@ if __name__ == '__main__':
     boss_sigma_obs_z = 0.02820930183351492 / 2.0
     # new dope error
     boss_sigma_obs_x = 0.032860982 * 2.0
-    boss_sigma_obs_y = 0.012899399 * 2.0
+    boss_sigma_obs_y = 0.012899399 * 1.5
     boss_sigma_obs_z = 0.01
     boss_sigma_obs_ang_init = 0.0216773873 * 2.0
     # Motion model Noise
-    pos_noise = 0.001 * 5
-    ang_noise = 0.05 * 1
+    pos_noise = 0.001 * 5.0
+    ang_noise = 0.05 * 1.0
     # standard deviation of computing the weight
     boss_sigma_obs_ang = 0.216773873
     boss_sigma_obs_ang = 0.0216773873
-    boss_sigma_obs_ang = 0.0216773873 * 1
+    boss_sigma_obs_ang = 0.0216773873 * 4
     boss_sigma_obs_pos = 0.038226405
     boss_sigma_obs_pos = 0.004
-    boss_sigma_obs_pos = 0.005 * 1
+    boss_sigma_obs_pos = 0.005 * 4
+    
+    mass_mean = 0.380
+    mass_sigma = 0.5
+    friction_mean = 0.1
+    friction_sigma = 0.3
+    restitution_mean = 0.9
+    restitution_sigma = 0.2
+    
+    PFPE_time_cosuming_list = []
+    #visualisation_model
+    if visualisation_all == True:
+        p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
+    elif visualisation_all == False:
+        p_visualisation = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
+    p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
+    p_visualisation.setGravity(0,0,-9.81)
+    p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.5,0.3,0.2])
+    plane_id = p_visualisation.loadURDF("plane.urdf")   
     #build an object of class "Ros_listener"
     ros_listener = Ros_listener()
     #get pose info from DOPE
@@ -1959,6 +1986,7 @@ if __name__ == '__main__':
                 # if ((dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh)) and (dis_robcur_robold_PE > d_thresh):
                 if (dis_robcur_robold_PE > d_thresh):
                     if robot1.isAnyParticleInContact():
+                        # print("PFPE")
                         if first_write_flag == 0:
                             #record the error
                             t_begin = time.time()
@@ -2005,6 +2033,7 @@ if __name__ == '__main__':
                             display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
                         # print("Average time of updating: ",np.mean(robot1.times))
                         t_finish_PFPE = time.time()
+                        PFPE_time_cosuming_list.append(t_finish_PFPE - t_begin_PFPE)
                         # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
                         simRobot_touch_par_flag = 0
                     else:
@@ -2106,6 +2135,7 @@ if __name__ == '__main__':
                         # print("Average time of updating: ",np.mean(robot1.times))
                         # print("PE: Finished")
                         t_finish_PFPE = time.time()
+                        PFPE_time_cosuming_list.append(t_finish_PFPE - t_begin_PFPE)
                         # print("Time consuming:", t_finish_PFPE - t_begin)
                         simRobot_touch_par_flag = 0
                     else:

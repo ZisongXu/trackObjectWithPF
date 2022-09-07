@@ -5,21 +5,23 @@ Created on Wed Aug 24 15:09:51 2022
 @author: 12106
 """
 
+import ssl
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import copy
 flag_pos = True
 flag_ang = True
-flag_PFPM = True
+flag_PFPM = False
+correct_time_flag = False
 update_style_flag = "pose"
-task_flag = "1b"
+task_flag = "1a"
 loop_flag = 10
 if task_flag == "1a":
     if update_style_flag == "pose":
         prepare_time = 1900
     else:
-        prepare_time = 1900
+        prepare_time = 2100
 elif task_flag == "1b":
     if update_style_flag == "pose":
         prepare_time = 1900
@@ -29,7 +31,7 @@ elif task_flag == "2":
     if update_style_flag == "pose":
         prepare_time = 1900
     else:
-        prepare_time = 2100
+        prepare_time = 3900
 else:
     if update_style_flag == "time":
         prepare_time = 1600
@@ -43,6 +45,15 @@ file_name_PFPM_ang = update_style_flag+'_scene'+task_flag+'_PFPM_err_ang.csv'
 file_name_pos = update_style_flag+'_scene'+task_flag+'_pos.csv'
 file_name_ang = update_style_flag+'_scene'+task_flag+'_ang.csv'
 # pos
+
+def correct_time(datasetcopy):
+    print("Enter into the correct time function")
+    for time_index in range(len(datasetcopy)):
+        time = datasetcopy.loc[datasetcopy.index==time_index,'time']
+        if datasetcopy.time[time_index] > 2:
+            datasetcopy.loc[datasetcopy.index==time_index,'time'] = datasetcopy.loc[datasetcopy.index==time_index,'time'] - 16
+    # print(datasetcopy.time)
+    
 if flag_pos == True:
     print("Ready to integrate the data of pos")
     for j in range(loop_flag):
@@ -50,10 +61,14 @@ if flag_pos == True:
         dataset.columns=["index","time","error","alg"]
         datasetcopy = copy.deepcopy(dataset)
         newdataset = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-        timedf = dataset['time']
         timestep_list = []
         for timestep in range(prepare_time):
             timestep_list.append(timestep/100.0)
+        if update_style_flag == "time" and task_flag == "2" and correct_time_flag == True:
+            correct_time(datasetcopy)
+        timedf = datasetcopy['time']
+        # print(datasetcopy)
+        # datasetcopy.to_csv("test",index=0,header=0,mode='a')
         for i in range(prepare_time):
             newdata = (timedf - timestep_list[int(i)]).abs()
             #print(newdata)
@@ -63,6 +78,7 @@ if flag_pos == True:
                                  datasetcopy.loc[newdata.idxmin(),'time'],
                                  datasetcopy.loc[newdata.idxmin(),'error'],
                                  datasetcopy.loc[newdata.idxmin(),'alg']]
+        # print(newdataset.time)
         print("obse_pos ",j)
         newdataset.to_csv(file_name_pos,index=0,header=0,mode='a')
     print("finished")
@@ -71,10 +87,13 @@ if flag_pos == True:
         dataset.columns=["index","time","error","alg"]
         datasetcopy = copy.deepcopy(dataset)
         newdataset = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-        timedf = dataset['time']
+        # timedf = dataset['time']
         timestep_list = []
         for timestep in range(prepare_time):
             timestep_list.append(timestep/100.0)
+        if update_style_flag == "time" and task_flag == "2" and correct_time_flag == True:
+            correct_time(datasetcopy)
+        timedf = datasetcopy['time']
         for i in range(prepare_time):
             newdata = (timedf - timestep_list[int(i)]).abs()
             #print(newdata)
@@ -94,10 +113,13 @@ if flag_pos == True:
             dataset.columns=["index","time","error","alg"]
             datasetcopy = copy.deepcopy(dataset)
             newdataset = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-            timedf = dataset['time']
+            # timedf = dataset['time']
             timestep_list = []
             for timestep in range(prepare_time):
                 timestep_list.append(timestep/100.0)
+            if update_style_flag == "time" and task_flag == "2" and correct_time_flag == True:
+                correct_time(datasetcopy)
+            timedf = datasetcopy['time']
             for i in range(prepare_time):
                 newdata = (timedf - timestep_list[int(i)]).abs()
                 #print(newdata)
@@ -118,10 +140,13 @@ if flag_ang == True:
         dataset.columns=["index","time","error","alg"]
         datasetcopy = copy.deepcopy(dataset)
         newdataset = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-        timedf = dataset['time']
+        # timedf = dataset['time']
         timestep_list = []
         for timestep in range(prepare_time):
             timestep_list.append(timestep/100.0)
+        if update_style_flag == "time" and task_flag == "2" and correct_time_flag == True:
+            correct_time(datasetcopy)
+        timedf = datasetcopy['time']
         for i in range(prepare_time):
             newdata = (timedf - timestep_list[i]).abs()
             #print(newdata)
@@ -140,10 +165,13 @@ if flag_ang == True:
         dataset.columns=["index","time","error","alg"]
         datasetcopy = copy.deepcopy(dataset)
         newdataset = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-        timedf = dataset['time']
+        # timedf = dataset['time']
         timestep_list = []
         for timestep in range(prepare_time):
             timestep_list.append(timestep/100.0)
+        if update_style_flag == "time" and task_flag == "2" and correct_time_flag == True:
+            correct_time(datasetcopy)
+        timedf = datasetcopy['time']
         for i in range(prepare_time):
             newdata = (timedf - timestep_list[i]).abs()
             #print(newdata)
@@ -162,10 +190,13 @@ if flag_ang == True:
             dataset.columns=["index","time","error","alg"]
             datasetcopy = copy.deepcopy(dataset)
             newdataset = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-            timedf = dataset['time']
+            # timedf = dataset['time']
             timestep_list = []
             for timestep in range(prepare_time):
                 timestep_list.append(timestep/100.0)
+            if update_style_flag == "time" and task_flag == "2" and correct_time_flag == True:
+                correct_time(datasetcopy)
+            timedf = datasetcopy['time']
             for i in range(prepare_time):
                 newdata = (timedf - timestep_list[i]).abs()
                 #print(newdata)

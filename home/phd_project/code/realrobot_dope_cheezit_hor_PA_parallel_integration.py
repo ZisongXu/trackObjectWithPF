@@ -1684,14 +1684,14 @@ if __name__ == '__main__':
     prepare_time = 0
     rospy.init_node('PF_for_dope')
     signal.signal(signal.SIGINT, signal_handler)
-    visualisation_all = True
+    visualisation_all = False
     visualisation_flag = True
     visualisation_particle_flag = True
     file_time = 1
     run_PFPE_flag = True
     run_PFPM_flag = False
     task_flag = "1a"
-    update_style_flag = "pose"
+    update_style_flag = "time"
     simRobot_touch_par_flag = 0
     first_write_flag = 0
     particle_cloud = []
@@ -1729,10 +1729,10 @@ if __name__ == '__main__':
     # standard deviation of computing the weight
     boss_sigma_obs_ang = 0.216773873
     boss_sigma_obs_ang = 0.0216773873
-    boss_sigma_obs_ang = 0.0216773873 * 4
+    boss_sigma_obs_ang = 0.0216773873 * 1
     boss_sigma_obs_pos = 0.038226405
     boss_sigma_obs_pos = 0.004
-    boss_sigma_obs_pos = 0.005 * 4
+    boss_sigma_obs_pos = 0.005 * 1
     
     mass_mean = 0.380
     mass_sigma = 0.5

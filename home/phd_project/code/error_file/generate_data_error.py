@@ -14,8 +14,8 @@ flag_pos = True
 flag_ang = True
 flag_DOPE = True
 flag_PFPE = True
-flag_PFPM = True
-update_style_flag = "pose"
+flag_PFPM = False
+update_style_flag = "time"
 task_flag = "1b"
 loop_flag = 10
 

@@ -14,8 +14,8 @@ flag_pos = True
 flag_ang = True
 flag_PFPM = False
 correct_time_flag = False
-update_style_flag = "pose"
-task_flag = "1a"
+update_style_flag = "time"
+task_flag = "1b"
 loop_flag = 10
 if task_flag == "1a":
     if update_style_flag == "pose":

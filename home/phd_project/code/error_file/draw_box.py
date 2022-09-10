@@ -15,36 +15,61 @@ import tf.transformations
 from PIL import Image
 from PIL import ImageDraw
 from cv_bridge import CvBridge
-
+from dope.inference.cuboid import Cuboid3d
+from dope.inference.cuboid_pnp_solver import CuboidPNPSolver
+from dope.inference.detector import ModelData, ObjectDetector
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import CameraInfo, Image as ImageSensor_msg
 from std_msgs.msg import String
+from vision_msgs.msg import Detection3D, Detection3DArray, ObjectHypothesisWithPose
 from visualization_msgs.msg import Marker, MarkerArray
+import tf
+import tf.transformations as transformations
 
 
 class Ros_listener():
     def __init__(self):
-#        self.joint_subscriber = rospy.Subscriber('/joint_states', JointState, self.joint_values_callback,queue_size=1)
-#        self.robot_pose = rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose',PoseStamped, self.robot_pose_callback,queue_size=10)
-#        self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/cheezit/pose',PoseStamped, self.object_pose_callback,queue_size=10)
-#        self.base_pose = rospy.Subscriber('/mocap/rigid_bodies/baseofcheezit/pose', PoseStamped, self.base_of_cheezit_callback,queue_size=10)
+        # Start ROS publishers
+        self.pub_rgb_dope_points = \
+            rospy.Publisher(
+                rospy.get_param('~topic_publishing') + "/rgb_points",
+                ImageSensor_msg,
+                queue_size=10
+            )
+
         self.cv_bridge = CvBridge()
         image_sub = message_filters.Subscriber('/camera/color/image_raw', ImageSensor_msg)
-#        image_sub = message_filters.Subscriber(
-#            rospy.get_param('~topic_camera'),
-#            ImageSensor_msg
-#        )
-#        image_sub=np.uint8(image_sub)
-#        
-#        ts = message_filters.ApproximateTimeSynchronizer([image_sub], 10, 1, allow_headerless=True)
+        
         ts = message_filters.TimeSynchronizer([image_sub], 1)
         ts.registerCallback(self.image_callback)
         rospy.spin()
-        
+    
     def image_callback(self, image_msg):
-        img = self.cv_bridge.imgmsg_to_cv2(image_msg, "rgb8")
-        # cv2.imshow("image_sub:", img)
         
+        while True:
+            try:
+                (trans,rot) = listener.lookupTransform('/RealSense', '/cracker', rospy.Time(0))
+                break
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                continue
+        camera_T_obj_dope_pos = list(trans)
+        camera_T_obj_dope_ori = list(rot)
+        camera_T_obj_dope_3_3 = transformations.quaternion_matrix(camera_T_obj_dope_ori)
+        print("camera_T_obj_dope_3_3:",camera_T_obj_dope_3_3)
+        while True:
+            try:
+                (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
+                break
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                continue
+        rob_T_obj_dope_pos = list(trans)
+        results_cv2 = cv2.projectPoints(np.array(rob_T_obj_dope_pos),
+                                        np.array([0,0,0]),
+                                        np.array([0,0,0]),
+                                        np.array(_camera_intrinsic_matrix),
+                                        np.array(_dist_coeffs))
+        print("results_cv2[0]:", results_cv2[0])
+        img = self.cv_bridge.imgmsg_to_cv2(image_msg, "rgb8")
         height, width, _ = img.shape
         img_copy = img.copy()
         
@@ -52,14 +77,13 @@ class Ros_listener():
         im = im.convert('RGB')
         draw = Draw(im)
         
-        
+        points = [(270.73113541500015, 171.23152323217352), (241.46136527990785, 86.12035538275252), (355.92305269234504, 104.18411471846555), (393.4423106422681, 179.7875187171499), (252.5544934396236, 198.2046834515927), (226.773595371207, 114.98036848759719), (337.3676219356163, 128.83336788753047), (371.01054493868116, 202.87435265364252), (308.9311599655143, 146.9263616063306)]
+
+        draw.draw_cube(points, (255, 0, 0))
+
         rgb_points_img = CvBridge().cv2_to_imgmsg(np.array(im)[..., ::-1], "bgr8")
-        
-        # draw.draw_cube(points)
-        # rgb_points_img = CvBridge().cv2_to_imgmsg(np.array(im)[..., ::-1], "bgr8")
-        
-#        cv2.imshow("rgb_points_img:", rgb_points_img)
-        cv2.waitKey(3)
+        # rgb_points_img.header = camera_info.header
+        self.pub_rgb_dope_points.publish(rgb_points_img)
         
 class Draw(object):
     """Drawing helper class to visualize the neural network output"""
@@ -126,30 +150,43 @@ class Draw(object):
         
 #cv_bridge = CvBridge()
 #img = cv_bridge.imgmsg_to_cv2(image_msg, "rgb8")
-points = [(270.73113541500015, 171.23152323217352), 
-          (241.46136527990785, 86.12035538275252), 
-          (355.92305269234504, 104.18411471846555), 
-          (393.4423106422681, 179.7875187171499), 
-          (252.5544934396236, 198.2046834515927), 
-          (226.773595371207, 114.98036848759719), 
-          (337.3676219356163, 128.83336788753047), 
-          (371.01054493868116, 202.87435265364252), 
-          (308.9311599655143, 146.9263616063306)]
+
 #draw = Draw()
 #draw.draw_cube(points2d, self.draw_colors[m])
 
-
+def rotation_4_4_to_transformation_4_4(rotation_4_4,pos):
+    rotation_4_4[0][3] = pos[0]
+    rotation_4_4[1][3] = pos[1]
+    rotation_4_4[2][3] = pos[2]
+    return rotation_4_4
 def main():
     """Main routine to run DOPE"""
 
     # Initialize ROS node
     rospy.init_node('draw_box')
+    listener = tf.TransformListener()
+    while True:
+        try:
+            (trans,rot) = listener.lookupTransform('/RealSense', '/cracker', rospy.Time(0))
+            break
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            continue
+    camera_T_obj_dope_pos = list(trans)
+    camera_T_obj_dope_ori = list(rot)
+    
     ros_listen = Ros_listener()
-
+    
     try:
         rospy.spin()
     except rospy.ROSInterruptException:
         pass
-
+_camera_intrinsic_matrix = [[504.91994222,          0.0, 259.28746541],
+                            [         0.0, 503.71668498, 212.89422353],
+                            [         0.0,          0.0,          1.0]]
+_dist_coeffs = [[0.], [0.], [0.], [0.]]
 if __name__ == "__main__":
-    main()
+    # main()
+    rospy.init_node('draw_box')
+    listener = tf.TransformListener()
+    
+    ros_listen = Ros_listener()

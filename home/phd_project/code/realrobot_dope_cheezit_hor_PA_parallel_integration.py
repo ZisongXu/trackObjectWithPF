@@ -585,7 +585,7 @@ class PFMove():
         estimated_object_ang = [object_estimate_pose[3],object_estimate_pose[4],object_estimate_pose[5]]
         if visualisation_flag == True:
             self.display_estimated_robot_in_visual_model(estimated_object_pos,estimated_object_ang)
-    
+        #x,y,z,w
         estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
         nois_obj_ori_cur = p_visualisation.getQuaternionFromEuler(nois_obj_ang_cur)
         
@@ -605,7 +605,18 @@ class PFMove():
         err_opti_PFPE_pos = compute_pos_err_bt_2_points(estimated_object_pos,opti_obj_pos_cur)
         err_opti_PFPE_ang = compute_ang_err_bt_2_points(estimated_object_ori,opti_obj_ori_cur)
         err_opti_PFPE_ang = angle_correction(err_opti_PFPE_ang)
-
+        if publish_PFPE_pose_flag == True:
+            pub = rospy.Publisher('PFPE_pose', PoseStamped, queue_size = 1)
+            pose_PFPE = PoseStamped()
+            pose_PFPE.pose.position.x = estimated_object_pos[0]
+            pose_PFPE.pose.position.y = estimated_object_pos[1]
+            pose_PFPE.pose.position.z = estimated_object_pos[2]
+            pose_PFPE.pose.orientation.x = estimated_object_ori[0]
+            pose_PFPE.pose.orientation.y = estimated_object_ori[1]
+            pose_PFPE.pose.orientation.z = estimated_object_ori[2]
+            pose_PFPE.pose.orientation.w = estimated_object_ori[3]
+            pub.publish(pose_PFPE)
+            # rospy.loginfo(pose_PFPE)
         t_before_record = time.time()
         boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_pos, 'dope']
         boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_ang, 'dope']
@@ -1684,13 +1695,15 @@ if __name__ == '__main__':
     prepare_time = 0
     rospy.init_node('PF_for_dope')
     signal.signal(signal.SIGINT, signal_handler)
+    publish_PFPE_pose_flag = True
+    publish_PFPM_pose_flag = True
     visualisation_all = False
     visualisation_flag = True
     visualisation_particle_flag = True
     file_time = 10
     run_PFPE_flag = True
     run_PFPM_flag = False
-    task_flag = "1b"
+    task_flag = "2"
     update_style_flag = "time"
     simRobot_touch_par_flag = 0
     first_write_flag = 0
@@ -1729,10 +1742,10 @@ if __name__ == '__main__':
     # standard deviation of computing the weight
     boss_sigma_obs_ang = 0.216773873
     boss_sigma_obs_ang = 0.0216773873
-    boss_sigma_obs_ang = 0.0216773873 * 70
+    boss_sigma_obs_ang = 0.0216773873 * 4
     boss_sigma_obs_pos = 0.038226405
     boss_sigma_obs_pos = 0.004
-    boss_sigma_obs_pos = 0.005 * 100
+    boss_sigma_obs_pos = 0.005 * 4
     
     mass_mean = 0.380
     mass_sigma = 0.5
@@ -1855,6 +1868,18 @@ if __name__ == '__main__':
     estimated_object_pos = [estimated_object_set[0],estimated_object_set[1],estimated_object_set[2]]
     estimated_object_ang = [estimated_object_set[3],estimated_object_set[4],estimated_object_set[5]]
     estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
+    if publish_PFPE_pose_flag == True:
+        pub = rospy.Publisher('PFPE_pose', PoseStamped, queue_size = 1)
+        pose_PFPE = PoseStamped()
+        pose_PFPE.pose.position.x = estimated_object_pos[0]
+        pose_PFPE.pose.position.y = estimated_object_pos[1]
+        pose_PFPE.pose.position.z = estimated_object_pos[2]
+        pose_PFPE.pose.orientation.x = estimated_object_ori[0]
+        pose_PFPE.pose.orientation.y = estimated_object_ori[1]
+        pose_PFPE.pose.orientation.z = estimated_object_ori[2]
+        pose_PFPE.pose.orientation.w = estimated_object_ori[3]
+        pub.publish(pose_PFPE)
+        # rospy.loginfo(pose_PFPE)
     boss_est_pose_PFPM.append(estimated_object_set)
     initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
     if visualisation_particle_flag == True:

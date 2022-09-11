@@ -617,6 +617,31 @@ class PFMove():
             pose_PFPE.pose.orientation.w = estimated_object_ori[3]
             pub.publish(pose_PFPE)
             # rospy.loginfo(pose_PFPE)
+        if publish_DOPE_pose_flag == True:
+            pub_DOPE = rospy.Publisher('DOPE_pose', PoseStamped, queue_size = 1)
+            pose_DOPE = PoseStamped()
+            pose_DOPE.pose.position.x = nois_obj_pos_cur[0]
+            pose_DOPE.pose.position.y = nois_obj_pos_cur[1]
+            pose_DOPE.pose.position.z = nois_obj_pos_cur[2]
+            pose_DOPE.pose.orientation.x = nois_obj_ori_cur[0]
+            pose_DOPE.pose.orientation.y = nois_obj_ori_cur[1]
+            pose_DOPE.pose.orientation.z = nois_obj_ori_cur[2]
+            pose_DOPE.pose.orientation.w = nois_obj_ori_cur[3]
+            pub_DOPE.publish(pose_DOPE)
+            # rospy.loginfo(pose_DOPE)
+        if publish_Opti_pose_flag == True:
+            print("opti_obj_pos_cur:",opti_obj_pos_cur)
+            print("opti_obj_ori_cur:",opti_obj_ori_cur)
+            pub_opti = rospy.Publisher('Opti_pose', PoseStamped, queue_size = 1)
+            pose_opti = PoseStamped()
+            pose_opti.pose.position.x = opti_obj_pos_cur[0]
+            pose_opti.pose.position.y = opti_obj_pos_cur[1]
+            pose_opti.pose.position.z = opti_obj_pos_cur[2]
+            pose_opti.pose.orientation.x = opti_obj_ori_cur[0]
+            pose_opti.pose.orientation.y = opti_obj_ori_cur[1]
+            pose_opti.pose.orientation.z = opti_obj_ori_cur[2]
+            pose_opti.pose.orientation.w = opti_obj_ori_cur[3]
+            pub_opti.publish(pose_opti)
         t_before_record = time.time()
         boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_pos, 'dope']
         boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_ang, 'dope']
@@ -1696,14 +1721,15 @@ if __name__ == '__main__':
     rospy.init_node('PF_for_dope')
     signal.signal(signal.SIGINT, signal_handler)
     publish_PFPE_pose_flag = True
-    publish_PFPM_pose_flag = True
+    publish_DOPE_pose_flag = True
+    publish_Opti_pose_flag = True
     visualisation_all = False
     visualisation_flag = True
     visualisation_particle_flag = True
     file_time = 10
     run_PFPE_flag = True
     run_PFPM_flag = False
-    task_flag = "2"
+    task_flag = "1b"
     update_style_flag = "time"
     simRobot_touch_par_flag = 0
     first_write_flag = 0
@@ -1880,6 +1906,29 @@ if __name__ == '__main__':
         pose_PFPE.pose.orientation.w = estimated_object_ori[3]
         pub.publish(pose_PFPE)
         # rospy.loginfo(pose_PFPE)
+    if publish_DOPE_pose_flag == True:
+        pub_DOPE = rospy.Publisher('DOPE_pose', PoseStamped, queue_size = 1)
+        pose_DOPE = PoseStamped()
+        pose_DOPE.pose.position.x = pw_T_object_pos_dope[0]
+        pose_DOPE.pose.position.y = pw_T_object_pos_dope[1]
+        pose_DOPE.pose.position.z = pw_T_object_pos_dope[2]
+        pose_DOPE.pose.orientation.x = pw_T_object_ori_dope[0]
+        pose_DOPE.pose.orientation.y = pw_T_object_ori_dope[1]
+        pose_DOPE.pose.orientation.z = pw_T_object_ori_dope[2]
+        pose_DOPE.pose.orientation.w = pw_T_object_ori_dope[3]
+        pub.publish(pose_DOPE)
+        # rospy.loginfo(pose_DOPE)
+    if publish_Opti_pose_flag == True:
+        pub_opti = rospy.Publisher('Opti_pose', PoseStamped, queue_size = 1)
+        pose_opti = PoseStamped()
+        pose_opti.pose.position.x = pw_T_object_pos[0]
+        pose_opti.pose.position.y = pw_T_object_pos[1]
+        pose_opti.pose.position.z = pw_T_object_pos[2]
+        pose_opti.pose.orientation.x = pw_T_object_ori[0]
+        pose_opti.pose.orientation.y = pw_T_object_ori[1]
+        pose_opti.pose.orientation.z = pw_T_object_ori[2]
+        pose_opti.pose.orientation.w = pw_T_object_ori[3]
+        pub.publish(pose_opti)
     boss_est_pose_PFPM.append(estimated_object_set)
     initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
     if visualisation_particle_flag == True:

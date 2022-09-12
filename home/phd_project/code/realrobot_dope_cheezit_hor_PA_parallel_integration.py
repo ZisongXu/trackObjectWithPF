@@ -135,7 +135,10 @@ class Ros_listener():
     def __init__(self):
         self.joint_subscriber = rospy.Subscriber('/joint_states', JointState, self.joint_values_callback,queue_size=1)
         self.robot_pose = rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose',PoseStamped, self.robot_pose_callback,queue_size=10)
-        self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/cheezit/pose',PoseStamped, self.object_pose_callback,queue_size=10)
+        if object_cracker_flag == True:
+            self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/cheezit/pose',PoseStamped, self.object_pose_callback,queue_size=10)
+        if object_soup_flag == True:
+            self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/soup/pose',PoseStamped, self.object_pose_callback,queue_size=10)
         self.base_pose = rospy.Subscriber('/mocap/rigid_bodies/baseofcheezit/pose', PoseStamped, self.base_of_cheezit_callback,queue_size=10)
         self.current_joint_values = [-1.57,0.0,0.0,-2.8,1.7,1.57,1.1]
         self.robot_pos = [ 0.139080286026,

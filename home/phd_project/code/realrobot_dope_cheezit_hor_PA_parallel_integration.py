@@ -9,6 +9,7 @@ from concurrent.futures.process import _threads_wakeups
 import itertools
 import os.path
 from pickle import TRUE
+from re import T
 from ssl import ALERT_DESCRIPTION_ILLEGAL_PARAMETER
 from tkinter.tix import Tree
 
@@ -197,7 +198,7 @@ class Ros_listener():
         self.base_ori = [x_ori, y_ori, z_ori, w_ori]
 #Class of particle's structure
 class Particle(object):
-    def __init__(self,x=0.0,y=0.0,z=0.0,x_angle=0.0,y_angle=0.0,z_angle=0.0,w=1.0,index = 0):
+    def __init__(self,x=0.0,y=0.0,z=0.0,x_angle=0.0,y_angle=0.0,z_angle=0.0,w=1.0,index=0,linearVelocity=[0,0,0],angularVelocity=[0,0,0]):
         self.x = x
         self.y = y
         self.z = z
@@ -206,6 +207,8 @@ class Particle(object):
         self.z_angle = z_angle
         self.w = w
         self.index = index
+        self.linearVelocity = linearVelocity
+        self.angularVelocity = angularVelocity
     def as_pose(self):
         return True
 
@@ -229,9 +232,14 @@ class InitialRealworldModel():
         return real_robot_id
     def initial_target_object(self,object_pos,object_orientation = [0,0,0,1]):
         #object_orientation = p_visualisation.getQuaternionFromEuler(object_euler)
-        real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_obj_small_hor.urdf"),
-                                                  object_pos,
-                                                  object_orientation)
+        if object_cracker_flag == True:
+            real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_obj_small_hor.urdf"),
+                                                      object_pos,
+                                                      object_orientation)
+        if object_soup_flag == True:
+            real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/soup/camsoup_obj_small_hor.urdf"),
+                                                      object_pos,
+                                                      object_orientation)
         p_visualisation.changeDynamics(real_object_id,-1,mass=0.380,lateralFriction = 0.5)
         return real_object_id
     def set_real_robot_JointPosition(self,pybullet_simulation_env,robot, position):
@@ -345,18 +353,28 @@ class InitialSimulationModel():
             visualize_particle_pos = [particle.x, particle.y, particle.z]
             visualize_particle_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             visualize_particle_orientation = p_visualisation.getQuaternionFromEuler(visualize_particle_angle)
-            visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_with_visual_small_PE_hor.urdf"),
-                                                             visualize_particle_pos,
-                                                             visualize_particle_orientation)
+            if object_cracker_flag == True:
+                visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_with_visual_small_PE_hor.urdf"),
+                                                                visualize_particle_pos,
+                                                                visualize_particle_orientation)
+            if object_soup_flag == True:
+                visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/soup/camsoup_par_with_visual_small_PE_hor.urdf"),
+                                                                visualize_particle_pos,
+                                                                visualize_particle_orientation)
             self.particle_with_visual_id_collection.append(visualize_particle_Id)
     def display_particle_PM(self):
         for index, particle in enumerate(self.particle_cloud_PM):
             visualize_particle_pos = [particle.x, particle.y, particle.z]
             visualize_particle_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             visualize_particle_orientation = p_visualisation.getQuaternionFromEuler(visualize_particle_angle)
-            visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_with_visual_small_PM_hor.urdf"),
-                                                             visualize_particle_pos,
-                                                             visualize_particle_orientation)
+            if object_cracker_flag == True:
+                visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_with_visual_small_PM_hor.urdf"),
+                                                                visualize_particle_pos,
+                                                                visualize_particle_orientation)
+            if object_soup_flag == True:
+                visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/soup/camsoup_par_with_visual_small_PM_hor.urdf"),
+                                                                visualize_particle_pos,
+                                                                visualize_particle_orientation)
             self.particle_with_visual_id_collection_PM.append(visualize_particle_Id)
 
     def initial_and_set_simulation_env(self,joint_of_robot):
@@ -371,10 +389,16 @@ class InitialSimulationModel():
             pybullet_simulation_env.setGravity(0,0,-9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
             if task_flag == "2":
-                sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
-                                                               pw_T_base_pos,
-                                                               pw_T_base_ori,
-                                                               useFixedBase=1)
+                if object_cracker_flag == True:
+                    sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
+                                                                pw_T_base_pos,
+                                                                pw_T_base_ori,
+                                                                useFixedBase=1)
+                if object_soup_flag == True:
+                    sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
+                                                                pw_T_base_pos,
+                                                                pw_T_base_ori,
+                                                                useFixedBase=1)
             fake_robot_start_pos = self.real_robot_start_pos
             fake_robot_start_orientation = self.real_robot_start_ori
             fake_robot_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
@@ -389,9 +413,14 @@ class InitialSimulationModel():
             particle_no_visual_start_pos = [particle.x, particle.y, particle.z]
             particle_no_visual_start_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             particle_no_visual_start_orientation = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_start_angle)
-            particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_no_visual_small_hor.urdf"),
-                                                                     particle_no_visual_start_pos,
-                                                                     particle_no_visual_start_orientation)
+            if object_cracker_flag == True:
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_no_visual_small_hor.urdf"),
+                                                                        particle_no_visual_start_pos,
+                                                                        particle_no_visual_start_orientation)
+            if object_soup_flag == True:
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/camsoup_par_no_visual_small_hor.urdf"),
+                                                                        particle_no_visual_start_pos,
+                                                                        particle_no_visual_start_orientation)
             
             while True:
                 pybullet_simulation_env.stepSimulation()
@@ -434,9 +463,14 @@ class InitialSimulationModel():
             particle_no_visual_start_pos = [particle.x, particle.y, particle.z]
             particle_no_visual_start_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             particle_no_visual_start_orientation = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_start_angle)
-            particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_no_visual_small_hor.urdf"),
-                                                                     particle_no_visual_start_pos,
-                                                                     particle_no_visual_start_orientation)
+            if object_cracker_flag == True:
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_no_visual_small_hor.urdf"),
+                                                                        particle_no_visual_start_pos,
+                                                                        particle_no_visual_start_orientation)
+            if object_soup_flag == True:
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/camsoup_par_no_visual_small_hor.urdf"),
+                                                                        particle_no_visual_start_pos,
+                                                                        particle_no_visual_start_orientation)
             #pybullet_simulation_env.changeDynamics(particle_no_visual_id,-1,mass=3,lateralFriction = 0.7)
             self.particle_no_visual_id_collection_PM.append(particle_no_visual_id)
         obj_est_set_PM = self.compute_estimate_pos_of_object(self.particle_cloud_PM)
@@ -685,13 +719,15 @@ class PFMove():
             #         return True
         return False
         
-    def update_partcile_cloud_pose_PE(self, index, x, y, z, x_angle, y_angle, z_angle):
+    def update_partcile_cloud_pose_PE(self, index, x, y, z, x_angle, y_angle, z_angle, linearVelocity, angularVelocity):
         self.particle_cloud[index].x = x
         self.particle_cloud[index].y = y
         self.particle_cloud[index].z = z
         self.particle_cloud[index].x_angle = x_angle
         self.particle_cloud[index].y_angle = y_angle
         self.particle_cloud[index].z_angle = z_angle
+        self.particle_cloud[index].linearVelocity = linearVelocity
+        self.particle_cloud[index].angularVelocity = angularVelocity
         
     # have been replaced
     def motion_update_PE(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
@@ -747,6 +783,10 @@ class PFMove():
             flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur,real_robot_joint_pos)
             
     def function_to_parallelise(self, index, pybullet_env,fake_robot_id, real_robot_joint_pos):
+        # print(self.particle_cloud[index].linearVelocity,self.particle_cloud[index].angularVelocity)
+        pybullet_env.resetBaseVelocity(initial_parameter.particle_no_visual_id_collection[index], 
+                                       self.particle_cloud[index].linearVelocity, 
+                                       self.particle_cloud[index].angularVelocity)
         self.change_obj_parameters(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
         #execute the control
         if update_style_flag == "pose":
@@ -758,6 +798,9 @@ class PFMove():
                 self.set_real_robot_JointPosition(pybullet_env,fake_robot_id[index],real_robot_joint_pos)
                 pybullet_env.stepSimulation()
         ### ori: x,y,z,w
+        linearVelocity, angularVelocity = pybullet_env.getBaseVelocity(initial_parameter.particle_no_visual_id_collection[index])
+        # print("linearVelocity:",type(list(linearVelocity)))
+        # print("angularVelocity:",type(list(angularVelocity)))
         sim_par_cur_pos,sim_par_cur_ori = self.get_item_pos(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
         sim_par_cur_ang = p_visualisation.getEulerFromQuaternion(sim_par_cur_ori)
         #add noise on pos of each particle
@@ -765,6 +808,7 @@ class PFMove():
         pybullet_env.resetBasePositionAndOrientation(initial_parameter.particle_no_visual_id_collection[index],
                                                      [normal_x, normal_y, normal_z],
                                                      P_quat)
+        # if
         # check collision
         while True:
             pybullet_env.stepSimulation()
@@ -785,7 +829,8 @@ class PFMove():
                     break
             if flag == 0:
                 break
-        self.update_partcile_cloud_pose_PE(index, normal_x, normal_y, normal_z, x_angle, y_angle, z_angle)
+        # print(linearVelocity, angularVelocity)
+        self.update_partcile_cloud_pose_PE(index, normal_x, normal_y, normal_z, x_angle, y_angle, z_angle, linearVelocity, angularVelocity)
         # pipe.send()
         
     def add_noise_pose(self, sim_par_cur_pos, sim_par_cur_ori):
@@ -1020,7 +1065,10 @@ class PFMove():
                                 self.particle_cloud[i].x_angle,
                                 self.particle_cloud[i].y_angle,
                                 self.particle_cloud[i].z_angle,
-                                1.0/particle_num, index)
+                                1.0/particle_num, index,
+                                self.particle_cloud[i].linearVelocity,
+                                self.particle_cloud[i].angularVelocity)
+
             newParticles.append(particle)
         self.particle_cloud = copy.deepcopy(newParticles)
 
@@ -1726,9 +1774,11 @@ if __name__ == '__main__':
     visualisation_all = False
     visualisation_flag = True
     visualisation_particle_flag = True
-    file_time = 10
-    run_PFPE_flag = False
-    run_PFPM_flag = True
+    object_cracker_flag = True
+    object_soup_flag = False
+    file_time = 9
+    run_PFPE_flag = True
+    run_PFPM_flag = False
     task_flag = "3"
     update_style_flag = "time"
     simRobot_touch_par_flag = 0
@@ -1796,7 +1846,10 @@ if __name__ == '__main__':
     listener = tf.TransformListener()
     while True:
         try:
-            (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
+            if object_cracker_flag == True:
+                (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
+            if object_soup_flag == True:
+                (trans,rot) = listener.lookupTransform('/panda_link0', '/soup', rospy.Time(0))
             break
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
@@ -1827,8 +1880,12 @@ if __name__ == '__main__':
     pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object)
     pw_T_object_ang = p_visualisation.getEulerFromQuaternion(pw_T_object_ori)
     #load the groud truth object
-    if visualisation_flag == True:
+    if visualisation_flag == True and object_cracker_flag == True:
         optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_real_obj_with_visual_small_hor.urdf"),
+                                                       pw_T_object_pos,
+                                                       pw_T_object_ori)
+    if visualisation_flag == True and object_soup_flag == True:
+        optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/soup/camsoup_real_obj_with_visual_small_hor.urdf"),
                                                        pw_T_object_pos,
                                                        pw_T_object_ori)
     #compute and load the pose of optitrack_base
@@ -1841,7 +1898,11 @@ if __name__ == '__main__':
         pw_T_base_pos = [pw_T_base[0][3], pw_T_base[1][3], pw_T_base[2][3]]
         pw_T_base_ori = transformations.quaternion_from_matrix(pw_T_base)
         pw_T_base_ang = p_visualisation.getEulerFromQuaternion(pw_T_base_ori)
-        if visualisation_flag == True:
+        if visualisation_flag == True and object_cracker_flag == True:
+            optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
+                                                         pw_T_base_pos,
+                                                         pw_T_base_ori)
+        if visualisation_flag == True and object_soup_flag == True:
             optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
                                                          pw_T_base_pos,
                                                          pw_T_base_ori)
@@ -1852,8 +1913,12 @@ if __name__ == '__main__':
     pw_T_object_ang_dope = p_visualisation.getEulerFromQuaternion(pw_T_object_ori_dope)
     pw_T_object_ang_dope = list(pw_T_object_ang_dope)
     #load the DOPE object
-    if visualisation_flag == True:
+    if visualisation_flag == True and object_cracker_flag == True:
         dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_dope_obj_with_visual_small_PE_hor.urdf"),
+                                                  pw_T_object_pos_dope,
+                                                  pw_T_object_ori_dope)
+    if visualisation_flag == True and object_soup_flag == True:
+        dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/soup/camsoup_dope_obj_with_visual_small_PE_hor.urdf"),
                                                   pw_T_object_pos_dope,
                                                   pw_T_object_ori_dope)
     #initialization pose of DOPE
@@ -1936,13 +2001,22 @@ if __name__ == '__main__':
             initial_parameter.display_particle()
         if run_PFPM_flag == True:
             initial_parameter.display_particle_PM()
-    if visualisation_flag == True:
+    if visualisation_flag == True and object_cracker_flag == True:
         if run_PFPE_flag == True:
             estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
                                                            estimated_object_pos,
                                                            estimated_object_ori)
         if run_PFPM_flag == True:
             estimated_object_id_PM = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PM_hor.urdf"),
+                                                              estimated_object_pos,
+                                                              estimated_object_ori)
+    if visualisation_flag == True and object_soup_flag == True:
+        if run_PFPE_flag == True:
+            estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/soup/camsoup_est_obj_with_visual_small_PE_hor.urdf"),
+                                                           estimated_object_pos,
+                                                           estimated_object_ori)
+        if run_PFPM_flag == True:
+            estimated_object_id_PM = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/soup/camsoup_est_obj_with_visual_small_PM_hor.urdf"),
                                                               estimated_object_pos,
                                                               estimated_object_ori)
 
@@ -1987,11 +2061,17 @@ if __name__ == '__main__':
         #get pose info from DOPE
         dope_is_fresh = True
         try:
-            latest_dope_time = listener.getLatestCommonTime('/panda_link0', '/cracker')
+            if object_cracker_flag == True:
+                latest_dope_time = listener.getLatestCommonTime('/panda_link0', '/cracker')
+            if object_soup_flag == True:
+                latest_dope_time = listener.getLatestCommonTime('/panda_link0', '/soup')
             #print("latest_dope_time: ",latest_dope_time.to_sec())
             #print("rospy.get_time: ",rospy.get_time())
             if (rospy.get_time() - latest_dope_time.to_sec()) < 0.3:
-                (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
+                if object_cracker_flag == True:
+                    (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
+                if object_soup_flag == True:
+                    (trans,rot) = listener.lookupTransform('/panda_link0', '/soup', rospy.Time(0))
                 dope_is_fresh = True
                 #print("dope is FRESH")
             else:

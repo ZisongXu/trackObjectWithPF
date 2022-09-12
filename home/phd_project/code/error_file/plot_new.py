@@ -12,7 +12,7 @@ import copy
 import math
 flag_plot_ang = False
 flag_plot_pos = True
-task_flag = "1a"
+task_flag = "3"
 update_style_flag = "time"
 
 if update_style_flag == "pose":

@@ -1727,8 +1727,8 @@ if __name__ == '__main__':
     visualisation_flag = True
     visualisation_particle_flag = True
     file_time = 10
-    run_PFPE_flag = True
-    run_PFPM_flag = False
+    run_PFPE_flag = False
+    run_PFPM_flag = True
     task_flag = "3"
     update_style_flag = "time"
     simRobot_touch_par_flag = 0

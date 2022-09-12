@@ -15,7 +15,7 @@ flag_ang = True
 flag_PFPM = False
 correct_time_flag = False
 update_style_flag = "time"
-task_flag = "1b"
+task_flag = "3"
 loop_flag = 10
 if task_flag == "1a":
     if update_style_flag == "pose":
@@ -34,7 +34,7 @@ elif task_flag == "2":
         prepare_time = 3900
 else:
     if update_style_flag == "time":
-        prepare_time = 1600
+        prepare_time = 2300
 
 file_name_obse_pos = update_style_flag+'_scene'+task_flag+'_obse_err_pos.csv'
 file_name_PFPE_pos = update_style_flag+'_scene'+task_flag+'_PFPE_err_pos.csv'

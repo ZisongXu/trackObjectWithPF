@@ -630,8 +630,8 @@ class PFMove():
             pub_DOPE.publish(pose_DOPE)
             # rospy.loginfo(pose_DOPE)
         if publish_Opti_pose_flag == True:
-            print("opti_obj_pos_cur:",opti_obj_pos_cur)
-            print("opti_obj_ori_cur:",opti_obj_ori_cur)
+            # print("opti_obj_pos_cur:",opti_obj_pos_cur)
+            # print("opti_obj_ori_cur:",opti_obj_ori_cur)
             pub_opti = rospy.Publisher('Opti_pose', PoseStamped, queue_size = 1)
             pose_opti = PoseStamped()
             pose_opti.pose.position.x = opti_obj_pos_cur[0]
@@ -1729,7 +1729,7 @@ if __name__ == '__main__':
     file_time = 10
     run_PFPE_flag = True
     run_PFPM_flag = False
-    task_flag = "1b"
+    task_flag = "3"
     update_style_flag = "time"
     simRobot_touch_par_flag = 0
     first_write_flag = 0

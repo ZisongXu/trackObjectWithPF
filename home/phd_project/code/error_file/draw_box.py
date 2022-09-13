@@ -15,13 +15,9 @@ import tf.transformations
 from PIL import Image
 from PIL import ImageDraw
 from cv_bridge import CvBridge
-from dope.inference.cuboid import Cuboid3d
-from dope.inference.cuboid_pnp_solver import CuboidPNPSolver
-from dope.inference.detector import ModelData, ObjectDetector
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import CameraInfo, Image as ImageSensor_msg
 from std_msgs.msg import String
-from vision_msgs.msg import Detection3D, Detection3DArray, ObjectHypothesisWithPose
 from visualization_msgs.msg import Marker, MarkerArray
 import tf
 import tf.transformations as transformations
@@ -30,12 +26,12 @@ import tf.transformations as transformations
 class Ros_listener():
     def __init__(self):
         # Start ROS publishers
-        self.pub_rgb_dope_points = \
-            rospy.Publisher(
-                rospy.get_param('~topic_publishing') + "/rgb_points",
-                ImageSensor_msg,
-                queue_size=10
-            )
+#        self.pub_rgb_dope_points = \
+#            rospy.Publisher(
+#                rospy.get_param('~topic_publishing') + "/rgb_points",
+#                ImageSensor_msg,
+#                queue_size=10
+#            )
 
         self.cv_bridge = CvBridge()
         image_sub = message_filters.Subscriber('/camera/color/image_raw', ImageSensor_msg)

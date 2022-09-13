@@ -141,6 +141,8 @@ class Ros_listener():
             if object_soup_flag == True:
                 self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/soup/pose',PoseStamped, self.object_pose_callback,queue_size=10)
             self.base_pose = rospy.Subscriber('/mocap/rigid_bodies/baseofcheezit/pose', PoseStamped, self.base_of_cheezit_callback,queue_size=10)
+        elif optitrack_working_flag == False:
+            self.fake_opti_pose = rospy.Subscriber('/Opti_pose',PoseStamped, self.fake_optipose_callback,queue_size=10)
         self.current_joint_values = [-1.57,0.0,0.0,-2.8,1.7,1.57,1.1]
         self.robot_pos = [ 0.139080286026,
                           -0.581342339516,
@@ -200,6 +202,18 @@ class Ros_listener():
         z_ori = data.pose.orientation.z
         w_ori = data.pose.orientation.w
         self.base_ori = [x_ori, y_ori, z_ori, w_ori]
+    def fake_optipose_callback(self,data):
+        # pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.fake_opti_pos = [x_pos, y_pos, z_pos]
+        # ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.fake_opti_ori = [x_ori, y_ori, z_ori, w_ori]
 #Class of particle's structure
 class Particle(object):
     def __init__(self,x=0.0,y=0.0,z=0.0,x_angle=0.0,y_angle=0.0,z_angle=0.0,w=1.0,index=0,linearVelocity=[0,0,0],angularVelocity=[0,0,0]):
@@ -636,13 +650,13 @@ class PFMove():
             self.display_particle_in_visual_model_PE(self.particle_cloud)
         #self.draw_contrast_figure(estimated_object_pos,observation)
         #neettochange
-        if optitrack_working_flag == True:
-            err_opti_dope_pos = compute_pos_err_bt_2_points(nois_obj_pos_cur,opti_obj_pos_cur)
-            err_opti_dope_ang = compute_ang_err_bt_2_points(nois_obj_ori_cur,opti_obj_ori_cur)
-            err_opti_dope_ang = angle_correction(err_opti_dope_ang)
-            err_opti_PFPE_pos = compute_pos_err_bt_2_points(estimated_object_pos,opti_obj_pos_cur)
-            err_opti_PFPE_ang = compute_ang_err_bt_2_points(estimated_object_ori,opti_obj_ori_cur)
-            err_opti_PFPE_ang = angle_correction(err_opti_PFPE_ang)
+        # if optitrack_working_flag == True:
+        err_opti_dope_pos = compute_pos_err_bt_2_points(nois_obj_pos_cur,opti_obj_pos_cur)
+        err_opti_dope_ang = compute_ang_err_bt_2_points(nois_obj_ori_cur,opti_obj_ori_cur)
+        err_opti_dope_ang = angle_correction(err_opti_dope_ang)
+        err_opti_PFPE_pos = compute_pos_err_bt_2_points(estimated_object_pos,opti_obj_pos_cur)
+        err_opti_PFPE_ang = compute_ang_err_bt_2_points(estimated_object_ori,opti_obj_ori_cur)
+        err_opti_PFPE_ang = angle_correction(err_opti_PFPE_ang)
         if publish_PFPE_pose_flag == True:
             pub = rospy.Publisher('PFPE_pose', PoseStamped, queue_size = 1)
             pose_PFPE = PoseStamped()
@@ -681,19 +695,19 @@ class PFMove():
             pose_opti.pose.orientation.w = opti_obj_ori_cur[3]
             pub_opti.publish(pose_opti)
         t_before_record = time.time()
-        if optitrack_working_flag == True:
-            boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_pos, 'dope']
-            boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_ang, 'dope']
-            boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_pos, 'dope']
-            boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_ang, 'dope']
-            flag_record = flag_record + 1
-            flag_record_dope = flag_record_dope + 1
-            boss_PFPE_err_pos_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_pos, 'PFPE']
-            boss_PFPE_err_ang_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_ang, 'PFPE']
-            boss_err_pos_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_pos, 'PFPE']
-            boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_ang, 'PFPE']
-            flag_record = flag_record + 1
-            flag_record_PFPE = flag_record_PFPE + 1
+        # if optitrack_working_flag == True:
+        boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_pos, 'dope']
+        boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_ang, 'dope']
+        boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_pos, 'dope']
+        boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_ang, 'dope']
+        flag_record = flag_record + 1
+        flag_record_dope = flag_record_dope + 1
+        boss_PFPE_err_pos_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_pos, 'PFPE']
+        boss_PFPE_err_ang_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_ang, 'PFPE']
+        boss_err_pos_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_pos, 'PFPE']
+        boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_ang, 'PFPE']
+        flag_record = flag_record + 1
+        flag_record_PFPE = flag_record_PFPE + 1
 
         # print debug info of all particles here
         #input('hit enter to continue')
@@ -1227,20 +1241,20 @@ class PFMovePM():
             self.display_estimated_robot_in_visual_model(estimated_object_pos_PM,estimated_object_ang_PM)
         if visualisation_particle_flag == True:
             self.display_particle_in_visual_model_PM(self.particle_cloud_PM)
-        if optitrack_working_flag == True:
-            err_opti_PFPM_pos = compute_pos_err_bt_2_points(estimated_object_pos_PM,opti_obj_pos_cur)
-            err_opti_PFPM_ang = compute_ang_err_bt_2_points(estimated_object_ori_PM,opti_obj_ori_cur)
-            err_opti_PFPM_ang = angle_correction(err_opti_PFPM_ang)
+        # if optitrack_working_flag == True:
+        err_opti_PFPM_pos = compute_pos_err_bt_2_points(estimated_object_pos_PM,opti_obj_pos_cur)
+        err_opti_PFPM_ang = compute_ang_err_bt_2_points(estimated_object_ori_PM,opti_obj_ori_cur)
+        err_opti_PFPM_ang = angle_correction(err_opti_PFPM_ang)
 
         # if t_decide_write > 1:
         t_before_record = time.time()
-        if optitrack_working_flag == True:
-            boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_pos, 'PFPM']
-            boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_ang, 'PFPM']
-            boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_pos, 'PFPM']
-            boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_ang, 'PFPM']
-            flag_record = flag_record + 1
-            flag_record_PFPM = flag_record_PFPM + 1
+        # if optitrack_working_flag == True:
+        boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_pos, 'PFPM']
+        boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_ang, 'PFPM']
+        boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_pos, 'PFPM']
+        boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_ang, 'PFPM']
+        flag_record = flag_record + 1
+        flag_record_PFPM = flag_record_PFPM + 1
 
         # print debug info of all particles here
         #input('hit enter to continue')
@@ -1784,6 +1798,7 @@ if __name__ == '__main__':
     object_cracker_flag = True
     object_soup_flag = False
     optitrack_working_flag = False
+    publish_opti_pose_for_inter_flag = False
     file_time = 9
     run_PFPE_flag = True
     run_PFPM_flag = False
@@ -1875,7 +1890,7 @@ if __name__ == '__main__':
         if task_flag == "2":
             base_of_cheezit_pos = ros_listener.base_pos
             base_of_cheezit_ori = ros_listener.base_ori
-
+        
     pybullet_robot_pos = [0.0, 0.0, 0.026]
     pybullet_robot_ori = [0,0,0,1]
     pw_T_robot_3_3 = transformations.quaternion_matrix(pybullet_robot_ori)
@@ -1916,6 +1931,20 @@ if __name__ == '__main__':
                 optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
                                                             pw_T_base_pos,
                                                             pw_T_base_ori)
+    if publish_opti_pose_for_inter_flag == True:
+        # print("opti_obj_pos_cur:",opti_obj_pos_cur)
+        # print("opti_obj_ori_cur:",opti_obj_ori_cur)
+        pub_opti = rospy.Publisher('Opti_pose', PoseStamped, queue_size = 1)
+        pose_opti = PoseStamped()
+        pose_opti.pose.position.x = pw_T_object_pos[0]
+        pose_opti.pose.position.y = pw_T_object_pos[1]
+        pose_opti.pose.position.z = pw_T_object_pos[2]
+        pose_opti.pose.orientation.x = pw_T_object_ori[0]
+        pose_opti.pose.orientation.y = pw_T_object_ori[1]
+        pose_opti.pose.orientation.z = pw_T_object_ori[2]
+        pose_opti.pose.orientation.w = pw_T_object_ori[3]
+        pub_opti.publish(pose_opti)
+    
     #compute pose of object in DOPE
     pw_T_object_dope = np.dot(pw_T_robot,rob_T_obj_dope)
     pw_T_object_pos_dope = [pw_T_object_dope[0][3],pw_T_object_dope[1][3],pw_T_object_dope[2][3]]
@@ -1949,7 +1978,11 @@ if __name__ == '__main__':
         err_opti_dope_ang = compute_ang_err_bt_2_points(pw_T_object_ori,pw_T_object_ori_dope)
         err_opti_dope_ang = angle_correction(err_opti_dope_ang)
         err_opti_dope_sum = err_opti_dope_pos + err_opti_dope_ang
-
+    elif optitrack_working_flag == False:
+        err_opti_dope_pos = compute_pos_err_bt_2_points(ros_listener.fake_opti_pos,pw_T_object_pos_dope)
+        err_opti_dope_ang = compute_ang_err_bt_2_points(ros_listener.fake_opti_ori,pw_T_object_ori_dope)
+        err_opti_dope_ang = angle_correction(err_opti_dope_ang)
+        err_opti_dope_sum = err_opti_dope_pos + err_opti_dope_ang
 
     #input('Press [ENTER] to initial real world model')
     #build an object of class "InitialRealworldModel"
@@ -2010,6 +2043,7 @@ if __name__ == '__main__':
             pose_opti.pose.orientation.z = pw_T_object_ori[2]
             pose_opti.pose.orientation.w = pw_T_object_ori[3]
             pub.publish(pose_opti)
+    
     boss_est_pose_PFPM.append(estimated_object_set)
     initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
     if visualisation_particle_flag == True:
@@ -2040,6 +2074,10 @@ if __name__ == '__main__':
     if optitrack_working_flag == True:
         err_opti_esti_pos = compute_pos_err_bt_2_points(estimated_object_pos,pw_T_object_pos)
         err_opti_esti_ang = compute_ang_err_bt_2_points(estimated_object_ori,pw_T_object_ori)
+        err_opti_esti_ang = angle_correction(err_opti_esti_ang)
+    elif optitrack_working_flag == False:
+        err_opti_esti_pos = compute_pos_err_bt_2_points(estimated_object_pos,ros_listener.fake_opti_pos)
+        err_opti_esti_ang = compute_ang_err_bt_2_points(estimated_object_ori,ros_listener.fake_opti_ori)
         err_opti_esti_ang = angle_correction(err_opti_esti_ang)
     
     # initial_parameter.particle_cloud #parameter of particle
@@ -2135,6 +2173,21 @@ if __name__ == '__main__':
             pw_T_obj_ang_opti = copy.deepcopy(pw_T_object_ang)
             pw_T_obj_ori_opti = copy.deepcopy(pw_T_object_ori)
 
+        if publish_opti_pose_for_inter_flag == True:
+            
+            # print("opti_obj_pos_cur:",opti_obj_pos_cur)
+            # print("opti_obj_ori_cur:",opti_obj_ori_cur)
+            pub_opti = rospy.Publisher('Opti_pose', PoseStamped, queue_size = 1)
+            pose_opti = PoseStamped()
+            pose_opti.pose.position.x = pw_T_object_pos[0]
+            pose_opti.pose.position.y = pw_T_object_pos[1]
+            pose_opti.pose.position.z = pw_T_object_pos[2]
+            pose_opti.pose.orientation.x = pw_T_object_ori[0]
+            pose_opti.pose.orientation.y = pw_T_object_ori[1]
+            pose_opti.pose.orientation.z = pw_T_object_ori[2]
+            pose_opti.pose.orientation.w = pw_T_object_ori[3]
+            pub_opti.publish(pose_opti)
+            
         #compute distance between old DOPE obj and cur DOPE obj (position and angle)
         dis_betw_cur_and_old = compute_pos_err_bt_2_points(dope_obj_pos_cur,dope_obj_pos_old)
         ang_betw_cur_and_old = compute_ang_err_bt_2_points(dope_obj_ori_cur,dope_obj_ori_old)
@@ -2159,7 +2212,7 @@ if __name__ == '__main__':
                 if (dis_robcur_robold_PE > d_thresh):
                     if robot1.isAnyParticleInContact():
                         # print("PFPE")
-                        if first_write_flag == 0 and optitrack_working_flag == True:
+                        if first_write_flag == 0:
                             #record the error
                             t_begin = time.time()
                             t_before_record = time.time()
@@ -2190,8 +2243,8 @@ if __name__ == '__main__':
                             opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos)  # get pos of real object
                             opti_obj_ori_cur = copy.deepcopy(pw_T_object_ori)
                         elif optitrack_working_flag == False:
-                            opti_obj_pos_cur = [0,0,0]
-                            opti_obj_ori_cur = [0,0,0,1]
+                            opti_obj_pos_cur = ros_listener.fake_opti_pos
+                            opti_obj_ori_cur = ros_listener.fake_opti_ori
                         nois_obj_pos_cur = copy.deepcopy(dope_obj_pos_cur)
                         nois_obj_ang_cur = copy.deepcopy(dope_obj_ang_cur)
                         # execute sim_robot movement
@@ -2207,6 +2260,8 @@ if __name__ == '__main__':
                         rob_link_9_pose_old_PE = copy.deepcopy(rob_link_9_pose_cur_PE)
                         if visualisation_flag == True and optitrack_working_flag == True:
                             display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
+                        elif visualisation_flag == True and optitrack_working_flag == False:
+                            display_real_object_in_visual_model(optitrack_object_id,ros_listener.fake_opti_pos,ros_listener.fake_opti_ori)
                         # print("Average time of updating: ",np.mean(robot1.times))
                         t_finish_PFPE = time.time()
                         PFPE_time_cosuming_list.append(t_finish_PFPE - t_begin_PFPE)
@@ -2221,7 +2276,7 @@ if __name__ == '__main__':
             if run_PFPM_flag == True:
                 # if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
                 if (dis_robcur_robold_PM > d_thresh_PM) and robot2.isAnyParticleInContact():
-                    if first_write_flag == 0 and optitrack_working_flag == True:
+                    if first_write_flag == 0:
                         #record the error
                         t_begin = time.time()
                         t_before_record = time.time()
@@ -2250,8 +2305,8 @@ if __name__ == '__main__':
                         opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object
                         opti_obj_ori_cur_PM = copy.deepcopy(pw_T_object_ori)
                     elif optitrack_working_flag == False:
-                        opti_obj_pos_cur_PM = [0,0,0]
-                        opti_obj_ori_cur_PM = [0,0,0,1]
+                        opti_obj_pos_cur_PM = ros_listener.fake_opti_pos
+                        opti_obj_ori_cur_PM = ros_listener.fake_opti_ori
                     nois_obj_pos_cur_PM = copy.deepcopy(dope_obj_pos_cur)
                     nois_obj_ang_cur_PM = copy.deepcopy(dope_obj_ang_cur)
                     # execute sim_robot movement
@@ -2271,7 +2326,7 @@ if __name__ == '__main__':
                 if run_PFPE_flag == True:
                     if robot1.isAnyParticleInContact():
                     # if True:
-                        if first_write_flag == 0 and optitrack_working_flag == True:
+                        if first_write_flag == 0:
                             #record the error
                             t_begin = time.time()
                             t_before_record = time.time()
@@ -2303,8 +2358,8 @@ if __name__ == '__main__':
                             opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos) #get pos of real object
                             opti_obj_ori_cur = copy.deepcopy(pw_T_object_ori)
                         elif optitrack_working_flag == False:
-                            opti_obj_pos_cur = [0,0,0]
-                            opti_obj_ori_cur = [0,0,0,1]
+                            opti_obj_pos_cur = ros_listener.fake_opti_pos
+                            opti_obj_ori_cur = ros_listener.fake_opti_ori
                         nois_obj_pos_cur = copy.deepcopy(dope_obj_pos_cur)
                         nois_obj_ang_cur = copy.deepcopy(dope_obj_ang_cur)
                         #execute sim_robot movement
@@ -2316,6 +2371,8 @@ if __name__ == '__main__':
                                                      do_obs_update=dope_is_fresh)
                         if visualisation_flag == True and optitrack_working_flag == True:
                             display_real_object_in_visual_model(optitrack_object_id, pw_T_object_pos, pw_T_object_ori)
+                        elif visualisation_flag == True and optitrack_working_flag == False:
+                            display_real_object_in_visual_model(optitrack_object_id, ros_listener.fake_opti_pos, ros_listener.fake_opti_ori)
                         # print("Average time of updating: ",np.mean(robot1.times))
                         # print("PE: Finished")
                         t_finish_PFPE = time.time()
@@ -2330,7 +2387,7 @@ if __name__ == '__main__':
                 if run_PFPM_flag == True:
                     if robot2.isAnyParticleInContact():
                     # if True:
-                        if first_write_flag == 0 and optitrack_working_flag == True:
+                        if first_write_flag == 0:
                             #record the error
                             t_begin = time.time()
                             t_before_record = time.time()
@@ -2359,8 +2416,8 @@ if __name__ == '__main__':
                             opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object
                             opti_obj_ori_cur_PM = copy.deepcopy(pw_T_object_ori)
                         if optitrack_working_flag == False:
-                            opti_obj_pos_cur_PM = [0,0,0]
-                            opti_obj_ori_cur_PM = [0,0,0,1]
+                            opti_obj_pos_cur_PM = ros_listener.fake_opti_pos
+                            opti_obj_ori_cur_PM = ros_listener.fake_opti_ori
                         nois_obj_pos_cur_PM = copy.deepcopy(dope_obj_pos_cur)
                         nois_obj_ang_cur_PM = copy.deepcopy(dope_obj_ang_cur)
                         robot2.real_robot_control_PM(opti_obj_pos_cur_PM,

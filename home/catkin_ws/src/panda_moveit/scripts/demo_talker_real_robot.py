@@ -395,8 +395,8 @@ if __name__ == '__main__':
     #for i in range(8):
     #    panda.move_y_straight_line_ccp()
     #    time.sleep(1)
-    #targetPositionsJoints_test = [0.0,-0.08,0.0,-1.65,0.0,1.58,0.870]
-    #panda.move_to_target_joints(targetPositionsJoints_test)
+    targetPositionsJoints_test = [0.0,-0.08,0.0,-1.65,0.0,1.58,0.870]
+    panda.move_to_target_joints(targetPositionsJoints_test)
     #targetPositionsJoints_test = [-2.5,0.0,0.0,-1.0,1.7,1.57,0.6]
     #panda.move_to_target_joints(targetPositionsJoints_test)
     #cube
@@ -426,16 +426,16 @@ if __name__ == '__main__':
     #     waypoints.append(copy.deepcopy(wpose))    
     #     panda.move_through_waypoints(waypoints)
         
-    for index in range(5):
-        wpose = panda.moveit_group.get_current_pose().pose
-        waypoints = []
-        wpose.position.y -= 0.1
-        # wpose.position.z += 0.08
-        # wpose.position.y -= 0.15
-        waypoints.append(copy.deepcopy(wpose))    
-        panda.move_through_waypoints(waypoints)
-    targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.469608373509513, 0.9228163020693847]
-    panda.move_to_target_joints(targetPositionsJoints_test)
+    # for index in range(5):
+    #     wpose = panda.moveit_group.get_current_pose().pose
+    #     waypoints = []
+    #     wpose.position.y -= 0.1
+    #     # wpose.position.z += 0.08
+    #     # wpose.position.y -= 0.15
+    #     waypoints.append(copy.deepcopy(wpose))    
+    #     panda.move_through_waypoints(waypoints)
+    # targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.469608373509513, 0.9228163020693847]
+    # panda.move_to_target_joints(targetPositionsJoints_test)
     sys.exit()
     for index in range(5):
         print("run time:", index + 1)

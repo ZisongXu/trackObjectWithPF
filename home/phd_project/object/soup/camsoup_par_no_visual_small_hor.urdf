@@ -6,13 +6,13 @@
    <link name="right_leg">
      <visual>
        <geometry>
-         <cylinder length="10.185500144958496" radius="3.3829689025878906"/>
+         <cylinder length="10.00" radius="3.3829689025878906"/>
        </geometry>
        <material name="green"/>
      </visual>
      <collision>
        <geometry>
-         <cylinder length="10.185500144958496" radius="3.3829689025878906"/>
+         <cylinder length="10.00" radius="3.3829689025878906"/>
        </geometry>
      </collision>
      <inertial>

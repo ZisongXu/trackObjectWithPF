@@ -6,7 +6,7 @@
    <link name="base_link">
      <visual>
        <geometry>
-         <cylinder length="10.185500144958496" radius="3.3829689025878906"/>
+         <cylinder length="10.00" radius="3.3829689025878906"/>
        </geometry>
        <material name="blue"/>
      </visual>

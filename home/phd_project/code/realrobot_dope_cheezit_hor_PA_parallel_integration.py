@@ -67,6 +67,9 @@ boss_PFPE_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[]
 boss_PFPM_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
 boss_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
 
+boss_opti_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
+boss_opti_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
+
 boss_obs_pose_PFPM = []
 boss_est_pose_PFPM = []
 boss_update_flag_obse = 0
@@ -161,8 +164,17 @@ class Ros_listener():
                            -0.476704657078,
                             0.490200251342,
                             0.512272834778]
-
         #self.object_ori = [0,0,0,1]
+        self.fake_opti_pos = [ 0.504023790359,
+                           -0.214561194181,
+                            0.0601389780641]
+        #x,y,z,w
+        self.fake_opti_ori = [-0.51964700222,
+                           -0.476704657078,
+                            0.490200251342,
+                            0.512272834778]
+        #self.object_ori = [0,0,0,1]
+        
         rospy.spin
     def joint_values_callback(self, msg):
         self.current_joint_values = list(msg.position)
@@ -1931,19 +1943,7 @@ if __name__ == '__main__':
                 optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
                                                             pw_T_base_pos,
                                                             pw_T_base_ori)
-    if publish_opti_pose_for_inter_flag == True:
-        # print("opti_obj_pos_cur:",opti_obj_pos_cur)
-        # print("opti_obj_ori_cur:",opti_obj_ori_cur)
-        pub_opti = rospy.Publisher('Opti_pose', PoseStamped, queue_size = 1)
-        pose_opti = PoseStamped()
-        pose_opti.pose.position.x = pw_T_object_pos[0]
-        pose_opti.pose.position.y = pw_T_object_pos[1]
-        pose_opti.pose.position.z = pw_T_object_pos[2]
-        pose_opti.pose.orientation.x = pw_T_object_ori[0]
-        pose_opti.pose.orientation.y = pw_T_object_ori[1]
-        pose_opti.pose.orientation.z = pw_T_object_ori[2]
-        pose_opti.pose.orientation.w = pw_T_object_ori[3]
-        pub_opti.publish(pose_opti)
+    
     
     #compute pose of object in DOPE
     pw_T_object_dope = np.dot(pw_T_robot,rob_T_obj_dope)
@@ -2371,8 +2371,8 @@ if __name__ == '__main__':
                                                      do_obs_update=dope_is_fresh)
                         if visualisation_flag == True and optitrack_working_flag == True:
                             display_real_object_in_visual_model(optitrack_object_id, pw_T_object_pos, pw_T_object_ori)
-                        elif visualisation_flag == True and optitrack_working_flag == False:
-                            display_real_object_in_visual_model(optitrack_object_id, ros_listener.fake_opti_pos, ros_listener.fake_opti_ori)
+                        # elif visualisation_flag == True and optitrack_working_flag == False:
+                        #    display_real_object_in_visual_model(optitrack_object_id, ros_listener.fake_opti_pos, ros_listener.fake_opti_ori)
                         # print("Average time of updating: ",np.mean(robot1.times))
                         # print("PE: Finished")
                         t_finish_PFPE = time.time()

@@ -12,10 +12,10 @@ import seaborn as sns
 import copy
 flag_pos = True
 flag_ang = True
-flag_PFPM = False
+flag_PFPM = True
 correct_time_flag = False
 update_style_flag = "time"
-task_flag = "3"
+task_flag = "1b"
 loop_flag = 10
 if task_flag == "1a":
     if update_style_flag == "pose":
@@ -26,7 +26,7 @@ elif task_flag == "1b":
     if update_style_flag == "pose":
         prepare_time = 1900
     else:
-        prepare_time = 1950
+        prepare_time = 2000
 elif task_flag == "2":
     if update_style_flag == "pose":
         prepare_time = 1900

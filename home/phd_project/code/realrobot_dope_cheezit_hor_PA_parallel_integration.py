@@ -67,8 +67,36 @@ boss_PFPE_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[]
 boss_PFPM_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
 boss_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
 
-boss_opti_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-boss_opti_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
+boss_opti_pos_x_df = pd.DataFrame(columns=['step','time','pos_x','alg'],index=[])
+boss_opti_pos_y_df = pd.DataFrame(columns=['step','time','pos_y','alg'],index=[])
+boss_opti_pos_z_df = pd.DataFrame(columns=['step','time','pos_z','alg'],index=[])
+boss_opti_ori_x_df = pd.DataFrame(columns=['step','time','ang_x','alg'],index=[])
+boss_opti_ori_y_df = pd.DataFrame(columns=['step','time','ang_y','alg'],index=[])
+boss_opti_ori_z_df = pd.DataFrame(columns=['step','time','ang_z','alg'],index=[])
+boss_opti_ori_w_df = pd.DataFrame(columns=['step','time','ang_w','alg'],index=[])
+
+boss_estPE_pos_x_df = pd.DataFrame(columns=['step','time','pos_x','alg'],index=[])
+boss_estPE_pos_y_df = pd.DataFrame(columns=['step','time','pos_y','alg'],index=[])
+boss_estPE_pos_z_df = pd.DataFrame(columns=['step','time','pos_z','alg'],index=[])
+boss_estPE_ori_x_df = pd.DataFrame(columns=['step','time','ang_x','alg'],index=[])
+boss_estPE_ori_y_df = pd.DataFrame(columns=['step','time','ang_y','alg'],index=[])
+boss_estPE_ori_z_df = pd.DataFrame(columns=['step','time','ang_z','alg'],index=[])
+boss_estPE_ori_w_df = pd.DataFrame(columns=['step','time','ang_w','alg'],index=[])
+
+boss_estDO_pos_x_df = pd.DataFrame(columns=['step','time','pos_x','alg'],index=[])
+boss_estDO_pos_y_df = pd.DataFrame(columns=['step','time','pos_y','alg'],index=[])
+boss_estDO_pos_z_df = pd.DataFrame(columns=['step','time','pos_z','alg'],index=[])
+boss_estDO_ori_x_df = pd.DataFrame(columns=['step','time','ang_x','alg'],index=[])
+boss_estDO_ori_y_df = pd.DataFrame(columns=['step','time','ang_y','alg'],index=[])
+boss_estDO_ori_z_df = pd.DataFrame(columns=['step','time','ang_z','alg'],index=[])
+boss_estDO_ori_w_df = pd.DataFrame(columns=['step','time','ang_w','alg'],index=[])
+
+
+
+
+
+
+
 
 boss_obs_pose_PFPM = []
 boss_est_pose_PFPM = []
@@ -632,6 +660,9 @@ class PFMove():
         global flag_record_dope
         global flag_record_PFPE
         global flag_record
+        global estPE_form_previous
+        global estDO_form_previous
+        global estPM_form_previous
         self.times = []
         t1 = time.time()
         self.motion_update_PE_parallelised(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
@@ -679,8 +710,8 @@ class PFMove():
             pose_PFPE.pose.orientation.y = estimated_object_ori[1]
             pose_PFPE.pose.orientation.z = estimated_object_ori[2]
             pose_PFPE.pose.orientation.w = estimated_object_ori[3]
-            pub.publish(pose_PFPE)
-            # rospy.loginfo(pose_PFPE)
+            # pub.publish(pose_PFPE)
+            rospy.loginfo(pose_PFPE)
         if publish_DOPE_pose_flag == True:
             pub_DOPE = rospy.Publisher('DOPE_pose', PoseStamped, queue_size = 1)
             pose_DOPE = PoseStamped()
@@ -691,7 +722,8 @@ class PFMove():
             pose_DOPE.pose.orientation.y = nois_obj_ori_cur[1]
             pose_DOPE.pose.orientation.z = nois_obj_ori_cur[2]
             pose_DOPE.pose.orientation.w = nois_obj_ori_cur[3]
-            pub_DOPE.publish(pose_DOPE)
+            print(pose_DOPE)
+            # pub_DOPE.publish(pose_DOPE)
             # rospy.loginfo(pose_DOPE)
         if publish_Opti_pose_flag == True and optitrack_working_flag == True:
             # print("opti_obj_pos_cur:",opti_obj_pos_cur)
@@ -721,6 +753,24 @@ class PFMove():
         flag_record = flag_record + 1
         flag_record_PFPE = flag_record_PFPE + 1
 
+        
+        estPE_from_pre_time = time.time()
+        boss_estPE_pos_x_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[0], 'estPE']
+        boss_estPE_pos_y_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[1], 'estPE']
+        boss_estPE_pos_z_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[2], 'estPE']
+        boss_estPE_ori_x_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[0], 'estPE']
+        boss_estPE_ori_y_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[1], 'estPE']
+        boss_estPE_ori_z_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[2], 'estPE']
+        boss_estPE_ori_w_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[3], 'estPE']
+        estPE_form_previous = estPE_form_previous + 1
+        boss_estDO_pos_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, nois_obj_pos_cur[0], 'estDO']
+        boss_estDO_pos_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, nois_obj_pos_cur[1], 'estDO']
+        boss_estDO_pos_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, nois_obj_pos_cur[2], 'estDO']
+        boss_estDO_ori_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[0], 'estDO']
+        boss_estDO_ori_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[1], 'estDO']
+        boss_estDO_ori_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[2], 'estDO']
+        boss_estDO_ori_w_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[3], 'estDO']
+        estDO_form_previous = estDO_form_previous + 1
         # print debug info of all particles here
         #input('hit enter to continue')
         return
@@ -1794,24 +1844,58 @@ def signal_handler(sig, frame):
         print("write PFPM file")
         print("PM: Update frequency is: " + str(flag_update_num_PM))
     print("file_time:", file_time)
+    
+    if write_opti_pose_flag == True:
+        print("write_opti_pos")
+        boss_opti_pos_x_df.to_csv('opti_pos_x.csv')
+        boss_opti_pos_y_df.to_csv('opti_pos_y.csv')
+        boss_opti_pos_z_df.to_csv('opti_pos_z.csv')
+        boss_opti_ori_x_df.to_csv('opti_ori_x.csv')
+        boss_opti_ori_y_df.to_csv('opti_ori_y.csv')
+        boss_opti_ori_z_df.to_csv('opti_ori_z.csv')
+        boss_opti_ori_w_df.to_csv('opti_ori_w.csv')
+
+    if write_estPE_pose_flag == True:
+        print("write_opti_pos")
+        boss_estPE_pos_x_df.to_csv('estPE_pos_x.csv')
+        boss_estPE_pos_y_df.to_csv('estPE_pos_y.csv')
+        boss_estPE_pos_z_df.to_csv('estPE_pos_z.csv')
+        boss_estPE_ori_x_df.to_csv('estPE_ori_x.csv')
+        boss_estPE_ori_y_df.to_csv('estPE_ori_y.csv')
+        boss_estPE_ori_z_df.to_csv('estPE_ori_z.csv')
+        boss_estPE_ori_w_df.to_csv('estPE_ori_w.csv')
+    if write_estDO_pose_flag == True:
+        print("write_estDO_pos")
+        boss_estPE_pos_x_df.to_csv('estDO_pos_x.csv')
+        boss_estPE_pos_y_df.to_csv('estDO_pos_y.csv')
+        boss_estPE_pos_z_df.to_csv('estDO_pos_z.csv')
+        boss_estPE_ori_x_df.to_csv('estDO_ori_x.csv')
+        boss_estPE_ori_y_df.to_csv('estDO_ori_y.csv')
+        boss_estPE_ori_z_df.to_csv('estDO_ori_z.csv')
+        boss_estPE_ori_w_df.to_csv('estDO_ori_w.csv')
     sys.exit()
     
 if __name__ == '__main__':
     # ros node
+    opti_from_pre_time_begin = time.time()
     prepare_time = 0
     rospy.init_node('PF_for_dope')
     signal.signal(signal.SIGINT, signal_handler)
-    publish_PFPE_pose_flag = True
+    publish_PFPE_pose_flag = False
     publish_DOPE_pose_flag = True
-    publish_Opti_pose_flag = True
-    visualisation_all = True
+    publish_Opti_pose_flag = False
+    visualisation_all = False
     visualisation_flag = True
     visualisation_particle_flag = True
     object_cracker_flag = True
     object_soup_flag = False
-    optitrack_working_flag = False
+    optitrack_working_flag = True
     publish_opti_pose_for_inter_flag = False
-    file_time = 9
+    write_opti_pose_flag = False
+    write_estPE_pose_flag = False
+    write_estDO_pose_flag = False
+    write_estPM_pose_flag = False
+    file_time = 10
     run_PFPE_flag = True
     run_PFPM_flag = False
     task_flag = "1b"
@@ -1820,9 +1904,12 @@ if __name__ == '__main__':
     first_write_flag = 0
     particle_cloud = []
     if update_style_flag == "pose":
-        particle_num =150
+        particle_num = 150
     elif update_style_flag == "time":
-        particle_num = 70
+        if run_PFPE_flag == True:
+            particle_num = 70
+        elif run_PFPM_flag == True:
+            particle_num = 200
     print("This is "+update_style_flag+" update in scene"+task_flag)    
     d_thresh = 0.005
     a_thresh = 0.01
@@ -1836,7 +1923,10 @@ if __name__ == '__main__':
     flag_update_num_PE = 0
     
     change_sim_time = 1.0/90
-    boss_pf_update_interval_in_real = 0.16
+    if run_PFPE_flag == True:
+        boss_pf_update_interval_in_real = 0.16
+    elif run_PFPM_flag == True:
+        boss_pf_update_interval_in_real = 0.02
     pf_update_rate = rospy.Rate(1.0/boss_pf_update_interval_in_real)
     # error in xyz axis DOPE before recalibrating
     boss_sigma_obs_x = 0.03973017808163751 / 2.0
@@ -1864,6 +1954,11 @@ if __name__ == '__main__':
     friction_sigma = 0.3
     restitution_mean = 0.9
     restitution_sigma = 0.2
+    
+    opti_form_previous = 0
+    estPE_form_previous = 0
+    estDO_form_previous = 0
+    estPM_form_previous = 0
     
     PFPE_time_cosuming_list = []
     #visualisation_model
@@ -1924,7 +2019,20 @@ if __name__ == '__main__':
         if visualisation_flag == True and object_soup_flag == True:
             optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/soup/camsoup_real_obj_with_visual_small_hor.urdf"),
                                                         pw_T_object_pos,
-                                                        pw_T_object_ori)
+                                                        pw_T_object_ori)    
+            
+        
+        opti_from_pre_time = time.time()
+        boss_opti_pos_x_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_object_pos[0], 'opti']
+        boss_opti_pos_y_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_object_pos[1], 'opti']
+        boss_opti_pos_z_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_object_pos[2], 'opti']
+        boss_opti_ori_x_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_object_ori[0], 'opti']
+        boss_opti_ori_y_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_object_ori[1], 'opti']
+        boss_opti_ori_z_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_object_ori[2], 'opti']
+        boss_opti_ori_w_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_object_ori[3], 'opti']
+        opti_form_previous = opti_form_previous + 1
+        
+        
         #compute and load the pose of optitrack_base
         if task_flag == "2":
             robot_T_base = compute_transformation_matrix(init_robot_pos, init_robot_ori, base_of_cheezit_pos, base_of_cheezit_ori)
@@ -2007,6 +2115,27 @@ if __name__ == '__main__':
     estimated_object_pos = [estimated_object_set[0],estimated_object_set[1],estimated_object_set[2]]
     estimated_object_ang = [estimated_object_set[3],estimated_object_set[4],estimated_object_set[5]]
     estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
+    
+    
+    
+    estPE_from_pre_time = time.time()
+    boss_estPE_pos_x_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[0], 'estPE']
+    boss_estPE_pos_y_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[1], 'estPE']
+    boss_estPE_pos_z_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[2], 'estPE']
+    boss_estPE_ori_x_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[0], 'estPE']
+    boss_estPE_ori_y_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[1], 'estPE']
+    boss_estPE_ori_z_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[2], 'estPE']
+    boss_estPE_ori_w_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[3], 'estPE']
+    estPE_form_previous = estPE_form_previous + 1
+    boss_estDO_pos_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, dope_obj_pos_init[0], 'estDO']
+    boss_estDO_pos_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, dope_obj_pos_init[1], 'estDO']
+    boss_estDO_pos_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, dope_obj_pos_init[2], 'estDO']
+    boss_estDO_ori_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, dope_obj_ori_init[0], 'estDO']
+    boss_estDO_ori_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, dope_obj_ori_init[1], 'estDO']
+    boss_estDO_ori_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, dope_obj_ori_init[2], 'estDO']
+    boss_estDO_ori_w_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, dope_obj_ori_init[3], 'estDO']
+    estDO_form_previous = estDO_form_previous + 1
+    
     if publish_PFPE_pose_flag == True:
         pub = rospy.Publisher('PFPE_pose', PoseStamped, queue_size = 1)
         pose_PFPE = PoseStamped()
@@ -2017,8 +2146,8 @@ if __name__ == '__main__':
         pose_PFPE.pose.orientation.y = estimated_object_ori[1]
         pose_PFPE.pose.orientation.z = estimated_object_ori[2]
         pose_PFPE.pose.orientation.w = estimated_object_ori[3]
-        pub.publish(pose_PFPE)
-        # rospy.loginfo(pose_PFPE)
+        # pub.publish(pose_PFPE)
+        rospy.loginfo(pose_PFPE)
     if publish_DOPE_pose_flag == True:
         pub_DOPE = rospy.Publisher('DOPE_pose', PoseStamped, queue_size = 1)
         pose_DOPE = PoseStamped()
@@ -2029,7 +2158,8 @@ if __name__ == '__main__':
         pose_DOPE.pose.orientation.y = pw_T_object_ori_dope[1]
         pose_DOPE.pose.orientation.z = pw_T_object_ori_dope[2]
         pose_DOPE.pose.orientation.w = pw_T_object_ori_dope[3]
-        pub.publish(pose_DOPE)
+        print(pose_DOPE)
+        # pub_DOPE.publish(pose_DOPE)
         # rospy.loginfo(pose_DOPE)
     if optitrack_working_flag == True:
         if publish_Opti_pose_flag == True:
@@ -2042,7 +2172,7 @@ if __name__ == '__main__':
             pose_opti.pose.orientation.y = pw_T_object_ori[1]
             pose_opti.pose.orientation.z = pw_T_object_ori[2]
             pose_opti.pose.orientation.w = pw_T_object_ori[3]
-            pub.publish(pose_opti)
+            pub_opti.publish(pose_opti)
     
     boss_est_pose_PFPM.append(estimated_object_set)
     initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
@@ -2122,7 +2252,7 @@ if __name__ == '__main__':
                 latest_dope_time = listener.getLatestCommonTime('/panda_link0', '/soup')
             #print("latest_dope_time: ",latest_dope_time.to_sec())
             #print("rospy.get_time: ",rospy.get_time())
-            if (rospy.get_time() - latest_dope_time.to_sec()) < 0.3:
+            if (rospy.get_time() - latest_dope_time.to_sec()) < 0.1:
                 if object_cracker_flag == True:
                     (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
                 if object_soup_flag == True:
@@ -2173,6 +2303,17 @@ if __name__ == '__main__':
             pw_T_obj_ang_opti = copy.deepcopy(pw_T_object_ang)
             pw_T_obj_ori_opti = copy.deepcopy(pw_T_object_ori)
 
+            opti_from_pre_time = time.time()
+            boss_opti_pos_x_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_object_pos[0], 'opti']
+            boss_opti_pos_y_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_object_pos[1], 'opti']
+            boss_opti_pos_z_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_object_pos[2], 'opti']
+            boss_opti_ori_x_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_object_ori[0], 'opti']
+            boss_opti_ori_y_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_object_ori[1], 'opti']
+            boss_opti_ori_z_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_object_ori[2], 'opti']
+            boss_opti_ori_w_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_object_ori[3], 'opti']
+            opti_form_previous = opti_form_previous + 1
+        
+        
         if publish_opti_pose_for_inter_flag == True:
             
             # print("opti_obj_pos_cur:",opti_obj_pos_cur)

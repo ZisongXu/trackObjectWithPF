@@ -13,7 +13,7 @@ import math
 import numpy as np
 flag_plot_ang = True
 flag_plot_pos = False
-task_flag = "3"
+task_flag = "1b"
 update_style_flag = "time"
 
 if update_style_flag == "pose":

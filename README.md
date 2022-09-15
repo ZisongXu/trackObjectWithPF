@@ -1,4 +1,4 @@
-# PhysicsBasedParticleFiltering
+# Physics_Based_Particle_Filtering 
 This project uses singularity container to support all the code.
 Ubuntu20 + ROS:noetic + Pybullet
   1. Go to the file

@@ -710,8 +710,8 @@ class PFMove():
             pose_PFPE.pose.orientation.y = estimated_object_ori[1]
             pose_PFPE.pose.orientation.z = estimated_object_ori[2]
             pose_PFPE.pose.orientation.w = estimated_object_ori[3]
-            # pub.publish(pose_PFPE)
-            rospy.loginfo(pose_PFPE)
+            pub.publish(pose_PFPE)
+            # rospy.loginfo(pose_PFPE)
         if publish_DOPE_pose_flag == True:
             pub_DOPE = rospy.Publisher('DOPE_pose', PoseStamped, queue_size = 1)
             pose_DOPE = PoseStamped()
@@ -722,8 +722,8 @@ class PFMove():
             pose_DOPE.pose.orientation.y = nois_obj_ori_cur[1]
             pose_DOPE.pose.orientation.z = nois_obj_ori_cur[2]
             pose_DOPE.pose.orientation.w = nois_obj_ori_cur[3]
-            print(pose_DOPE)
-            # pub_DOPE.publish(pose_DOPE)
+            # print(pose_DOPE)
+            pub_DOPE.publish(pose_DOPE)
             # rospy.loginfo(pose_DOPE)
         if publish_Opti_pose_flag == True and optitrack_working_flag == True:
             # print("opti_obj_pos_cur:",opti_obj_pos_cur)
@@ -1881,7 +1881,7 @@ if __name__ == '__main__':
     prepare_time = 0
     rospy.init_node('PF_for_dope')
     signal.signal(signal.SIGINT, signal_handler)
-    publish_PFPE_pose_flag = False
+    publish_PFPE_pose_flag = True
     publish_DOPE_pose_flag = True
     publish_Opti_pose_flag = False
     visualisation_all = False
@@ -2146,8 +2146,8 @@ if __name__ == '__main__':
         pose_PFPE.pose.orientation.y = estimated_object_ori[1]
         pose_PFPE.pose.orientation.z = estimated_object_ori[2]
         pose_PFPE.pose.orientation.w = estimated_object_ori[3]
-        # pub.publish(pose_PFPE)
-        rospy.loginfo(pose_PFPE)
+        pub.publish(pose_PFPE)
+        # rospy.loginfo(pose_PFPE)
     if publish_DOPE_pose_flag == True:
         pub_DOPE = rospy.Publisher('DOPE_pose', PoseStamped, queue_size = 1)
         pose_DOPE = PoseStamped()
@@ -2158,8 +2158,8 @@ if __name__ == '__main__':
         pose_DOPE.pose.orientation.y = pw_T_object_ori_dope[1]
         pose_DOPE.pose.orientation.z = pw_T_object_ori_dope[2]
         pose_DOPE.pose.orientation.w = pw_T_object_ori_dope[3]
-        print(pose_DOPE)
-        # pub_DOPE.publish(pose_DOPE)
+        # print(pose_DOPE)
+        pub_DOPE.publish(pose_DOPE)
         # rospy.loginfo(pose_DOPE)
     if optitrack_working_flag == True:
         if publish_Opti_pose_flag == True:

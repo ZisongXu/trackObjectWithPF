@@ -176,15 +176,6 @@ class Ros_listener():
                           [0.0], 
                           [0.0]])
         if DOPE_flag == True:
-            if task_flag == "1b":
-                x_par = 55
-                y_par = 50
-            elif task_flag == "1a":
-                x_par = 45
-                y_par = 75
-            elif task_flag == "2":
-                x_par = 45
-                y_par = 65
             color = (100, 149, 237) # dark blue
             color = (255, 255, 0) # yellow
             # color = (138, 43, 226) # purple
@@ -270,18 +261,6 @@ class Ros_listener():
             draw.draw_cube(points_DOPE, color)
             
         if PFPE_flag == True:
-            if task_flag == "1b":
-                x_par = 55
-                y_par = 50
-            elif task_flag == "1a":
-                x_par = 55
-                y_par = 75
-            elif task_flag == "2":
-                x_par = 45
-                y_par = 65
-            elif task_flag == "4":
-                x_par = 45
-                y_par = 65
             color = (0, 255, 0) # green
             pw_T_obj_PFPE_pos = PFPE_listener.PFPE_pos
             pw_T_obj_PFPE_ori = PFPE_listener.PFPE_ori
@@ -348,15 +327,6 @@ class Ros_listener():
                     results_cv2_points[7]]
             draw.draw_cube(points_PFPE, color)
         if Opti_flag == True:
-            if task_flag == "1b":
-                x_par = 60
-                y_par = 50
-            elif task_flag == "1a":
-                x_par = 55
-                y_par = 75
-            elif task_flag == "2":
-                x_par = 55
-                y_par = 75
             color = (0, 255, 255) # light blue
             pw_T_obj_Opti_pos = OPTI_listener.Opti_pos
             pw_T_obj_Opti_ori = OPTI_listener.Opti_ori

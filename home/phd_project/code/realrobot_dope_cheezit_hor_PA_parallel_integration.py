@@ -1884,7 +1884,7 @@ if __name__ == '__main__':
     publish_PFPE_pose_flag = True
     publish_DOPE_pose_flag = True
     publish_Opti_pose_flag = False
-    visualisation_all = False
+    visualisation_all = True
     visualisation_flag = True
     visualisation_particle_flag = True
     object_cracker_flag = True

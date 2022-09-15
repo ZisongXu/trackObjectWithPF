@@ -109,7 +109,7 @@ boss_update_flag_PFPM = 0
 plane_id = p_visualisation.loadURDF("plane.urdf")
 real_franka_robot_start_pos = [0.127, -0.04, 0.03]
 real_franka_robot_start_orientation = p_visualisation.getQuaternionFromEuler([0,0,0])
-real_robot_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
+real_robot_id = p_visualisation.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
                                          real_franka_robot_start_pos,
                                          real_franka_robot_start_orientation,
                                          useFixedBase=1)
@@ -118,7 +118,7 @@ real_robot_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/data/
 #load and set object
 cylinder_real_object_start_pos = [0.567, -0.3642, 0.057]
 cylinder_real_object_start_orientation = p_visualisation.getQuaternionFromEuler([0,0,0])
-real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cylinder_object_small.urdf"),
+real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cylinder_object_small.urdf"),
                                           cylinder_real_object_start_pos,
                                           cylinder_real_object_start_orientation)
                                           
@@ -277,7 +277,7 @@ class InitialRealworldModel():
         self.joint_pos = joint_pos
     def initial_robot(self,robot_pos,robot_orientation = [0,0,0,1]):
         #robot_orientation = p_visualisation.getQuaternionFromEuler(robot_euler)
-        real_robot_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
+        real_robot_id = p_visualisation.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
                                                  robot_pos,
                                                  robot_orientation,
                                                  useFixedBase=1)
@@ -291,11 +291,11 @@ class InitialRealworldModel():
     def initial_target_object(self,object_pos,object_orientation = [0,0,0,1]):
         #object_orientation = p_visualisation.getQuaternionFromEuler(object_euler)
         if object_cracker_flag == True:
-            real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_obj_small_hor.urdf"),
+            real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_obj_small_hor.urdf"),
                                                       object_pos,
                                                       object_orientation)
         if object_soup_flag == True:
-            real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/soup/camsoup_obj_small_hor.urdf"),
+            real_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_obj_small_hor.urdf"),
                                                       object_pos,
                                                       object_orientation)
         p_visualisation.changeDynamics(real_object_id,-1,mass=0.380,lateralFriction = 0.5)
@@ -412,11 +412,11 @@ class InitialSimulationModel():
             visualize_particle_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             visualize_particle_orientation = p_visualisation.getQuaternionFromEuler(visualize_particle_angle)
             if object_cracker_flag == True:
-                visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_with_visual_small_PE_hor.urdf"),
+                visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_par_with_visual_small_PE_hor.urdf"),
                                                                 visualize_particle_pos,
                                                                 visualize_particle_orientation)
             if object_soup_flag == True:
-                visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/soup/camsoup_par_with_visual_small_PE_hor.urdf"),
+                visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_with_visual_small_PE_hor.urdf"),
                                                                 visualize_particle_pos,
                                                                 visualize_particle_orientation)
             self.particle_with_visual_id_collection.append(visualize_particle_Id)
@@ -426,11 +426,11 @@ class InitialSimulationModel():
             visualize_particle_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             visualize_particle_orientation = p_visualisation.getQuaternionFromEuler(visualize_particle_angle)
             if object_cracker_flag == True:
-                visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_with_visual_small_PM_hor.urdf"),
+                visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_par_with_visual_small_PM_hor.urdf"),
                                                                 visualize_particle_pos,
                                                                 visualize_particle_orientation)
             if object_soup_flag == True:
-                visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/soup/camsoup_par_with_visual_small_PM_hor.urdf"),
+                visualize_particle_Id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_with_visual_small_PM_hor.urdf"),
                                                                 visualize_particle_pos,
                                                                 visualize_particle_orientation)
             self.particle_with_visual_id_collection_PM.append(visualize_particle_Id)
@@ -448,18 +448,18 @@ class InitialSimulationModel():
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
             if task_flag == "2":
                 if object_cracker_flag == True:
-                    sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
+                    sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cube/base_of_cheezit.urdf"),
                                                                 pw_T_base_pos,
                                                                 pw_T_base_ori,
                                                                 useFixedBase=1)
                 if object_soup_flag == True:
-                    sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
+                    sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cube/base_of_cheezit.urdf"),
                                                                 pw_T_base_pos,
                                                                 pw_T_base_ori,
                                                                 useFixedBase=1)
             fake_robot_start_pos = self.real_robot_start_pos
             fake_robot_start_orientation = self.real_robot_start_ori
-            fake_robot_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
+            fake_robot_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
                                                              fake_robot_start_pos,
                                                              fake_robot_start_orientation,
                                                              useFixedBase=1)
@@ -472,11 +472,11 @@ class InitialSimulationModel():
             particle_no_visual_start_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             particle_no_visual_start_orientation = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_start_angle)
             if object_cracker_flag == True:
-                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_no_visual_small_hor.urdf"),
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_par_no_visual_small_hor.urdf"),
                                                                         particle_no_visual_start_pos,
                                                                         particle_no_visual_start_orientation)
             if object_soup_flag == True:
-                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/camsoup_par_no_visual_small_hor.urdf"),
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cube/camsoup_par_no_visual_small_hor.urdf"),
                                                                         particle_no_visual_start_pos,
                                                                         particle_no_visual_start_orientation)
             
@@ -522,11 +522,11 @@ class InitialSimulationModel():
             particle_no_visual_start_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             particle_no_visual_start_orientation = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_start_angle)
             if object_cracker_flag == True:
-                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_par_no_visual_small_hor.urdf"),
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_par_no_visual_small_hor.urdf"),
                                                                         particle_no_visual_start_pos,
                                                                         particle_no_visual_start_orientation)
             if object_soup_flag == True:
-                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/phd_project/object/cube/camsoup_par_no_visual_small_hor.urdf"),
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cube/camsoup_par_no_visual_small_hor.urdf"),
                                                                         particle_no_visual_start_pos,
                                                                         particle_no_visual_start_orientation)
             #pybullet_simulation_env.changeDynamics(particle_no_visual_id,-1,mass=3,lateralFriction = 0.7)
@@ -2013,11 +2013,11 @@ if __name__ == '__main__':
         pw_T_object_ang = p_visualisation.getEulerFromQuaternion(pw_T_object_ori)
         #load the groud truth object
         if visualisation_flag == True and object_cracker_flag == True:
-            optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_real_obj_with_visual_small_hor.urdf"),
+            optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_real_obj_with_visual_small_hor.urdf"),
                                                         pw_T_object_pos,
                                                         pw_T_object_ori)
         if visualisation_flag == True and object_soup_flag == True:
-            optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/soup/camsoup_real_obj_with_visual_small_hor.urdf"),
+            optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_real_obj_with_visual_small_hor.urdf"),
                                                         pw_T_object_pos,
                                                         pw_T_object_ori)    
             
@@ -2044,11 +2044,11 @@ if __name__ == '__main__':
             pw_T_base_ori = transformations.quaternion_from_matrix(pw_T_base)
             pw_T_base_ang = p_visualisation.getEulerFromQuaternion(pw_T_base_ori)
             if visualisation_flag == True and object_cracker_flag == True:
-                optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
+                optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/base_of_cheezit.urdf"),
                                                             pw_T_base_pos,
                                                             pw_T_base_ori)
             if visualisation_flag == True and object_soup_flag == True:
-                optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/base_of_cheezit.urdf"),
+                optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/base_of_cheezit.urdf"),
                                                             pw_T_base_pos,
                                                             pw_T_base_ori)
     
@@ -2061,11 +2061,11 @@ if __name__ == '__main__':
     pw_T_object_ang_dope = list(pw_T_object_ang_dope)
     #load the DOPE object
     if visualisation_flag == True and object_cracker_flag == True:
-        dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_dope_obj_with_visual_small_PE_hor.urdf"),
+        dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_dope_obj_with_visual_small_PE_hor.urdf"),
                                                   pw_T_object_pos_dope,
                                                   pw_T_object_ori_dope)
     if visualisation_flag == True and object_soup_flag == True:
-        dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/soup/camsoup_dope_obj_with_visual_small_PE_hor.urdf"),
+        dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_dope_obj_with_visual_small_PE_hor.urdf"),
                                                   pw_T_object_pos_dope,
                                                   pw_T_object_ori_dope)
     #initialization pose of DOPE
@@ -2183,20 +2183,20 @@ if __name__ == '__main__':
             initial_parameter.display_particle_PM()
     if visualisation_flag == True and object_cracker_flag == True:
         if run_PFPE_flag == True:
-            estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
+            estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
                                                            estimated_object_pos,
                                                            estimated_object_ori)
         if run_PFPM_flag == True:
-            estimated_object_id_PM = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/cube/cheezit_est_obj_with_visual_small_PM_hor.urdf"),
+            estimated_object_id_PM = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_est_obj_with_visual_small_PM_hor.urdf"),
                                                               estimated_object_pos,
                                                               estimated_object_ori)
     if visualisation_flag == True and object_soup_flag == True:
         if run_PFPE_flag == True:
-            estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/soup/camsoup_est_obj_with_visual_small_PE_hor.urdf"),
+            estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_est_obj_with_visual_small_PE_hor.urdf"),
                                                            estimated_object_pos,
                                                            estimated_object_ori)
         if run_PFPM_flag == True:
-            estimated_object_id_PM = p_visualisation.loadURDF(os.path.expanduser("~/phd_project/object/soup/camsoup_est_obj_with_visual_small_PM_hor.urdf"),
+            estimated_object_id_PM = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_est_obj_with_visual_small_PM_hor.urdf"),
                                                               estimated_object_pos,
                                                               estimated_object_ori)
 

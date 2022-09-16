@@ -677,7 +677,7 @@ class PFMove():
         object_estimate_pose = self.compute_estimate_pos_of_object(self.particle_cloud)
         estimated_object_pos = [object_estimate_pose[0],object_estimate_pose[1],object_estimate_pose[2]]
         estimated_object_ang = [object_estimate_pose[3],object_estimate_pose[4],object_estimate_pose[5]]
-        if visualisation_flag == True:
+        if visualisation_flag == True and visualisation_mean == True:
             self.display_estimated_robot_in_visual_model(estimated_object_pos,estimated_object_ang)
         #x,y,z,w
         estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
@@ -1299,7 +1299,7 @@ class PFMovePM():
         estimated_object_ang_PM = [estimated_object_pose_PM[3],estimated_object_pose_PM[4],estimated_object_pose_PM[5]]
         estimated_object_ori_PM = p_visualisation.getQuaternionFromEuler(estimated_object_ang_PM)
         boss_est_pose_PFPM.append(estimated_object_pose_PM)
-        if visualisation_flag == True:
+        if visualisation_flag == True and visualisation_mean == True:
             self.display_estimated_robot_in_visual_model(estimated_object_pos_PM,estimated_object_ang_PM)
         if visualisation_particle_flag == True:
             self.display_particle_in_visual_model_PM(self.particle_cloud_PM)
@@ -1886,6 +1886,7 @@ if __name__ == '__main__':
     publish_Opti_pose_flag = False
     visualisation_all = True
     visualisation_flag = True
+    visualisation_mean = False
     visualisation_particle_flag = True
     object_cracker_flag = True
     object_soup_flag = False
@@ -1968,7 +1969,10 @@ if __name__ == '__main__':
         p_visualisation = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
     p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
     p_visualisation.setGravity(0,0,-9.81)
-    p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.5,0.3,0.2])
+    if task_flag == "2":
+        p_visualisation.resetDebugVisualizerCamera(cameraDistance=0.5,cameraYaw=90,cameraPitch=-10,cameraTargetPosition=[0.5,0.1,0.2])
+    else:
+        p_visualisation.resetDebugVisualizerCamera(cameraDistance=0.5,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.3,0.1,0.2])
     plane_id = p_visualisation.loadURDF("plane.urdf")   
     #build an object of class "Ros_listener"
     ros_listener = Ros_listener()
@@ -2181,7 +2185,7 @@ if __name__ == '__main__':
             initial_parameter.display_particle()
         if run_PFPM_flag == True:
             initial_parameter.display_particle_PM()
-    if visualisation_flag == True and object_cracker_flag == True:
+    if visualisation_flag == True and object_cracker_flag == True and visualisation_mean == True:
         if run_PFPE_flag == True:
             estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
                                                            estimated_object_pos,
@@ -2190,7 +2194,7 @@ if __name__ == '__main__':
             estimated_object_id_PM = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_est_obj_with_visual_small_PM_hor.urdf"),
                                                               estimated_object_pos,
                                                               estimated_object_ori)
-    if visualisation_flag == True and object_soup_flag == True:
+    if visualisation_flag == True and object_soup_flag == True and visualisation_mean == True:
         if run_PFPE_flag == True:
             estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_est_obj_with_visual_small_PE_hor.urdf"),
                                                            estimated_object_pos,

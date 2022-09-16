@@ -425,8 +425,15 @@ if __name__ == '__main__':
     #     # #wpose.position.y += 0.15
     #     waypoints.append(copy.deepcopy(wpose))    
     #     panda.move_through_waypoints(waypoints)
+    cheezit_flag = False
+    souo_flag = True
+    if cheezit_flag == True:
+        time = 5
+    if souo_flag == True:
+        time = 3
         
-    # for index in range(5):
+        
+    # for index in range(time):
     #     wpose = panda.moveit_group.get_current_pose().pose
     #     waypoints = []
     #     wpose.position.y -= 0.1
@@ -437,21 +444,21 @@ if __name__ == '__main__':
     # targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.469608373509513, 0.9228163020693847]
     # panda.move_to_target_joints(targetPositionsJoints_test)
     # sys.exit()
-    for index in range(2):
+    for index in range(time):
         print("run time:", index + 1)
         wpose = panda.moveit_group.get_current_pose().pose
         waypoints = []
-        # wpose.position.y += 0.1
-        wpose.position.z += 0.08
+        wpose.position.y += 0.1
+        # wpose.position.z += 0.08
         # wpose.position.y += 0.15
         waypoints.append(copy.deepcopy(wpose))    
         panda.move_through_waypoints(waypoints)
-    for index in range(2):
-        wpose = panda.moveit_group.get_current_pose().pose
-        waypoints = []
-        wpose.position.z -= 0.08
-        waypoints.append(copy.deepcopy(wpose))    
-        panda.move_through_waypoints(waypoints)
+    # for index in range(2):
+    #     wpose = panda.moveit_group.get_current_pose().pose
+    #     waypoints = []
+    #     wpose.position.z -= 0.08
+    #     waypoints.append(copy.deepcopy(wpose))    
+    #     panda.move_through_waypoints(waypoints)
     # targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.469608373509513, 0.9228163020693847]
     # panda.move_to_target_joints(targetPositionsJoints_test)
     # time.sleep(2)

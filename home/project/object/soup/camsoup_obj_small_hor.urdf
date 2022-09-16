@@ -6,13 +6,13 @@
    <link name="obj_in_sim">
      <visual>
        <geometry>
-         <cylinder length="10.00" radius="3.3829689025878906"/>
+         <cylinder length="0.1000" radius="0.033829689025878906"/>
        </geometry>
        <material name="red"/>
      </visual>
      <collision>
        <geometry>
-         <cylinder length="10.00" radius="3.3829689025878906"/>
+         <cylinder length="0.1000" radius="0.033829689025878906"/>
        </geometry>
      </collision>
      <inertial>

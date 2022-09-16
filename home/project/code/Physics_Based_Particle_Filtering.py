@@ -476,7 +476,7 @@ class InitialSimulationModel():
                                                                         particle_no_visual_start_pos,
                                                                         particle_no_visual_start_orientation)
             if object_soup_flag == True:
-                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cube/camsoup_par_no_visual_small_hor.urdf"),
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_no_visual_small_hor.urdf"),
                                                                         particle_no_visual_start_pos,
                                                                         particle_no_visual_start_orientation)
             
@@ -526,7 +526,7 @@ class InitialSimulationModel():
                                                                         particle_no_visual_start_pos,
                                                                         particle_no_visual_start_orientation)
             if object_soup_flag == True:
-                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cube/camsoup_par_no_visual_small_hor.urdf"),
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_no_visual_small_hor.urdf"),
                                                                         particle_no_visual_start_pos,
                                                                         particle_no_visual_start_orientation)
             #pybullet_simulation_env.changeDynamics(particle_no_visual_id,-1,mass=3,lateralFriction = 0.7)
@@ -1888,8 +1888,8 @@ if __name__ == '__main__':
     visualisation_flag = True
     visualisation_mean = False
     visualisation_particle_flag = True
-    object_cracker_flag = True
-    object_soup_flag = False
+    object_cracker_flag = False
+    object_soup_flag = True
     optitrack_working_flag = True
     publish_opti_pose_for_inter_flag = False
     write_opti_pose_flag = False
@@ -1972,12 +1972,13 @@ if __name__ == '__main__':
     if task_flag == "2":
         p_visualisation.resetDebugVisualizerCamera(cameraDistance=0.5,cameraYaw=90,cameraPitch=-10,cameraTargetPosition=[0.5,0.1,0.2])
     else:
-        p_visualisation.resetDebugVisualizerCamera(cameraDistance=0.5,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.3,0.1,0.2])
+        p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.3,0.1,0.2])
     plane_id = p_visualisation.loadURDF("plane.urdf")   
     #build an object of class "Ros_listener"
     ros_listener = Ros_listener()
     #get pose info from DOPE
     listener = tf.TransformListener()
+    
     while True:
         try:
             if object_cracker_flag == True:
@@ -2024,7 +2025,9 @@ if __name__ == '__main__':
             optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_real_obj_with_visual_small_hor.urdf"),
                                                         pw_T_object_pos,
                                                         pw_T_object_ori)    
-            
+            print("optitrack:")
+            print(pw_T_object_pos)
+            print(pw_T_object_ori)
         
         opti_from_pre_time = time.time()
         boss_opti_pos_x_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_object_pos[0], 'opti']
@@ -2072,6 +2075,9 @@ if __name__ == '__main__':
         dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_dope_obj_with_visual_small_PE_hor.urdf"),
                                                   pw_T_object_pos_dope,
                                                   pw_T_object_ori_dope)
+        print("DOPE:")
+        print(pw_T_object_pos_dope)
+        print(pw_T_object_ori_dope)
     #initialization pose of DOPE
     dope_obj_pos_init = copy.deepcopy(pw_T_object_pos_dope)
     dope_obj_ang_init = copy.deepcopy(pw_T_object_ang_dope)
@@ -2119,8 +2125,6 @@ if __name__ == '__main__':
     estimated_object_pos = [estimated_object_set[0],estimated_object_set[1],estimated_object_set[2]]
     estimated_object_ang = [estimated_object_set[3],estimated_object_set[4],estimated_object_set[5]]
     estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
-    
-    
     
     estPE_from_pre_time = time.time()
     boss_estPE_pos_x_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[0], 'estPE']
@@ -2180,6 +2184,7 @@ if __name__ == '__main__':
     
     boss_est_pose_PFPM.append(estimated_object_set)
     initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
+    
     if visualisation_particle_flag == True:
         if run_PFPE_flag == True:
             initial_parameter.display_particle()

@@ -9,10 +9,7 @@ This is the official implementation of our paper "Real-Time Physics-Based Object
 
 Click to watch
 
-[YouTube](https://youtu.be/srZZM_CKum4)
-
-[![Watch the video](https://i.imgur.com/vKb2F1B.png)](https://youtu.be/srZZM_CKum4)
-
+[![Watch the video](https://img.youtube.com/vi/srZZM_CKum4/hqdefault.jpg)](https://youtu.be/srZZM_CKum4)
 
 This project uses singularity container to support all the code.
 Ubuntu20 + ROS:noetic + Pybullet

@@ -3,12 +3,16 @@
    <material name="red">
      <color rgba="1 0.498 0.3137 1"/>
    </material>
+   <material name="light_green">
+     <color rgba="0 1 0.498 1"/>
+   </material>
    <link name="obj_in_sim">
      <visual>
        <geometry>
          <cylinder length="0.1000" radius="0.033829689025878906"/>
        </geometry>
-       <material name="red"/>
+       <material name="light_green"/>
+       <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
      </visual>
      <collision>
        <geometry>

@@ -9,6 +9,7 @@
          <cylinder length="0.1000" radius="0.033829689025878906"/>
        </geometry>
        <material name="golden"/>
+       <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
      </visual>
      <inertial>
        <mass value="0"/>

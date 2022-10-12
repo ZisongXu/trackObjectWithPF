@@ -9,6 +9,7 @@
          <cylinder length="0.1000" radius="0.033829689025878906"/>
        </geometry>
        <material name="green"/>
+       <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
      </visual>
      <collision>
        <geometry>

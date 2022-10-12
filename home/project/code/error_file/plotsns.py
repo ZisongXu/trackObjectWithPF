@@ -11,8 +11,8 @@ import seaborn as sns
 import copy
 import math
 import numpy as np
-flag_plot_ang = True
-flag_plot_pos = False
+flag_plot_ang = False
+flag_plot_pos = True
 task_flag = "1b"
 update_style_flag = "time"
 

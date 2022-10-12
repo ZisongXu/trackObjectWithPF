@@ -170,7 +170,7 @@ class Ros_listener():
             if object_cracker_flag == True:
                 self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/cheezit/pose',PoseStamped, self.object_pose_callback,queue_size=10)
             if object_soup_flag == True:
-                self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/soup/pose',PoseStamped, self.object_pose_callback,queue_size=10)
+                self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/zisongsoup/pose',PoseStamped, self.object_pose_callback,queue_size=10)
             self.base_pose = rospy.Subscriber('/mocap/rigid_bodies/baseofcheezit/pose', PoseStamped, self.base_of_cheezit_callback,queue_size=10)
         elif optitrack_working_flag == False:
             self.fake_opti_pose = rospy.Subscriber('/Opti_pose',PoseStamped, self.fake_optipose_callback,queue_size=10)
@@ -911,6 +911,7 @@ class PFMove():
             if flag == 0:
                 break
         # print(linearVelocity, angularVelocity)
+        normal_z = normal_z + 0.03
         self.update_partcile_cloud_pose_PE(index, normal_x, normal_y, normal_z, x_angle, y_angle, z_angle, linearVelocity, angularVelocity)
         # pipe.send()
         
@@ -1896,7 +1897,7 @@ if __name__ == '__main__':
     write_estPE_pose_flag = False
     write_estDO_pose_flag = False
     write_estPM_pose_flag = False
-    file_time = 10
+    file_time = 1
     run_PFPE_flag = True
     run_PFPM_flag = False
     task_flag = "1b"
@@ -1978,7 +1979,7 @@ if __name__ == '__main__':
     ros_listener = Ros_listener()
     #get pose info from DOPE
     listener = tf.TransformListener()
-    
+    print("before while loop")
     while True:
         try:
             if object_cracker_flag == True:
@@ -1988,6 +1989,7 @@ if __name__ == '__main__':
             break
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
+    print("after while loop")
     rob_T_obj_dope_pos = list(trans)
     rob_T_obj_dope_ori = list(rot)
     rob_T_obj_dope_3_3 = transformations.quaternion_matrix(rob_T_obj_dope_ori)
@@ -2078,6 +2080,7 @@ if __name__ == '__main__':
         print("DOPE:")
         print(pw_T_object_pos_dope)
         print(pw_T_object_ori_dope)
+    # input("pasue")
     #initialization pose of DOPE
     dope_obj_pos_init = copy.deepcopy(pw_T_object_pos_dope)
     dope_obj_ang_init = copy.deepcopy(pw_T_object_ang_dope)

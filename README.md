@@ -12,10 +12,19 @@ Click to watch
 [![Watch the video](https://img.youtube.com/vi/srZZM_CKum4/hqdefault.jpg)](https://youtu.be/srZZM_CKum4)
 
 
+# Brief Description:
 
-# Quick setup:
+We propose a method to track the pose of an object over time, by using the image from the camera, and the particles in the physical engine. Although sometimes the camera cannot see the object clearly, our method can still track the pose of the object.
+
+
+# Quick Setup:
 This project uses singularity container to support all the code.
-Ubuntu20 + ROS:noetic + Pybullet
-  1. Go to the file
-  2. Run ./build.sh in the terminal
-  3. Run ./run.sh in the terminal
+
+* Ubuntu20
+* ROS: noetic
+* Pybullet
+
+```./build.sh``` 
+
+```./run.sh```
+

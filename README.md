@@ -18,11 +18,7 @@ We propose a method to track the pose of an object over time, by using the image
 
 
 # Quick Setup:
-This project uses singularity container to support all the code.
-
-* Ubuntu20
-* ROS: noetic
-* Pybullet
+This project uses singularity container to support all the code:
 
 ```./build.sh``` 
 

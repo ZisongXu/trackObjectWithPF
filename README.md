@@ -11,6 +11,9 @@ Click to watch
 
 [![Watch the video](https://img.youtube.com/vi/srZZM_CKum4/hqdefault.jpg)](https://youtu.be/srZZM_CKum4)
 
+
+
+# Quick setup:
 This project uses singularity container to support all the code.
 Ubuntu20 + ROS:noetic + Pybullet
   1. Go to the file

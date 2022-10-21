@@ -49,18 +49,15 @@ from Particle import Particle
 from InitialRealworldModel import InitialRealworldModel
 from InitialSimulationModel import InitialSimulationModel
 
-boss_obse_err_sum_df = pd.DataFrame()
-boss_PFPE_err_sum_df = pd.DataFrame()
-boss_PFPM_err_sum_df = pd.DataFrame()
 
 boss_obse_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-boss_PFPE_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-boss_PFPM_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
+boss_PBPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
+boss_CVPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
 boss_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
 
 boss_obse_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-boss_PFPE_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-boss_PFPM_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
+boss_PBPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
+boss_CVPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
 boss_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
 
 boss_opti_pos_x_df = pd.DataFrame(columns=['step','time','pos_x','alg'],index=[])
@@ -71,13 +68,13 @@ boss_opti_ori_y_df = pd.DataFrame(columns=['step','time','ang_y','alg'],index=[]
 boss_opti_ori_z_df = pd.DataFrame(columns=['step','time','ang_z','alg'],index=[])
 boss_opti_ori_w_df = pd.DataFrame(columns=['step','time','ang_w','alg'],index=[])
 
-boss_estPE_pos_x_df = pd.DataFrame(columns=['step','time','pos_x','alg'],index=[])
-boss_estPE_pos_y_df = pd.DataFrame(columns=['step','time','pos_y','alg'],index=[])
-boss_estPE_pos_z_df = pd.DataFrame(columns=['step','time','pos_z','alg'],index=[])
-boss_estPE_ori_x_df = pd.DataFrame(columns=['step','time','ang_x','alg'],index=[])
-boss_estPE_ori_y_df = pd.DataFrame(columns=['step','time','ang_y','alg'],index=[])
-boss_estPE_ori_z_df = pd.DataFrame(columns=['step','time','ang_z','alg'],index=[])
-boss_estPE_ori_w_df = pd.DataFrame(columns=['step','time','ang_w','alg'],index=[])
+boss_estPB_pos_x_df = pd.DataFrame(columns=['step','time','pos_x','alg'],index=[])
+boss_estPB_pos_y_df = pd.DataFrame(columns=['step','time','pos_y','alg'],index=[])
+boss_estPB_pos_z_df = pd.DataFrame(columns=['step','time','pos_z','alg'],index=[])
+boss_estPB_ori_x_df = pd.DataFrame(columns=['step','time','ang_x','alg'],index=[])
+boss_estPB_ori_y_df = pd.DataFrame(columns=['step','time','ang_y','alg'],index=[])
+boss_estPB_ori_z_df = pd.DataFrame(columns=['step','time','ang_z','alg'],index=[])
+boss_estPB_ori_w_df = pd.DataFrame(columns=['step','time','ang_w','alg'],index=[])
 
 boss_estDO_pos_x_df = pd.DataFrame(columns=['step','time','pos_x','alg'],index=[])
 boss_estDO_pos_y_df = pd.DataFrame(columns=['step','time','pos_y','alg'],index=[])
@@ -87,11 +84,11 @@ boss_estDO_ori_y_df = pd.DataFrame(columns=['step','time','ang_y','alg'],index=[
 boss_estDO_ori_z_df = pd.DataFrame(columns=['step','time','ang_z','alg'],index=[])
 boss_estDO_ori_w_df = pd.DataFrame(columns=['step','time','ang_w','alg'],index=[])
 
-boss_obs_pose_PFPM = []
-boss_est_pose_PFPM = []
+boss_obs_pose_CVPF = []
+boss_est_pose_CVPF = []
 boss_update_flag_obse = 0
-boss_update_flag_PFPE = 0
-boss_update_flag_PFPM = 0
+boss_update_flag_PBPF = 0
+boss_update_flag_CVPF = 0
 
 
 #Class of Particle Filter move
@@ -116,9 +113,9 @@ class PFMove():
         self.noise_object_pose = []
 
     #new structure
-    def real_robot_control_PE(self,opti_obj_pos_cur,opti_obj_ori_cur,real_robot_joint_pos,nois_obj_pos_cur,nois_obj_ang_cur,do_obs_update):
+    def real_robot_control_PB(self,opti_obj_pos_cur,opti_obj_ori_cur,real_robot_joint_pos,nois_obj_pos_cur,nois_obj_ang_cur,do_obs_update):
         # Cheat
-        self.update_particle_filter_PE(self.pybullet_env_id_collection,  # simulation environment per particle
+        self.update_particle_filter_PB(self.pybullet_env_id_collection,  # simulation environment per particle
                                        self.pybullet_sim_fake_robot_id_collection,  # fake robot id per sim_env
                                        real_robot_joint_pos,  # execution actions of the fake robot
                                        opti_obj_pos_cur,
@@ -175,23 +172,23 @@ class PFMove():
         distance = math.sqrt(x_d ** 2 + y_d ** 2 + z_d ** 2)
         return distance
     #executed_control
-    def update_particle_filter_PE(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur,do_obs_update):
-        # print("update_particle_filter_PE")
+    def update_particle_filter_PB(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur,do_obs_update):
+        # print("update_particle_filter_PB")
         global flag_record_dope
-        global flag_record_PFPE
+        global flag_record_PBPF
         global flag_record
-        global estPE_form_previous
+        global estPB_form_previous
         global estDO_form_previous
-        global estPM_form_previous
+        global estCV_form_previous
         self.times = []
         t1 = time.time()
-        self.motion_update_PE_parallelised(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
+        self.motion_update_PB_parallelised(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
         t2 = time.time()
         self.times.append(t2-t1)
         # print("Motion model1 time consuming:",t2-t1)
 
         if do_obs_update:
-            self.observation_update_PE(nois_obj_pos_cur,nois_obj_ang_cur)
+            self.observation_update_PB(nois_obj_pos_cur,nois_obj_ang_cur)
         
         # Compute mean of particles
         object_estimate_pose = self.compute_estimate_pos_of_object(self.particle_cloud)
@@ -210,28 +207,28 @@ class PFMove():
 
         # print("Display particle")
         if visualisation_particle_flag == True:
-            self.display_particle_in_visual_model_PE(self.particle_cloud)
+            self.display_particle_in_visual_model_PB(self.particle_cloud)
         #self.draw_contrast_figure(estimated_object_pos,observation)
         #neettochange
         # if optitrack_working_flag == True:
         err_opti_dope_pos = compute_pos_err_bt_2_points(nois_obj_pos_cur,opti_obj_pos_cur)
         err_opti_dope_ang = compute_ang_err_bt_2_points(nois_obj_ori_cur,opti_obj_ori_cur)
         err_opti_dope_ang = angle_correction(err_opti_dope_ang)
-        err_opti_PFPE_pos = compute_pos_err_bt_2_points(estimated_object_pos,opti_obj_pos_cur)
-        err_opti_PFPE_ang = compute_ang_err_bt_2_points(estimated_object_ori,opti_obj_ori_cur)
-        err_opti_PFPE_ang = angle_correction(err_opti_PFPE_ang)
-        if publish_PFPE_pose_flag == True:
-            pub = rospy.Publisher('PFPE_pose', PoseStamped, queue_size = 1)
-            pose_PFPE = PoseStamped()
-            pose_PFPE.pose.position.x = estimated_object_pos[0]
-            pose_PFPE.pose.position.y = estimated_object_pos[1]
-            pose_PFPE.pose.position.z = estimated_object_pos[2]
-            pose_PFPE.pose.orientation.x = estimated_object_ori[0]
-            pose_PFPE.pose.orientation.y = estimated_object_ori[1]
-            pose_PFPE.pose.orientation.z = estimated_object_ori[2]
-            pose_PFPE.pose.orientation.w = estimated_object_ori[3]
-            pub.publish(pose_PFPE)
-            # rospy.loginfo(pose_PFPE)
+        err_opti_PBPF_pos = compute_pos_err_bt_2_points(estimated_object_pos,opti_obj_pos_cur)
+        err_opti_PBPF_ang = compute_ang_err_bt_2_points(estimated_object_ori,opti_obj_ori_cur)
+        err_opti_PBPF_ang = angle_correction(err_opti_PBPF_ang)
+        if publish_PBPF_pose_flag == True:
+            pub = rospy.Publisher('PBPF_pose', PoseStamped, queue_size = 1)
+            pose_PBPF = PoseStamped()
+            pose_PBPF.pose.position.x = estimated_object_pos[0]
+            pose_PBPF.pose.position.y = estimated_object_pos[1]
+            pose_PBPF.pose.position.z = estimated_object_pos[2]
+            pose_PBPF.pose.orientation.x = estimated_object_ori[0]
+            pose_PBPF.pose.orientation.y = estimated_object_ori[1]
+            pose_PBPF.pose.orientation.z = estimated_object_ori[2]
+            pose_PBPF.pose.orientation.w = estimated_object_ori[3]
+            pub.publish(pose_PBPF)
+            # rospy.loginfo(pose_PBPF)
         if publish_DOPE_pose_flag == True:
             pub_DOPE = rospy.Publisher('DOPE_pose', PoseStamped, queue_size = 1)
             pose_DOPE = PoseStamped()
@@ -266,30 +263,30 @@ class PFMove():
         boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin - prepare_time, err_opti_dope_ang, 'dope']
         flag_record = flag_record + 1
         flag_record_dope = flag_record_dope + 1
-        boss_PFPE_err_pos_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_pos, 'PFPE']
-        boss_PFPE_err_ang_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_ang, 'PFPE']
-        boss_err_pos_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_pos, 'PFPE']
-        boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin - prepare_time, err_opti_PFPE_ang, 'PFPE']
+        boss_PBPF_err_pos_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin - prepare_time, err_opti_PBPF_pos, 'PBPF']
+        boss_PBPF_err_ang_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin - prepare_time, err_opti_PBPF_ang, 'PBPF']
+        boss_err_pos_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin - prepare_time, err_opti_PBPF_pos, 'PBPF']
+        boss_err_ang_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin - prepare_time, err_opti_PBPF_ang, 'PBPF']
         flag_record = flag_record + 1
-        flag_record_PFPE = flag_record_PFPE + 1
+        flag_record_PBPF = flag_record_PBPF + 1
 
         
-        estPE_from_pre_time = time.time()
-        boss_estPE_pos_x_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[0], 'estPE']
-        boss_estPE_pos_y_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[1], 'estPE']
-        boss_estPE_pos_z_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[2], 'estPE']
-        boss_estPE_ori_x_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[0], 'estPE']
-        boss_estPE_ori_y_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[1], 'estPE']
-        boss_estPE_ori_z_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[2], 'estPE']
-        boss_estPE_ori_w_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[3], 'estPE']
-        estPE_form_previous = estPE_form_previous + 1
-        boss_estDO_pos_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, nois_obj_pos_cur[0], 'estDO']
-        boss_estDO_pos_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, nois_obj_pos_cur[1], 'estDO']
-        boss_estDO_pos_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, nois_obj_pos_cur[2], 'estDO']
-        boss_estDO_ori_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[0], 'estDO']
-        boss_estDO_ori_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[1], 'estDO']
-        boss_estDO_ori_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[2], 'estDO']
-        boss_estDO_ori_w_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[3], 'estDO']
+        estPB_from_pre_time = time.time()
+        boss_estPB_pos_x_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[0], 'estPB']
+        boss_estPB_pos_y_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[1], 'estPB']
+        boss_estPB_pos_z_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[2], 'estPB']
+        boss_estPB_ori_x_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[0], 'estPB']
+        boss_estPB_ori_y_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[1], 'estPB']
+        boss_estPB_ori_z_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[2], 'estPB']
+        boss_estPB_ori_w_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[3], 'estPB']
+        estPB_form_previous = estPB_form_previous + 1
+        boss_estDO_pos_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, nois_obj_pos_cur[0], 'estDO']
+        boss_estDO_pos_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, nois_obj_pos_cur[1], 'estDO']
+        boss_estDO_pos_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, nois_obj_pos_cur[2], 'estDO']
+        boss_estDO_ori_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[0], 'estDO']
+        boss_estDO_ori_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[1], 'estDO']
+        boss_estDO_ori_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[2], 'estDO']
+        boss_estDO_ori_w_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[3], 'estDO']
         estDO_form_previous = estDO_form_previous + 1
         # print debug info of all particles here
         #input('hit enter to continue')
@@ -320,7 +317,7 @@ class PFMove():
             #         return True
         return False
         
-    def update_partcile_cloud_pose_PE(self, index, x, y, z, x_angle, y_angle, z_angle, linearVelocity, angularVelocity):
+    def update_partcile_cloud_pose_PB(self, index, x, y, z, x_angle, y_angle, z_angle, linearVelocity, angularVelocity):
         self.particle_cloud[index].x = x
         self.particle_cloud[index].y = y
         self.particle_cloud[index].z = z
@@ -331,19 +328,19 @@ class PFMove():
         self.particle_cloud[index].angularVelocity = angularVelocity
         
     # have been replaced
-    def motion_update_PE(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
+    def motion_update_PB(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
         start = time.time()
         for index, pybullet_env in enumerate(pybullet_sim_env):
             pipe_parent, pipe_child = multiprocessing.Pipe()
             self.function_to_parallelise(index, pybullet_env,fake_robot_id, real_robot_joint_pos, pipe_child)
             x, y, z, x_angle, y_angle, z_angle = pipe_parent.recv()
-            self.update_partcile_cloud_pose_PE(index, x, y, z, x_angle, y_angle, z_angle)
+            self.update_partcile_cloud_pose_PB(index, x, y, z, x_angle, y_angle, z_angle)
         end = time.time()
         # print(end - start)
 
 
-    def motion_update_PE_parallelised(self,pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
-        # print("motion_update_PE_parallelised")
+    def motion_update_PB_parallelised(self,pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
+        # print("motion_update_PB_parallelised")
         global simRobot_touch_par_flag
         threads = []
         start = time.time()
@@ -432,7 +429,7 @@ class PFMove():
                 break
         # print(linearVelocity, angularVelocity)
         normal_z = normal_z + 0.03
-        self.update_partcile_cloud_pose_PE(index, normal_x, normal_y, normal_z, x_angle, y_angle, z_angle, linearVelocity, angularVelocity)
+        self.update_partcile_cloud_pose_PB(index, normal_x, normal_y, normal_z, x_angle, y_angle, z_angle, linearVelocity, angularVelocity)
         # pipe.send()
         
     def add_noise_pose(self, sim_par_cur_pos, sim_par_cur_ori):
@@ -467,7 +464,7 @@ class PFMove():
         # pipe.send()
         return normal_x, normal_y, normal_z, x_angle, y_angle, z_angle, P_quat
     
-    def observation_update_PE(self, nois_obj_pos_cur,nois_obj_ang_cur):
+    def observation_update_PB(self, nois_obj_pos_cur,nois_obj_ang_cur):
         nois_obj_x = nois_obj_pos_cur[0]
         nois_obj_y = nois_obj_pos_cur[1]
         nois_obj_z = nois_obj_pos_cur[2]
@@ -605,7 +602,7 @@ class PFMove():
         flag_1 = 0
         tot_weight = sum([particle.w for particle in self.particle_cloud])
         if tot_weight == 0:
-            # print("Error!,PFPE particles total weight is 0")
+            # print("Error!,PBPF particles total weight is 0")
             tot_weight = 1
             flag_1 = 1
         for particle in self.particle_cloud:
@@ -691,7 +688,7 @@ class PFMove():
                                                          visual_particle_orientation)
         return
 
-    def display_particle_in_visual_model_PE(self, particle_cloud):
+    def display_particle_in_visual_model_PB(self, particle_cloud):
         for index, particle in enumerate(particle_cloud):
             visual_particle_pos = [particle.x, particle.y, particle.z]
             visual_particle_ang = [particle.x_angle, particle.y_angle, particle.z_angle]
@@ -769,13 +766,13 @@ class PFMove():
 
 
 
-class PFMovePM():
+class PFMoveCV():
     def __init__(self,robot_id=None,real_robot_id=None,object_id=None):
         # init internals   
-        self.particle_cloud_PM = copy.deepcopy(initial_parameter.particle_cloud_PM)
-        self.particle_no_visual_id_collection_PM = copy.deepcopy(initial_parameter.particle_no_visual_id_collection_PM)
-        self.pybullet_env_id_collection_PM = copy.deepcopy(initial_parameter.pybullet_particle_env_collection_PM)
-        self.particle_with_visual_id_collection_PM = copy.deepcopy(initial_parameter.particle_with_visual_id_collection_PM)
+        self.particle_cloud_CV = copy.deepcopy(initial_parameter.particle_cloud_CV)
+        self.particle_no_visual_id_collection_CV = copy.deepcopy(initial_parameter.particle_no_visual_id_collection_CV)
+        self.pybullet_env_id_collection_CV = copy.deepcopy(initial_parameter.pybullet_particle_env_collection_CV)
+        self.particle_with_visual_id_collection_CV = copy.deepcopy(initial_parameter.particle_with_visual_id_collection_CV)
 
         self.object_estimate_pose_x = []
         self.object_estimate_pose_y = []
@@ -787,9 +784,9 @@ class PFMovePM():
         self.noise_object_pose = []
 
     #new structure
-    def real_robot_control_PM(self,opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur,do_obs_update):
+    def real_robot_control_CV(self,opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur,do_obs_update):
         #Cheat
-        self.update_particle_filter_PM(opti_obj_pos_cur,
+        self.update_particle_filter_CV(opti_obj_pos_cur,
                                        opti_obj_ori_cur,
                                        nois_obj_pos_cur,
                                        nois_obj_ang_cur,
@@ -805,48 +802,48 @@ class PFMovePM():
         return distance
 
     #executed_control
-    def update_particle_filter_PM(self, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur,do_obs_update):
-        global flag_record_PFPM
+    def update_particle_filter_CV(self, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur,do_obs_update):
+        global flag_record_CVPF
         global flag_record
         t1 = time.time()
-        self.motion_update_PM(nois_obj_ang_cur)
+        self.motion_update_CV(nois_obj_ang_cur)
         t2 = time.time()
         if do_obs_update:
-            self.observation_update_PM(nois_obj_pos_cur,nois_obj_ang_cur)
+            self.observation_update_CV(nois_obj_pos_cur,nois_obj_ang_cur)
             
         # Compute mean of particles
-        estimated_object_pose_PM = self.compute_estimate_pos_of_object(self.particle_cloud_PM)
-        estimated_object_pos_PM = [estimated_object_pose_PM[0],estimated_object_pose_PM[1],estimated_object_pose_PM[2]]
-        estimated_object_ang_PM = [estimated_object_pose_PM[3],estimated_object_pose_PM[4],estimated_object_pose_PM[5]]
-        estimated_object_ori_PM = p_visualisation.getQuaternionFromEuler(estimated_object_ang_PM)
-        boss_est_pose_PFPM.append(estimated_object_pose_PM)
+        estimated_object_pose_CV = self.compute_estimate_pos_of_object(self.particle_cloud_CV)
+        estimated_object_pos_CV = [estimated_object_pose_CV[0],estimated_object_pose_CV[1],estimated_object_pose_CV[2]]
+        estimated_object_ang_CV = [estimated_object_pose_CV[3],estimated_object_pose_CV[4],estimated_object_pose_CV[5]]
+        estimated_object_ori_CV = p_visualisation.getQuaternionFromEuler(estimated_object_ang_CV)
+        boss_est_pose_CVPF.append(estimated_object_pose_CV)
         if visualisation_flag == True and visualisation_mean == True:
-            self.display_estimated_robot_in_visual_model(estimated_object_pos_PM,estimated_object_ang_PM)
+            self.display_estimated_robot_in_visual_model(estimated_object_pos_CV,estimated_object_ang_CV)
         if visualisation_particle_flag == True:
-            self.display_particle_in_visual_model_PM(self.particle_cloud_PM)
+            self.display_particle_in_visual_model_CV(self.particle_cloud_CV)
         # if optitrack_working_flag == True:
-        err_opti_PFPM_pos = compute_pos_err_bt_2_points(estimated_object_pos_PM,opti_obj_pos_cur)
-        err_opti_PFPM_ang = compute_ang_err_bt_2_points(estimated_object_ori_PM,opti_obj_ori_cur)
-        err_opti_PFPM_ang = angle_correction(err_opti_PFPM_ang)
+        err_opti_CVPF_pos = compute_pos_err_bt_2_points(estimated_object_pos_CV,opti_obj_pos_cur)
+        err_opti_CVPF_ang = compute_ang_err_bt_2_points(estimated_object_ori_CV,opti_obj_ori_cur)
+        err_opti_CVPF_ang = angle_correction(err_opti_CVPF_ang)
 
         # if t_decide_write > 1:
         t_before_record = time.time()
         # if optitrack_working_flag == True:
-        boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_pos, 'PFPM']
-        boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_ang, 'PFPM']
-        boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_pos, 'PFPM']
-        boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin - prepare_time, err_opti_PFPM_ang, 'PFPM']
+        boss_CVPF_err_pos_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin - prepare_time, err_opti_CVPF_pos, 'CVPF']
+        boss_CVPF_err_ang_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin - prepare_time, err_opti_CVPF_ang, 'CVPF']
+        boss_err_pos_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin - prepare_time, err_opti_CVPF_pos, 'CVPF']
+        boss_err_ang_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin - prepare_time, err_opti_CVPF_ang, 'CVPF']
         flag_record = flag_record + 1
-        flag_record_PFPM = flag_record_PFPM + 1
+        flag_record_CVPF = flag_record_CVPF + 1
 
         # print debug info of all particles here
         #input('hit enter to continue')
         return
 
     def isAnyParticleInContact(self):
-        for index, particle in enumerate(self.particle_cloud_PM):
+        for index, particle in enumerate(self.particle_cloud_CV):
             # get pose from particle
-            sim_par_cur_pos,sim_par_cur_ori = self.get_item_pos(self.pybullet_env_id_collection_PM[index], initial_parameter.particle_no_visual_id_collection_PM[index])
+            sim_par_cur_pos,sim_par_cur_ori = self.get_item_pos(self.pybullet_env_id_collection_CV[index], initial_parameter.particle_no_visual_id_collection_CV[index])
             # reset pose of object in pybullet vis to the pose
             p_visualisation.resetBasePositionAndOrientation(contact_particle_id,
                                                             sim_par_cur_pos,
@@ -869,11 +866,11 @@ class PFMovePM():
         return False
 
 
-    def motion_update_PM(self, nois_obj_ang_cur):
-        if flag_update_num_PM < 2:
-            length = len(boss_obs_pose_PFPM)
-            obs_curr_pose = copy.deepcopy(boss_obs_pose_PFPM[length-1])
-            obs_last_pose = copy.deepcopy(boss_obs_pose_PFPM[length-2])
+    def motion_update_CV(self, nois_obj_ang_cur):
+        if flag_update_num_CV < 2:
+            length = len(boss_obs_pose_CVPF)
+            obs_curr_pose = copy.deepcopy(boss_obs_pose_CVPF[length-1])
+            obs_last_pose = copy.deepcopy(boss_obs_pose_CVPF[length-2])
             obs_curr_pos = [obs_curr_pose[0],obs_curr_pose[1],obs_curr_pose[2]]
             obs_curr_ang = [obs_curr_pose[3],obs_curr_pose[4],obs_curr_pose[5]]
             obs_curr_ori = p_visualisation.getQuaternionFromEuler(obs_curr_ang)
@@ -882,11 +879,11 @@ class PFMovePM():
             obs_last_ori = p_visualisation.getQuaternionFromEuler(obs_last_ang)
             obsO_T_obsN = self.compute_transformation_matrix(obs_last_pos, obs_last_ori, obs_curr_pos, obs_curr_ori)
             parO_T_parN = copy.deepcopy(obsO_T_obsN)
-            self.update_particle_in_motion_model_PM(parO_T_parN, nois_obj_ang_cur)
+            self.update_particle_in_motion_model_CV(parO_T_parN, nois_obj_ang_cur)
         else:
-            length = len(boss_est_pose_PFPM)
-            est_curr_pose = copy.deepcopy(boss_est_pose_PFPM[length-1])
-            est_last_pose = copy.deepcopy(boss_est_pose_PFPM[length-2])
+            length = len(boss_est_pose_CVPF)
+            est_curr_pose = copy.deepcopy(boss_est_pose_CVPF[length-1])
+            est_last_pose = copy.deepcopy(boss_est_pose_CVPF[length-2])
             est_curr_pos = [est_curr_pose[0],est_curr_pose[1],est_curr_pose[2]]
             est_curr_ang = [est_curr_pose[3],est_curr_pose[4],est_curr_pose[5]]
             est_curr_ori = p_visualisation.getQuaternionFromEuler(est_curr_ang)
@@ -895,11 +892,11 @@ class PFMovePM():
             est_last_ori = p_visualisation.getQuaternionFromEuler(est_last_ang)
             estO_T_estN = self.compute_transformation_matrix(est_last_pos, est_last_ori, est_curr_pos, est_curr_ori)
             parO_T_parN = copy.deepcopy(estO_T_estN)
-            self.update_particle_in_motion_model_PM(parO_T_parN, nois_obj_ang_cur)
+            self.update_particle_in_motion_model_CV(parO_T_parN, nois_obj_ang_cur)
         #input("test")
         return
 
-    def observation_update_PM(self,nois_obj_pos_cur,nois_obj_ang_cur):
+    def observation_update_CV(self,nois_obj_pos_cur,nois_obj_ang_cur):
         nois_obj_x = nois_obj_pos_cur[0]
         nois_obj_y = nois_obj_pos_cur[1]
         nois_obj_z = nois_obj_pos_cur[2]
@@ -912,7 +909,7 @@ class PFMovePM():
         self.noise_object_ang = [nois_obj_x_ang,nois_obj_y_ang,nois_obj_z_ang]
         self.noise_object_pose = [nois_obj_x,nois_obj_y,nois_obj_z,nois_obj_x_ang,nois_obj_y_ang,nois_obj_z_ang]
 
-        for index,particle in enumerate(self.particle_cloud_PM):
+        for index,particle in enumerate(self.particle_cloud_CV):
             particle_x = particle.x
             particle_y = particle.y
             particle_z = particle.z
@@ -955,22 +952,22 @@ class PFMovePM():
             weight = weight_xyz * weight_ang
             particle.w = weight
 
-        # Flag = self.normalize_particles_PM()
-        # self.resample_particles_PM()
-        self.resample_particles_PM_update()
-        self.set_paticle_in_each_sim_env_PM()
+        # Flag = self.normalize_particles_CV()
+        # self.resample_particles_CV()
+        self.resample_particles_CV_update()
+        self.set_paticle_in_each_sim_env_CV()
         return
 
-    def update_particle_in_motion_model_PM(self, parO_T_parN, nois_obj_ang_cur):
-        for index, pybullet_env in enumerate(self.pybullet_env_id_collection_PM):
+    def update_particle_in_motion_model_CV(self, parO_T_parN, nois_obj_ang_cur):
+        for index, pybullet_env in enumerate(self.pybullet_env_id_collection_CV):
             # print("=================================================")
-            pw_T_parO_x = self.particle_cloud_PM[index].x
-            pw_T_parO_y = self.particle_cloud_PM[index].y
-            pw_T_parO_z = self.particle_cloud_PM[index].z
+            pw_T_parO_x = self.particle_cloud_CV[index].x
+            pw_T_parO_y = self.particle_cloud_CV[index].y
+            pw_T_parO_z = self.particle_cloud_CV[index].z
             pw_T_parO_pos = [pw_T_parO_x,pw_T_parO_y,pw_T_parO_z]
-            pw_T_parO_x_ang = self.particle_cloud_PM[index].x_angle
-            pw_T_parO_y_ang = self.particle_cloud_PM[index].y_angle
-            pw_T_parO_z_ang = self.particle_cloud_PM[index].z_angle
+            pw_T_parO_x_ang = self.particle_cloud_CV[index].x_angle
+            pw_T_parO_y_ang = self.particle_cloud_CV[index].y_angle
+            pw_T_parO_z_ang = self.particle_cloud_CV[index].z_angle
             pw_T_parO_ang = [pw_T_parO_x_ang,pw_T_parO_y_ang,pw_T_parO_z_ang]
             pw_T_parO_ori = pybullet_env.getQuaternionFromEuler(pw_T_parO_ang)
 
@@ -1023,12 +1020,12 @@ class PFMovePM():
             # y_angle = pw_T_parN_ang[1]
             # z_angle = pw_T_parN_ang[2]
 
-            self.particle_cloud_PM[index].x = normal_x
-            self.particle_cloud_PM[index].y = normal_y
-            self.particle_cloud_PM[index].z = normal_z
-            self.particle_cloud_PM[index].x_angle = x_angle
-            self.particle_cloud_PM[index].y_angle = y_angle
-            self.particle_cloud_PM[index].z_angle = z_angle
+            self.particle_cloud_CV[index].x = normal_x
+            self.particle_cloud_CV[index].y = normal_y
+            self.particle_cloud_CV[index].z = normal_z
+            self.particle_cloud_CV[index].x_angle = x_angle
+            self.particle_cloud_CV[index].y_angle = y_angle
+            self.particle_cloud_CV[index].z_angle = z_angle
 
 
     def get_item_pos(self,pybullet_env,item_id):
@@ -1056,48 +1053,48 @@ class PFMovePM():
     def normal_distribution(self, x, mean, sigma):
         return np.exp(-1*((x-mean)**2)/(2*(sigma**2)))/(math.sqrt(2*np.pi)* sigma)
 
-    def normalize_particles_PM(self):
+    def normalize_particles_CV(self):
         flag_1 = 0
-        tot_weight = sum([particle.w for particle in self.particle_cloud_PM])
+        tot_weight = sum([particle.w for particle in self.particle_cloud_CV])
         if tot_weight == 0:
-            # print("Error!,PFPM particles total weight is 0")
+            # print("Error!,CVPF particles total weight is 0")
             tot_weight = 1
             flag_1 = 1
-        for particle in self.particle_cloud_PM:
+        for particle in self.particle_cloud_CV:
             if flag_1 == 0:
                 particle_w = particle.w/tot_weight
                 particle.w = particle_w
             else:
                 particle.w = 1.0/particle_num
 
-    def resample_particles_PM(self):
+    def resample_particles_CV(self):
         particles_w = []
         newParticles = []
-        n_particle = len(self.particle_cloud_PM)
-        for particle in self.particle_cloud_PM:
+        n_particle = len(self.particle_cloud_CV)
+        for particle in self.particle_cloud_CV:
             particles_w.append(particle.w)
         particle_array= np.random.choice(a = n_particle, size = n_particle, replace=True, p= particles_w)
         particle_array_list = list(particle_array)
         for index,i in enumerate(particle_array_list):
-            particle = Particle(self.particle_cloud_PM[i].x,
-                                self.particle_cloud_PM[i].y,
-                                self.particle_cloud_PM[i].z,
-                                self.particle_cloud_PM[i].x_angle,
-                                self.particle_cloud_PM[i].y_angle,
-                                self.particle_cloud_PM[i].z_angle,
+            particle = Particle(self.particle_cloud_CV[i].x,
+                                self.particle_cloud_CV[i].y,
+                                self.particle_cloud_CV[i].z,
+                                self.particle_cloud_CV[i].x_angle,
+                                self.particle_cloud_CV[i].y_angle,
+                                self.particle_cloud_CV[i].z_angle,
                                 1.0/particle_num,index)
             newParticles.append(particle)
-        self.particle_cloud_PM = copy.deepcopy(newParticles)
+        self.particle_cloud_CV = copy.deepcopy(newParticles)
         
-    def resample_particles_PM_update(self):
+    def resample_particles_CV_update(self):
         particles_w = []
         newParticles = []
         base_w = 0
         base_w_list = []
         base_w_list.append(base_w)
         particle_array_list = []
-        n_particle = len(self.particle_cloud_PM)
-        for particle in self.particle_cloud_PM:
+        n_particle = len(self.particle_cloud_CV)
+        for particle in self.particle_cloud_CV:
             particles_w.append(particle.w)
             base_w = base_w + particle.w
             base_w_list.append(base_w)
@@ -1106,52 +1103,52 @@ class PFMovePM():
         for index in range(n_particle):
             if w_sum != 0:
                 position = (r + index * w_sum / particle_num) % w_sum
-                position_index = self.compute_position_PM(position, base_w_list)
+                position_index = self.compute_position_CV(position, base_w_list)
                 particle_array_list.append(position_index)
             elif w_sum == 0:
                 particle_array_list.append(index)
         # print("w_sum:", w_sum)
         # print("particle_array_list:", particle_array_list)
         for index,i in enumerate(particle_array_list):
-            particle = Particle(self.particle_cloud_PM[i].x,
-                                self.particle_cloud_PM[i].y,
-                                self.particle_cloud_PM[i].z,
-                                self.particle_cloud_PM[i].x_angle,
-                                self.particle_cloud_PM[i].y_angle,
-                                self.particle_cloud_PM[i].z_angle,
+            particle = Particle(self.particle_cloud_CV[i].x,
+                                self.particle_cloud_CV[i].y,
+                                self.particle_cloud_CV[i].z,
+                                self.particle_cloud_CV[i].x_angle,
+                                self.particle_cloud_CV[i].y_angle,
+                                self.particle_cloud_CV[i].z_angle,
                                 1.0/particle_num, index)
             newParticles.append(particle)
-        self.particle_cloud_PM = copy.deepcopy(newParticles)
+        self.particle_cloud_CV = copy.deepcopy(newParticles)
         
-    def compute_position_PM(self, position, base_w_list):
+    def compute_position_CV(self, position, base_w_list):
         for index in range(1, len(base_w_list)):
             if position <= base_w_list[index] and position > base_w_list[index - 1]:
                 return index - 1
             else:
                 continue
-    def set_paticle_in_each_sim_env_PM(self):
-        for index, pybullet_env in enumerate(self.pybullet_env_id_collection_PM):
-            visual_particle_pos = [self.particle_cloud_PM[index].x, self.particle_cloud_PM[index].y, self.particle_cloud_PM[index].z]
-            visual_particle_angle = [self.particle_cloud_PM[index].x_angle, self.particle_cloud_PM[index].y_angle, self.particle_cloud_PM[index].z_angle]
+    def set_paticle_in_each_sim_env_CV(self):
+        for index, pybullet_env in enumerate(self.pybullet_env_id_collection_CV):
+            visual_particle_pos = [self.particle_cloud_CV[index].x, self.particle_cloud_CV[index].y, self.particle_cloud_CV[index].z]
+            visual_particle_angle = [self.particle_cloud_CV[index].x_angle, self.particle_cloud_CV[index].y_angle, self.particle_cloud_CV[index].z_angle]
             visual_particle_orientation = pybullet_env.getQuaternionFromEuler(visual_particle_angle)
-            pybullet_env.resetBasePositionAndOrientation(self.particle_no_visual_id_collection_PM[index],
+            pybullet_env.resetBasePositionAndOrientation(self.particle_no_visual_id_collection_CV[index],
                                                          visual_particle_pos,
                                                          visual_particle_orientation)
         return
 
-    def display_particle_in_visual_model_PM(self, particle_cloud):
+    def display_particle_in_visual_model_CV(self, particle_cloud):
         for index, particle in enumerate(particle_cloud):
             visual_particle_pos = [particle.x, particle.y, particle.z]
             visual_particle_ang = [particle.x_angle, particle.y_angle, particle.z_angle]
             visual_particle_orientation = p_visualisation.getQuaternionFromEuler(visual_particle_ang)
-            p_visualisation.resetBasePositionAndOrientation(self.particle_with_visual_id_collection_PM[index],
+            p_visualisation.resetBasePositionAndOrientation(self.particle_with_visual_id_collection_CV[index],
                                                             visual_particle_pos,
                                                             visual_particle_orientation)
 
     def display_estimated_robot_in_visual_model(self, observation,estimated_angle):
         esti_obj_pos = observation
         esti_obj_ori = p_visualisation.getQuaternionFromEuler(estimated_angle)
-        p_visualisation.resetBasePositionAndOrientation(estimated_object_id_PM,
+        p_visualisation.resetBasePositionAndOrientation(estimated_object_id_CV,
                                                         esti_obj_pos,
                                                         esti_obj_ori)
 
@@ -1300,70 +1297,70 @@ def signal_handler(sig, frame):
     if update_style_flag == "pose":
         if task_flag == "1a":
             file_name_obse_pos = 'pose_scene1a_obse_err_pos.csv'
-            file_name_PFPE_pos = 'pose_scene1a_PFPE_err_pos.csv'
-            file_name_PFPM_pos = 'pose_scene1a_PFPM_err_pos.csv'
+            file_name_PBPF_pos = 'pose_scene1a_PBPF_err_pos.csv'
+            file_name_CVPF_pos = 'pose_scene1a_CVPF_err_pos.csv'
             file_name_obse_ang = 'pose_scene1a_obse_err_ang.csv'
-            file_name_PFPE_ang = 'pose_scene1a_PFPE_err_ang.csv'
-            file_name_PFPM_ang = 'pose_scene1a_PFPM_err_ang.csv'
+            file_name_PBPF_ang = 'pose_scene1a_PBPF_err_ang.csv'
+            file_name_CVPF_ang = 'pose_scene1a_CVPF_err_ang.csv'
         elif task_flag == "1b":
             file_name_obse_pos = 'pose_scene1b_obse_err_pos.csv'
-            file_name_PFPE_pos = 'pose_scene1b_PFPE_err_pos.csv'
-            file_name_PFPM_pos = 'pose_scene1b_PFPM_err_pos.csv'
+            file_name_PBPF_pos = 'pose_scene1b_PBPF_err_pos.csv'
+            file_name_CVPF_pos = 'pose_scene1b_CVPF_err_pos.csv'
             file_name_obse_ang = 'pose_scene1b_obse_err_ang.csv'
-            file_name_PFPE_ang = 'pose_scene1b_PFPE_err_ang.csv'
-            file_name_PFPM_ang = 'pose_scene1b_PFPM_err_ang.csv'
+            file_name_PBPF_ang = 'pose_scene1b_PBPF_err_ang.csv'
+            file_name_CVPF_ang = 'pose_scene1b_CVPF_err_ang.csv'
         elif task_flag == "2":
             file_name_obse_pos = 'pose_scene2_obse_err_pos.csv'
-            file_name_PFPE_pos = 'pose_scene2_PFPE_err_pos.csv'
-            file_name_PFPM_pos = 'pose_scene2_PFPM_err_pos.csv'
+            file_name_PBPF_pos = 'pose_scene2_PBPF_err_pos.csv'
+            file_name_CVPF_pos = 'pose_scene2_CVPF_err_pos.csv'
             file_name_obse_ang = 'pose_scene2_obse_err_ang.csv'
-            file_name_PFPE_ang = 'pose_scene2_PFPE_err_ang.csv'
-            file_name_PFPM_ang = 'pose_scene2_PFPM_err_ang.csv'
+            file_name_PBPF_ang = 'pose_scene2_PBPF_err_ang.csv'
+            file_name_CVPF_ang = 'pose_scene2_CVPF_err_ang.csv'
     elif update_style_flag == "time":
         if task_flag == "1a":
             file_name_obse_pos = 'time_scene1a_obse_err_pos.csv'
-            file_name_PFPE_pos = 'time_scene1a_PFPE_err_pos.csv'
-            file_name_PFPM_pos = 'time_scene1a_PFPM_err_pos.csv'
+            file_name_PBPF_pos = 'time_scene1a_PBPF_err_pos.csv'
+            file_name_CVPF_pos = 'time_scene1a_CVPF_err_pos.csv'
             file_name_obse_ang = 'time_scene1a_obse_err_ang.csv'
-            file_name_PFPE_ang = 'time_scene1a_PFPE_err_ang.csv'
-            file_name_PFPM_ang = 'time_scene1a_PFPM_err_ang.csv'
+            file_name_PBPF_ang = 'time_scene1a_PBPF_err_ang.csv'
+            file_name_CVPF_ang = 'time_scene1a_CVPF_err_ang.csv'
         elif task_flag == "1b":
             file_name_obse_pos = 'time_scene1b_obse_err_pos.csv'
-            file_name_PFPE_pos = 'time_scene1b_PFPE_err_pos.csv'
-            file_name_PFPM_pos = 'time_scene1b_PFPM_err_pos.csv'
+            file_name_PBPF_pos = 'time_scene1b_PBPF_err_pos.csv'
+            file_name_CVPF_pos = 'time_scene1b_CVPF_err_pos.csv'
             file_name_obse_ang = 'time_scene1b_obse_err_ang.csv'
-            file_name_PFPE_ang = 'time_scene1b_PFPE_err_ang.csv'
-            file_name_PFPM_ang = 'time_scene1b_PFPM_err_ang.csv'
+            file_name_PBPF_ang = 'time_scene1b_PBPF_err_ang.csv'
+            file_name_CVPF_ang = 'time_scene1b_CVPF_err_ang.csv'
         elif task_flag == "2":
             file_name_obse_pos = 'time_scene2_obse_err_pos.csv'
-            file_name_PFPE_pos = 'time_scene2_PFPE_err_pos.csv'
-            file_name_PFPM_pos = 'time_scene2_PFPM_err_pos.csv'
+            file_name_PBPF_pos = 'time_scene2_PBPF_err_pos.csv'
+            file_name_CVPF_pos = 'time_scene2_CVPF_err_pos.csv'
             file_name_obse_ang = 'time_scene2_obse_err_ang.csv'
-            file_name_PFPE_ang = 'time_scene2_PFPE_err_ang.csv'
-            file_name_PFPM_ang = 'time_scene2_PFPM_err_ang.csv'
+            file_name_PBPF_ang = 'time_scene2_PBPF_err_ang.csv'
+            file_name_CVPF_ang = 'time_scene2_CVPF_err_ang.csv'
         elif task_flag == "3":
             file_name_obse_pos = 'time_scene3_obse_err_pos.csv'
-            file_name_PFPE_pos = 'time_scene3_PFPE_err_pos.csv'
-            file_name_PFPM_pos = 'time_scene3_PFPM_err_pos.csv'
+            file_name_PBPF_pos = 'time_scene3_PBPF_err_pos.csv'
+            file_name_CVPF_pos = 'time_scene3_CVPF_err_pos.csv'
             file_name_obse_ang = 'time_scene3_obse_err_ang.csv'
-            file_name_PFPE_ang = 'time_scene3_PFPE_err_ang.csv'
-            file_name_PFPM_ang = 'time_scene3_PFPM_err_ang.csv'
+            file_name_PBPF_ang = 'time_scene3_PBPF_err_ang.csv'
+            file_name_CVPF_ang = 'time_scene3_CVPF_err_ang.csv'
     # boss_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_pos,index=0,header=0,mode='a')
     # boss_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_ang,index=0,header=0,mode='a')
-    if run_PFPE_flag == True:
+    if run_PBPF_flag == True:
         boss_obse_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_obse_pos,index=0,header=0,mode='a')
         boss_obse_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_obse_ang,index=0,header=0,mode='a')
         print("write obser file")
-        boss_PFPE_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_PFPE_pos,index=0,header=0,mode='a')
-        boss_PFPE_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_PFPE_ang,index=0,header=0,mode='a')
-        print("write PFPE file")
-        print("PE: Update frequency is: " + str(flag_update_num_PE))
-        print("max time:", max(PFPE_time_cosuming_list))
-    if run_PFPM_flag == True:
-        boss_PFPM_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_PFPM_pos,index=0,header=0,mode='a')
-        boss_PFPM_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_PFPM_ang,index=0,header=0,mode='a')
-        print("write PFPM file")
-        print("PM: Update frequency is: " + str(flag_update_num_PM))
+        boss_PBPF_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_PBPF_pos,index=0,header=0,mode='a')
+        boss_PBPF_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_PBPF_ang,index=0,header=0,mode='a')
+        print("write PBPF file")
+        print("PB: Update frequency is: " + str(flag_update_num_PB))
+        print("max time:", max(PBPF_time_cosuming_list))
+    if run_CVPF_flag == True:
+        boss_CVPF_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_CVPF_pos,index=0,header=0,mode='a')
+        boss_CVPF_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_CVPF_ang,index=0,header=0,mode='a')
+        print("write CVPF file")
+        print("CV: Update frequency is: " + str(flag_update_num_CV))
     print("file_time:", file_time)
     
     if write_opti_pose_flag == True:
@@ -1376,24 +1373,24 @@ def signal_handler(sig, frame):
         boss_opti_ori_z_df.to_csv('opti_ori_z.csv')
         boss_opti_ori_w_df.to_csv('opti_ori_w.csv')
 
-    if write_estPE_pose_flag == True:
+    if write_estPB_pose_flag == True:
         print("write_opti_pos")
-        boss_estPE_pos_x_df.to_csv('estPE_pos_x.csv')
-        boss_estPE_pos_y_df.to_csv('estPE_pos_y.csv')
-        boss_estPE_pos_z_df.to_csv('estPE_pos_z.csv')
-        boss_estPE_ori_x_df.to_csv('estPE_ori_x.csv')
-        boss_estPE_ori_y_df.to_csv('estPE_ori_y.csv')
-        boss_estPE_ori_z_df.to_csv('estPE_ori_z.csv')
-        boss_estPE_ori_w_df.to_csv('estPE_ori_w.csv')
+        boss_estPB_pos_x_df.to_csv('estPB_pos_x.csv')
+        boss_estPB_pos_y_df.to_csv('estPB_pos_y.csv')
+        boss_estPB_pos_z_df.to_csv('estPB_pos_z.csv')
+        boss_estPB_ori_x_df.to_csv('estPB_ori_x.csv')
+        boss_estPB_ori_y_df.to_csv('estPB_ori_y.csv')
+        boss_estPB_ori_z_df.to_csv('estPB_ori_z.csv')
+        boss_estPB_ori_w_df.to_csv('estPB_ori_w.csv')
     if write_estDO_pose_flag == True:
         print("write_estDO_pos")
-        boss_estPE_pos_x_df.to_csv('estDO_pos_x.csv')
-        boss_estPE_pos_y_df.to_csv('estDO_pos_y.csv')
-        boss_estPE_pos_z_df.to_csv('estDO_pos_z.csv')
-        boss_estPE_ori_x_df.to_csv('estDO_ori_x.csv')
-        boss_estPE_ori_y_df.to_csv('estDO_ori_y.csv')
-        boss_estPE_ori_z_df.to_csv('estDO_ori_z.csv')
-        boss_estPE_ori_w_df.to_csv('estDO_ori_w.csv')
+        boss_estPB_pos_x_df.to_csv('estDO_pos_x.csv')
+        boss_estPB_pos_y_df.to_csv('estDO_pos_y.csv')
+        boss_estPB_pos_z_df.to_csv('estDO_pos_z.csv')
+        boss_estPB_ori_x_df.to_csv('estDO_ori_x.csv')
+        boss_estPB_ori_y_df.to_csv('estDO_ori_y.csv')
+        boss_estPB_ori_z_df.to_csv('estDO_ori_z.csv')
+        boss_estPB_ori_w_df.to_csv('estDO_ori_w.csv')
     sys.exit()
     
 if __name__ == '__main__':
@@ -1402,7 +1399,7 @@ if __name__ == '__main__':
     prepare_time = 0
     rospy.init_node('PF_for_dope')
     signal.signal(signal.SIGINT, signal_handler)
-    publish_PFPE_pose_flag = True
+    publish_PBPF_pose_flag = True
     publish_DOPE_pose_flag = True
     publish_Opti_pose_flag = False
     visualisation_all = True
@@ -1414,12 +1411,12 @@ if __name__ == '__main__':
     optitrack_working_flag = True
     publish_opti_pose_for_inter_flag = False
     write_opti_pose_flag = False
-    write_estPE_pose_flag = False
+    write_estPB_pose_flag = False
     write_estDO_pose_flag = False
-    write_estPM_pose_flag = False
+    write_estCV_pose_flag = False
     file_time = 1
-    run_PFPE_flag = True
-    run_PFPM_flag = False
+    run_PBPF_flag = True
+    run_CVPF_flag = False
     task_flag = "1b"
     update_style_flag = "time"
     simRobot_touch_par_flag = 0
@@ -1428,26 +1425,26 @@ if __name__ == '__main__':
     if update_style_flag == "pose":
         particle_num = 150
     elif update_style_flag == "time":
-        if run_PFPE_flag == True:
+        if run_PBPF_flag == True:
             particle_num = 70
-        elif run_PFPM_flag == True:
+        elif run_CVPF_flag == True:
             particle_num = 200
     print("This is "+update_style_flag+" update in scene"+task_flag)    
     d_thresh = 0.005
     a_thresh = 0.01
-    d_thresh_PM = 0.0002
-    a_thresh_PM = 0.0010
+    d_thresh_CV = 0.0002
+    a_thresh_CV = 0.0010
     flag_record = 0
     flag_record_dope = 0
-    flag_record_PFPE = 0
-    flag_record_PFPM = 0
-    flag_update_num_PM = 0
-    flag_update_num_PE = 0
+    flag_record_PBPF = 0
+    flag_record_CVPF = 0
+    flag_update_num_CV = 0
+    flag_update_num_PB = 0
     
     change_sim_time = 1.0/90
-    if run_PFPE_flag == True:
+    if run_PBPF_flag == True:
         boss_pf_update_interval_in_real = 0.16
-    elif run_PFPM_flag == True:
+    elif run_CVPF_flag == True:
         boss_pf_update_interval_in_real = 0.02
     pf_update_rate = rospy.Rate(1.0/boss_pf_update_interval_in_real)
     # error in xyz axis DOPE before recalibrating
@@ -1478,11 +1475,11 @@ if __name__ == '__main__':
     restitution_sigma = 0.2
     
     opti_form_previous = 0
-    estPE_form_previous = 0
+    estPB_form_previous = 0
     estDO_form_previous = 0
-    estPM_form_previous = 0
+    estCV_form_previous = 0
     
-    PFPE_time_cosuming_list = []
+    PBPF_time_cosuming_list = []
     #visualisation_model
     if visualisation_all == True:
         p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
@@ -1613,7 +1610,7 @@ if __name__ == '__main__':
                           dope_obj_ang_init[0],
                           dope_obj_ang_init[1],
                           dope_obj_ang_init[2]]
-    boss_obs_pose_PFPM.append(dope_obj_pose_init)
+    boss_obs_pose_CVPF.append(dope_obj_pose_init)
     #input('test')
     #compute error
     if optitrack_working_flag == True:
@@ -1655,36 +1652,36 @@ if __name__ == '__main__':
     estimated_object_ang = [estimated_object_set[3],estimated_object_set[4],estimated_object_set[5]]
     estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
     
-    estPE_from_pre_time = time.time()
-    boss_estPE_pos_x_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[0], 'estPE']
-    boss_estPE_pos_y_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[1], 'estPE']
-    boss_estPE_pos_z_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[2], 'estPE']
-    boss_estPE_ori_x_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[0], 'estPE']
-    boss_estPE_ori_y_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[1], 'estPE']
-    boss_estPE_ori_z_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[2], 'estPE']
-    boss_estPE_ori_w_df.loc[estPE_form_previous] = [estPE_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[3], 'estPE']
-    estPE_form_previous = estPE_form_previous + 1
-    boss_estDO_pos_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, dope_obj_pos_init[0], 'estDO']
-    boss_estDO_pos_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, dope_obj_pos_init[1], 'estDO']
-    boss_estDO_pos_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, dope_obj_pos_init[2], 'estDO']
-    boss_estDO_ori_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, dope_obj_ori_init[0], 'estDO']
-    boss_estDO_ori_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, dope_obj_ori_init[1], 'estDO']
-    boss_estDO_ori_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, dope_obj_ori_init[2], 'estDO']
-    boss_estDO_ori_w_df.loc[estDO_form_previous] = [estDO_form_previous, estPE_from_pre_time - opti_from_pre_time_begin, dope_obj_ori_init[3], 'estDO']
+    estPB_from_pre_time = time.time()
+    boss_estPB_pos_x_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[0], 'estPB']
+    boss_estPB_pos_y_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[1], 'estPB']
+    boss_estPB_pos_z_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[2], 'estPB']
+    boss_estPB_ori_x_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[0], 'estPB']
+    boss_estPB_ori_y_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[1], 'estPB']
+    boss_estPB_ori_z_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[2], 'estPB']
+    boss_estPB_ori_w_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[3], 'estPB']
+    estPB_form_previous = estPB_form_previous + 1
+    boss_estDO_pos_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, dope_obj_pos_init[0], 'estDO']
+    boss_estDO_pos_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, dope_obj_pos_init[1], 'estDO']
+    boss_estDO_pos_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, dope_obj_pos_init[2], 'estDO']
+    boss_estDO_ori_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, dope_obj_ori_init[0], 'estDO']
+    boss_estDO_ori_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, dope_obj_ori_init[1], 'estDO']
+    boss_estDO_ori_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, dope_obj_ori_init[2], 'estDO']
+    boss_estDO_ori_w_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, dope_obj_ori_init[3], 'estDO']
     estDO_form_previous = estDO_form_previous + 1
     
-    if publish_PFPE_pose_flag == True:
-        pub = rospy.Publisher('PFPE_pose', PoseStamped, queue_size = 1)
-        pose_PFPE = PoseStamped()
-        pose_PFPE.pose.position.x = estimated_object_pos[0]
-        pose_PFPE.pose.position.y = estimated_object_pos[1]
-        pose_PFPE.pose.position.z = estimated_object_pos[2]
-        pose_PFPE.pose.orientation.x = estimated_object_ori[0]
-        pose_PFPE.pose.orientation.y = estimated_object_ori[1]
-        pose_PFPE.pose.orientation.z = estimated_object_ori[2]
-        pose_PFPE.pose.orientation.w = estimated_object_ori[3]
-        pub.publish(pose_PFPE)
-        # rospy.loginfo(pose_PFPE)
+    if publish_PBPF_pose_flag == True:
+        pub = rospy.Publisher('PBPF_pose', PoseStamped, queue_size = 1)
+        pose_PBPF = PoseStamped()
+        pose_PBPF.pose.position.x = estimated_object_pos[0]
+        pose_PBPF.pose.position.y = estimated_object_pos[1]
+        pose_PBPF.pose.position.z = estimated_object_pos[2]
+        pose_PBPF.pose.orientation.x = estimated_object_ori[0]
+        pose_PBPF.pose.orientation.y = estimated_object_ori[1]
+        pose_PBPF.pose.orientation.z = estimated_object_ori[2]
+        pose_PBPF.pose.orientation.w = estimated_object_ori[3]
+        pub.publish(pose_PBPF)
+        # rospy.loginfo(pose_PBPF)
     if publish_DOPE_pose_flag == True:
         pub_DOPE = rospy.Publisher('DOPE_pose', PoseStamped, queue_size = 1)
         pose_DOPE = PoseStamped()
@@ -1711,30 +1708,30 @@ if __name__ == '__main__':
             pose_opti.pose.orientation.w = pw_T_object_ori[3]
             pub_opti.publish(pose_opti)
     
-    boss_est_pose_PFPM.append(estimated_object_set)
-    initial_parameter.initial_and_set_simulation_env_PM(ros_listener.current_joint_values)
+    boss_est_pose_CVPF.append(estimated_object_set)
+    initial_parameter.initial_and_set_simulation_env_CV(ros_listener.current_joint_values)
     
     if visualisation_particle_flag == True:
-        if run_PFPE_flag == True:
+        if run_PBPF_flag == True:
             initial_parameter.display_particle()
-        if run_PFPM_flag == True:
-            initial_parameter.display_particle_PM()
+        if run_CVPF_flag == True:
+            initial_parameter.display_particle_CV()
     if visualisation_flag == True and object_cracker_flag == True and visualisation_mean == True:
-        if run_PFPE_flag == True:
+        if run_PBPF_flag == True:
             estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
                                                            estimated_object_pos,
                                                            estimated_object_ori)
-        if run_PFPM_flag == True:
-            estimated_object_id_PM = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_est_obj_with_visual_small_PM_hor.urdf"),
+        if run_CVPF_flag == True:
+            estimated_object_id_CV = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_est_obj_with_visual_small_PM_hor.urdf"),
                                                               estimated_object_pos,
                                                               estimated_object_ori)
     if visualisation_flag == True and object_soup_flag == True and visualisation_mean == True:
-        if run_PFPE_flag == True:
+        if run_PBPF_flag == True:
             estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_est_obj_with_visual_small_PE_hor.urdf"),
                                                            estimated_object_pos,
                                                            estimated_object_ori)
-        if run_PFPM_flag == True:
-            estimated_object_id_PM = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_est_obj_with_visual_small_PM_hor.urdf"),
+        if run_CVPF_flag == True:
+            estimated_object_id_CV = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_est_obj_with_visual_small_PM_hor.urdf"),
                                                               estimated_object_pos,
                                                               estimated_object_ori)
 
@@ -1760,19 +1757,19 @@ if __name__ == '__main__':
     dope_obj_pos_old = copy.deepcopy(dope_obj_pos_init)
     dope_obj_ang_old = copy.deepcopy(dope_obj_ang_init)
     dope_obj_ori_old = copy.deepcopy(dope_obj_ori_init)
-    dope_obj_pos_old_PM = copy.deepcopy(dope_obj_pos_init)
-    dope_obj_ang_old_PM = copy.deepcopy(dope_obj_ang_init)
-    dope_obj_ori_old_PM = copy.deepcopy(dope_obj_ori_init)
+    dope_obj_pos_old_CV = copy.deepcopy(dope_obj_pos_init)
+    dope_obj_ang_old_CV = copy.deepcopy(dope_obj_ang_init)
+    dope_obj_ori_old_CV = copy.deepcopy(dope_obj_ori_init)
     #compute pose of robot arm
-    rob_link_9_pose_old_PE = p_visualisation.getLinkState(real_robot_id,9)
-    rob_link_9_pose_old_PM = p_visualisation.getLinkState(real_robot_id,9)
-    rob_link_9_ang_old_PE = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_old_PE[1])
-    rob_link_9_ang_old_PM = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_old_PM[1])
-    rob_pose_init = copy.deepcopy(rob_link_9_pose_old_PE)
+    rob_link_9_pose_old_PB = p_visualisation.getLinkState(real_robot_id,9)
+    rob_link_9_pose_old_CV = p_visualisation.getLinkState(real_robot_id,9)
+    rob_link_9_ang_old_PB = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_old_PB[1])
+    rob_link_9_ang_old_CV = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_old_CV[1])
+    rob_pose_init = copy.deepcopy(rob_link_9_pose_old_PB)
     
     print("Welcome to Our Approach !")
     robot1 = PFMove()
-    robot2 = PFMovePM()
+    robot2 = PFMoveCV()
 
     while not rospy.is_shutdown():
     # while True:
@@ -1870,27 +1867,27 @@ if __name__ == '__main__':
         #compute distance between old DOPE obj and cur DOPE obj (position and angle)
         dis_betw_cur_and_old = compute_pos_err_bt_2_points(dope_obj_pos_cur,dope_obj_pos_old)
         ang_betw_cur_and_old = compute_ang_err_bt_2_points(dope_obj_ori_cur,dope_obj_ori_old)
-        dis_betw_cur_and_old_PM = compute_pos_err_bt_2_points(dope_obj_pos_cur,dope_obj_pos_old_PM)
-        ang_betw_cur_and_old_PM = compute_ang_err_bt_2_points(dope_obj_ori_cur,dope_obj_ori_old_PM)
+        dis_betw_cur_and_old_CV = compute_pos_err_bt_2_points(dope_obj_pos_cur,dope_obj_pos_old_CV)
+        ang_betw_cur_and_old_CV = compute_ang_err_bt_2_points(dope_obj_ori_cur,dope_obj_ori_old_CV)
 
         #compute distance between old robot arm and cur robot arm (position and angle)
-        rob_link_9_pose_cur_PE = p_visualisation.getLinkState(real_robot_id,9)
-        rob_link_9_pose_cur_PM = p_visualisation.getLinkState(real_robot_id,9)
-        rob_link_9_ang_cur_PE = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_cur_PE[1])
-        rob_link_9_ang_cur_PM = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_cur_PM[1])
-        dis_robcur_robold_PE = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PE[0],rob_link_9_pose_old_PE[0])
-        dis_robcur_robold_PM = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PM[0],rob_link_9_pose_old_PM[0])
-        ang_robcur_robold_PE = comp_z_ang(rob_link_9_ang_cur_PE,rob_link_9_ang_old_PE)
-        ang_robcur_robold_PM = comp_z_ang(rob_link_9_ang_cur_PM,rob_link_9_ang_old_PM)
+        rob_link_9_pose_cur_PB = p_visualisation.getLinkState(real_robot_id,9)
+        rob_link_9_pose_cur_CV = p_visualisation.getLinkState(real_robot_id,9)
+        rob_link_9_ang_cur_PB = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_cur_PB[1])
+        rob_link_9_ang_cur_CV = p_visualisation.getEulerFromQuaternion(rob_link_9_pose_cur_CV[1])
+        dis_robcur_robold_PB = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PB[0],rob_link_9_pose_old_PB[0])
+        dis_robcur_robold_CV = compute_pos_err_bt_2_points(rob_link_9_pose_cur_CV[0],rob_link_9_pose_old_CV[0])
+        ang_robcur_robold_PB = comp_z_ang(rob_link_9_ang_cur_PB,rob_link_9_ang_old_PB)
+        ang_robcur_robold_CV = comp_z_ang(rob_link_9_ang_cur_CV,rob_link_9_ang_old_CV)
 
-        #write_file_judgement = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PE[0],rob_pose_init[0])
+        #write_file_judgement = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PB[0],rob_pose_init[0])
         # Determine if particles need to be updated
         if update_style_flag == "pose":
-            if run_PFPE_flag == True:
-                # if ((dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh)) and (dis_robcur_robold_PE > d_thresh):
-                if (dis_robcur_robold_PE > d_thresh):
+            if run_PBPF_flag == True:
+                # if ((dis_betw_cur_and_old > d_thresh) or (ang_betw_cur_and_old > a_thresh)) and (dis_robcur_robold_PB > d_thresh):
+                if (dis_robcur_robold_PB > d_thresh):
                     if robot1.isAnyParticleInContact():
-                        # print("PFPE")
+                        # print("PBPF")
                         if first_write_flag == 0:
                             #record the error
                             t_begin = time.time()
@@ -1901,22 +1898,22 @@ if __name__ == '__main__':
                             boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
                             flag_record = flag_record + 1
                             flag_record_dope = flag_record_dope + 1
-                            boss_PFPE_err_pos_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
-                            boss_PFPE_err_ang_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
-                            boss_err_pos_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
-                            boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
+                            boss_PBPF_err_pos_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
+                            boss_PBPF_err_ang_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
+                            boss_err_pos_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
+                            boss_err_ang_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
                             flag_record = flag_record + 1
-                            flag_record_PFPE = flag_record_PFPE + 1
-                            boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
-                            boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
-                            boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
-                            boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
+                            flag_record_PBPF = flag_record_PBPF + 1
+                            boss_CVPF_err_pos_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
+                            boss_CVPF_err_ang_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
+                            boss_err_pos_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
+                            boss_err_ang_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
                             flag_record = flag_record + 1
-                            flag_record_PFPM = flag_record_PFPM + 1
+                            flag_record_CVPF = flag_record_CVPF + 1
                             first_write_flag = 1
                         simRobot_touch_par_flag = 1
-                        t_begin_PFPE = time.time()
-                        flag_update_num_PE = flag_update_num_PE + 1
+                        t_begin_PBPF = time.time()
+                        flag_update_num_PB = flag_update_num_PB + 1
                         # Cheat
                         if optitrack_working_flag == True:
                             opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos)  # get pos of real object
@@ -1927,7 +1924,7 @@ if __name__ == '__main__':
                         nois_obj_pos_cur = copy.deepcopy(dope_obj_pos_cur)
                         nois_obj_ang_cur = copy.deepcopy(dope_obj_ang_cur)
                         # execute sim_robot movement
-                        robot1.real_robot_control_PE(opti_obj_pos_cur,
+                        robot1.real_robot_control_PB(opti_obj_pos_cur,
                                                      opti_obj_ori_cur,
                                                      ros_listener.current_joint_values,
                                                      nois_obj_pos_cur,
@@ -1936,25 +1933,25 @@ if __name__ == '__main__':
                         # dope_obj_pos_old = copy.deepcopy(dope_obj_pos_cur)
                         # dope_obj_ang_old = copy.deepcopy(dope_obj_ang_cur)
                         # dope_obj_ori_old = copy.deepcopy(dope_obj_ori_cur)
-                        rob_link_9_pose_old_PE = copy.deepcopy(rob_link_9_pose_cur_PE)
+                        rob_link_9_pose_old_PB = copy.deepcopy(rob_link_9_pose_cur_PB)
                         if visualisation_flag == True and optitrack_working_flag == True:
                             display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
                         elif visualisation_flag == True and optitrack_working_flag == False:
                             display_real_object_in_visual_model(optitrack_object_id,ros_listener.fake_opti_pos,ros_listener.fake_opti_ori)
                         # print("Average time of updating: ",np.mean(robot1.times))
-                        t_finish_PFPE = time.time()
-                        PFPE_time_cosuming_list.append(t_finish_PFPE - t_begin_PFPE)
-                        # print("Time consuming:", t_finish_PFPE - t_begin_PFPE)
+                        t_finish_PBPF = time.time()
+                        PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
+                        # print("Time consuming:", t_finish_PBPF - t_begin_PBPF)
                         simRobot_touch_par_flag = 0
                     else:
                         # print("robot does not touch the particle")
-                        robot1.motion_update_PE_parallelised(initial_parameter.pybullet_particle_env_collection,
+                        robot1.motion_update_PB_parallelised(initial_parameter.pybullet_particle_env_collection,
                                                              initial_parameter.fake_robot_id_collection,
                                                              ros_listener.current_joint_values)
                         # continue 
-            if run_PFPM_flag == True:
-                # if (dis_betw_cur_and_old_PM > d_thresh_PM) or (ang_betw_cur_and_old_PM > a_thresh_PM) or (dis_robcur_robold_PM > d_thresh_PM):
-                if (dis_robcur_robold_PM > d_thresh_PM) and robot2.isAnyParticleInContact():
+            if run_CVPF_flag == True:
+                # if (dis_betw_cur_and_old_CV > d_thresh_CV) or (ang_betw_cur_and_old_CV > a_thresh_CV) or (dis_robcur_robold_CV > d_thresh_CV):
+                if (dis_robcur_robold_CV > d_thresh_CV) and robot2.isAnyParticleInContact():
                     if first_write_flag == 0:
                         #record the error
                         t_begin = time.time()
@@ -1965,44 +1962,44 @@ if __name__ == '__main__':
                         boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
                         flag_record = flag_record + 1
                         flag_record_dope = flag_record_dope + 1
-                        boss_PFPE_err_pos_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
-                        boss_PFPE_err_ang_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
-                        boss_err_pos_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
-                        boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
+                        boss_PBPF_err_pos_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
+                        boss_PBPF_err_ang_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
+                        boss_err_pos_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
+                        boss_err_ang_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
                         flag_record = flag_record + 1
-                        flag_record_PFPE = flag_record_PFPE + 1
-                        boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
-                        boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
-                        boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
-                        boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
+                        flag_record_PBPF = flag_record_PBPF + 1
+                        boss_CVPF_err_pos_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
+                        boss_CVPF_err_ang_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
+                        boss_err_pos_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
+                        boss_err_ang_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
                         flag_record = flag_record + 1
-                        flag_record_PFPM = flag_record_PFPM + 1
+                        flag_record_CVPF = flag_record_CVPF + 1
                         first_write_flag = 1
-                    flag_update_num_PM = flag_update_num_PM + 1
-                    boss_obs_pose_PFPM.append(dope_obj_pose_cur)
+                    flag_update_num_CV = flag_update_num_CV + 1
+                    boss_obs_pose_CVPF.append(dope_obj_pose_cur)
                     if optitrack_working_flag == True:
-                        opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object
-                        opti_obj_ori_cur_PM = copy.deepcopy(pw_T_object_ori)
+                        opti_obj_pos_cur_CV = copy.deepcopy(pw_T_object_pos) #get pos of real object
+                        opti_obj_ori_cur_CV = copy.deepcopy(pw_T_object_ori)
                     elif optitrack_working_flag == False:
-                        opti_obj_pos_cur_PM = ros_listener.fake_opti_pos
-                        opti_obj_ori_cur_PM = ros_listener.fake_opti_ori
-                    nois_obj_pos_cur_PM = copy.deepcopy(dope_obj_pos_cur)
-                    nois_obj_ang_cur_PM = copy.deepcopy(dope_obj_ang_cur)
+                        opti_obj_pos_cur_CV = ros_listener.fake_opti_pos
+                        opti_obj_ori_cur_CV = ros_listener.fake_opti_ori
+                    nois_obj_pos_cur_CV = copy.deepcopy(dope_obj_pos_cur)
+                    nois_obj_ang_cur_CV = copy.deepcopy(dope_obj_ang_cur)
                     # execute sim_robot movement
-                    robot2.real_robot_control_PM(opti_obj_pos_cur_PM,
-                                                 opti_obj_ori_cur_PM,
-                                                 nois_obj_pos_cur_PM,
-                                                 nois_obj_ang_cur_PM,
+                    robot2.real_robot_control_CV(opti_obj_pos_cur_CV,
+                                                 opti_obj_ori_cur_CV,
+                                                 nois_obj_pos_cur_CV,
+                                                 nois_obj_ang_cur_CV,
                                                  do_obs_update=dope_is_fresh)
-                    # dope_obj_pos_old_PM = copy.deepcopy(dope_obj_pos_cur)
-                    # dope_obj_ang_old_PM = copy.deepcopy(dope_obj_ang_cur)
-                    # dope_obj_ori_old_PM = copy.deepcopy(dope_obj_ori_cur)
-                    rob_link_9_pose_old_PM = copy.deepcopy(rob_link_9_pose_cur_PM)
+                    # dope_obj_pos_old_CV = copy.deepcopy(dope_obj_pos_cur)
+                    # dope_obj_ang_old_CV = copy.deepcopy(dope_obj_ang_cur)
+                    # dope_obj_ori_old_CV = copy.deepcopy(dope_obj_ori_cur)
+                    rob_link_9_pose_old_CV = copy.deepcopy(rob_link_9_pose_cur_CV)
                     if visualisation_flag == True:
                         display_real_object_in_visual_model(optitrack_object_id,pw_T_object_pos,pw_T_object_ori)
         elif update_style_flag == "time":
             while True:
-                if run_PFPE_flag == True:
+                if run_PBPF_flag == True:
                     if robot1.isAnyParticleInContact():
                     # if True:
                         if first_write_flag == 0:
@@ -2015,23 +2012,23 @@ if __name__ == '__main__':
                             boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
                             flag_record = flag_record + 1
                             flag_record_dope = flag_record_dope + 1
-                            boss_PFPE_err_pos_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
-                            boss_PFPE_err_ang_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
-                            boss_err_pos_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
-                            boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
+                            boss_PBPF_err_pos_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
+                            boss_PBPF_err_ang_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
+                            boss_err_pos_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
+                            boss_err_ang_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
                             flag_record = flag_record + 1
-                            flag_record_PFPE = flag_record_PFPE + 1
-                            boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
-                            boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
-                            boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
-                            boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
+                            flag_record_PBPF = flag_record_PBPF + 1
+                            boss_CVPF_err_pos_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
+                            boss_CVPF_err_ang_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
+                            boss_err_pos_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
+                            boss_err_ang_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
                             flag_record = flag_record + 1
-                            flag_record_PFPM = flag_record_PFPM + 1
+                            flag_record_CVPF = flag_record_CVPF + 1
                             first_write_flag = 1
                         simRobot_touch_par_flag = 1
-                        t_begin_PFPE = time.time()
-                        flag_update_num_PE = flag_update_num_PE + 1
-                        # print("PE: Need to update particles and update frequency is: " + str(flag_update_num_PE))
+                        t_begin_PBPF = time.time()
+                        flag_update_num_PB = flag_update_num_PB + 1
+                        # print("PB: Need to update particles and update frequency is: " + str(flag_update_num_PB))
                         #Cheat
                         if optitrack_working_flag == True:
                             opti_obj_pos_cur = copy.deepcopy(pw_T_object_pos) #get pos of real object
@@ -2042,7 +2039,7 @@ if __name__ == '__main__':
                         nois_obj_pos_cur = copy.deepcopy(dope_obj_pos_cur)
                         nois_obj_ang_cur = copy.deepcopy(dope_obj_ang_cur)
                         #execute sim_robot movement
-                        robot1.real_robot_control_PE(opti_obj_pos_cur,
+                        robot1.real_robot_control_PB(opti_obj_pos_cur,
                                                      opti_obj_ori_cur,
                                                      ros_listener.current_joint_values,
                                                      nois_obj_pos_cur,
@@ -2053,17 +2050,17 @@ if __name__ == '__main__':
                         # elif visualisation_flag == True and optitrack_working_flag == False:
                         #    display_real_object_in_visual_model(optitrack_object_id, ros_listener.fake_opti_pos, ros_listener.fake_opti_ori)
                         # print("Average time of updating: ",np.mean(robot1.times))
-                        # print("PE: Finished")
-                        t_finish_PFPE = time.time()
-                        PFPE_time_cosuming_list.append(t_finish_PFPE - t_begin_PFPE)
-                        # print("Time consuming:", t_finish_PFPE - t_begin)
+                        # print("PB: Finished")
+                        t_finish_PBPF = time.time()
+                        PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
+                        # print("Time consuming:", t_finish_PBPF - t_begin)
                         simRobot_touch_par_flag = 0
                     else:
                         # print("robot does not touch the particle")
-                        robot1.motion_update_PE_parallelised(initial_parameter.pybullet_particle_env_collection,
+                        robot1.motion_update_PB_parallelised(initial_parameter.pybullet_particle_env_collection,
                                                              initial_parameter.fake_robot_id_collection,
                                                              ros_listener.current_joint_values)
-                if run_PFPM_flag == True:
+                if run_CVPF_flag == True:
                     if robot2.isAnyParticleInContact():
                     # if True:
                         if first_write_flag == 0:
@@ -2076,33 +2073,33 @@ if __name__ == '__main__':
                             boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
                             flag_record = flag_record + 1
                             flag_record_dope = flag_record_dope + 1
-                            boss_PFPE_err_pos_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
-                            boss_PFPE_err_ang_df.loc[flag_record_PFPE] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
-                            boss_err_pos_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_pos, 'PFPE']
-                            boss_err_ang_df.loc[flag_record] = [flag_record_PFPE, t_before_record - t_begin, err_opti_esti_ang, 'PFPE']
+                            boss_PBPF_err_pos_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
+                            boss_PBPF_err_ang_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
+                            boss_err_pos_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
+                            boss_err_ang_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
                             flag_record = flag_record + 1
-                            flag_record_PFPE = flag_record_PFPE + 1
-                            boss_PFPM_err_pos_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
-                            boss_PFPM_err_ang_df.loc[flag_record_PFPM] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
-                            boss_err_pos_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_pos, 'PFPM']
-                            boss_err_ang_df.loc[flag_record] = [flag_record_PFPM, t_before_record - t_begin, err_opti_esti_ang, 'PFPM']
+                            flag_record_PBPF = flag_record_PBPF + 1
+                            boss_CVPF_err_pos_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
+                            boss_CVPF_err_ang_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
+                            boss_err_pos_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
+                            boss_err_ang_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
                             flag_record = flag_record + 1
-                            flag_record_PFPM = flag_record_PFPM + 1
+                            flag_record_CVPF = flag_record_CVPF + 1
                             first_write_flag = 1
-                        flag_update_num_PM = flag_update_num_PM + 1
-                        boss_obs_pose_PFPM.append(dope_obj_pose_cur)
+                        flag_update_num_CV = flag_update_num_CV + 1
+                        boss_obs_pose_CVPF.append(dope_obj_pose_cur)
                         if optitrack_working_flag == True:
-                            opti_obj_pos_cur_PM = copy.deepcopy(pw_T_object_pos) #get pos of real object
-                            opti_obj_ori_cur_PM = copy.deepcopy(pw_T_object_ori)
+                            opti_obj_pos_cur_CV = copy.deepcopy(pw_T_object_pos) #get pos of real object
+                            opti_obj_ori_cur_CV = copy.deepcopy(pw_T_object_ori)
                         if optitrack_working_flag == False:
-                            opti_obj_pos_cur_PM = ros_listener.fake_opti_pos
-                            opti_obj_ori_cur_PM = ros_listener.fake_opti_ori
-                        nois_obj_pos_cur_PM = copy.deepcopy(dope_obj_pos_cur)
-                        nois_obj_ang_cur_PM = copy.deepcopy(dope_obj_ang_cur)
-                        robot2.real_robot_control_PM(opti_obj_pos_cur_PM,
-                                                     opti_obj_ori_cur_PM,
-                                                     nois_obj_pos_cur_PM,
-                                                     nois_obj_ang_cur_PM,
+                            opti_obj_pos_cur_CV = ros_listener.fake_opti_pos
+                            opti_obj_ori_cur_CV = ros_listener.fake_opti_ori
+                        nois_obj_pos_cur_CV = copy.deepcopy(dope_obj_pos_cur)
+                        nois_obj_ang_cur_CV = copy.deepcopy(dope_obj_ang_cur)
+                        robot2.real_robot_control_CV(opti_obj_pos_cur_CV,
+                                                     opti_obj_ori_cur_CV,
+                                                     nois_obj_pos_cur_CV,
+                                                     nois_obj_ang_cur_CV,
                                                      do_obs_update=dope_is_fresh)
                         if visualisation_flag == True and optitrack_working_flag == True:
                             display_real_object_in_visual_model(optitrack_object_id, pw_T_object_pos, pw_T_object_ori)

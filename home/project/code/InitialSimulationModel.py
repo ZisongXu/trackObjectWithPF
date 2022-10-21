@@ -57,10 +57,10 @@ class InitialSimulationModel():
         self.particle_no_visual_id_collection = []
         self.particle_with_visual_id_collection =[]
         self.noise_object_pose = []
-        self.particle_cloud_PM = []
-        self.pybullet_particle_env_collection_PM = []
-        self.particle_no_visual_id_collection_PM = []
-        self.particle_with_visual_id_collection_PM =[]
+        self.particle_cloud_CV = []
+        self.pybullet_particle_env_collection_CV = []
+        self.particle_no_visual_id_collection_CV = []
+        self.particle_with_visual_id_collection_CV =[]
         self.boss_sigma_obs_x = boss_sigma_obs_x
         self.boss_sigma_obs_y = boss_sigma_obs_y
         self.boss_sigma_obs_z = boss_sigma_obs_z
@@ -149,8 +149,8 @@ class InitialSimulationModel():
                                                                 visualize_particle_orientation)
             self.particle_with_visual_id_collection.append(visualize_particle_Id)
             
-    def display_particle_PM(self):
-        for index, particle in enumerate(self.particle_cloud_PM):
+    def display_particle_CV(self):
+        for index, particle in enumerate(self.particle_cloud_CV):
             visualize_particle_pos = [particle.x, particle.y, particle.z]
             visualize_particle_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             visualize_particle_orientation = self.p_visualisation.getQuaternionFromEuler(visualize_particle_angle)
@@ -162,7 +162,7 @@ class InitialSimulationModel():
                 visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_with_visual_small_PM_hor.urdf"),
                                                                 visualize_particle_pos,
                                                                 visualize_particle_orientation)
-            self.particle_with_visual_id_collection_PM.append(visualize_particle_Id)
+            self.particle_with_visual_id_collection_CV.append(visualize_particle_Id)
 
     def initial_and_set_simulation_env(self,joint_of_robot):
         for index, particle in enumerate(self.particle_cloud):
@@ -231,11 +231,11 @@ class InitialSimulationModel():
         obj_est_set = self.compute_estimate_pos_of_object(self.particle_cloud)
         return obj_est_set[0],obj_est_set[1],obj_est_set[2],obj_est_set[3],obj_est_set[4],obj_est_set[5]
     
-    def initial_and_set_simulation_env_PM(self,joint_of_robot):
-        self.particle_cloud_PM = copy.deepcopy(self.particle_cloud)
-        for index, particle in enumerate(self.particle_cloud_PM):
+    def initial_and_set_simulation_env_CV(self,joint_of_robot):
+        self.particle_cloud_CV = copy.deepcopy(self.particle_cloud)
+        for index, particle in enumerate(self.particle_cloud_CV):
             pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT) # GUI_SERVER, DIRECT
-            self.pybullet_particle_env_collection_PM.append(pybullet_simulation_env)
+            self.pybullet_particle_env_collection_CV.append(pybullet_simulation_env)
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0,0,-9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
@@ -250,9 +250,9 @@ class InitialSimulationModel():
                 particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_no_visual_small_hor.urdf"),
                                                                         particle_no_visual_start_pos,
                                                                         particle_no_visual_start_orientation)
-            self.particle_no_visual_id_collection_PM.append(particle_no_visual_id)
-        obj_est_set_PM = self.compute_estimate_pos_of_object(self.particle_cloud_PM)
-        return obj_est_set_PM[0],obj_est_set_PM[1],obj_est_set_PM[2],obj_est_set_PM[3],obj_est_set_PM[4],obj_est_set_PM[5]
+            self.particle_no_visual_id_collection_CV.append(particle_no_visual_id)
+        obj_est_set_CV = self.compute_estimate_pos_of_object(self.particle_cloud_CV)
+        return obj_est_set_CV[0],obj_est_set_CV[1],obj_est_set_CV[2],obj_est_set_CV[3],obj_est_set_CV[4],obj_est_set_CV[5]
 
     def set_sim_robot_JointPosition(self,pybullet_simulation_env,robot, position):
         num_joints = 9

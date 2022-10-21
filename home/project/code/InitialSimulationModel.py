@@ -140,11 +140,11 @@ class InitialSimulationModel():
             visualize_particle_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             visualize_particle_orientation = self.p_visualisation.getQuaternionFromEuler(visualize_particle_angle)
             if self.object_cracker_flag == True:
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_par_with_visual_small_PE_hor.urdf"),
+                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_par_with_visual_small_PB_hor.urdf"),
                                                                 visualize_particle_pos,
                                                                 visualize_particle_orientation)
             if self.object_soup_flag == True:
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_with_visual_small_PE_hor.urdf"),
+                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_with_visual_small_PB_hor.urdf"),
                                                                 visualize_particle_pos,
                                                                 visualize_particle_orientation)
             self.particle_with_visual_id_collection.append(visualize_particle_Id)
@@ -155,11 +155,11 @@ class InitialSimulationModel():
             visualize_particle_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             visualize_particle_orientation = self.p_visualisation.getQuaternionFromEuler(visualize_particle_angle)
             if self.object_cracker_flag == True:
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_par_with_visual_small_PM_hor.urdf"),
+                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_par_with_visual_small_CV_hor.urdf"),
                                                                 visualize_particle_pos,
                                                                 visualize_particle_orientation)
             if self.object_soup_flag == True:
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_with_visual_small_PM_hor.urdf"),
+                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_with_visual_small_CV_hor.urdf"),
                                                                 visualize_particle_pos,
                                                                 visualize_particle_orientation)
             self.particle_with_visual_id_collection_CV.append(visualize_particle_Id)

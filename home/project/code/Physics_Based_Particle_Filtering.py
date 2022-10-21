@@ -1589,11 +1589,11 @@ if __name__ == '__main__':
     pw_T_object_ang_dope = list(pw_T_object_ang_dope)
     #load the DOPE object
     if visualisation_flag == True and object_cracker_flag == True:
-        dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_dope_obj_with_visual_small_PE_hor.urdf"),
+        dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_dope_obj_with_visual_small_PB_hor.urdf"),
                                                   pw_T_object_pos_dope,
                                                   pw_T_object_ori_dope)
     if visualisation_flag == True and object_soup_flag == True:
-        dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_dope_obj_with_visual_small_PE_hor.urdf"),
+        dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_dope_obj_with_visual_small_PB_hor.urdf"),
                                                   pw_T_object_pos_dope,
                                                   pw_T_object_ori_dope)
         print("DOPE:")
@@ -1718,20 +1718,20 @@ if __name__ == '__main__':
             initial_parameter.display_particle_CV()
     if visualisation_flag == True and object_cracker_flag == True and visualisation_mean == True:
         if run_PBPF_flag == True:
-            estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_est_obj_with_visual_small_PE_hor.urdf"),
+            estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_est_obj_with_visual_small_PB_hor.urdf"),
                                                            estimated_object_pos,
                                                            estimated_object_ori)
         if run_CVPF_flag == True:
-            estimated_object_id_CV = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_est_obj_with_visual_small_PM_hor.urdf"),
+            estimated_object_id_CV = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_est_obj_with_visual_small_CV_hor.urdf"),
                                                               estimated_object_pos,
                                                               estimated_object_ori)
     if visualisation_flag == True and object_soup_flag == True and visualisation_mean == True:
         if run_PBPF_flag == True:
-            estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_est_obj_with_visual_small_PE_hor.urdf"),
+            estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_est_obj_with_visual_small_PB_hor.urdf"),
                                                            estimated_object_pos,
                                                            estimated_object_ori)
         if run_CVPF_flag == True:
-            estimated_object_id_CV = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_est_obj_with_visual_small_PM_hor.urdf"),
+            estimated_object_id_CV = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_est_obj_with_visual_small_CV_hor.urdf"),
                                                               estimated_object_pos,
                                                               estimated_object_ori)
 

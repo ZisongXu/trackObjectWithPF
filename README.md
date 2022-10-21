@@ -22,5 +22,6 @@ This project uses singularity container to support all the code: Please run ```.
 
 # Run Code
 In the container:
-[TrackObjectWithPF] Singularity> ~/project/code $ python3 Physics_Based_Particle_Filtering.py
+
+```[TrackObjectWithPF] Singularity> ~/project/code $ python3 Physics_Based_Particle_Filtering.py```
 

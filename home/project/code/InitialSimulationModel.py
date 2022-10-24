@@ -175,7 +175,7 @@ class InitialSimulationModel():
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0,0,-9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
-            if self.task_flag == "2":
+            if self.task_flag == "4":
                 if self.object_cracker_flag == True:
                     sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cube/base_of_cheezit.urdf"),
                                                                    self.pw_T_base_pos,

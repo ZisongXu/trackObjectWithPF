@@ -11,7 +11,7 @@ class InitialRealworldModel():
         self.p_visualisation = p_visualisation
         
     def initial_robot(self,robot_pos,robot_orientation = [0,0,0,1]):
-        #robot_orientation = p_visualisation.getQuaternionFromEuler(robot_euler)
+        # robot_orientation = p_visualisation.getQuaternionFromEuler(robot_euler)
         real_robot_id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
                                                       robot_pos,
                                                       robot_orientation,
@@ -23,7 +23,7 @@ class InitialRealworldModel():
         return real_robot_id
     
     def initial_target_object(self,object_pos,object_orientation = [0,0,0,1]):
-        #object_orientation = p_visualisation.getQuaternionFromEuler(object_euler)
+        # object_orientation = p_visualisation.getQuaternionFromEuler(object_euler)
         if self.object_cracker_flag == True:
             real_object_id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_obj_small_hor.urdf"),
                                                            object_pos,

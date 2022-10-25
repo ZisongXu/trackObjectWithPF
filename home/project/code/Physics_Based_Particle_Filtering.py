@@ -436,11 +436,13 @@ class PFMove():
             nois_obj_pos_y = nois_obj_pos[1]
             nois_obj_pos_z = nois_obj_pos[2]
             mean = 0
+            # position weight
             dis_x = abs(particle_x-nois_obj_pos_x)
             dis_y = abs(particle_y-nois_obj_pos_y)
             dis_z = abs(particle_z-nois_obj_pos_z)
             dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
             weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
+            # rotation weight
             nois_obj_ang = [nois_obj_pose[3],nois_obj_pose[4],nois_obj_pose[5]]
             par_ang = [particle_x_ang,particle_y_ang,particle_z_ang]
             nois_obj_ori = p_visualisation.getQuaternionFromEuler(nois_obj_ang) # pybullet x,y,z,w
@@ -664,14 +666,10 @@ class PFMove():
     def compute_transformation_matrix(self, init_robot_pos,init_robot_ori,init_object_pos,init_object_ori):
         robot_transformation_matrix = transformations.quaternion_matrix(init_robot_ori)
         ow_T_robot = self.rotation_4_4_to_transformation_4_4(robot_transformation_matrix,init_robot_pos)
-        #print("ow_T_robot:",ow_T_robot)
         object_transformation_matrix = transformations.quaternion_matrix(init_object_ori)
         ow_T_object = self.rotation_4_4_to_transformation_4_4(object_transformation_matrix,init_object_pos)
-        #print("ow_T_object:",ow_T_object)
         robot_T_ow = np.linalg.inv(ow_T_robot)
         robot_T_object = np.dot(robot_T_ow,ow_T_object)
-        #print("robot_T_object:")
-        #print(robot_T_object)
         return robot_T_object
 
     def rotation_4_4_to_transformation_4_4(self, rotation_4_4,pos):
@@ -689,26 +687,21 @@ class PFMoveCV():
         self.particle_no_visual_id_collection_CV = copy.deepcopy(initial_parameter.particle_no_visual_id_collection_CV)
         self.pybullet_env_id_collection_CV = copy.deepcopy(initial_parameter.pybullet_particle_env_collection_CV)
         self.particle_with_visual_id_collection_CV = copy.deepcopy(initial_parameter.particle_with_visual_id_collection_CV)
-
         self.object_estimate_pose_x = []
         self.object_estimate_pose_y = []
         self.object_real_____pose_x = []
         self.object_real_____pose_y = []
-
         self.noise_object_pos = []
         self.noise_object_ang = []
         self.noise_object_pose = []
 
     #new structure
     def real_robot_control_CV(self,opti_obj_pos_cur,opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur,do_obs_update):
-        #Cheat
         self.update_particle_filter_CV(opti_obj_pos_cur,
                                        opti_obj_ori_cur,
                                        nois_obj_pos_cur,
                                        nois_obj_ang_cur,
                                        do_obs_update)
-        # if Flag is False:
-        #     return False
 
     def compute_pos_err_bt_2_points(self,pos1,pos2):
         x_d = pos1[0]-pos2[0]
@@ -717,43 +710,38 @@ class PFMoveCV():
         distance = math.sqrt(x_d ** 2 + y_d ** 2 + z_d ** 2)
         return distance
 
-    #executed_control
+    # executed_control
     def update_particle_filter_CV(self, opti_obj_pos_cur, opti_obj_ori_cur,nois_obj_pos_cur,nois_obj_ang_cur,do_obs_update):
         global flag_record_CVPF
         global flag_record
-        t1 = time.time()
+        # motion model
         self.motion_update_CV(nois_obj_ang_cur)
-        t2 = time.time()
+        # observation model
         if do_obs_update:
             self.observation_update_CV(nois_obj_pos_cur,nois_obj_ang_cur)
-            
         # Compute mean of particles
         estimated_object_pose_CV = self.compute_estimate_pos_of_object(self.particle_cloud_CV)
         estimated_object_pos_CV = [estimated_object_pose_CV[0],estimated_object_pose_CV[1],estimated_object_pose_CV[2]]
         estimated_object_ang_CV = [estimated_object_pose_CV[3],estimated_object_pose_CV[4],estimated_object_pose_CV[5]]
         estimated_object_ori_CV = p_visualisation.getQuaternionFromEuler(estimated_object_ang_CV)
         boss_est_pose_CVPF.append(estimated_object_pose_CV)
+        # display estimated object
         if visualisation_flag == True and visualisation_mean == True:
             self.display_estimated_object_in_visual_model(estimated_object_id_CV, estimated_object_pos_CV,estimated_object_ang_CV)
+        # display particles
         if visualisation_particle_flag == True:
             self.display_particle_in_visual_model_CV(self.particle_cloud_CV)
-        # if optitrack_working_flag == True:
+        # compute error and write down to the file
         err_opti_CVPF_pos = compute_pos_err_bt_2_points(estimated_object_pos_CV,opti_obj_pos_cur)
         err_opti_CVPF_ang = compute_ang_err_bt_2_points(estimated_object_ori_CV,opti_obj_ori_cur)
         err_opti_CVPF_ang = angle_correction(err_opti_CVPF_ang)
-
-        # if t_decide_write > 1:
         t_before_record = time.time()
-        # if optitrack_working_flag == True:
         boss_CVPF_err_pos_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_pos, 'CVPF']
         boss_CVPF_err_ang_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_ang, 'CVPF']
         boss_err_pos_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_pos, 'CVPF']
         boss_err_ang_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_ang, 'CVPF']
         flag_record = flag_record + 1
         flag_record_CVPF = flag_record_CVPF + 1
-
-        # print debug info of all particles here
-        #input('hit enter to continue')
         return
 
     def isAnyParticleInContact(self):
@@ -781,8 +769,8 @@ class PFMoveCV():
                 
         return False
 
-
     def motion_update_CV(self, nois_obj_ang_cur):
+        # t0, t1: use observation data (obs0, obs1) to update motion
         if flag_update_num_CV < 2:
             length = len(boss_obs_pose_CVPF)
             obs_curr_pose = copy.deepcopy(boss_obs_pose_CVPF[length-1])
@@ -796,6 +784,7 @@ class PFMoveCV():
             obsO_T_obsN = self.compute_transformation_matrix(obs_last_pos, obs_last_ori, obs_curr_pos, obs_curr_ori)
             parO_T_parN = copy.deepcopy(obsO_T_obsN)
             self.update_particle_in_motion_model_CV(parO_T_parN, nois_obj_ang_cur)
+        # after t1: use (est0, est1) to update motion
         else:
             length = len(boss_est_pose_CVPF)
             est_curr_pose = copy.deepcopy(boss_est_pose_CVPF[length-1])
@@ -809,7 +798,6 @@ class PFMoveCV():
             estO_T_estN = self.compute_transformation_matrix(est_last_pos, est_last_ori, est_curr_pos, est_curr_ori)
             parO_T_parN = copy.deepcopy(estO_T_estN)
             self.update_particle_in_motion_model_CV(parO_T_parN, nois_obj_ang_cur)
-        #input("test")
         return
 
     def observation_update_CV(self,nois_obj_pos_cur,nois_obj_ang_cur):
@@ -820,11 +808,9 @@ class PFMoveCV():
         nois_obj_y_ang = nois_obj_ang_cur[1]
         nois_obj_z_ang = nois_obj_ang_cur[2]
         nois_obj_pose = [nois_obj_x,nois_obj_y,nois_obj_z,nois_obj_x_ang,nois_obj_y_ang,nois_obj_z_ang]
-
         self.noise_object_pos = [nois_obj_x,nois_obj_y,nois_obj_z]
         self.noise_object_ang = [nois_obj_x_ang,nois_obj_y_ang,nois_obj_z_ang]
         self.noise_object_pose = [nois_obj_x,nois_obj_y,nois_obj_z,nois_obj_x_ang,nois_obj_y_ang,nois_obj_z_ang]
-
         for index,particle in enumerate(self.particle_cloud_CV):
             particle_x = particle.x
             particle_y = particle.y
@@ -832,32 +818,23 @@ class PFMoveCV():
             particle_x_ang = particle.x_angle
             particle_y_ang = particle.y_angle
             particle_z_ang = particle.z_angle
-
             nois_obj_pos = [nois_obj_pose[0],nois_obj_pose[1],nois_obj_pose[2]]
             nois_obj_pos_x = nois_obj_pos[0]
             nois_obj_pos_y = nois_obj_pos[1]
             nois_obj_pos_z = nois_obj_pos[2]
             mean = 0
+            # position weight
             dis_x = abs(particle_x-nois_obj_pos_x)
             dis_y = abs(particle_y-nois_obj_pos_y)
             dis_z = abs(particle_z-nois_obj_pos_z)
-            # sigma_x = boss_sigma_obs_x
-            # sigma_y = boss_sigma_obs_y
-            # sigma_z = boss_sigma_obs_z
-            # weight_x = self.normal_distribution(dis_x, mean, sigma_x)
-            # weight_y = self.normal_distribution(dis_y, mean, sigma_y)
-            # weight_z = self.normal_distribution(dis_z, mean, sigma_z)
-            #weight_pos = weight_x + weight_y + weight_z
             dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
             weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
-
-            #pybullet x,y,z,w
+            # rotation weight
             nois_obj_ang = [nois_obj_pose[3],nois_obj_pose[4],nois_obj_pose[5]]
             par_ang = [particle_x_ang,particle_y_ang,particle_z_ang]
-            nois_obj_ori = p_visualisation.getQuaternionFromEuler(nois_obj_ang)
+            nois_obj_ori = p_visualisation.getQuaternionFromEuler(nois_obj_ang) # pybullet x,y,z,w
             par_ori = p_visualisation.getQuaternionFromEuler(par_ang)
-            #w,x,y,z
-            nois_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3])
+            nois_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3]) # w,x,y,z
             par_quat = Quaternion(x=par_ori[0],y=par_ori[1],z=par_ori[2],w=par_ori[3])
             err_bt_par_dope = par_quat * nois_obj_quat.inverse
             cos_theta_over_2 = err_bt_par_dope.w
@@ -867,16 +844,16 @@ class PFMoveCV():
             weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
             weight = weight_xyz * weight_ang
             particle.w = weight
-
+        # old resample function
         # Flag = self.normalize_particles_CV()
         # self.resample_particles_CV()
+        # new resample function
         self.resample_particles_CV_update()
         self.set_paticle_in_each_sim_env_CV()
         return
 
     def update_particle_in_motion_model_CV(self, parO_T_parN, nois_obj_ang_cur):
         for index, pybullet_env in enumerate(self.pybullet_env_id_collection_CV):
-            # print("=================================================")
             pw_T_parO_x = self.particle_cloud_CV[index].x
             pw_T_parO_y = self.particle_cloud_CV[index].y
             pw_T_parO_z = self.particle_cloud_CV[index].z
@@ -886,33 +863,21 @@ class PFMoveCV():
             pw_T_parO_z_ang = self.particle_cloud_CV[index].z_angle
             pw_T_parO_ang = [pw_T_parO_x_ang,pw_T_parO_y_ang,pw_T_parO_z_ang]
             pw_T_parO_ori = pybullet_env.getQuaternionFromEuler(pw_T_parO_ang)
-
             pw_T_parO_3_3 = transformations.quaternion_matrix(pw_T_parO_ori)
             pw_T_parO = self.rotation_4_4_to_transformation_4_4(pw_T_parO_3_3,pw_T_parO_pos)
             pw_T_parN = np.dot(pw_T_parO,parO_T_parN)
             pw_T_parN_pos = [pw_T_parN[0][3], pw_T_parN[1][3], pw_T_parN[2][3]]
-            pw_T_parN_ori = transformations.quaternion_from_matrix(pw_T_parN)
-            pw_T_parN_ang = pybullet_env.getEulerFromQuaternion(pw_T_parN_ori)
-            #test
-            par_curr_pos = copy.deepcopy(pw_T_parN_pos)
-            par_curr_ori = copy.deepcopy(pw_T_parN_ori)
-            par_last_pos = copy.deepcopy(pw_T_parO_pos)
-            par_last_ori = copy.deepcopy(pw_T_parO_ori)
-            test_parO_T_parN = self.compute_transformation_matrix(par_last_pos, par_last_ori, par_curr_pos, par_curr_ori)
-            # print("test_parO_T_parN"+str(index+1)+":")
-            # print(test_parO_T_parN)
+            # pw_T_parN_ori = transformations.quaternion_from_matrix(pw_T_parN)
+            # pw_T_parN_ang = pybullet_env.getEulerFromQuaternion(pw_T_parN_ori)
 
             # add noise on particle filter
             normal_x = self.add_noise_2_par(pw_T_parN_pos[0])
             normal_y = self.add_noise_2_par(pw_T_parN_pos[1])
             normal_z = self.add_noise_2_par(pw_T_parN_pos[2])
-            # normal_x = pw_T_parN_pos[0]
-            # normal_y = pw_T_parN_pos[1]
-            # normal_z = pw_T_parN_pos[2]
 
             nois_obj_ori_cur = pybullet_env.getQuaternionFromEuler(nois_obj_ang_cur)
-            quat = copy.deepcopy(nois_obj_ori_cur)#x,y,z,w
-            quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3])#w,x,y,z
+            quat = copy.deepcopy(nois_obj_ori_cur) # x,y,z,w
+            quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3]) # w,x,y,z
             random_dir = random.uniform(0, 2*math.pi)
             z_axis = random.uniform(-1,1)
             x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
@@ -922,19 +887,15 @@ class PFMoveCV():
             x_quat = math.sin(angle_noise/2.0) * x_axis
             y_quat = math.sin(angle_noise/2.0) * y_axis
             z_quat = math.sin(angle_noise/2.0) * z_axis
-            ###nois_quat(w,x,y,z); new_quat(w,x,y,z)
+            ### nois_quat(w,x,y,z); new_quat(w,x,y,z)
             nois_quat = Quaternion(x=x_quat,y=y_quat,z=z_quat,w=w_quat)
             new_quat = nois_quat * quat_QuatStyle
-            ###pb_quat(x,y,z,w)
+            ### pb_quat(x,y,z,w)
             pb_quat = [new_quat[1], new_quat[2], new_quat[3], new_quat[0]]
             new_angle = p_visualisation.getEulerFromQuaternion(pb_quat)
-
             x_angle = new_angle[0]
             y_angle = new_angle[1]
             z_angle = new_angle[2]
-            # x_angle = pw_T_parN_ang[0]
-            # y_angle = pw_T_parN_ang[1]
-            # z_angle = pw_T_parN_ang[2]
 
             self.particle_cloud_CV[index].x = normal_x
             self.particle_cloud_CV[index].y = normal_y
@@ -942,7 +903,6 @@ class PFMoveCV():
             self.particle_cloud_CV[index].x_angle = x_angle
             self.particle_cloud_CV[index].y_angle = y_angle
             self.particle_cloud_CV[index].z_angle = z_angle
-
 
     def get_item_pos(self,pybullet_env,item_id):
         item_info = pybullet_env.getBasePositionAndOrientation(item_id)
@@ -1023,8 +983,6 @@ class PFMoveCV():
                 particle_array_list.append(position_index)
             elif w_sum == 0:
                 particle_array_list.append(index)
-        # print("w_sum:", w_sum)
-        # print("particle_array_list:", particle_array_list)
         for index,i in enumerate(particle_array_list):
             particle = Particle(self.particle_cloud_CV[i].x,
                                 self.particle_cloud_CV[i].y,
@@ -1042,6 +1000,7 @@ class PFMoveCV():
                 return index - 1
             else:
                 continue
+            
     def set_paticle_in_each_sim_env_CV(self):
         for index, pybullet_env in enumerate(self.pybullet_env_id_collection_CV):
             visual_particle_pos = [self.particle_cloud_CV[index].x, self.particle_cloud_CV[index].y, self.particle_cloud_CV[index].z]
@@ -1097,7 +1056,6 @@ class PFMoveCV():
             qws.append(particle.w)
             quaternions.append([q[0], q[1], q[2], q[3]])
             w_set = w_set + particle.w
-        # q = average_quaternions(np.array(quaternions))
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
         x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[0], q[1], q[2], q[3]])
         return x_set / w_set, y_set / w_set, z_set / w_set, x_angle, y_angle, z_angle
@@ -1116,8 +1074,6 @@ class PFMoveCV():
         rotation_4_4[1][3] = pos[1]
         rotation_4_4[2][3] = pos[2]
         return rotation_4_4
-
-
 
 # function independent of Class
 # add position into transformation matrix

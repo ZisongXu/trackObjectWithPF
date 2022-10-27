@@ -18,9 +18,10 @@ We propose a method to track the pose of an object over time, by using the image
 
 
 # Quick Setup:
-This project uses singularity container to support all the code:
+This project uses singularity container to support all the code: Please run ```./build.sh``` in Ubuntu20 terminal to build the container, and then run ```./run.sh``` to run the container.
 
-```./build.sh``` 
+# Run Code
+In the container:
 
-```./run.sh```
+```[TrackObjectWithPF] Singularity> ~/project/code $ python3 Physics_Based_Particle_Filtering.py```
 

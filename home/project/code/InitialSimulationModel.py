@@ -39,10 +39,11 @@ from quaternion_averaging import weightedAverageQuaternions
 from Particle import Particle
 #Class of initialize the simulation model
 class InitialSimulationModel():
-    def __init__(self, particle_num, real_robot_start_pos, real_robot_start_ori, noise_obj_pos, noise_obj_ang, pw_T_object_ori_dope,
+    def __init__(self, object_num, particle_num, real_robot_start_pos, real_robot_start_ori, noise_obj_pos, noise_obj_ang, pw_T_object_ori_dope,
                  pw_T_base_pos, pw_T_base_ori,
                  boss_sigma_obs_x, boss_sigma_obs_y, boss_sigma_obs_z, boss_sigma_obs_ang_init, p_visualisation,
                  update_style_flag, change_sim_time, task_flag, object_cracker_flag, object_soup_flag):
+        self.object_num = object_num
         self.particle_num = particle_num
         self.noise_obj_pos = noise_obj_pos
         self.noise_obj_ang = noise_obj_ang

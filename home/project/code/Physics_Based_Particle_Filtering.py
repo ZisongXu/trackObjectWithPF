@@ -663,11 +663,11 @@ class PFMove():
         x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[0], q[1], q[2], q[3]])
         return x_set/w_set, y_set/w_set, z_set/w_set, x_angle, y_angle, z_angle
 
-    def compute_transformation_matrix(self, init_robot_pos,init_robot_ori,init_object_pos,init_object_ori):
-        robot_transformation_matrix = transformations.quaternion_matrix(init_robot_ori)
-        ow_T_robot = self.rotation_4_4_to_transformation_4_4(robot_transformation_matrix,init_robot_pos)
-        object_transformation_matrix = transformations.quaternion_matrix(init_object_ori)
-        ow_T_object = self.rotation_4_4_to_transformation_4_4(object_transformation_matrix,init_object_pos)
+    def compute_transformation_matrix(self, opti_T_robot_opti_pos, opti_T_robot_opti_ori, opti_T_object_opti_pos, opti_T_object_opti_ori):
+        robot_transformation_matrix = transformations.quaternion_matrix(opti_T_robot_opti_ori)
+        ow_T_robot = self.rotation_4_4_to_transformation_4_4(robot_transformation_matrix, opti_T_robot_opti_pos)
+        object_transformation_matrix = transformations.quaternion_matrix(opti_T_object_opti_ori)
+        ow_T_object = self.rotation_4_4_to_transformation_4_4(object_transformation_matrix,opti_T_object_opti_pos)
         robot_T_ow = np.linalg.inv(ow_T_robot)
         robot_T_object = np.dot(robot_T_ow,ow_T_object)
         return robot_T_object
@@ -1110,11 +1110,11 @@ def compute_ang_err_bt_2_points(object1_ori, object2_ori):
     theta = theta_over_2 * 2
     return theta
 # compute the transformation matrix represent that the pose of object in the robot world
-def compute_transformation_matrix(init_robot_pos, init_robot_ori, init_object_pos, init_object_ori):
-    robot_transformation_matrix = transformations.quaternion_matrix(init_robot_ori)
-    ow_T_robot = rotation_4_4_to_transformation_4_4(robot_transformation_matrix, init_robot_pos)
-    object_transformation_matrix = transformations.quaternion_matrix(init_object_ori)
-    ow_T_object = rotation_4_4_to_transformation_4_4(object_transformation_matrix, init_object_pos)
+def compute_transformation_matrix(opti_T_robot_opti_pos, opti_T_robot_opti_ori, opti_T_object_opti_pos, opti_T_object_opti_ori):
+    robot_transformation_matrix = transformations.quaternion_matrix(opti_T_robot_opti_ori)
+    ow_T_robot = rotation_4_4_to_transformation_4_4(robot_transformation_matrix, opti_T_robot_opti_pos)
+    object_transformation_matrix = transformations.quaternion_matrix(opti_T_object_opti_ori)
+    ow_T_object = rotation_4_4_to_transformation_4_4(object_transformation_matrix, opti_T_object_opti_pos)
     robot_T_ow = np.linalg.inv(ow_T_robot)
     robot_T_object = np.dot(robot_T_ow, ow_T_object)
     return robot_T_object
@@ -1275,6 +1275,7 @@ if __name__ == '__main__':
     run_PBPF_flag = True
     run_CVPF_flag = False
     # scene
+    OBJECT_NUM = 2
     task_flag = "1"
     # update mode (pose/time)
     update_style_flag = "time"
@@ -1285,9 +1286,9 @@ if __name__ == '__main__':
         particle_num = 150
     elif update_style_flag == "time":
         if run_PBPF_flag == True:
-            particle_num = 70
+            particle_num = 10
         elif run_CVPF_flag == True:
-            particle_num = 200
+            particle_num = 10
     print("This is "+update_style_flag+" update in scene"+task_flag)    
     # some parameters
     d_thresh = 0.005
@@ -1370,10 +1371,10 @@ if __name__ == '__main__':
     # give some time to update the data
     time.sleep(0.5)
     if optitrack_working_flag == True:
-        init_robot_pos = ros_listener.robot_pos
-        init_robot_ori = ros_listener.robot_ori
-        init_object_pos = ros_listener.object_pos
-        init_object_ori = ros_listener.object_ori
+        opti_T_robot_opti_pos = ros_listener.robot_pos
+        opti_T_robot_opti_ori = ros_listener.robot_ori
+        opti_T_object_opti_pos = ros_listener.object_pos
+        opti_T_object_opti_ori = ros_listener.object_ori
         if task_flag == "4":
             base_of_cheezit_pos = ros_listener.base_pos
             base_of_cheezit_ori = ros_listener.base_ori
@@ -1384,7 +1385,7 @@ if __name__ == '__main__':
     pw_T_robot = rotation_4_4_to_transformation_4_4(pw_T_robot_3_3,pybullet_robot_pos)
     # compute transformation matrix (OptiTrack)
     if optitrack_working_flag == True:
-        robot_T_object = compute_transformation_matrix(init_robot_pos,init_robot_ori,init_object_pos,init_object_ori)
+        robot_T_object = compute_transformation_matrix(opti_T_robot_opti_pos, opti_T_robot_opti_ori, opti_T_object_opti_pos, opti_T_object_opti_ori)
         pw_T_object = np.dot(pw_T_robot,robot_T_object)
         pw_T_object_pos = [pw_T_object[0][3],pw_T_object[1][3],pw_T_object[2][3]]
         pw_T_object_ori = transformations.quaternion_from_matrix(pw_T_object)
@@ -1412,7 +1413,7 @@ if __name__ == '__main__':
         pw_T_base_pos = [0,0,0]
         pw_T_base_ori = [0,0,0,1]
         if task_flag == "4":
-            robot_T_base = compute_transformation_matrix(init_robot_pos, init_robot_ori, base_of_cheezit_pos, base_of_cheezit_ori)
+            robot_T_base = compute_transformation_matrix(opti_T_robot_opti_pos, opti_T_robot_opti_ori, base_of_cheezit_pos, base_of_cheezit_ori)
             # input('Press [ENTER] to compute the pose of object in the pybullet world')
             # pw_T_robot_3_3 = transformations.quaternion_matrix(pybullet_robot_ori)
             # pw_T_robot = rotation_4_4_to_transformation_4_4(pw_T_robot_3_3, pybullet_robot_pos)
@@ -1473,7 +1474,7 @@ if __name__ == '__main__':
     #initialize the real robot in the pybullet
     real_robot_id = real_world_object.initial_robot(robot_pos = pybullet_robot_pos,robot_orientation = pybullet_robot_ori)
     # initialize the real object in the pybullet
-    # real_object_id = real_world_object.initial_target_object(object_pos = pw_T_object_pos,object_orientation = pw_T_object_ori)
+    real_object_id = real_world_object.initial_target_object(object_pos = pw_T_object_pos,object_orientation = pw_T_object_ori)
     if optitrack_working_flag == True:
         contact_particle_id = real_world_object.initial_target_object(object_pos = pw_T_object_pos,object_orientation = pw_T_object_ori)
     elif optitrack_working_flag == False:
@@ -1482,7 +1483,8 @@ if __name__ == '__main__':
     franka_robot = Franka_robot(real_robot_id, p_visualisation)
     # initialize sim world (particles)
     # initial_parameter = InitialSimulationModel(particle_num, pybullet_robot_pos, pybullet_robot_ori, dope_obj_pos_init, dope_obj_ang_init, dope_obj_ori_init)
-    initial_parameter = InitialSimulationModel(particle_num, pybullet_robot_pos, pybullet_robot_ori, dope_obj_pos_init, dope_obj_ang_init, dope_obj_ori_init,
+    initial_parameter = InitialSimulationModel(OBJECT_NUM, particle_num, 
+                                               pybullet_robot_pos, pybullet_robot_ori, dope_obj_pos_init, dope_obj_ang_init, dope_obj_ori_init,
                                                pw_T_base_pos, pw_T_base_ori,
                                                boss_sigma_obs_x, boss_sigma_obs_y, boss_sigma_obs_z, boss_sigma_obs_ang_init, p_visualisation,
                                                update_style_flag, change_sim_time, task_flag, object_cracker_flag, object_soup_flag)

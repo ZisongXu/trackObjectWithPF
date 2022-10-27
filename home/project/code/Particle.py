@@ -5,9 +5,13 @@ class Particle(object):
         self.x = x
         self.y = y
         self.z = z
+        # self.angle = angle
+        
         self.x_angle = x_angle
         self.y_angle = y_angle
         self.z_angle = z_angle
+        # self.w_ori = w_ori
+        
         self.w = w
         self.index = index
         self.linearVelocity = linearVelocity

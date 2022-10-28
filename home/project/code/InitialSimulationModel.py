@@ -39,14 +39,13 @@ from quaternion_averaging import weightedAverageQuaternions
 from Particle import Particle
 #Class of initialize the simulation model
 class InitialSimulationModel():
-    def __init__(self, object_num, particle_num, real_robot_start_pos, real_robot_start_ori, noise_obj_pos, noise_obj_ang, pw_T_object_ori_dope,
+    def __init__(self, object_num, particle_num, real_robot_start_pos, real_robot_start_ori, noise_obj_pos, pw_T_object_ori_dope,
                  pw_T_base_pos, pw_T_base_ori,
                  boss_sigma_obs_x, boss_sigma_obs_y, boss_sigma_obs_z, boss_sigma_obs_ang_init, p_visualisation,
-                 update_style_flag, change_sim_time, task_flag, object_cracker_flag, object_soup_flag):
+                 update_style_flag, change_sim_time, task_flag, object_cracker_flag, object_soup_flag=False):
         self.object_num = object_num
         self.particle_num = particle_num
         self.noise_obj_pos = noise_obj_pos
-        self.noise_obj_ang = noise_obj_ang
         self.real_robot_start_pos = real_robot_start_pos
         self.real_robot_start_ori = real_robot_start_ori
         self.pw_T_object_ori_dope = pw_T_object_ori_dope
@@ -57,7 +56,6 @@ class InitialSimulationModel():
         self.fake_robot_id_collection = []
         self.particle_no_visual_id_collection = []
         self.particle_with_visual_id_collection =[]
-        self.noise_object_pose = []
         self.particle_cloud_CV = []
         self.pybullet_particle_env_collection_CV = []
         self.particle_no_visual_id_collection_CV = []
@@ -74,28 +72,19 @@ class InitialSimulationModel():
         self.object_soup_flag = object_soup_flag
         
     def initial_particle(self):
-        noise_obj_x = copy.deepcopy(self.noise_obj_pos[0])
-        noise_obj_y = copy.deepcopy(self.noise_obj_pos[1])
-        noise_obj_z = copy.deepcopy(self.noise_obj_pos[2])
-        noise_obj_pos = [noise_obj_x,noise_obj_y,noise_obj_z]
-        noise_obj_x_ang = copy.deepcopy(self.noise_obj_ang[0])
-        noise_obj_y_ang = copy.deepcopy(self.noise_obj_ang[1])
-        noise_obj_z_ang = copy.deepcopy(self.noise_obj_ang[2])
-        noise_obj_ang = [noise_obj_x_ang,noise_obj_y_ang,noise_obj_z_ang]
-        self.noise_object_pose = [noise_obj_x,noise_obj_y,noise_obj_z,noise_obj_x_ang,noise_obj_y_ang,noise_obj_z_ang]
         for i in range(self.particle_num):
-            x,y,z,x_angle,y_angle,z_angle,new_quat = self.generate_random_pose(self.noise_object_pose,self.pw_T_object_ori_dope)
+            x,y,z,x_angle,y_angle,z_angle,new_quat = self.generate_random_pose(self.noise_obj_pos, self.pw_T_object_ori_dope)
             w = 1/self.particle_num
             particle = Particle(x,y,z,x_angle,y_angle,z_angle,w,index=i)
             self.particle_cloud.append(particle)
 
-    def generate_random_pose(self,noise_object_pose, pw_T_object_ori_dope):
-        angle = copy.deepcopy([noise_object_pose[3],noise_object_pose[4],noise_object_pose[5]])
+    def generate_random_pose(self,noise_object_pos, pw_T_object_ori_dope):
+        position = copy.deepcopy(noise_object_pos)
         quat = copy.deepcopy(pw_T_object_ori_dope)#x,y,z,w
         quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3])#w,x,y,z
-        x = self.add_noise_to_init_par(noise_object_pose[0],self.boss_sigma_obs_x)
-        y = self.add_noise_to_init_par(noise_object_pose[1],self.boss_sigma_obs_y)
-        z = self.add_noise_to_init_par(noise_object_pose[2],self.boss_sigma_obs_z)
+        x = self.add_noise_to_init_par(position[0], self.boss_sigma_obs_x)
+        y = self.add_noise_to_init_par(position[1], self.boss_sigma_obs_y)
+        z = self.add_noise_to_init_par(position[2], self.boss_sigma_obs_z)
         random_dir = random.uniform(0, 2*math.pi)
         z_axis = random.uniform(-1,1)
         x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
@@ -132,8 +121,7 @@ class InitialSimulationModel():
             quaternions.append([q[0], q[1], q[2], q[3]])
             w_set = w_set + particle.w
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
-        x_angle, y_angle, z_angle = self.p_visualisation.getEulerFromQuaternion([q[0], q[1], q[2], q[3]])
-        return x_set/w_set,y_set/w_set,z_set/w_set,x_angle,y_angle,z_angle
+        return x_set/w_set, y_set/w_set, z_set/w_set, q[0], q[1], q[2], q[3]
 
     def display_particle(self):
         for index, particle in enumerate(self.particle_cloud):
@@ -214,7 +202,7 @@ class InitialSimulationModel():
                 for contact in contacts:
                     contact_dis = contact[8]
                     if contact_dis < -0.001:
-                        Px,Py,Pz,Px_angle,Py_angle,Pz_angle,P_quat = self.generate_random_pose(self.noise_object_pose,self.pw_T_object_ori_dope)
+                        Px,Py,Pz,Px_angle,Py_angle,Pz_angle,P_quat = self.generate_random_pose(self.noise_obj_pos,self.pw_T_object_ori_dope)
                         pybullet_simulation_env.resetBasePositionAndOrientation(particle_no_visual_id,
                                                                                 [Px,Py,Pz],
                                                                                 P_quat)
@@ -230,7 +218,7 @@ class InitialSimulationModel():
                     break
             self.particle_no_visual_id_collection.append(particle_no_visual_id)
         obj_est_set = self.compute_estimate_pos_of_object(self.particle_cloud)
-        return obj_est_set[0],obj_est_set[1],obj_est_set[2],obj_est_set[3],obj_est_set[4],obj_est_set[5]
+        return obj_est_set[0], obj_est_set[1], obj_est_set[2], obj_est_set[3], obj_est_set[4], obj_est_set[5], obj_est_set[6]
     
     def initial_and_set_simulation_env_CV(self,joint_of_robot):
         self.particle_cloud_CV = copy.deepcopy(self.particle_cloud)
@@ -253,7 +241,7 @@ class InitialSimulationModel():
                                                                         particle_no_visual_start_orientation)
             self.particle_no_visual_id_collection_CV.append(particle_no_visual_id)
         obj_est_set_CV = self.compute_estimate_pos_of_object(self.particle_cloud_CV)
-        return obj_est_set_CV[0],obj_est_set_CV[1],obj_est_set_CV[2],obj_est_set_CV[3],obj_est_set_CV[4],obj_est_set_CV[5]
+        return obj_est_set_CV[0], obj_est_set_CV[1], obj_est_set_CV[2], obj_est_set_CV[3], obj_est_set_CV[4], obj_est_set_CV[5], obj_est_set_CV[6]
 
     def set_sim_robot_JointPosition(self,pybullet_simulation_env,robot, position):
         num_joints = 9

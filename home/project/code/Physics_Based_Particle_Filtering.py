@@ -276,7 +276,7 @@ class PFMove():
             #         return True
         return False
     
-    # update particle cloud
+    # update particle cloud particle angle
     def update_partcile_cloud_pose_PB(self, index, x, y, z, x_angle, y_angle, z_angle, linearVelocity, angularVelocity):
         self.particle_cloud[index].x = x
         self.particle_cloud[index].y = y
@@ -424,7 +424,7 @@ class PFMove():
         test_ori = p_visualisation.getQuaternionFromEuler(test_euler) # pybullet x,y,z,w
         print(nois_obj_ori_cur)
         print(test_ori)
-        for index,particle in enumerate(self.particle_cloud):
+        for index,particle in enumerate(self.particle_cloud): # particle angle
             particle_x = particle.x
             particle_y = particle.y
             particle_z = particle.z
@@ -536,7 +536,7 @@ class PFMove():
             else:
                 particle.w = 1/particle_num
                 
-    # old
+    # old particle angle
     def resample_particles(self):
         particles_w = []
         newParticles = []
@@ -578,7 +578,7 @@ class PFMove():
                 particle_array_list.append(position_index)
             else:
                 particle_array_list.append(index)
-        for index,i in enumerate(particle_array_list):
+        for index,i in enumerate(particle_array_list): # particle angle
             particle = Particle(self.particle_cloud[i].x,
                                 self.particle_cloud[i].y,
                                 self.particle_cloud[i].z,
@@ -598,7 +598,7 @@ class PFMove():
             else:
                 continue
                
-    def set_paticle_in_each_sim_env(self):
+    def set_paticle_in_each_sim_env(self): # particle angle
         for index, pybullet_env in enumerate(self.pybullet_env_id_collection):
             visual_particle_pos = [self.particle_cloud[index].x, self.particle_cloud[index].y, self.particle_cloud[index].z]
             visual_particle_angle = [self.particle_cloud[index].x_angle, self.particle_cloud[index].y_angle, self.particle_cloud[index].z_angle]
@@ -608,7 +608,7 @@ class PFMove():
                                                          visual_particle_orientation)
         return
 
-    def display_particle_in_visual_model_PB(self, particle_cloud):
+    def display_particle_in_visual_model_PB(self, particle_cloud): # particle angle
         for index, particle in enumerate(particle_cloud):
             visual_particle_pos = [particle.x, particle.y, particle.z]
             visual_particle_ang = [particle.x_angle, particle.y_angle, particle.z_angle]
@@ -638,7 +638,7 @@ class PFMove():
         plt.close()
         return
 
-    def compute_estimate_pos_of_object(self, particle_cloud):
+    def compute_estimate_pos_of_object(self, particle_cloud): # particle angle
         x_set = 0
         y_set = 0
         z_set = 0
@@ -687,11 +687,10 @@ class PFMoveCV():
         self.object_real_____pose_y = []
 
     #new structure
-    def real_robot_control_CV(self, opti_obj_pos_cur, opti_obj_ori_cur, nois_obj_pos_cur, nois_obj_ang_cur, nois_obj_ori_cur, do_obs_update):
+    def real_robot_control_CV(self, opti_obj_pos_cur, opti_obj_ori_cur, nois_obj_pos_cur, nois_obj_ori_cur, do_obs_update):
         self.update_particle_filter_CV(opti_obj_pos_cur,
                                        opti_obj_ori_cur,
                                        nois_obj_pos_cur,
-                                       nois_obj_ang_cur,
                                        nois_obj_ori_cur,
                                        do_obs_update)
 
@@ -703,29 +702,28 @@ class PFMoveCV():
         return distance
 
     # executed_control
-    def update_particle_filter_CV(self, opti_obj_pos_cur, opti_obj_ori_cur, nois_obj_pos_cur, nois_obj_ang_cur, nois_obj_ori_cur, do_obs_update):
+    def update_particle_filter_CV(self, opti_obj_pos_cur, opti_obj_ori_cur, nois_obj_pos_cur, nois_obj_ori_cur, do_obs_update):
         global flag_record_CVPF
         global flag_record
         # motion model
         self.motion_update_CV(nois_obj_ori_cur)
         # observation model
         if do_obs_update:
-            self.observation_update_CV(nois_obj_pos_cur, nois_obj_ang_cur, nois_obj_ori_cur)
+            self.observation_update_CV(nois_obj_pos_cur, nois_obj_ori_cur)
         # Compute mean of particles
         estimated_object_pose_CV = self.compute_estimate_pos_of_object(self.particle_cloud_CV)
-        estimated_object_pos_CV = [estimated_object_pose_CV[0],estimated_object_pose_CV[1],estimated_object_pose_CV[2]]
-        estimated_object_ang_CV = [estimated_object_pose_CV[3],estimated_object_pose_CV[4],estimated_object_pose_CV[5]]
-        estimated_object_ori_CV = p_visualisation.getQuaternionFromEuler(estimated_object_ang_CV)
+        estimated_object_pos_CV = [estimated_object_pose_CV[0], estimated_object_pose_CV[1], estimated_object_pose_CV[2]] # particle angle
+        estimated_object_ori_CV = [estimated_object_pose_CV[3], estimated_object_pose_CV[4], estimated_object_pose_CV[5], estimated_object_pose_CV[6]]
         boss_est_pose_CVPF.append(estimated_object_pose_CV)
         # display estimated object
         if visualisation_flag == True and visualisation_mean == True:
-            self.display_estimated_object_in_visual_model(estimated_object_id_CV, estimated_object_pos_CV,estimated_object_ang_CV)
+            self.display_estimated_object_in_visual_model(estimated_object_id_CV, estimated_object_pos_CV, estimated_object_ori_CV)
         # display particles
         if visualisation_particle_flag == True:
             self.display_particle_in_visual_model_CV(self.particle_cloud_CV)
         # compute error and write down to the file
-        err_opti_CVPF_pos = compute_pos_err_bt_2_points(estimated_object_pos_CV,opti_obj_pos_cur)
-        err_opti_CVPF_ang = compute_ang_err_bt_2_points(estimated_object_ori_CV,opti_obj_ori_cur)
+        err_opti_CVPF_pos = compute_pos_err_bt_2_points(estimated_object_pos_CV, opti_obj_pos_cur)
+        err_opti_CVPF_ang = compute_ang_err_bt_2_points(estimated_object_ori_CV, opti_obj_ori_cur)
         err_opti_CVPF_ang = angle_correction(err_opti_CVPF_ang)
         t_before_record = time.time()
         boss_CVPF_err_pos_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_pos, 'CVPF']
@@ -779,25 +777,28 @@ class PFMoveCV():
             length = len(boss_est_pose_CVPF)
             est_curr_pose = copy.deepcopy(boss_est_pose_CVPF[length-1])
             est_last_pose = copy.deepcopy(boss_est_pose_CVPF[length-2])
-            est_curr_pos = [est_curr_pose[0],est_curr_pose[1],est_curr_pose[2]]
-            est_curr_ang = [est_curr_pose[3],est_curr_pose[4],est_curr_pose[5]]
-            est_curr_ori = p_visualisation.getQuaternionFromEuler(est_curr_ang)
-            est_last_pos = [est_last_pose[0],est_last_pose[1],est_last_pose[2]]
-            est_last_ang = [est_last_pose[3],est_last_pose[4],est_last_pose[5]]
-            est_last_ori = p_visualisation.getQuaternionFromEuler(est_last_ang)
+            est_curr_pos = [est_curr_pose[0], est_curr_pose[1], est_curr_pose[2]]
+            est_curr_ori = [est_curr_pose[3], est_curr_pose[4], est_curr_pose[5], est_curr_pose[6]]
+            est_last_pos = [est_last_pose[0],est_last_pose[1], est_last_pose[2]]
+            est_last_ori = [est_last_pose[3], est_last_pose[4], est_last_pose[5], est_last_pose[6]]
             estO_T_estN = self.compute_transformation_matrix(est_last_pos, est_last_ori, est_curr_pos, est_curr_ori)
             parO_T_parN = copy.deepcopy(estO_T_estN)
             self.update_particle_in_motion_model_CV(parO_T_parN, nois_obj_ori_cur)
         return
 
-    def observation_update_CV(self,nois_obj_pos_cur, nois_obj_ang_cur, nois_obj_ori_cur):
+    def observation_update_CV(self,nois_obj_pos_cur, nois_obj_ori_cur):
         nois_obj_x = nois_obj_pos_cur[0]
         nois_obj_y = nois_obj_pos_cur[1]
         nois_obj_z = nois_obj_pos_cur[2]
-        nois_obj_x_ang = nois_obj_ang_cur[0]
-        nois_obj_y_ang = nois_obj_ang_cur[1]
-        nois_obj_z_ang = nois_obj_ang_cur[2]
-        nois_obj_pose = [nois_obj_x, nois_obj_y, nois_obj_z, nois_obj_x_ang, nois_obj_y_ang, nois_obj_z_ang]
+        nois_obj_x_ori = nois_obj_ori_cur[0]
+        nois_obj_y_ori = nois_obj_ori_cur[1]
+        nois_obj_z_ori = nois_obj_ori_cur[2]
+        nois_obj_w_ori = nois_obj_ori_cur[3]
+        nois_obj_ori = [nois_obj_x_ori, nois_obj_y_ori, nois_obj_z_ori, nois_obj_w_ori]
+#        mid_euler = p_visualisation.getEulerFromQuaternion(nois_obj_ori)
+#        print(nois_obj_ori)
+#        nois_obj_ori = p_visualisation.getQuaternionFromEuler(mid_euler) # pybullet x,y,z,w
+#        print(nois_obj_ori)
         for index,particle in enumerate(self.particle_cloud_CV):
             particle_x = particle.x
             particle_y = particle.y
@@ -813,20 +814,10 @@ class PFMoveCV():
             dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
             weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
             # rotation weight
-            nois_obj_ang = [nois_obj_pose[3],nois_obj_pose[4],nois_obj_pose[5]]
-#            nois_obj_ori = p_visualisation.getQuaternionFromEuler(nois_obj_ang) # pybullet x,y,z,w
-            nois_obj_ori = tuple(copy.deepcopy(nois_obj_ori_cur))
-            print(nois_obj_ori)
-            test_euler = p_visualisation.getEulerFromQuaternion(nois_obj_ori_cur)
-            nois_obj_ori = p_visualisation.getQuaternionFromEuler(test_euler) # pybullet x,y,z,w
-            print(nois_obj_ori_cur)
-            print(nois_obj_ori)
-            
-            if
-            
-            el
-            
-            par_ang = [particle_x_ang,particle_y_ang,particle_z_ang]
+            # nois_obj_ang = [nois_obj_pose[3],nois_obj_pose[4],nois_obj_pose[5]]
+            # nois_obj_ori = p_visualisation.getQuaternionFromEuler(nois_obj_ang) # pybullet x,y,z,w
+
+            par_ang = [particle_x_ang, particle_y_ang, particle_z_ang]
             par_ori = p_visualisation.getQuaternionFromEuler(par_ang)
             nois_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3]) # w,x,y,z
             par_quat = Quaternion(x=par_ori[0],y=par_ori[1],z=par_ori[2],w=par_ori[3])
@@ -1004,7 +995,7 @@ class PFMoveCV():
                                                          visual_particle_orientation)
         return
 
-    def display_particle_in_visual_model_CV(self, particle_cloud):
+    def display_particle_in_visual_model_CV(self, particle_cloud): # particle angle
         for index, particle in enumerate(particle_cloud):
             visual_particle_pos = [particle.x, particle.y, particle.z]
             visual_particle_ang = [particle.x_angle, particle.y_angle, particle.z_angle]
@@ -1013,9 +1004,7 @@ class PFMoveCV():
                                                             visual_particle_pos,
                                                             visual_particle_orientation)
 
-    def display_estimated_object_in_visual_model(self, estimated_object_id_CV, observation,estimated_angle):
-        esti_obj_pos = observation
-        esti_obj_ori = p_visualisation.getQuaternionFromEuler(estimated_angle)
+    def display_estimated_object_in_visual_model(self, estimated_object_id_CV, esti_obj_pos, esti_obj_ori):
         p_visualisation.resetBasePositionAndOrientation(estimated_object_id_CV,
                                                         esti_obj_pos,
                                                         esti_obj_ori)
@@ -1041,7 +1030,7 @@ class PFMoveCV():
         w_set = 0
         quaternions = []
         qws = []
-        for index, particle in enumerate(particle_cloud):
+        for index, particle in enumerate(particle_cloud): # particle angle
             x_set = x_set + particle.x * particle.w
             y_set = y_set + particle.y * particle.w
             z_set = z_set + particle.z * particle.w
@@ -1050,8 +1039,7 @@ class PFMoveCV():
             quaternions.append([q[0], q[1], q[2], q[3]])
             w_set = w_set + particle.w
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
-        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[0], q[1], q[2], q[3]])
-        return x_set / w_set, y_set / w_set, z_set / w_set, x_angle, y_angle, z_angle
+        return x_set/w_set, y_set/w_set, z_set/w_set, q[0], q[1], q[2], q[3]
 
     def compute_transformation_matrix(self, a_pos,a_ori,b_pos,b_ori):
         ow_T_a_3_3 = transformations.quaternion_matrix(a_ori)
@@ -1303,9 +1291,8 @@ if __name__ == '__main__':
     visualisation_mean = False
     visualisation_particle_flag = True
     # the flag of object judgment
-    observation_cheating_flag = False
-    object_cracker_flag = True
-    object_soup_flag = False
+    observation_cheating_flag = True
+    object_flag = "cracker" # cracker/soup
     # OptiTrack works fine flag
     optitrack_working_flag = True
     publish_opti_pose_for_inter_flag = False
@@ -1318,8 +1305,8 @@ if __name__ == '__main__':
     # number of times to run the algorithm
     file_time = 1
     # which algorithm to run
-    run_PBPF_flag = True
-    run_CVPF_flag = False
+    run_PBPF_flag = False
+    run_CVPF_flag = True
     # scene
     task_flag = "1"
     # update mode (pose/time)
@@ -1334,7 +1321,7 @@ if __name__ == '__main__':
         if run_PBPF_flag == True:
             particle_num = 70
         elif run_CVPF_flag == True:
-            particle_num = 20
+            particle_num = 50
     print("This is "+update_style_flag+" update in scene"+task_flag)    
     # some parameters
     d_thresh = 0.005
@@ -1389,14 +1376,14 @@ if __name__ == '__main__':
     elif visualisation_all == False:
         p_visualisation = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
     p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
-    p_visualisation.setGravity(0,0,-9.81)
+    p_visualisation.setGravity(0, 0, -9.81)
     if task_flag == "4":
         p_visualisation.resetDebugVisualizerCamera(cameraDistance=0.5,cameraYaw=90,cameraPitch=-10,cameraTargetPosition=[0.5,0.1,0.2])
     else:
         p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.3,0.1,0.2])
     plane_id = p_visualisation.loadURDF("plane.urdf")   
     # build an object of class "Ros_listener"
-    ros_listener = Ros_listener(optitrack_working_flag, object_cracker_flag, object_soup_flag)
+    ros_listener = Ros_listener(optitrack_working_flag, object_flag)
     # get object pose in robot world info from DOPE
     listener = tf.TransformListener()
     # robot pose in sim world (pybullet)
@@ -1408,9 +1395,9 @@ if __name__ == '__main__':
     if observation_cheating_flag == False:
         while True:
             try:
-                if object_cracker_flag == True:
+                if object_flag == "cracker":
                     (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
-                if object_soup_flag == True:
+                if object_flag == "soup":
                     (trans,rot) = listener.lookupTransform('/panda_link0', '/soup', rospy.Time(0))
                 break
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
@@ -1437,12 +1424,16 @@ if __name__ == '__main__':
             pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
             pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
             pw_T_obj_opti_ang = p_visualisation.getEulerFromQuaternion(pw_T_obj_opti_ori)
-            #load the groud truth object
-            if visualisation_flag == True and object_cracker_flag == True:
+            # load the groud truth object
+            if visualisation_flag == True and object_flag == "cracker":
+                # test_euler = p_visualisation.getEulerFromQuaternion(pw_T_obj_opti_ori)
+                # print(pw_T_obj_opti_ori)
+                # pw_T_obj_opti_ori = p_visualisation.getQuaternionFromEuler(test_euler) # pybullet x,y,z,w
+                # print(pw_T_obj_opti_ori)
                 optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_real_obj_with_visual_small_hor.urdf"),
                                                               pw_T_obj_opti_pos,
                                                               pw_T_obj_opti_ori)
-            if visualisation_flag == True and object_soup_flag == True:
+            if visualisation_flag == True and object_flag == "soup":
                 optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_real_obj_with_visual_small_hor.urdf"),
                                                               pw_T_obj_opti_pos,
                                                               pw_T_obj_opti_ori)    
@@ -1467,11 +1458,11 @@ if __name__ == '__main__':
                 pw_T_base_pos = [pw_T_base[0][3], pw_T_base[1][3], pw_T_base[2][3]]
                 pw_T_base_ori = transformations.quaternion_from_matrix(pw_T_base)
                 pw_T_base_ang = p_visualisation.getEulerFromQuaternion(pw_T_base_ori)
-                if visualisation_flag == True and object_cracker_flag == True:
+                if visualisation_flag == True and object_flag == "cracker":
                     optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/base_of_cheezit.urdf"),
                                                                 pw_T_base_pos,
                                                                 pw_T_base_ori)
-                if visualisation_flag == True and object_soup_flag == True:
+                if visualisation_flag == True and object_flag == "soup":
                     optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/base_of_cheezit.urdf"),
                                                                 pw_T_base_pos,
                                                                 pw_T_base_ori)
@@ -1481,11 +1472,11 @@ if __name__ == '__main__':
         pw_T_obj_dope_pos = [pw_T_obj_dope[0][3], pw_T_obj_dope[1][3], pw_T_obj_dope[2][3]]
         pw_T_obj_dope_ori = transformations.quaternion_from_matrix(pw_T_obj_dope)
         # load the DOPE object
-        if visualisation_flag == True and object_cracker_flag == True:
+        if visualisation_flag == True and object_flag == "cracker":
             dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_dope_obj_with_visual_small_PB_hor.urdf"),
                                                       pw_T_obj_dope_pos,
                                                       pw_T_obj_dope_ori)
-        if visualisation_flag == True and object_soup_flag == True:
+        if visualisation_flag == True and object_flag == "soup":
             dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_dope_obj_with_visual_small_PB_hor.urdf"),
                                                       pw_T_obj_dope_pos,
                                                       pw_T_obj_dope_ori)
@@ -1494,21 +1485,21 @@ if __name__ == '__main__':
         pw_T_obj_opti_pos = [0.4472889147344443, 0.08677179678403951, 0.0821006075425945]
         pw_T_obj_opti_ori = [0,0,0,1]
         pw_T_obj_opti_ori = [0.52338279, 0.47884367, 0.52129429, -0.47437481]
-        if visualisation_flag == True and object_cracker_flag == True:
+        if visualisation_flag == True and object_flag == "cracker":
             optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_real_obj_with_visual_small_hor.urdf"),
                                                            pw_T_obj_opti_pos,
                                                            pw_T_obj_opti_ori)
-        if visualisation_flag == True and object_soup_flag == True:
+        if visualisation_flag == True and object_flag == "soup":
             optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_real_obj_with_visual_small_hor.urdf"),
                                                            pw_T_obj_opti_pos,
                                                            pw_T_obj_opti_ori)   
         pw_T_obj_dope_pos, pw_T_obj_dope_ori = add_noise_pose(pw_T_obj_opti_pos, pw_T_obj_opti_ori)
         # load the DOPE object
-        if visualisation_flag == True and object_cracker_flag == True:
+        if visualisation_flag == True and object_flag == "cracker":
             dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_dope_obj_with_visual_small_PB_hor.urdf"),
                                                       pw_T_obj_dope_pos,
                                                       pw_T_obj_dope_ori)
-        if visualisation_flag == True and object_soup_flag == True:
+        if visualisation_flag == True and object_flag == "soup":
             dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_dope_obj_with_visual_small_PB_hor.urdf"),
                                                       pw_T_obj_dope_pos,
                                                       pw_T_obj_dope_ori)
@@ -1534,7 +1525,10 @@ if __name__ == '__main__':
         err_opti_dope_ang = angle_correction(err_opti_dope_ang)
     # initial visualisation world model
     # build an object of class "InitialRealworldModel"
-    real_world_object = InitialRealworldModel(ros_listener.current_joint_values, object_cracker_flag, object_soup_flag, p_visualisation)
+    if observation_cheating_flag == False:
+        real_world_object = InitialRealworldModel(ros_listener.current_joint_values, object_flag, p_visualisation)
+    elif observation_cheating_flag == True:
+        real_world_object = InitialRealworldModel(0, object_flag, p_visualisation)
     #initialize the real robot in the pybullet
     real_robot_id = real_world_object.initial_robot(robot_pos=pw_T_rob_sim_pos, robot_orientation=pw_T_rob_sim_ori)
     # initialize the real object in the pybullet
@@ -1550,7 +1544,7 @@ if __name__ == '__main__':
     initial_parameter = InitialSimulationModel(object_num, particle_num, pw_T_rob_sim_pos, pw_T_rob_sim_ori, pw_T_obj_dope_pos, pw_T_obj_dope_ori,
                                                pw_T_base_pos, pw_T_base_ori,
                                                boss_sigma_obs_x, boss_sigma_obs_y, boss_sigma_obs_z, boss_sigma_obs_ang_init, p_visualisation,
-                                               update_style_flag, change_sim_time, task_flag, object_cracker_flag, object_soup_flag)
+                                               update_style_flag, change_sim_time, task_flag, object_flag)
     initial_parameter.initial_particle()
     # get estimated object
     estimated_object_set = initial_parameter.initial_and_set_simulation_env(ros_listener.current_joint_values)
@@ -1623,7 +1617,7 @@ if __name__ == '__main__':
         if run_CVPF_flag == True:
             initial_parameter.display_particle_CV()
     # load object in the sim world
-    if visualisation_flag == True and object_cracker_flag == True and visualisation_mean == True:
+    if visualisation_flag == True and object_flag == "cracker" and visualisation_mean == True:
         if run_PBPF_flag == True:
             estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_est_obj_with_visual_small_PB_hor.urdf"),
                                                            estimated_object_pos,
@@ -1632,7 +1626,7 @@ if __name__ == '__main__':
             estimated_object_id_CV = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_est_obj_with_visual_small_CV_hor.urdf"),
                                                               estimated_object_pos,
                                                               estimated_object_ori)
-    if visualisation_flag == True and object_soup_flag == True and visualisation_mean == True:
+    if visualisation_flag == True and object_flag == "soup" and visualisation_mean == True:
         if run_PBPF_flag == True:
             estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_est_obj_with_visual_small_PB_hor.urdf"),
                                                            estimated_object_pos,
@@ -1679,16 +1673,16 @@ if __name__ == '__main__':
         dope_is_fresh = True
         if observation_cheating_flag == False:
             try:
-                if object_cracker_flag == True:
+                if object_flag == "cracker":
                     latest_dope_time = listener.getLatestCommonTime('/panda_link0', '/cracker')
-                if object_soup_flag == True:
+                if object_flag == "soup":
                     latest_dope_time = listener.getLatestCommonTime('/panda_link0', '/soup')
                 #print("latest_dope_time: ",latest_dope_time.to_sec())
                 #print("rospy.get_time: ",rospy.get_time())
                 if (rospy.get_time() - latest_dope_time.to_sec()) < 0.1:
-                    if object_cracker_flag == True:
+                    if object_flag == "cracker":
                         (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
-                    if object_soup_flag == True:
+                    if object_flag == "soup":
                         (trans,rot) = listener.lookupTransform('/panda_link0', '/soup', rospy.Time(0))
                     dope_is_fresh = True
                     # print("dope is FRESH")
@@ -1879,7 +1873,6 @@ if __name__ == '__main__':
                     robot2.real_robot_control_CV(opti_obj_pos_cur_CV, # ground truth pos [x, y, z]
                                                  opti_obj_ori_cur_CV, # ground truth ori [x, y, z, w]
                                                  nois_obj_pos_cur_CV, # DOPE value pos [x, y, z]
-                                                 nois_obj_ang_cur_CV, # DOPE value ang [θx, θy, θz]
                                                  nois_obj_ori_cur_CV, # DOPE value ori [x, y, z, w]
                                                  do_obs_update=dope_is_fresh) # flag for judging DOPE work
                     rob_link_9_pose_old_CV = copy.deepcopy(rob_link_9_pose_cur_CV)
@@ -1984,7 +1977,6 @@ if __name__ == '__main__':
                         robot2.real_robot_control_CV(opti_obj_pos_cur_CV, # ground truth pos [x, y, z]
                                                      opti_obj_ori_cur_CV, # ground truth ori [x, y, z, w]
                                                      nois_obj_pos_cur_CV, # DOPE value pos [x, y, z]
-                                                     nois_obj_ang_cur_CV, # DOPE value ang [θx, θy, θz]
                                                      nois_obj_ori_cur_CV, # DOPE value ori [x, y, z, w]
                                                      do_obs_update=dope_is_fresh) # flag for judging DOPE work
                         if visualisation_flag == True and optitrack_working_flag == True:

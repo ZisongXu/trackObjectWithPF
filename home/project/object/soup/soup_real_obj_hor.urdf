@@ -3,19 +3,20 @@
    <material name="red">
      <color rgba="1 0.498 0.3137 1"/>
    </material>
-   <material name="green">
+   <material name="light_green">
      <color rgba="0 1 0.498 1"/>
    </material>
-   <link name="right_leg">
+   <link name="obj_in_sim">
      <visual>
        <geometry>
-         <box size="0.16 0.21343700408935547 0.061"/>
+         <cylinder length="0.1000" radius="0.033829689025878906"/>
        </geometry>
        <material name="red"/>
+       <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
      </visual>
      <collision>
        <geometry>
-         <box size="0.16 0.21343700408935547 0.061"/>
+         <cylinder length="0.1000" radius="0.033829689025878906"/>
        </geometry>
      </collision>
      <inertial>

@@ -9,9 +9,9 @@
    <link name="right_leg">
      <visual>
        <geometry>
-         <box size="0.16 0.21343700408935547 0.061"/>
+         <box size="0.14 0.19343700408935547 0.041"/>
        </geometry>
-       <material name="red"/>
+       <material name="green"/>
      </visual>
      <collision>
        <geometry>

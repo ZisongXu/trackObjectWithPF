@@ -4,16 +4,15 @@ from geometry_msgs.msg import Point,PointStamped,PoseStamped,Quaternion,Transfor
 
 #Class of franka robot listen to info from ROS
 class Ros_listener():
-    def __init__(self, optitrack_working_flag, object_cracker_flag, object_soup_flag):
+    def __init__(self, optitrack_working_flag, object_flag):
         self.optitrack_working_flag = optitrack_working_flag
-        self.object_cracker_flag = object_cracker_flag
-        self.object_soup_flag = object_soup_flag
+        self.object_flag = object_flag
         self.joint_subscriber = rospy.Subscriber('/joint_states', JointState, self.joint_values_callback,queue_size=1)
         if self.optitrack_working_flag == True:
             self.robot_pose = rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose',PoseStamped, self.robot_pose_callback,queue_size=10)
-            if self.object_cracker_flag == True:
+            if self.object_flag == "cracker":
                 self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/cheezit/pose',PoseStamped, self.object_pose_callback,queue_size=10)
-            if self.object_soup_flag == True:
+            if self.object_flag == "soup":
                 self.object_pose = rospy.Subscriber('/mocap/rigid_bodies/zisongsoup/pose',PoseStamped, self.object_pose_callback,queue_size=10)
             self.base_pose = rospy.Subscriber('/mocap/rigid_bodies/baseofcheezit/pose', PoseStamped, self.base_of_cheezit_callback,queue_size=10)
         elif self.optitrack_working_flag == False:

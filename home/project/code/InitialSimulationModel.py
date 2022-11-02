@@ -128,7 +128,7 @@ class InitialSimulationModel():
             visualize_particle_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             visualize_particle_orientation = self.p_visualisation.getQuaternionFromEuler(visualize_particle_angle)
             if self.object_flag == "cracker":
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_par_with_visual_small_PB_hor.urdf"),
+                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_par_with_visual_PB_hor.urdf"),
                                                                 visualize_particle_pos,
                                                                 visualize_particle_orientation)
             if self.object_flag == "soup":
@@ -143,7 +143,7 @@ class InitialSimulationModel():
             visualize_particle_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             visualize_particle_orientation = self.p_visualisation.getQuaternionFromEuler(visualize_particle_angle)
             if self.object_flag == "cracker":
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_par_with_visual_small_CV_hor.urdf"),
+                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_par_with_visual_CV_hor.urdf"),
                                                                 visualize_particle_pos,
                                                                 visualize_particle_orientation)
             if self.object_flag == "soup":
@@ -165,12 +165,12 @@ class InitialSimulationModel():
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
             if self.task_flag == "4":
                 if self.object_flag == "cracker":
-                    sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cube/base_of_cheezit.urdf"),
+                    sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cracker/base_of_cracker.urdf"),
                                                                    self.pw_T_base_pos,
                                                                    self.pw_T_base_ori,
                                                                    useFixedBase=1)
                 if self.object_flag == "soup":
-                    sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cube/base_of_cheezit.urdf"),
+                    sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cracker/base_of_cracker.urdf"),
                                                                    self.pw_T_base_pos,
                                                                    self.pw_T_base_ori,
                                                                    useFixedBase=1)
@@ -187,7 +187,7 @@ class InitialSimulationModel():
             particle_no_visual_start_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             particle_no_visual_start_orientation = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_start_angle)
             if self.object_flag == "cracker":
-                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_par_no_visual_small_hor.urdf"),
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_par_no_visual_hor.urdf"),
                                                                         particle_no_visual_start_pos,
                                                                         particle_no_visual_start_orientation)
             if self.object_flag == "soup":
@@ -231,7 +231,7 @@ class InitialSimulationModel():
             particle_no_visual_start_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
             particle_no_visual_start_orientation = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_start_angle)
             if self.object_flag == "cracker":
-                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cube/cheezit_par_no_visual_small_hor.urdf"),
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_par_no_visual_hor.urdf"),
                                                                         particle_no_visual_start_pos,
                                                                         particle_no_visual_start_orientation)
             if self.object_flag == "soup":

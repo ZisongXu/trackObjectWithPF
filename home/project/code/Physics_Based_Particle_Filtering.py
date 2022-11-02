@@ -170,12 +170,11 @@ class PFMove():
             self.observation_update_PB(nois_obj_pos_cur, nois_obj_ori_cur)
         # Compute mean of particles
         object_estimate_pose = self.compute_estimate_pos_of_object(self.particle_cloud)
-        estimated_object_pos = [object_estimate_pose[0],object_estimate_pose[1],object_estimate_pose[2]]
-        estimated_object_ang = [object_estimate_pose[3],object_estimate_pose[4],object_estimate_pose[5]]
+        estimated_object_pos = [object_estimate_pose[0], object_estimate_pose[1], object_estimate_pose[2]]
+        estimated_object_ori = [object_estimate_pose[3], object_estimate_pose[4], object_estimate_pose[5], object_estimate_pose[6]]
         # display estimated object
         if visualisation_flag == True and visualisation_mean == True:
-            self.display_estimated_object_in_visual_model(estimated_object_id, estimated_object_pos, estimated_object_ang)
-        estimated_object_ori = p_visualisation.getQuaternionFromEuler(estimated_object_ang)
+            self.display_estimated_object_in_visual_model(estimated_object_id, estimated_object_pos, estimated_object_ori)
         # display particles
         if visualisation_particle_flag == True:
             self.display_particle_in_visual_model_PB(self.particle_cloud)
@@ -281,13 +280,9 @@ class PFMove():
         return False
     
     # update particle cloud particle angle
-    def update_partcile_cloud_pose_PB(self, index, x, y, z, x_angle, y_angle, z_angle, linearVelocity, angularVelocity):
-        self.particle_cloud[index].x = x
-        self.particle_cloud[index].y = y
-        self.particle_cloud[index].z = z
-        self.particle_cloud[index].x_angle = x_angle
-        self.particle_cloud[index].y_angle = y_angle
-        self.particle_cloud[index].z_angle = z_angle
+    def update_partcile_cloud_pose_PB(self, index, x, y, z, ori, linearVelocity, angularVelocity):
+        self.particle_cloud[index].pos = [x, y, z]
+        self.particle_cloud[index].ori = copy.deepcopy(ori)
         self.particle_cloud[index].linearVelocity = linearVelocity
         self.particle_cloud[index].angularVelocity = angularVelocity
         
@@ -352,9 +347,9 @@ class PFMove():
         ### ori: x,y,z,w
         # get velocity of each particle
         linearVelocity, angularVelocity = pybullet_env.getBaseVelocity(initial_parameter.particle_no_visual_id_collection[index])
-        sim_par_cur_pos,sim_par_cur_ori = self.get_item_pos(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
+        sim_par_cur_pos, sim_par_cur_ori = self.get_item_pos(pybullet_env,initial_parameter.particle_no_visual_id_collection[index])
         # add noise on pose of each particle
-        normal_x, normal_y, normal_z, x_angle, y_angle, z_angle, P_quat = self.add_noise_pose(sim_par_cur_pos, sim_par_cur_ori)
+        normal_x, normal_y, normal_z, P_quat = self.add_noise_pose(sim_par_cur_pos, sim_par_cur_ori)
         pybullet_env.resetBasePositionAndOrientation(initial_parameter.particle_no_visual_id_collection[index],
                                                      [normal_x, normal_y, normal_z],
                                                      P_quat)
@@ -370,7 +365,7 @@ class PFMove():
                 contact_dis = contact[8]
                 if contact_dis < -0.001:
                     #print("detected contact during initialization. BodyA: %d, BodyB: %d, LinkOfA: %d, LinkOfB: %d", contact[1], contact[2], contact[3], contact[4])
-                    normal_x, normal_y, normal_z, x_angle, y_angle, z_angle, P_quat = self.add_noise_pose(sim_par_cur_pos, sim_par_cur_ori)
+                    normal_x, normal_y, normal_z, P_quat = self.add_noise_pose(sim_par_cur_pos, sim_par_cur_ori)
                     pybullet_env.resetBasePositionAndOrientation(initial_parameter.particle_no_visual_id_collection[index],
                                                                  [normal_x, normal_y, normal_z],
                                                                  P_quat)
@@ -378,7 +373,7 @@ class PFMove():
                     break
             if flag == 0:
                 break
-        self.update_partcile_cloud_pose_PB(index, normal_x, normal_y, normal_z, x_angle, y_angle, z_angle, linearVelocity, angularVelocity)
+        self.update_partcile_cloud_pose_PB(index, normal_x, normal_y, normal_z, P_quat, linearVelocity, angularVelocity)
         # pipe.send()
     
     # add noise
@@ -404,15 +399,9 @@ class PFMove():
         ###pb_quat(x,y,z,w)
         pb_quat = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
         new_angle = p_visualisation.getEulerFromQuaternion(pb_quat)
-        x_angle = new_angle[0]
-        y_angle = new_angle[1]
-        z_angle = new_angle[2]
-        #x_angle = sim_par_cur_ang[0]
-        #y_angle = sim_par_cur_ang[1]
-        #z_angle = sim_par_cur_ang[2]
-        P_quat = p_visualisation.getQuaternionFromEuler([x_angle, y_angle, z_angle])
+        P_quat = p_visualisation.getQuaternionFromEuler(new_angle)
         # pipe.send()
-        return normal_x, normal_y, normal_z, x_angle, y_angle, z_angle, P_quat
+        return normal_x, normal_y, normal_z, P_quat
     
     # observation model
     def observation_update_PB(self, nois_obj_pos_cur, nois_obj_ori_cur):
@@ -424,17 +413,20 @@ class PFMove():
         nois_obj_z_ori = nois_obj_ori_cur[2]
         nois_obj_w_ori = nois_obj_ori_cur[3]
         nois_obj_ori = [nois_obj_x_ori, nois_obj_y_ori, nois_obj_z_ori, nois_obj_w_ori] # pybullet x,y,z,w
-        test_euler = p_visualisation.getEulerFromQuaternion(nois_obj_ori_cur)
-        test_ori = p_visualisation.getQuaternionFromEuler(test_euler) # pybullet x,y,z,w
-        print(nois_obj_ori_cur)
-        print(test_ori)
+        # make sure theta between -pi and pi
+        nois_obj_ori = quaternion_correction(nois_obj_ori_cur)
+#        nois_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3]) # w,x,y,z
+#        cos_theta_over_2 = nois_obj_quat.w
+#        sin_theta_over_2 = math.sqrt(nois_obj_quat.x ** 2 + nois_obj_quat.y ** 2 + nois_obj_quat.z ** 2)
+#        theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
+#        theta = theta_over_2 * 2
+#        if theta >= math.pi or theta <= -math.pi:
+#            nois_obj_ori = [-nois_obj_x_ori, -nois_obj_y_ori, -nois_obj_z_ori, -nois_obj_w_ori]
+            
         for index,particle in enumerate(self.particle_cloud): # particle angle
-            particle_x = particle.x
-            particle_y = particle.y
-            particle_z = particle.z
-            particle_x_ang = particle.x_angle
-            particle_y_ang = particle.y_angle
-            particle_z_ang = particle.z_angle
+            particle_x = particle.pos[0]
+            particle_y = particle.pos[1]
+            particle_z = particle.pos[2]
             mean = 0
             # position weight
             dis_x = abs(particle_x - nois_obj_x)
@@ -443,8 +435,7 @@ class PFMove():
             dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
             weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
             # rotation weight
-            par_ang = [particle_x_ang,particle_y_ang,particle_z_ang]
-            par_ori = p_visualisation.getQuaternionFromEuler(par_ang) # particle_change
+            par_ori = quaternion_correction(particle.ori)
             nois_obj_quat = Quaternion(x=nois_obj_ori[0], y=nois_obj_ori[1], z=nois_obj_ori[2], w=nois_obj_ori[3]) # Quaternion(): w,x,y,z
             par_quat = Quaternion(x=par_ori[0],y=par_ori[1],z=par_ori[2],w=par_ori[3])
             err_bt_par_dope = par_quat * nois_obj_quat.inverse
@@ -550,12 +541,8 @@ class PFMove():
         particle_array= np.random.choice(a = n_particle, size = n_particle, replace=True, p= particles_w)
         particle_array_list = list(particle_array)
         for index,i in enumerate(particle_array_list):
-            particle = Particle(self.particle_cloud[i].x,
-                                self.particle_cloud[i].y,
-                                self.particle_cloud[i].z,
-                                self.particle_cloud[i].x_angle,
-                                self.particle_cloud[i].y_angle,
-                                self.particle_cloud[i].z_angle,
+            particle = Particle(self.particle_cloud[i].pos,
+                                self.particle_cloud[i].ori,
                                 1.0/particle_num, index)
             newParticles.append(particle)
         self.particle_cloud = copy.deepcopy(newParticles)
@@ -583,13 +570,10 @@ class PFMove():
             else:
                 particle_array_list.append(index)
         for index,i in enumerate(particle_array_list): # particle angle
-            particle = Particle(self.particle_cloud[i].x,
-                                self.particle_cloud[i].y,
-                                self.particle_cloud[i].z,
-                                self.particle_cloud[i].x_angle,
-                                self.particle_cloud[i].y_angle,
-                                self.particle_cloud[i].z_angle,
-                                1.0/particle_num, index,
+            particle = Particle(self.particle_cloud[i].pos,
+                                self.particle_cloud[i].ori,
+                                1.0/particle_num, 
+                                index,
                                 self.particle_cloud[i].linearVelocity,
                                 self.particle_cloud[i].angularVelocity)
             newParticles.append(particle)
@@ -604,26 +588,18 @@ class PFMove():
                
     def set_paticle_in_each_sim_env(self): # particle angle
         for index, pybullet_env in enumerate(self.pybullet_env_id_collection):
-            visual_particle_pos = [self.particle_cloud[index].x, self.particle_cloud[index].y, self.particle_cloud[index].z]
-            visual_particle_angle = [self.particle_cloud[index].x_angle, self.particle_cloud[index].y_angle, self.particle_cloud[index].z_angle]
-            visual_particle_orientation = pybullet_env.getQuaternionFromEuler(visual_particle_angle)
             pybullet_env.resetBasePositionAndOrientation(self.particle_no_visual_id_collection[index],
-                                                         visual_particle_pos,
-                                                         visual_particle_orientation)
+                                                         self.particle_cloud[index].pos,
+                                                         self.particle_cloud[index].ori)
         return
 
     def display_particle_in_visual_model_PB(self, particle_cloud): # particle angle
         for index, particle in enumerate(particle_cloud):
-            visual_particle_pos = [particle.x, particle.y, particle.z]
-            visual_particle_ang = [particle.x_angle, particle.y_angle, particle.z_angle]
-            visual_particle_orientation = p_visualisation.getQuaternionFromEuler(visual_particle_ang)
             p_visualisation.resetBasePositionAndOrientation(self.particle_with_visual_id_collection[index],
-                                                            visual_particle_pos,
-                                                            visual_particle_orientation)
+                                                            particle.pos,
+                                                            particle.ori)
 
-    def display_estimated_object_in_visual_model(self, estimated_object_id, observation, estimated_angle):
-        esti_obj_pos = observation
-        esti_obj_ori = p_visualisation.getQuaternionFromEuler(estimated_angle)
+    def display_estimated_object_in_visual_model(self, estimated_object_id, esti_obj_pos, esti_obj_ori):
         p_visualisation.resetBasePositionAndOrientation(estimated_object_id,
                                                         esti_obj_pos,
                                                         esti_obj_ori)
@@ -642,7 +618,7 @@ class PFMove():
         plt.close()
         return
 
-    def compute_estimate_pos_of_object(self, particle_cloud): # particle angle
+    def compute_estimate_pos_of_object(self, particle_cloud): # need to change
         x_set = 0
         y_set = 0
         z_set = 0
@@ -650,16 +626,15 @@ class PFMove():
         quaternions = []
         qws = []
         for index, particle in enumerate(particle_cloud):
-            x_set = x_set + particle.x * particle.w
-            y_set = y_set + particle.y * particle.w
-            z_set = z_set + particle.z * particle.w
-            q = p_visualisation.getQuaternionFromEuler([particle.x_angle, particle.y_angle, particle.z_angle])
+            x_set = x_set + particle.pos[0] * particle.w
+            y_set = y_set + particle.pos[1] * particle.w
+            z_set = z_set + particle.pos[2] * particle.w
+            q = quaternion_correction(particle.ori)
             qws.append(particle.w)
             quaternions.append([q[0], q[1], q[2], q[3]])
             w_set = w_set + particle.w
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
-        x_angle, y_angle, z_angle = p_visualisation.getEulerFromQuaternion([q[0], q[1], q[2], q[3]])
-        return x_set/w_set, y_set/w_set, z_set/w_set, x_angle, y_angle, z_angle
+        return x_set/w_set, y_set/w_set, z_set/w_set, q[0], q[1], q[2], q[3]
 
     def compute_transformation_matrix(self, opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori):
         robot_transformation_matrix = transformations.quaternion_matrix(opti_T_rob_opti_ori)
@@ -800,17 +775,21 @@ class PFMoveCV():
         nois_obj_z_ori = nois_obj_ori_cur[2]
         nois_obj_w_ori = nois_obj_ori_cur[3]
         nois_obj_ori = [nois_obj_x_ori, nois_obj_y_ori, nois_obj_z_ori, nois_obj_w_ori]
-        mid_euler = p_visualisation.getEulerFromQuaternion(nois_obj_ori)
-        # print(nois_obj_ori)
-        nois_obj_ori = p_visualisation.getQuaternionFromEuler(mid_euler) # pybullet x,y,z,w
-        # print(nois_obj_ori)
+        
+        # make sure theta between -pi and pi
+        nois_obj_ori = quaternion_correction(nois_obj_ori_cur)
+#        nois_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3]) # w,x,y,z
+#        cos_theta_over_2 = nois_obj_quat.w
+#        sin_theta_over_2 = math.sqrt(nois_obj_quat.x ** 2 + nois_obj_quat.y ** 2 + nois_obj_quat.z ** 2)
+#        theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
+#        theta = theta_over_2 * 2
+#        if theta >= math.pi or theta <= -math.pi:
+#            nois_obj_ori = [-nois_obj_x_ori, -nois_obj_y_ori, -nois_obj_z_ori, -nois_obj_w_ori]
+       
         for index,particle in enumerate(self.particle_cloud_CV):
-            particle_x = particle.x
-            particle_y = particle.y
-            particle_z = particle.z
-            particle_x_ang = particle.x_angle
-            particle_y_ang = particle.y_angle
-            particle_z_ang = particle.z_angle
+            particle_x = particle.pos[0]
+            particle_y = particle.pos[1]
+            particle_z = particle.pos[2]
             mean = 0
             # position weight
             dis_x = abs(particle_x - nois_obj_x)
@@ -822,8 +801,7 @@ class PFMoveCV():
             # nois_obj_ang = [nois_obj_pose[3],nois_obj_pose[4],nois_obj_pose[5]]
             # nois_obj_ori = p_visualisation.getQuaternionFromEuler(nois_obj_ang) # pybullet x,y,z,w
 
-            par_ang = [particle_x_ang, particle_y_ang, particle_z_ang]
-            par_ori = p_visualisation.getQuaternionFromEuler(par_ang)
+            par_ori = quaternion_correction(particle.ori)
             nois_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3]) # w,x,y,z
             par_quat = Quaternion(x=par_ori[0],y=par_ori[1],z=par_ori[2],w=par_ori[3])
             err_bt_par_dope = par_quat * nois_obj_quat.inverse
@@ -844,15 +822,8 @@ class PFMoveCV():
 
     def update_particle_in_motion_model_CV(self, parO_T_parN, nois_obj_ori_cur):
         for index, pybullet_env in enumerate(self.pybullet_env_id_collection_CV):
-            pw_T_parO_x = self.particle_cloud_CV[index].x
-            pw_T_parO_y = self.particle_cloud_CV[index].y
-            pw_T_parO_z = self.particle_cloud_CV[index].z
-            pw_T_parO_pos = [pw_T_parO_x,pw_T_parO_y,pw_T_parO_z]
-            pw_T_parO_x_ang = self.particle_cloud_CV[index].x_angle
-            pw_T_parO_y_ang = self.particle_cloud_CV[index].y_angle
-            pw_T_parO_z_ang = self.particle_cloud_CV[index].z_angle
-            pw_T_parO_ang = [pw_T_parO_x_ang,pw_T_parO_y_ang,pw_T_parO_z_ang]
-            pw_T_parO_ori = pybullet_env.getQuaternionFromEuler(pw_T_parO_ang)
+            pw_T_parO_pos = copy.deepcopy(self.particle_cloud_CV[index].pos)
+            pw_T_parO_ori = copy.deepcopy(self.particle_cloud_CV[index].ori)
             pw_T_parO_3_3 = transformations.quaternion_matrix(pw_T_parO_ori)
             pw_T_parO = self.rotation_4_4_to_transformation_4_4(pw_T_parO_3_3,pw_T_parO_pos)
             pw_T_parN = np.dot(pw_T_parO,parO_T_parN)
@@ -881,17 +852,10 @@ class PFMoveCV():
             new_quat = nois_quat * quat_QuatStyle
             ### pb_quat(x,y,z,w)
             pb_quat = [new_quat[1], new_quat[2], new_quat[3], new_quat[0]]
-            new_angle = p_visualisation.getEulerFromQuaternion(pb_quat)
-            x_angle = new_angle[0]
-            y_angle = new_angle[1]
-            z_angle = new_angle[2]
 
-            self.particle_cloud_CV[index].x = normal_x
-            self.particle_cloud_CV[index].y = normal_y
-            self.particle_cloud_CV[index].z = normal_z
-            self.particle_cloud_CV[index].x_angle = x_angle
-            self.particle_cloud_CV[index].y_angle = y_angle
-            self.particle_cloud_CV[index].z_angle = z_angle
+            self.particle_cloud_CV[index].pos = [normal_x, normal_y, normal_z]
+            self.particle_cloud_CV[index].ori = copy.deepcopy(pb_quat)
+
 
     def get_item_pos(self,pybullet_env,item_id):
         item_info = pybullet_env.getBasePositionAndOrientation(item_id)
@@ -941,12 +905,8 @@ class PFMoveCV():
         particle_array= np.random.choice(a = n_particle, size = n_particle, replace=True, p= particles_w)
         particle_array_list = list(particle_array)
         for index,i in enumerate(particle_array_list):
-            particle = Particle(self.particle_cloud_CV[i].x,
-                                self.particle_cloud_CV[i].y,
-                                self.particle_cloud_CV[i].z,
-                                self.particle_cloud_CV[i].x_angle,
-                                self.particle_cloud_CV[i].y_angle,
-                                self.particle_cloud_CV[i].z_angle,
+            particle = Particle(self.particle_cloud_CV[i].pos,
+                                self.particle_cloud_CV[i].ori,
                                 1.0/particle_num,index)
             newParticles.append(particle)
         self.particle_cloud_CV = copy.deepcopy(newParticles)
@@ -973,12 +933,8 @@ class PFMoveCV():
             elif w_sum == 0:
                 particle_array_list.append(index)
         for index,i in enumerate(particle_array_list):
-            particle = Particle(self.particle_cloud_CV[i].x,
-                                self.particle_cloud_CV[i].y,
-                                self.particle_cloud_CV[i].z,
-                                self.particle_cloud_CV[i].x_angle,
-                                self.particle_cloud_CV[i].y_angle,
-                                self.particle_cloud_CV[i].z_angle,
+            particle = Particle(self.particle_cloud_CV[i].pos,
+                                self.particle_cloud_CV[i].ori,
                                 1.0/particle_num, index)
             newParticles.append(particle)
         self.particle_cloud_CV = copy.deepcopy(newParticles)
@@ -992,22 +948,18 @@ class PFMoveCV():
             
     def set_paticle_in_each_sim_env_CV(self):
         for index, pybullet_env in enumerate(self.pybullet_env_id_collection_CV):
-            visual_particle_pos = [self.particle_cloud_CV[index].x, self.particle_cloud_CV[index].y, self.particle_cloud_CV[index].z]
-            visual_particle_angle = [self.particle_cloud_CV[index].x_angle, self.particle_cloud_CV[index].y_angle, self.particle_cloud_CV[index].z_angle]
-            visual_particle_orientation = pybullet_env.getQuaternionFromEuler(visual_particle_angle)
+            visual_particle_pos = self.particle_cloud_CV[index].pos
+            visual_particle_ori = self.particle_cloud_CV[index].ori
             pybullet_env.resetBasePositionAndOrientation(self.particle_no_visual_id_collection_CV[index],
                                                          visual_particle_pos,
-                                                         visual_particle_orientation)
+                                                         visual_particle_ori)
         return
 
     def display_particle_in_visual_model_CV(self, particle_cloud): # particle angle
         for index, particle in enumerate(particle_cloud):
-            visual_particle_pos = [particle.x, particle.y, particle.z]
-            visual_particle_ang = [particle.x_angle, particle.y_angle, particle.z_angle]
-            visual_particle_orientation = p_visualisation.getQuaternionFromEuler(visual_particle_ang)
             p_visualisation.resetBasePositionAndOrientation(self.particle_with_visual_id_collection_CV[index],
-                                                            visual_particle_pos,
-                                                            visual_particle_orientation)
+                                                            particle.pos,
+                                                            particle.ori)
 
     def display_estimated_object_in_visual_model(self, estimated_object_id_CV, esti_obj_pos, esti_obj_ori):
         p_visualisation.resetBasePositionAndOrientation(estimated_object_id_CV,
@@ -1036,10 +988,10 @@ class PFMoveCV():
         quaternions = []
         qws = []
         for index, particle in enumerate(particle_cloud): # particle angle
-            x_set = x_set + particle.x * particle.w
-            y_set = y_set + particle.y * particle.w
-            z_set = z_set + particle.z * particle.w
-            q = p_visualisation.getQuaternionFromEuler([particle.x_angle, particle.y_angle, particle.z_angle])
+            x_set = x_set + particle.pos[0] * particle.w
+            y_set = y_set + particle.pos[1] * particle.w
+            z_set = z_set + particle.pos[2] * particle.w
+            q = quaternion_correction(particle.ori)
             qws.append(particle.w)
             quaternions.append([q[0], q[1], q[2], q[3]])
             w_set = w_set + particle.w
@@ -1173,6 +1125,17 @@ def angle_correction(angle):
         angle = angle + 2 * math.pi
     angle = abs(angle)
     return angle
+# make sure all quaternions all between -pi and +pi
+def quaternion_correction(quaternion): # x,y,z,w
+    new_quat = Quaternion(x=quaternion[0], y=quaternion[1], z=quaternion[2], w=quaternion[3]) # w,x,y,z
+    cos_theta_over_2 = new_quat.w
+    sin_theta_over_2 = math.sqrt(new_quat.x ** 2 + new_quat.y ** 2 + new_quat.z ** 2)
+    theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
+    theta = theta_over_2 * 2
+    if theta >= math.pi or theta <= -math.pi:
+        new_quaternion = [-quaternion[0], -quaternion[1], -quaternion[2], -quaternion[3]]
+        return new_quaternion
+    return quaternion
 # ctrl-c write down the error file
 def signal_handler(sig, frame):
     # write the error file
@@ -1319,7 +1282,6 @@ if __name__ == '__main__':
     # the flag is used to determine whether the robot touches the particle in the simulation
     simRobot_touch_par_flag = 0
     object_num = 2
-    particle_cloud = []
     if update_style_flag == "pose":
         particle_num = 150
     elif update_style_flag == "time":
@@ -1375,6 +1337,15 @@ if __name__ == '__main__':
     estDO_form_previous = 0
     
     PBPF_time_cosuming_list = []
+    
+    # multi-objects/robots list
+    pw_T_rob_sim_pose = [] 
+    pw_T_robs_sim_pose = []
+    pw_T_robs_sim_4_4 = []
+    rob_T_obj_dope_pose = []
+    rob_T_objs_dope_pose = []
+    rob_T_objs_dope_4_4 = []
+    
     # visualisation_model
     if visualisation_all == True:
         p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
@@ -1386,6 +1357,8 @@ if __name__ == '__main__':
         p_visualisation.resetDebugVisualizerCamera(cameraDistance=0.5,cameraYaw=90,cameraPitch=-10,cameraTargetPosition=[0.5,0.1,0.2])
     else:
         p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.3,0.1,0.2])
+        
+    
     plane_id = p_visualisation.loadURDF("plane.urdf")   
     # build an object of class "Ros_listener"
     ros_listener = Ros_listener(optitrack_working_flag, object_flag)
@@ -1396,6 +1369,10 @@ if __name__ == '__main__':
     pw_T_rob_sim_ori = [0,0,0,1]
     pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
     pw_T_rob_sim_4_4 = rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
+#    pw_T_rob_sim_pose.extend([pw_T_rob_sim_pos, pw_T_rob_sim_ori])
+#    pw_T_robs_sim_pose.append(pw_T_rob_sim_pose)
+#    pw_T_robs_sim_4_4.append(pw_T_rob_sim_4_4)
+    
     if observation_cheating_flag == False:
         print("before while loop")
         while True:
@@ -1410,7 +1387,10 @@ if __name__ == '__main__':
         rob_T_obj_dope_pos = list(trans)
         rob_T_obj_dope_ori = list(rot)
         rob_T_obj_dope_3_3 = transformations.quaternion_matrix(rob_T_obj_dope_ori)
-        rob_T_obj_dope = rotation_4_4_to_transformation_4_4(rob_T_obj_dope_3_3,rob_T_obj_dope_pos)
+        rob_T_obj_dope_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_dope_3_3, rob_T_obj_dope_pos)
+#        rob_T_obj_dope_pose.extend([rob_T_obj_dope_pos, rob_T_obj_dope_ori])
+#        rob_T_objs_dope_pose.append(rob_T_obj_dope_pose)
+#        rob_T_objs_dope_4_4.append(rob_T_obj_dope_4_4)
         print("after while loop")
         # give some time to update the data
         time.sleep(0.5)
@@ -1428,7 +1408,6 @@ if __name__ == '__main__':
             pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
             pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
             pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
-            pw_T_obj_opti_ang = p_visualisation.getEulerFromQuaternion(pw_T_obj_opti_ori)
             # load the groud truth object
             if visualisation_flag == True and object_flag == "cracker":
                 # test_euler = p_visualisation.getEulerFromQuaternion(pw_T_obj_opti_ori)
@@ -1474,7 +1453,7 @@ if __name__ == '__main__':
                                                                 pw_T_base_ori)
     
         # compute pose of DOPE object in sim world (pybullet)
-        pw_T_obj_dope = np.dot(pw_T_rob_sim_4_4, rob_T_obj_dope)
+        pw_T_obj_dope = np.dot(pw_T_rob_sim_4_4, rob_T_obj_dope_4_4)
         pw_T_obj_dope_pos = [pw_T_obj_dope[0][3], pw_T_obj_dope[1][3], pw_T_obj_dope[2][3]]
         pw_T_obj_dope_ori = transformations.quaternion_from_matrix(pw_T_obj_dope)
         # load the DOPE object
@@ -1713,8 +1692,8 @@ if __name__ == '__main__':
             rob_T_obj_dope_pos = list(trans)
             rob_T_obj_dope_ori = list(rot)
             rob_T_obj_dope_3_3 = transformations.quaternion_matrix(rob_T_obj_dope_ori)
-            rob_T_obj_dope = rotation_4_4_to_transformation_4_4(rob_T_obj_dope_3_3,rob_T_obj_dope_pos)
-            pw_T_obj_dope = np.dot(pw_T_rob_sim_4_4, rob_T_obj_dope)
+            rob_T_obj_dope_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_dope_3_3,rob_T_obj_dope_pos)
+            pw_T_obj_dope = np.dot(pw_T_rob_sim_4_4, rob_T_obj_dope_4_4)
             pw_T_obj_dope_pos = [pw_T_obj_dope[0][3],pw_T_obj_dope[1][3],pw_T_obj_dope[2][3]]
             pw_T_obj_dope_ori = transformations.quaternion_from_matrix(pw_T_obj_dope)
             pw_T_obj_dope_ang = p_visualisation.getEulerFromQuaternion(pw_T_obj_dope_ori)
@@ -1741,9 +1720,7 @@ if __name__ == '__main__':
             pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
             pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
             pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
-            pw_T_obj_opti_ang = p_visualisation.getEulerFromQuaternion(pw_T_obj_opti_ori)
             pw_T_obj_pos_opti = copy.deepcopy(pw_T_obj_opti_pos)
-            pw_T_obj_ang_opti = copy.deepcopy(pw_T_obj_opti_ang)
             pw_T_obj_ori_opti = copy.deepcopy(pw_T_obj_opti_ori)
             # when OptiTrack does not work, record the previous OptiTrack pose in the rosbag
             if compute_error_flag == True:

@@ -72,12 +72,12 @@ class InitialSimulationModel():
         
     def initial_particle(self):
         for i in range(self.particle_num):
-            x,y,z,x_angle,y_angle,z_angle,new_quat = self.generate_random_pose(self.noise_obj_pos, self.pw_T_object_ori_dope)
+            particle_pos, particle_ori = self.generate_random_pose(self.noise_obj_pos, self.pw_T_object_ori_dope)
             w = 1/self.particle_num
-            particle = Particle(x,y,z,x_angle,y_angle,z_angle,w,index=i)
+            particle = Particle(particle_pos, particle_ori, w, index=i)
             self.particle_cloud.append(particle)
 
-    def generate_random_pose(self,noise_object_pos, pw_T_object_ori_dope):
+    def generate_random_pose(self, noise_object_pos, pw_T_object_ori_dope):
         position = copy.deepcopy(noise_object_pos)
         quat = copy.deepcopy(pw_T_object_ori_dope)#x,y,z,w
         quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3])#w,x,y,z
@@ -88,23 +88,19 @@ class InitialSimulationModel():
         z_axis = random.uniform(-1,1)
         x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
         y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
-        angle_noise = self.add_noise_to_init_par(0,self.boss_sigma_obs_ang_init)
+        angle_noise = self.add_noise_to_init_par(0, self.boss_sigma_obs_ang_init)
         w_quat = math.cos(angle_noise/2.0)
         x_quat = math.sin(angle_noise/2.0) * x_axis
         y_quat = math.sin(angle_noise/2.0) * y_axis
         z_quat = math.sin(angle_noise/2.0) * z_axis
         ###nois_quat(w,x,y,z); new_quat(w,x,y,z)
-        nois_quat = Quaternion(x=x_quat,y=y_quat,z=z_quat,w=w_quat)
+        nois_quat = Quaternion(x=x_quat, y=y_quat, z=z_quat, w=w_quat)
         new_quat = nois_quat * quat_QuatStyle
         ###pb_quat(x,y,z,w)
-        pb_quat = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
-        new_angle = self.p_visualisation.getEulerFromQuaternion(pb_quat)
-        x_angle = new_angle[0]
-        y_angle = new_angle[1]
-        z_angle = new_angle[2]
-        return x,y,z,x_angle,y_angle,z_angle,pb_quat
+        pb_quat = [new_quat[1], new_quat[2], new_quat[3], new_quat[0]]
+        return [x, y, z], pb_quat
     
-    def compute_estimate_pos_of_object(self, particle_cloud):
+    def compute_estimate_pos_of_object(self, particle_cloud): # need to change
         x_set = 0
         y_set = 0
         z_set = 0
@@ -112,47 +108,41 @@ class InitialSimulationModel():
         quaternions = []
         qws = []
         for index,particle in enumerate(particle_cloud):
-            x_set = x_set + particle.x * particle.w
-            y_set = y_set + particle.y * particle.w
-            z_set = z_set + particle.z * particle.w
-            q = self.p_visualisation.getQuaternionFromEuler([particle.x_angle, particle.y_angle, particle.z_angle])
+            x_set = x_set + particle.pos[0] * particle.w
+            y_set = y_set + particle.pos[1] * particle.w
+            z_set = z_set + particle.pos[2] * particle.w
+            q = self.quaternion_correction(particle.ori)
             qws.append(particle.w)
-            quaternions.append([q[0], q[1], q[2], q[3]])
+            quaternions.append([q[0], q[1], q[2], q[3]]) # x,y,z,w
             w_set = w_set + particle.w
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
         return x_set/w_set, y_set/w_set, z_set/w_set, q[0], q[1], q[2], q[3]
 
     def display_particle(self):
         for index, particle in enumerate(self.particle_cloud):
-            visualize_particle_pos = [particle.x, particle.y, particle.z]
-            visualize_particle_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
-            visualize_particle_orientation = self.p_visualisation.getQuaternionFromEuler(visualize_particle_angle)
             if self.object_flag == "cracker":
                 visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_par_with_visual_PB_hor.urdf"),
-                                                                visualize_particle_pos,
-                                                                visualize_particle_orientation)
+                                                                      particle.pos,
+                                                                      particle.ori)
             if self.object_flag == "soup":
                 visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_with_visual_small_PB_hor.urdf"),
-                                                                visualize_particle_pos,
-                                                                visualize_particle_orientation)
+                                                                      particle.pos,
+                                                                      particle.ori)
             self.particle_with_visual_id_collection.append(visualize_particle_Id)
             
     def display_particle_CV(self):
         for index, particle in enumerate(self.particle_cloud_CV):
-            visualize_particle_pos = [particle.x, particle.y, particle.z]
-            visualize_particle_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
-            visualize_particle_orientation = self.p_visualisation.getQuaternionFromEuler(visualize_particle_angle)
             if self.object_flag == "cracker":
                 visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_par_with_visual_CV_hor.urdf"),
-                                                                visualize_particle_pos,
-                                                                visualize_particle_orientation)
+                                                                      particle.pos,
+                                                                      particle.ori)
             if self.object_flag == "soup":
                 visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_with_visual_small_CV_hor.urdf"),
-                                                                visualize_particle_pos,
-                                                                visualize_particle_orientation)
+                                                                      particle.pos,
+                                                                      particle.ori)
             self.particle_with_visual_id_collection_CV.append(visualize_particle_Id)
 
-    def initial_and_set_simulation_env(self,joint_of_robot):
+    def initial_and_set_simulation_env(self, joint_of_robot):
         for index, particle in enumerate(self.particle_cloud):
             pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
             self.pybullet_particle_env_collection.append(pybullet_simulation_env)
@@ -182,18 +172,15 @@ class InitialSimulationModel():
                                                              useFixedBase=1)
             self.fake_robot_id_collection.append(fake_robot_id)
             #set joint of fake robot
-            self.set_sim_robot_JointPosition(pybullet_simulation_env,fake_robot_id,joint_of_robot)
-            particle_no_visual_start_pos = [particle.x, particle.y, particle.z]
-            particle_no_visual_start_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
-            particle_no_visual_start_orientation = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_start_angle)
+            self.set_sim_robot_JointPosition(pybullet_simulation_env, fake_robot_id, joint_of_robot)
             if self.object_flag == "cracker":
                 particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_par_no_visual_hor.urdf"),
-                                                                        particle_no_visual_start_pos,
-                                                                        particle_no_visual_start_orientation)
+                                                                         particle.pos,
+                                                                         particle.ori)
             if self.object_flag == "soup":
                 particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_no_visual_small_hor.urdf"),
-                                                                        particle_no_visual_start_pos,
-                                                                        particle_no_visual_start_orientation)
+                                                                         particle.pos,
+                                                                         particle.ori)
             while True:
                 pybullet_simulation_env.stepSimulation()
                 flag = 0
@@ -201,17 +188,13 @@ class InitialSimulationModel():
                 for contact in contacts:
                     contact_dis = contact[8]
                     if contact_dis < -0.001:
-                        Px,Py,Pz,Px_angle,Py_angle,Pz_angle,P_quat = self.generate_random_pose(self.noise_obj_pos,self.pw_T_object_ori_dope)
+                        particle_pos, particle_ori = self.generate_random_pose(self.noise_obj_pos, self.pw_T_object_ori_dope)
                         pybullet_simulation_env.resetBasePositionAndOrientation(particle_no_visual_id,
-                                                                                [Px,Py,Pz],
-                                                                                P_quat)
+                                                                                particle_pos,
+                                                                                particle_ori)
                         flag = 1
-                        particle.x = Px
-                        particle.y = Py
-                        particle.z = Pz
-                        particle.x_angle = Px_angle
-                        particle.y_angle = Py_angle
-                        particle.z_angle = Pz_angle
+                        particle.pos = copy.deepcopy(particle_pos)
+                        particle.ori = copy.deepcopy(particle_ori)
                         break
                 if flag == 0:
                     break
@@ -219,7 +202,7 @@ class InitialSimulationModel():
         obj_est_set = self.compute_estimate_pos_of_object(self.particle_cloud)
         return obj_est_set[0], obj_est_set[1], obj_est_set[2], obj_est_set[3], obj_est_set[4], obj_est_set[5], obj_est_set[6]
     
-    def initial_and_set_simulation_env_CV(self,joint_of_robot):
+    def initial_and_set_simulation_env_CV(self, joint_of_robot):
         self.particle_cloud_CV = copy.deepcopy(self.particle_cloud)
         for index, particle in enumerate(self.particle_cloud_CV):
             pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT) # GUI_SERVER, DIRECT
@@ -227,17 +210,14 @@ class InitialSimulationModel():
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0,0,-9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
-            particle_no_visual_start_pos = [particle.x, particle.y, particle.z]
-            particle_no_visual_start_angle = [particle.x_angle, particle.y_angle, particle.z_angle]
-            particle_no_visual_start_orientation = pybullet_simulation_env.getQuaternionFromEuler(particle_no_visual_start_angle)
             if self.object_flag == "cracker":
                 particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_par_no_visual_hor.urdf"),
-                                                                        particle_no_visual_start_pos,
-                                                                        particle_no_visual_start_orientation)
+                                                                         particle.pos,
+                                                                         particle.ori)
             if self.object_flag == "soup":
                 particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_no_visual_small_hor.urdf"),
-                                                                        particle_no_visual_start_pos,
-                                                                        particle_no_visual_start_orientation)
+                                                                         particle.pos,
+                                                                         particle.ori)
             self.particle_no_visual_id_collection_CV.append(particle_no_visual_id)
         obj_est_set_CV = self.compute_estimate_pos_of_object(self.particle_cloud_CV)
         return obj_est_set_CV[0], obj_est_set_CV[1], obj_est_set_CV[2], obj_est_set_CV[3], obj_est_set_CV[4], obj_est_set_CV[5], obj_est_set_CV[6]
@@ -254,12 +234,24 @@ class InitialSimulationModel():
                                                 joint_index,
                                                 targetValue=position[joint_index])
                 
-    def add_noise_to_init_par(self,current_pos,sigma_init):
+    def add_noise_to_init_par(self, current_pos, sigma_init):
         mean = current_pos
         sigma = sigma_init
         new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_pos_is_added_noise
     
-    def take_easy_gaussian_value(self,mean,sigma):
+    def take_easy_gaussian_value(self, mean,sigma):
         normal = random.normalvariate(mean, sigma)
         return normal
+    
+    # make sure all quaternions all between -pi and +pi
+    def quaternion_correction(self, quaternion): # x,y,z,w
+        new_quat = Quaternion(x=quaternion[0], y=quaternion[1], z=quaternion[2], w=quaternion[3]) # w,x,y,z
+        cos_theta_over_2 = new_quat.w
+        sin_theta_over_2 = math.sqrt(new_quat.x ** 2 + new_quat.y ** 2 + new_quat.z ** 2)
+        theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
+        theta = theta_over_2 * 2
+        if theta >= math.pi or theta <= -math.pi:
+            new_quaternion = [-quaternion[0], -quaternion[1], -quaternion[2], -quaternion[3]]
+            return new_quaternion
+        return quaternion

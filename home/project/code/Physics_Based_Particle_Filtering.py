@@ -48,49 +48,13 @@ from Ros_listener import Ros_listener
 from Particle import Particle
 from InitialRealworldModel import InitialRealworldModel
 from InitialSimulationModel import InitialSimulationModel
-
-
-compute_error_flag = False
-# panda data frame to record the error and to compare them
-# pos
-if compute_error_flag == True:
-    boss_obse_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-    boss_PBPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-    boss_CVPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-    boss_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-    # ang
-    boss_obse_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-    boss_PBPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-    boss_CVPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-    boss_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-    
-    # when OptiTrack does not work, record the previous OptiTrack pose in the rosbag
-    boss_opti_pos_x_df = pd.DataFrame(columns=['step','time','pos_x','alg'],index=[])
-    boss_opti_pos_y_df = pd.DataFrame(columns=['step','time','pos_y','alg'],index=[])
-    boss_opti_pos_z_df = pd.DataFrame(columns=['step','time','pos_z','alg'],index=[])
-    boss_opti_ori_x_df = pd.DataFrame(columns=['step','time','ang_x','alg'],index=[])
-    boss_opti_ori_y_df = pd.DataFrame(columns=['step','time','ang_y','alg'],index=[])
-    boss_opti_ori_z_df = pd.DataFrame(columns=['step','time','ang_z','alg'],index=[])
-    boss_opti_ori_w_df = pd.DataFrame(columns=['step','time','ang_w','alg'],index=[])
-    boss_estPB_pos_x_df = pd.DataFrame(columns=['step','time','pos_x','alg'],index=[])
-    boss_estPB_pos_y_df = pd.DataFrame(columns=['step','time','pos_y','alg'],index=[])
-    boss_estPB_pos_z_df = pd.DataFrame(columns=['step','time','pos_z','alg'],index=[])
-    boss_estPB_ori_x_df = pd.DataFrame(columns=['step','time','ang_x','alg'],index=[])
-    boss_estPB_ori_y_df = pd.DataFrame(columns=['step','time','ang_y','alg'],index=[])
-    boss_estPB_ori_z_df = pd.DataFrame(columns=['step','time','ang_z','alg'],index=[])
-    boss_estPB_ori_w_df = pd.DataFrame(columns=['step','time','ang_w','alg'],index=[])
-    boss_estDO_pos_x_df = pd.DataFrame(columns=['step','time','pos_x','alg'],index=[])
-    boss_estDO_pos_y_df = pd.DataFrame(columns=['step','time','pos_y','alg'],index=[])
-    boss_estDO_pos_z_df = pd.DataFrame(columns=['step','time','pos_z','alg'],index=[])
-    boss_estDO_ori_x_df = pd.DataFrame(columns=['step','time','ang_x','alg'],index=[])
-    boss_estDO_ori_y_df = pd.DataFrame(columns=['step','time','ang_y','alg'],index=[])
-    boss_estDO_ori_z_df = pd.DataFrame(columns=['step','time','ang_z','alg'],index=[])
-    boss_estDO_ori_w_df = pd.DataFrame(columns=['step','time','ang_w','alg'],index=[])
+from EstimatedObjectPose import EstimatedObjectPose
+from ObservationPose import ObservationPose
+from OptitrackPose import OptitrackPose
 
 # CVPF Pose list (motion model)
 boss_obs_pose_CVPF = []
 boss_est_pose_CVPF = []
-
 
 
 #Class of Physics-based Particle Filtering
@@ -110,17 +74,14 @@ class PFMove():
 
     
     # buffer function
-    def real_robot_control_PB(self,opti_obj_pos_cur, opti_obj_ori_cur, real_robot_joint_pos,
-                              nois_obj_pos_cur, nois_obj_ori_cur, do_obs_update):
+    def real_robot_control_PB(self, real_robot_joint_pos, nois_obj_pos_cur, nois_obj_ori_cur, do_obs_update):
         # begin to run the PBPF algorithm
         self.update_particle_filter_PB(self.pybullet_env_id_collection, # simulation environment per particle
                                        self.pybullet_sim_fake_robot_id_collection, # fake robot id per sim_env
                                        real_robot_joint_pos, # execution actions of the fake robot
-                                       opti_obj_pos_cur, # ground truth pos [x, y, z]
-                                       opti_obj_ori_cur, # ground truth ori [x, y, z, w]
-                                       nois_obj_pos_cur, # DOPE value pos [x, y, z]
-                                       nois_obj_ori_cur, # DOPE value ori [x, y, z, w]
-                                       do_obs_update) # flag for judging DOPE work
+                                       nois_obj_pos_cur, # Obse value pos [x, y, z]
+                                       nois_obj_ori_cur, # Obse value ori [x, y, z, w]
+                                       do_obs_update) # flag for judging Obse work
     
     def get_real_robot_joint(self, pybullet_env_id, real_robot_id):
         real_robot_joint_list = []
@@ -151,14 +112,11 @@ class PFMove():
         return distance
     
     # executed_control
-    def update_particle_filter_PB(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos, 
-                                  opti_obj_pos_cur, opti_obj_ori_cur,
+    def update_particle_filter_PB(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos,
                                   nois_obj_pos_cur, nois_obj_ori_cur, do_obs_update):
-        global flag_record_dope
+        global flag_record_obse
         global flag_record_PBPF
         global flag_record
-        global estPB_form_previous
-        global estDO_form_previous
         self.times = []
         t1 = time.time()
         # motion model
@@ -179,78 +137,6 @@ class PFMove():
         if visualisation_particle_flag == True:
             self.display_particle_in_visual_model_PB(self.particle_cloud)
         # self.draw_contrast_figure(estimated_object_pos,observation)
-        # compute error and write down to the file
-        err_opti_dope_pos = compute_pos_err_bt_2_points(nois_obj_pos_cur,opti_obj_pos_cur)
-        err_opti_dope_ang = compute_ang_err_bt_2_points(nois_obj_ori_cur,opti_obj_ori_cur)
-        err_opti_dope_ang = angle_correction(err_opti_dope_ang)
-        err_opti_PBPF_pos = compute_pos_err_bt_2_points(estimated_object_pos,opti_obj_pos_cur)
-        err_opti_PBPF_ang = compute_ang_err_bt_2_points(estimated_object_ori,opti_obj_ori_cur)
-        err_opti_PBPF_ang = angle_correction(err_opti_PBPF_ang)
-        if publish_PBPF_pose_flag == True:
-            pub = rospy.Publisher('PBPF_pose', PoseStamped, queue_size = 1)
-            pose_PBPF = PoseStamped()
-            pose_PBPF.pose.position.x = estimated_object_pos[0]
-            pose_PBPF.pose.position.y = estimated_object_pos[1]
-            pose_PBPF.pose.position.z = estimated_object_pos[2]
-            pose_PBPF.pose.orientation.x = estimated_object_ori[0]
-            pose_PBPF.pose.orientation.y = estimated_object_ori[1]
-            pose_PBPF.pose.orientation.z = estimated_object_ori[2]
-            pose_PBPF.pose.orientation.w = estimated_object_ori[3]
-            pub.publish(pose_PBPF)
-        if publish_DOPE_pose_flag == True:
-            pub_DOPE = rospy.Publisher('DOPE_pose', PoseStamped, queue_size = 1)
-            pose_DOPE = PoseStamped()
-            pose_DOPE.pose.position.x = nois_obj_pos_cur[0]
-            pose_DOPE.pose.position.y = nois_obj_pos_cur[1]
-            pose_DOPE.pose.position.z = nois_obj_pos_cur[2]
-            pose_DOPE.pose.orientation.x = nois_obj_ori_cur[0]
-            pose_DOPE.pose.orientation.y = nois_obj_ori_cur[1]
-            pose_DOPE.pose.orientation.z = nois_obj_ori_cur[2]
-            pose_DOPE.pose.orientation.w = nois_obj_ori_cur[3]
-            pub_DOPE.publish(pose_DOPE)
-        # when OptiTrack does not work, record the previous OptiTrack pose in the rosbag
-        if publish_Opti_pose_flag == True and optitrack_working_flag == True:
-            pub_opti = rospy.Publisher('Opti_pose', PoseStamped, queue_size = 1)
-            pose_opti = PoseStamped()
-            pose_opti.pose.position.x = opti_obj_pos_cur[0]
-            pose_opti.pose.position.y = opti_obj_pos_cur[1]
-            pose_opti.pose.position.z = opti_obj_pos_cur[2]
-            pose_opti.pose.orientation.x = opti_obj_ori_cur[0]
-            pose_opti.pose.orientation.y = opti_obj_ori_cur[1]
-            pose_opti.pose.orientation.z = opti_obj_ori_cur[2]
-            pose_opti.pose.orientation.w = opti_obj_ori_cur[3]
-            pub_opti.publish(pose_opti)
-        if compute_error_flag == True:
-            t_before_record = time.time()
-            boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
-            boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
-            boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
-            boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
-            flag_record = flag_record + 1
-            flag_record_dope = flag_record_dope + 1
-            boss_PBPF_err_pos_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_pos, 'PBPF']
-            boss_PBPF_err_ang_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_ang, 'PBPF']
-            boss_err_pos_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_pos, 'PBPF']
-            boss_err_ang_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_ang, 'PBPF']
-            flag_record = flag_record + 1
-            flag_record_PBPF = flag_record_PBPF + 1
-            estPB_from_pre_time = time.time()
-            boss_estPB_pos_x_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[0], 'estPB']
-            boss_estPB_pos_y_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[1], 'estPB']
-            boss_estPB_pos_z_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[2], 'estPB']
-            boss_estPB_ori_x_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[0], 'estPB']
-            boss_estPB_ori_y_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[1], 'estPB']
-            boss_estPB_ori_z_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[2], 'estPB']
-            boss_estPB_ori_w_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[3], 'estPB']
-            estPB_form_previous = estPB_form_previous + 1
-            boss_estDO_pos_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, nois_obj_pos_cur[0], 'estDO']
-            boss_estDO_pos_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, nois_obj_pos_cur[1], 'estDO']
-            boss_estDO_pos_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, nois_obj_pos_cur[2], 'estDO']
-            boss_estDO_ori_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[0], 'estDO']
-            boss_estDO_ori_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[1], 'estDO']
-            boss_estDO_ori_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[2], 'estDO']
-            boss_estDO_ori_w_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, nois_obj_ori_cur[3], 'estDO']
-            estDO_form_previous = estDO_form_previous + 1
         return
     
     # judge if any particles are contact
@@ -438,9 +324,9 @@ class PFMove():
             par_ori = quaternion_correction(particle.ori)
             nois_obj_quat = Quaternion(x=nois_obj_ori[0], y=nois_obj_ori[1], z=nois_obj_ori[2], w=nois_obj_ori[3]) # Quaternion(): w,x,y,z
             par_quat = Quaternion(x=par_ori[0],y=par_ori[1],z=par_ori[2],w=par_ori[3])
-            err_bt_par_dope = par_quat * nois_obj_quat.inverse
-            cos_theta_over_2 = err_bt_par_dope.w
-            sin_theta_over_2 = math.sqrt(err_bt_par_dope.x ** 2 + err_bt_par_dope.y ** 2 + err_bt_par_dope.z ** 2)
+            err_bt_par_obse = par_quat * nois_obj_quat.inverse
+            cos_theta_over_2 = err_bt_par_obse.w
+            sin_theta_over_2 = math.sqrt(err_bt_par_obse.x ** 2 + err_bt_par_obse.y ** 2 + err_bt_par_obse.z ** 2)
             theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
             theta = theta_over_2 * 2
             weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
@@ -636,15 +522,6 @@ class PFMove():
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
         return x_set/w_set, y_set/w_set, z_set/w_set, q[0], q[1], q[2], q[3]
 
-    def compute_transformation_matrix(self, opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori):
-        robot_transformation_matrix = transformations.quaternion_matrix(opti_T_rob_opti_ori)
-        ow_T_robot = self.rotation_4_4_to_transformation_4_4(robot_transformation_matrix,opti_T_rob_opti_pos)
-        object_transformation_matrix = transformations.quaternion_matrix(opti_T_obj_opti_ori)
-        ow_T_object = self.rotation_4_4_to_transformation_4_4(object_transformation_matrix,opti_T_obj_opti_pos)
-        robot_T_ow = np.linalg.inv(ow_T_robot)
-        robot_T_object = np.dot(robot_T_ow,ow_T_object)
-        return robot_T_object
-
     def rotation_4_4_to_transformation_4_4(self, rotation_4_4,pos):
         rotation_4_4[0][3] = pos[0]
         rotation_4_4[1][3] = pos[1]
@@ -665,14 +542,6 @@ class PFMoveCV():
         self.object_real_____pose_x = []
         self.object_real_____pose_y = []
 
-    #new structure
-    def real_robot_control_CV(self, opti_obj_pos_cur, opti_obj_ori_cur, nois_obj_pos_cur, nois_obj_ori_cur, do_obs_update):
-        self.update_particle_filter_CV(opti_obj_pos_cur,
-                                       opti_obj_ori_cur,
-                                       nois_obj_pos_cur,
-                                       nois_obj_ori_cur,
-                                       do_obs_update)
-
     def compute_pos_err_bt_2_points(self,pos1,pos2):
         x_d = pos1[0]-pos2[0]
         y_d = pos1[1]-pos2[1]
@@ -681,7 +550,7 @@ class PFMoveCV():
         return distance
 
     # executed_control
-    def update_particle_filter_CV(self, opti_obj_pos_cur, opti_obj_ori_cur, nois_obj_pos_cur, nois_obj_ori_cur, do_obs_update):
+    def update_particle_filter_CV(self, nois_obj_pos_cur, nois_obj_ori_cur, do_obs_update):
         global flag_record_CVPF
         global flag_record
         # motion model
@@ -700,18 +569,6 @@ class PFMoveCV():
         # display particles
         if visualisation_particle_flag == True:
             self.display_particle_in_visual_model_CV(self.particle_cloud_CV)
-        # compute error and write down to the file
-        err_opti_CVPF_pos = compute_pos_err_bt_2_points(estimated_object_pos_CV, opti_obj_pos_cur)
-        err_opti_CVPF_ang = compute_ang_err_bt_2_points(estimated_object_ori_CV, opti_obj_ori_cur)
-        err_opti_CVPF_ang = angle_correction(err_opti_CVPF_ang)
-        if compute_error_flag == True:
-            t_before_record = time.time()
-            boss_CVPF_err_pos_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_pos, 'CVPF']
-            boss_CVPF_err_ang_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_ang, 'CVPF']
-            boss_err_pos_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_pos, 'CVPF']
-            boss_err_ang_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_ang, 'CVPF']
-            flag_record = flag_record + 1
-            flag_record_CVPF = flag_record_CVPF + 1
         return
 
     def isAnyParticleInContact(self):
@@ -804,9 +661,9 @@ class PFMoveCV():
             par_ori = quaternion_correction(particle.ori)
             nois_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3]) # w,x,y,z
             par_quat = Quaternion(x=par_ori[0],y=par_ori[1],z=par_ori[2],w=par_ori[3])
-            err_bt_par_dope = par_quat * nois_obj_quat.inverse
-            cos_theta_over_2 = err_bt_par_dope.w
-            sin_theta_over_2 = math.sqrt(err_bt_par_dope.x ** 2 + err_bt_par_dope.y ** 2 + err_bt_par_dope.z ** 2)
+            err_bt_par_obse = par_quat * nois_obj_quat.inverse
+            cos_theta_over_2 = err_bt_par_obse.w
+            sin_theta_over_2 = math.sqrt(err_bt_par_obse.x ** 2 + err_bt_par_obse.y ** 2 + err_bt_par_obse.z ** 2)
             theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
             theta = theta_over_2 * 2
             weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
@@ -998,7 +855,7 @@ class PFMoveCV():
         q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
         return x_set/w_set, y_set/w_set, z_set/w_set, q[0], q[1], q[2], q[3]
 
-    def compute_transformation_matrix(self, a_pos,a_ori,b_pos,b_ori):
+    def compute_transformation_matrix(self, a_pos, a_ori, b_pos, b_ori):
         ow_T_a_3_3 = transformations.quaternion_matrix(a_ori)
         ow_T_a_4_4 = self.rotation_4_4_to_transformation_4_4(ow_T_a_3_3,a_pos)
         ow_T_b_3_3 = transformations.quaternion_matrix(b_ori)
@@ -1048,14 +905,15 @@ def compute_ang_err_bt_2_points(object1_ori, object2_ori):
     theta = theta_over_2 * 2
     return theta
 # compute the transformation matrix represent that the pose of object in the robot world
-def compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori):
-    robot_transformation_matrix = transformations.quaternion_matrix(opti_T_rob_opti_ori)
-    ow_T_robot = rotation_4_4_to_transformation_4_4(robot_transformation_matrix, opti_T_rob_opti_pos)
-    object_transformation_matrix = transformations.quaternion_matrix(opti_T_obj_opti_ori)
-    ow_T_object = rotation_4_4_to_transformation_4_4(object_transformation_matrix, opti_T_obj_opti_pos)
-    robot_T_ow = np.linalg.inv(ow_T_robot)
-    robot_T_object = np.dot(robot_T_ow, ow_T_object)
-    return robot_T_object
+def compute_transformation_matrix(a_pos, a_ori, b_pos, b_ori):
+    ow_T_a_3_3 = transformations.quaternion_matrix(a_ori)
+    ow_T_a_4_4 = rotation_4_4_to_transformation_4_4(ow_T_a_3_3,a_pos)
+    ow_T_b_3_3 = transformations.quaternion_matrix(b_ori)
+    ow_T_b_4_4 = rotation_4_4_to_transformation_4_4(ow_T_b_3_3,b_pos)
+    a_T_ow_4_4 = np.linalg.inv(ow_T_a_4_4)
+    a_T_b_4_4 = np.dot(a_T_ow_4_4,ow_T_b_4_4)
+    return a_T_b_4_4
+
 # get pose of item
 def get_item_pos(pybullet_env, item_id):
     item_info = pybullet_env.getBasePositionAndOrientation(item_id)
@@ -1138,138 +996,21 @@ def quaternion_correction(quaternion): # x,y,z,w
     return quaternion
 # ctrl-c write down the error file
 def signal_handler(sig, frame):
-    # write the error file
-    # if rospy.is_shutdown():
-    if update_style_flag == "pose":
-        if task_flag == "1":
-            file_name_obse_pos = 'pose_scene1_obse_err_pos.csv'
-            file_name_PBPF_pos = 'pose_scene1_PBPF_err_pos.csv'
-            file_name_CVPF_pos = 'pose_scene1_CVPF_err_pos.csv'
-            file_name_obse_ang = 'pose_scene1_obse_err_ang.csv'
-            file_name_PBPF_ang = 'pose_scene1_PBPF_err_ang.csv'
-            file_name_CVPF_ang = 'pose_scene1_CVPF_err_ang.csv'
-        elif task_flag == "2":
-            file_name_obse_pos = 'pose_scene2_obse_err_pos.csv'
-            file_name_PBPF_pos = 'pose_scene2_PBPF_err_pos.csv'
-            file_name_CVPF_pos = 'pose_scene2_CVPF_err_pos.csv'
-            file_name_obse_ang = 'pose_scene2_obse_err_ang.csv'
-            file_name_PBPF_ang = 'pose_scene2_PBPF_err_ang.csv'
-            file_name_CVPF_ang = 'pose_scene2_CVPF_err_ang.csv'
-        elif task_flag == "3":
-            file_name_obse_pos = 'pose_scene3_obse_err_pos.csv'
-            file_name_PBPF_pos = 'pose_scene3_PBPF_err_pos.csv'
-            file_name_CVPF_pos = 'pose_scene3_CVPF_err_pos.csv'
-            file_name_obse_ang = 'pose_scene3_obse_err_ang.csv'
-            file_name_PBPF_ang = 'pose_scene3_PBPF_err_ang.csv'
-            file_name_CVPF_ang = 'pose_scene3_CVPF_err_ang.csv'
-        elif task_flag == "4":
-            file_name_obse_pos = 'pose_scene4_obse_err_pos.csv'
-            file_name_PBPF_pos = 'pose_scene4_PBPF_err_pos.csv'
-            file_name_CVPF_pos = 'pose_scene4_CVPF_err_pos.csv'
-            file_name_obse_ang = 'pose_scene4_obse_err_ang.csv'
-            file_name_PBPF_ang = 'pose_scene4_PBPF_err_ang.csv'
-            file_name_CVPF_ang = 'pose_scene4_CVPF_err_ang.csv'
-    elif update_style_flag == "time":
-        if task_flag == "1":
-            file_name_obse_pos = 'time_scene1_obse_err_pos.csv'
-            file_name_PBPF_pos = 'time_scene1_PBPF_err_pos.csv'
-            file_name_CVPF_pos = 'time_scene1_CVPF_err_pos.csv'
-            file_name_obse_ang = 'time_scene1_obse_err_ang.csv'
-            file_name_PBPF_ang = 'time_scene1_PBPF_err_ang.csv'
-            file_name_CVPF_ang = 'time_scene1_CVPF_err_ang.csv'
-        elif task_flag == "2":
-            file_name_obse_pos = 'time_scene2_obse_err_pos.csv'
-            file_name_PBPF_pos = 'time_scene2_PBPF_err_pos.csv'
-            file_name_CVPF_pos = 'time_scene2_CVPF_err_pos.csv'
-            file_name_obse_ang = 'time_scene2_obse_err_ang.csv'
-            file_name_PBPF_ang = 'time_scene2_PBPF_err_ang.csv'
-            file_name_CVPF_ang = 'time_scene2_CVPF_err_ang.csv'
-        elif task_flag == "3":
-            file_name_obse_pos = 'time_scene3_obse_err_pos.csv'
-            file_name_PBPF_pos = 'time_scene3_PBPF_err_pos.csv'
-            file_name_CVPF_pos = 'time_scene3_CVPF_err_pos.csv'
-            file_name_obse_ang = 'time_scene3_obse_err_ang.csv'
-            file_name_PBPF_ang = 'time_scene3_PBPF_err_ang.csv'
-            file_name_CVPF_ang = 'time_scene3_CVPF_err_ang.csv'
-        elif task_flag == "4":
-            file_name_obse_pos = 'time_scene4_obse_err_pos.csv'
-            file_name_PBPF_pos = 'time_scene4_PBPF_err_pos.csv'
-            file_name_CVPF_pos = 'time_scene4_CVPF_err_pos.csv'
-            file_name_obse_ang = 'time_scene4_obse_err_ang.csv'
-            file_name_PBPF_ang = 'time_scene4_PBPF_err_ang.csv'
-            file_name_CVPF_ang = 'time_scene4_CVPF_err_ang.csv'
-    # boss_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_pos,index=0,header=0,mode='a')
-    # boss_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_ang,index=0,header=0,mode='a')
-    if run_PBPF_flag == True:
-        boss_obse_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_obse_pos,index=0,header=0,mode='a')
-        boss_obse_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_obse_ang,index=0,header=0,mode='a')
-        print("write obser file")
-        boss_PBPF_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_PBPF_pos,index=0,header=0,mode='a')
-        boss_PBPF_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_PBPF_ang,index=0,header=0,mode='a')
-        print("write PBPF file")
-        print("PB: Update frequency is: " + str(flag_update_num_PB))
-        print("max time:", max(PBPF_time_cosuming_list))
-    if run_CVPF_flag == True:
-        boss_CVPF_err_pos_df.to_csv('error_file/'+str(file_time)+file_name_CVPF_pos,index=0,header=0,mode='a')
-        boss_CVPF_err_ang_df.to_csv('error_file/'+str(file_time)+file_name_CVPF_ang,index=0,header=0,mode='a')
-        print("write CVPF file")
-        print("CV: Update frequency is: " + str(flag_update_num_CV))
-    print("file_time:", file_time)
-    # when OptiTrack does not work, record the previous OptiTrack pose in the rosbag
-    if write_opti_pose_flag == True:
-        print("write_opti_pos")
-        boss_opti_pos_x_df.to_csv('opti_pos_x.csv')
-        boss_opti_pos_y_df.to_csv('opti_pos_y.csv')
-        boss_opti_pos_z_df.to_csv('opti_pos_z.csv')
-        boss_opti_ori_x_df.to_csv('opti_ori_x.csv')
-        boss_opti_ori_y_df.to_csv('opti_ori_y.csv')
-        boss_opti_ori_z_df.to_csv('opti_ori_z.csv')
-        boss_opti_ori_w_df.to_csv('opti_ori_w.csv')
-    if write_estPB_pose_flag == True:
-        print("write_opti_pos")
-        boss_estPB_pos_x_df.to_csv('estPB_pos_x.csv')
-        boss_estPB_pos_y_df.to_csv('estPB_pos_y.csv')
-        boss_estPB_pos_z_df.to_csv('estPB_pos_z.csv')
-        boss_estPB_ori_x_df.to_csv('estPB_ori_x.csv')
-        boss_estPB_ori_y_df.to_csv('estPB_ori_y.csv')
-        boss_estPB_ori_z_df.to_csv('estPB_ori_z.csv')
-        boss_estPB_ori_w_df.to_csv('estPB_ori_w.csv')
-    if write_estDO_pose_flag == True:
-        print("write_estDO_pos")
-        boss_estPB_pos_x_df.to_csv('estDO_pos_x.csv')
-        boss_estPB_pos_y_df.to_csv('estDO_pos_y.csv')
-        boss_estPB_pos_z_df.to_csv('estDO_pos_z.csv')
-        boss_estPB_ori_x_df.to_csv('estDO_ori_x.csv')
-        boss_estPB_ori_y_df.to_csv('estDO_ori_y.csv')
-        boss_estPB_ori_z_df.to_csv('estDO_ori_z.csv')
-        boss_estPB_ori_w_df.to_csv('estDO_ori_w.csv')
     sys.exit()
     
 if __name__ == '__main__':
-    opti_from_pre_time_begin = time.time() # program run initial time
-    rospy.init_node('PF_for_dope') # ros node
+    rospy.init_node('PF_for_obse') # ros node
     signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
-    # the flag of publish pose
-    publish_PBPF_pose_flag = False
-    publish_DOPE_pose_flag = False
-    publish_Opti_pose_flag = False
     # the flag of visualisation
     visualisation_all = True
-    visualisation_flag = True # DOPE and OptiTrack
+    visualisation_flag = True # obse and OptiTrack
     visualisation_mean = False
     visualisation_particle_flag = True
     # the flag of object judgment
-    observation_cheating_flag = False
+    observation_cheating_flag = True
     object_flag = "cracker" # cracker/soup
     # OptiTrack works fine flag
     optitrack_working_flag = True
-    publish_opti_pose_for_inter_flag = False
-    # write pose file
-    write_opti_pose_flag = False
-    write_estPB_pose_flag = False
-    write_estDO_pose_flag = False
-    write_estCV_pose_flag = False
-    first_write_flag = 0
     # number of times to run the algorithm
     file_time = 1
     # which algorithm to run
@@ -1281,7 +1022,7 @@ if __name__ == '__main__':
     update_style_flag = "time"
     # the flag is used to determine whether the robot touches the particle in the simulation
     simRobot_touch_par_flag = 0
-    object_num = 2
+    object_num = 1
     if update_style_flag == "pose":
         particle_num = 150
     elif update_style_flag == "time":
@@ -1296,7 +1037,7 @@ if __name__ == '__main__':
     d_thresh_CV = 0.0002
     a_thresh_CV = 0.0010
     flag_record = 0
-    flag_record_dope = 0
+    flag_record_obse = 0
     flag_record_PBPF = 0
     flag_record_CVPF = 0
     flag_update_num_CV = 0
@@ -1307,11 +1048,11 @@ if __name__ == '__main__':
     elif run_CVPF_flag == True:
         boss_pf_update_interval_in_real = 0.02
     pf_update_rate = rospy.Rate(1.0/boss_pf_update_interval_in_real)
-    # error in xyz axis DOPE before recalibrating
+    # error in xyz axis obse before recalibrating
     boss_sigma_obs_x = 0.03973017808163751 / 2.0
     boss_sigma_obs_y = 0.01167211468503462 / 2.0
     boss_sigma_obs_z = 0.02820930183351492 / 2.0
-    # new dope error
+    # new obse error
     boss_sigma_obs_x = 0.032860982 * 2.0
     boss_sigma_obs_y = 0.012899399 * 1.5
     boss_sigma_obs_z = 0.01
@@ -1332,20 +1073,12 @@ if __name__ == '__main__':
     friction_sigma = 0.3
     restitution_mean = 0.9
     restitution_sigma = 0.2
-    opti_form_previous = 0
-    estPB_form_previous = 0
-    estDO_form_previous = 0
     
     PBPF_time_cosuming_list = []
     
-    # multi-objects/robots list
-    pw_T_rob_sim_pose = [] 
-    pw_T_robs_sim_pose = []
-    pw_T_robs_sim_4_4 = []
-    rob_T_obj_dope_pose = []
-    rob_T_objs_dope_pose = []
-    rob_T_objs_dope_4_4 = []
-    
+    # multi-objects/robot list
+    obse_objects_list = []
+    opti_objects_list = []
     # visualisation_model
     if visualisation_all == True:
         p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER)#DIRECT,GUI_SERVER
@@ -1354,88 +1087,70 @@ if __name__ == '__main__':
     p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
     p_visualisation.setGravity(0, 0, -9.81)
     if task_flag == "4":
-        p_visualisation.resetDebugVisualizerCamera(cameraDistance=0.5,cameraYaw=90,cameraPitch=-10,cameraTargetPosition=[0.5,0.1,0.2])
+        p_visualisation.resetDebugVisualizerCamera(cameraDistance=0.5, cameraYaw=90, cameraPitch=-10, cameraTargetPosition=[0.5,0.1,0.2])
     else:
-        p_visualisation.resetDebugVisualizerCamera(cameraDistance=1,cameraYaw=180,cameraPitch=-85,cameraTargetPosition=[0.3,0.1,0.2])
-        
+        p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.3,0.1,0.2])
     
     plane_id = p_visualisation.loadURDF("plane.urdf")   
     # build an object of class "Ros_listener"
     ros_listener = Ros_listener(optitrack_working_flag, object_flag)
-    # get object pose in robot world info from DOPE
+    # get object pose in robot world info from obse
     listener = tf.TransformListener()
     # robot pose in sim world (pybullet)
     pw_T_rob_sim_pos = [0.0, 0.0, 0.026]
-    pw_T_rob_sim_ori = [0,0,0,1]
+    pw_T_rob_sim_ori = [0, 0, 0, 1]
     pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
     pw_T_rob_sim_4_4 = rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
-#    pw_T_rob_sim_pose.extend([pw_T_rob_sim_pos, pw_T_rob_sim_ori])
-#    pw_T_robs_sim_pose.append(pw_T_rob_sim_pose)
-#    pw_T_robs_sim_4_4.append(pw_T_rob_sim_4_4)
+
     
     if observation_cheating_flag == False:
         print("before while loop")
-        while True:
-            try:
-                if object_flag == "cracker":
-                    (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
-                if object_flag == "soup":
-                    (trans,rot) = listener.lookupTransform('/panda_link0', '/soup', rospy.Time(0))
-                break
-            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                continue
-        rob_T_obj_dope_pos = list(trans)
-        rob_T_obj_dope_ori = list(rot)
-        rob_T_obj_dope_3_3 = transformations.quaternion_matrix(rob_T_obj_dope_ori)
-        rob_T_obj_dope_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_dope_3_3, rob_T_obj_dope_pos)
-#        rob_T_obj_dope_pose.extend([rob_T_obj_dope_pos, rob_T_obj_dope_ori])
-#        rob_T_objs_dope_pose.append(rob_T_obj_dope_pose)
-#        rob_T_objs_dope_4_4.append(rob_T_obj_dope_4_4)
+        # observation multi-objects
+        for i in range(object_num):
+            while True:
+                try:
+                    if object_flag == "cracker":
+                        (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
+                    if object_flag == "soup":
+                        (trans,rot) = listener.lookupTransform('/panda_link0', '/soup', rospy.Time(0))
+                    break
+                except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                    continue
+            # trans_list.append(trans)
+            # rot_list.append(rot)
+            rob_T_obj_obse_pos = list(trans)
+            rob_T_obj_obse_ori = list(rot)
+            rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
+            rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3, rob_T_obj_obse_pos)
+            # compute pose of obse object in sim world (pybullet)
+            pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
+            pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
+            pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
+            
+            # load the obse object
+            if visualisation_flag == True and object_flag == "cracker":
+                obse_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obse_obj_with_visual_hor.urdf"),
+                                                          pw_T_obj_obse_pos,
+                                                          pw_T_obj_obse_ori)
+            if visualisation_flag == True and object_flag == "soup":
+                obse_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/soup_obse_obj_with_visual_hor.urdf"),
+                                                          pw_T_obj_obse_pos,
+                                                          pw_T_obj_obse_ori)
+            # represent observation multi-objects as a class
+            obse_object = ObservationPose(obse_object_id, pw_T_obj_obse_pos, pw_T_obj_obse_ori, index=i)
+            obse_objects_list.append(obse_object)
         print("after while loop")
         # give some time to update the data
         time.sleep(0.5)
         if optitrack_working_flag == True:
             opti_T_rob_opti_pos = ros_listener.robot_pos
             opti_T_rob_opti_ori = ros_listener.robot_ori
-            opti_T_obj_opti_pos = ros_listener.object_pos
-            opti_T_obj_opti_ori = ros_listener.object_ori
-            if task_flag == "4":
-                base_of_cheezit_pos = ros_listener.base_pos
-                base_of_cheezit_ori = ros_listener.base_ori
-        
-            # compute transformation matrix (OptiTrack)
-            rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
-            pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
-            pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
-            pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
-            # load the groud truth object
-            if visualisation_flag == True and object_flag == "cracker":
-                # test_euler = p_visualisation.getEulerFromQuaternion(pw_T_obj_opti_ori)
-                # print(pw_T_obj_opti_ori)
-                # pw_T_obj_opti_ori = p_visualisation.getQuaternionFromEuler(test_euler) # pybullet x,y,z,w
-                # print(pw_T_obj_opti_ori)
-                optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_real_obj_with_visual_hor.urdf"),
-                                                              pw_T_obj_opti_pos,
-                                                              pw_T_obj_opti_ori)
-            if visualisation_flag == True and object_flag == "soup":
-                optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_real_obj_with_visual_small_hor.urdf"),
-                                                              pw_T_obj_opti_pos,
-                                                              pw_T_obj_opti_ori)    
-            # when OptiTrack does not work, record the previous OptiTrack pose in the rosbag
-            if compute_error_flag == True:
-                opti_from_pre_time = time.time()
-                boss_opti_pos_x_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_obj_opti_pos[0], 'opti']
-                boss_opti_pos_y_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_obj_opti_pos[1], 'opti']
-                boss_opti_pos_z_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_obj_opti_pos[2], 'opti']
-                boss_opti_ori_x_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_obj_opti_ori[0], 'opti']
-                boss_opti_ori_y_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_obj_opti_ori[1], 'opti']
-                boss_opti_ori_z_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_obj_opti_ori[2], 'opti']
-                boss_opti_ori_w_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_obj_opti_ori[3], 'opti']
-                opti_form_previous = opti_form_previous + 1
             # compute and load the pose of optitrack_base (only task 4)
             pw_T_base_pos = [0,0,0]
             pw_T_base_ori = [0,0,0,1]
             if task_flag == "4":
+                base_of_cheezit_pos = ros_listener.base_pos
+                base_of_cheezit_ori = ros_listener.base_ori
                 robot_T_base = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, base_of_cheezit_pos, base_of_cheezit_ori)
                 # pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
                 # pw_T_rob_sim_4_4 = rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
@@ -1451,73 +1166,87 @@ if __name__ == '__main__':
                     optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/base_of_cracker.urdf"),
                                                                 pw_T_base_pos,
                                                                 pw_T_base_ori)
+                
+            # optitrack multi-objects
+            for i in range(object_num):
+                opti_T_obj_opti_pos = ros_listener.object_pos
+                opti_T_obj_opti_ori = ros_listener.object_ori
+                # compute transformation matrix (OptiTrack)
+                rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
+                pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
+                pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
+                pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
+                # load the groud truth object
+                if visualisation_flag == True and object_flag == "cracker":
+                    optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_real_obj_with_visual_hor.urdf"),
+                                                                   pw_T_obj_opti_pos,
+                                                                   pw_T_obj_opti_ori)
+                if visualisation_flag == True and object_flag == "soup":
+                    optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/soup_real_obj_with_visual_hor.urdf"),
+                                                                   pw_T_obj_opti_pos,
+                                                                   pw_T_obj_opti_ori)
+                # represent optitrack multi-objects as a class
+                opti_object = OptitrackPose(optitrack_object_id, pw_T_obj_opti_pos, pw_T_obj_opti_ori, index=i)
+                opti_objects_list.append(opti_object)
+            
     
-        # compute pose of DOPE object in sim world (pybullet)
-        pw_T_obj_dope = np.dot(pw_T_rob_sim_4_4, rob_T_obj_dope_4_4)
-        pw_T_obj_dope_pos = [pw_T_obj_dope[0][3], pw_T_obj_dope[1][3], pw_T_obj_dope[2][3]]
-        pw_T_obj_dope_ori = transformations.quaternion_from_matrix(pw_T_obj_dope)
-        # load the DOPE object
-        if visualisation_flag == True and object_flag == "cracker":
-            dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_dope_obj_with_visual_hor.urdf"),
-                                                      pw_T_obj_dope_pos,
-                                                      pw_T_obj_dope_ori)
-        if visualisation_flag == True and object_flag == "soup":
-            dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/soup_dope_obj_with_visual_hor.urdf"),
-                                                      pw_T_obj_dope_pos,
-                                                      pw_T_obj_dope_ori)
+        
     elif observation_cheating_flag == True:
         # load the groud truth object
         pw_T_objs_opti_pose_list = []
+        pw_T_obj0_opti_pose = []
         pw_T_obj1_opti_pose = []
-        pw_T_obj2_opti_pose = []
-        pw_T_objs_dope_pose_list = []
-        # for obj_num_index in range(object_num):
-        pw_T_obj1_opti_pos = [0.4472889147344443, 0.08677179678403951, 0.0821006075425945]
-        pw_T_obj1_opti_ori = [0.52338279, 0.47884367, 0.52129429, -0.47437481]
+        pw_T_objs_obse_pose_list = []
+        # simulate getting names of objects
+        objects_name_list = ["cracker", "soup"]
+        pw_T_obj0_opti_pos = [0.4472889147344443, 0.08677179678403951, 0.0821006075425945]
+        pw_T_obj0_opti_ori = [0.52338279, 0.47884367, 0.52129429, -0.47437481]
+        pw_T_obj0_opti_pose.append(pw_T_obj0_opti_pos)
+        pw_T_obj0_opti_pose.append(pw_T_obj0_opti_ori)
+        pw_T_objs_opti_pose_list.append(pw_T_obj0_opti_pose)
+        pw_T_obj1_opti_pos = [0.4472889147344443, 0.15677179678403951, 0.05]
+        pw_T_obj1_opti_ori = [1.0, 0.0, 0.0, 1.0]
         pw_T_obj1_opti_pose.append(pw_T_obj1_opti_pos)
         pw_T_obj1_opti_pose.append(pw_T_obj1_opti_ori)
         pw_T_objs_opti_pose_list.append(pw_T_obj1_opti_pose)
-        pw_T_obj2_opti_pos = [0.4472889147344443, 0.15677179678403951, 0.05]
-        pw_T_obj2_opti_ori = [1.0, 0.0, 0.0, 1.0]
-        pw_T_obj2_opti_pose.append(pw_T_obj2_opti_pos)
-        pw_T_obj2_opti_pose.append(pw_T_obj2_opti_ori)
-        pw_T_objs_opti_pose_list.append(pw_T_obj2_opti_pose)
-        for obj_num_index in range(object_num):
-            pw_T_objs_dope_pose = []
-            pw_T_objs_dope_pos, pw_T_objs_dope_ori = add_noise_pose(pw_T_objs_opti_pose_list[obj_num_index][0], pw_T_objs_opti_pose_list[obj_num_index][1])
-            pw_T_objs_dope_pose.append(pw_T_objs_dope_pos)
-            pw_T_objs_dope_pose.append(pw_T_objs_dope_ori)
-            pw_T_objs_dope_pose_list.append(pw_T_objs_dope_pose)
-        # load the Opti/DOPE object
-        if visualisation_flag == True:
-            optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_real_obj_hor.urdf"),
-                                                           pw_T_objs_opti_pose_list[0][0],
-                                                           pw_T_objs_opti_pose_list[0][1])
-            optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/soup_real_obj_hor.urdf"),
-                                                           pw_T_objs_opti_pose_list[1][0],
-                                                           pw_T_objs_opti_pose_list[1][1])
-            dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_dope_obj_with_visual_hor.urdf"),
-                                                      pw_T_objs_dope_pose_list[0][0],
-                                                      pw_T_objs_dope_pose_list[0][1])
-            dope_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/soup_dope_obj_with_visual_hor.urdf"),
-                                                      pw_T_objs_dope_pose_list[1][0],
-                                                      pw_T_objs_dope_pose_list[1][1])
+        for i in range(object_num):
+            # simulate getting ground truth of objects from OptiTrack
+            opti_T_obj_opti_pos = copy.deepcopy(pw_T_objs_opti_pose_list[i][0])
+            opti_T_obj_opti_ori = copy.deepcopy(pw_T_objs_opti_pose_list[i][1])
+            optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+objects_name_list[i]+"/"+objects_name_list[i]+"_real_obj_hor.urdf"),
+                                                           opti_T_obj_opti_pos,
+                                                           opti_T_obj_opti_ori)
+            opti_object = OptitrackPose(optitrack_object_id, opti_T_obj_opti_pos, opti_T_obj_opti_ori, index=i)
+            opti_objects_list.append(opti_object)
+            # simulate getting observation of objects from observation data
+            pw_T_obj_obse_pos, pw_T_obj_obse_ori = add_noise_pose(opti_T_obj_opti_pos, opti_T_obj_opti_ori)
+            obse_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+objects_name_list[i]+"/"+objects_name_list[i]+"_obse_obj_with_visual_hor.urdf"),
+                                                      pw_T_obj_obse_pos,
+                                                      pw_T_obj_obse_ori)
+            obse_object = ObservationPose(obse_object_id, pw_T_obj_obse_pos, pw_T_obj_obse_ori, index=i)
+            obse_objects_list.append(obse_object)
+
         pw_T_base_pos = [0,0,0]
         pw_T_base_ori = [0,0,0,1]
-    # initialization pose of DOPE
-    pw_T_obj_dope_pose = [[pw_T_obj_dope_pos[0], pw_T_obj_dope_pos[1], pw_T_obj_dope_pos[2]],
-                          [pw_T_obj_dope_ori[0], pw_T_obj_dope_ori[1], pw_T_obj_dope_ori[2], pw_T_obj_dope_ori[3]]]
+        # compute and load the pose of optitrack_base (only task 4)
+        if task_flag == "4":
+            qwertyuiop = 1
+            
+    input("stop")
+    # initialization pose of obse
+    pw_T_obj_obse_pose = [[pw_T_obj_obse_pos[0], pw_T_obj_obse_pos[1], pw_T_obj_obse_pos[2]],
+                          [pw_T_obj_obse_ori[0], pw_T_obj_obse_ori[1], pw_T_obj_obse_ori[2], pw_T_obj_obse_ori[3]]]
 
-    boss_obs_pose_CVPF.append(pw_T_obj_dope_pose)
+    boss_obs_pose_CVPF.append(pw_T_obj_obse_pose)
     # compute error
     if optitrack_working_flag == True:
-        err_opti_dope_pos = compute_pos_err_bt_2_points(pw_T_obj_opti_pos, pw_T_obj_dope_pos)
-        err_opti_dope_ang = compute_ang_err_bt_2_points(pw_T_obj_opti_ori, pw_T_obj_dope_ori)
-        err_opti_dope_ang = angle_correction(err_opti_dope_ang)
+        err_opti_obse_pos = compute_pos_err_bt_2_points(pw_T_obj_opti_pos, pw_T_obj_obse_pos)
+        err_opti_obse_ang = compute_ang_err_bt_2_points(pw_T_obj_opti_ori, pw_T_obj_obse_ori)
+        err_opti_obse_ang = angle_correction(err_opti_obse_ang)
     elif optitrack_working_flag == False:
-        err_opti_dope_pos = compute_pos_err_bt_2_points(ros_listener.fake_opti_pos, pw_T_obj_dope_pos)
-        err_opti_dope_ang = compute_ang_err_bt_2_points(ros_listener.fake_opti_ori, pw_T_obj_dope_ori)
-        err_opti_dope_ang = angle_correction(err_opti_dope_ang)
+        err_opti_obse_pos = compute_pos_err_bt_2_points(ros_listener.fake_opti_pos, pw_T_obj_obse_pos)
+        err_opti_obse_ang = compute_ang_err_bt_2_points(ros_listener.fake_opti_ori, pw_T_obj_obse_ori)
+        err_opti_obse_ang = angle_correction(err_opti_obse_ang)
     # initial visualisation world model
     # build an object of class "InitialRealworldModel"
     if observation_cheating_flag == False:
@@ -1531,12 +1260,12 @@ if __name__ == '__main__':
     if optitrack_working_flag == True:
         contact_particle_id = real_world_object.initial_contact_object(object_pos=pw_T_obj_opti_pos, object_orientation=pw_T_obj_opti_ori)
     elif optitrack_working_flag == False:
-        contact_particle_id = real_world_object.initial_contact_object(object_pos=pw_T_obj_dope_pos, object_orientation=pw_T_obj_dope_ori)
+        contact_particle_id = real_world_object.initial_contact_object(object_pos=pw_T_obj_obse_pos, object_orientation=pw_T_obj_obse_ori)
     # build an object of class "Franka_robot"
     franka_robot = Franka_robot(real_robot_id, p_visualisation)
     # initialize sim world (particles)
-    # initial_parameter = InitialSimulationModel(particle_num, pw_T_rob_sim_pos, pw_T_rob_sim_ori, dope_obj_pos_init, dope_obj_ori_init)
-    initial_parameter = InitialSimulationModel(object_num, particle_num, pw_T_rob_sim_pos, pw_T_rob_sim_ori, pw_T_obj_dope_pos, pw_T_obj_dope_ori,
+    # initial_parameter = InitialSimulationModel(particle_num, pw_T_rob_sim_pos, pw_T_rob_sim_ori, obse_obj_pos_init, obse_obj_ori_init)
+    initial_parameter = InitialSimulationModel(object_num, particle_num, pw_T_rob_sim_pos, pw_T_rob_sim_ori, pw_T_obj_obse_pos, pw_T_obj_obse_ori,
                                                pw_T_base_pos, pw_T_base_ori,
                                                boss_sigma_obs_x, boss_sigma_obs_y, boss_sigma_obs_z, boss_sigma_obs_ang_init, p_visualisation,
                                                update_style_flag, change_sim_time, task_flag, object_flag)
@@ -1545,64 +1274,6 @@ if __name__ == '__main__':
     estimated_object_set = initial_parameter.initial_and_set_simulation_env(ros_listener.current_joint_values)
     estimated_object_pos = [estimated_object_set[0], estimated_object_set[1], estimated_object_set[2]]
     estimated_object_ori = [estimated_object_set[3], estimated_object_set[4], estimated_object_set[5], estimated_object_set[6]]
-    # when OptiTrack does not work, record the previous OptiTrack pose in the rosbag
-    if compute_error_flag == True:
-        estPB_from_pre_time = time.time()
-        boss_estPB_pos_x_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[0], 'estPB']
-        boss_estPB_pos_y_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[1], 'estPB']
-        boss_estPB_pos_z_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_pos[2], 'estPB']
-        boss_estPB_ori_x_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[0], 'estPB']
-        boss_estPB_ori_y_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[1], 'estPB']
-        boss_estPB_ori_z_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[2], 'estPB']
-        boss_estPB_ori_w_df.loc[estPB_form_previous] = [estPB_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, estimated_object_ori[3], 'estPB']
-        estPB_form_previous = estPB_form_previous + 1
-        boss_estDO_pos_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, pw_T_obj_dope_pos[0], 'estDO']
-        boss_estDO_pos_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, pw_T_obj_dope_pos[1], 'estDO']
-        boss_estDO_pos_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, pw_T_obj_dope_pos[2], 'estDO']
-        boss_estDO_ori_x_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, pw_T_obj_dope_ori[0], 'estDO']
-        boss_estDO_ori_y_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, pw_T_obj_dope_ori[1], 'estDO']
-        boss_estDO_ori_z_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, pw_T_obj_dope_ori[2], 'estDO']
-        boss_estDO_ori_w_df.loc[estDO_form_previous] = [estDO_form_previous, estPB_from_pre_time - opti_from_pre_time_begin, pw_T_obj_dope_ori[3], 'estDO']
-        estDO_form_previous = estDO_form_previous + 1
-    # publish pose
-    if publish_PBPF_pose_flag == True:
-        pub = rospy.Publisher('PBPF_pose', PoseStamped, queue_size = 1)
-        pose_PBPF = PoseStamped()
-        pose_PBPF.pose.position.x = estimated_object_pos[0]
-        pose_PBPF.pose.position.y = estimated_object_pos[1]
-        pose_PBPF.pose.position.z = estimated_object_pos[2]
-        pose_PBPF.pose.orientation.x = estimated_object_ori[0]
-        pose_PBPF.pose.orientation.y = estimated_object_ori[1]
-        pose_PBPF.pose.orientation.z = estimated_object_ori[2]
-        pose_PBPF.pose.orientation.w = estimated_object_ori[3]
-        pub.publish(pose_PBPF)
-        # rospy.loginfo(pose_PBPF)
-    if publish_DOPE_pose_flag == True:
-        pub_DOPE = rospy.Publisher('DOPE_pose', PoseStamped, queue_size = 1)
-        pose_DOPE = PoseStamped()
-        pose_DOPE.pose.position.x = pw_T_obj_dope_pos[0]
-        pose_DOPE.pose.position.y = pw_T_obj_dope_pos[1]
-        pose_DOPE.pose.position.z = pw_T_obj_dope_pos[2]
-        pose_DOPE.pose.orientation.x = pw_T_obj_dope_ori[0]
-        pose_DOPE.pose.orientation.y = pw_T_obj_dope_ori[1]
-        pose_DOPE.pose.orientation.z = pw_T_obj_dope_ori[2]
-        pose_DOPE.pose.orientation.w = pw_T_obj_dope_ori[3]
-        # print(pose_DOPE)
-        pub_DOPE.publish(pose_DOPE)
-        # rospy.loginfo(pose_DOPE)
-    if optitrack_working_flag == True:
-        # when OptiTrack does not work, record the previous OptiTrack pose in the rosbag
-        if publish_Opti_pose_flag == True:
-            pub_opti = rospy.Publisher('Opti_pose', PoseStamped, queue_size = 1)
-            pose_opti = PoseStamped()
-            pose_opti.pose.position.x = pw_T_obj_opti_pos[0]
-            pose_opti.pose.position.y = pw_T_obj_opti_pos[1]
-            pose_opti.pose.position.z = pw_T_obj_opti_pos[2]
-            pose_opti.pose.orientation.x = pw_T_obj_opti_ori[0]
-            pose_opti.pose.orientation.y = pw_T_obj_opti_ori[1]
-            pose_opti.pose.orientation.z = pw_T_obj_opti_ori[2]
-            pose_opti.pose.orientation.w = pw_T_obj_opti_ori[3]
-            pub_opti.publish(pose_opti)
     
     boss_est_pose_CVPF.append(estimated_object_set)
     initial_parameter.initial_and_set_simulation_env_CV(ros_listener.current_joint_values)
@@ -1624,22 +1295,13 @@ if __name__ == '__main__':
                                                               estimated_object_ori)
     if visualisation_flag == True and object_flag == "soup" and visualisation_mean == True:
         if run_PBPF_flag == True:
-            estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_est_obj_with_visual_small_PB_hor.urdf"),
+            estimated_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/soup_est_obj_with_visual_PB_hor.urdf"),
                                                            estimated_object_pos,
                                                            estimated_object_ori)
         if run_CVPF_flag == True:
-            estimated_object_id_CV = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_est_obj_with_visual_small_CV_hor.urdf"),
+            estimated_object_id_CV = p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/soup_est_obj_with_visual_CV_hor.urdf"),
                                                               estimated_object_pos,
                                                               estimated_object_ori)
-    # compute error
-    if optitrack_working_flag == True:
-        err_opti_esti_pos = compute_pos_err_bt_2_points(estimated_object_pos, pw_T_obj_opti_pos)
-        err_opti_esti_ang = compute_ang_err_bt_2_points(estimated_object_ori, pw_T_obj_opti_ori)
-        err_opti_esti_ang = angle_correction(err_opti_esti_ang)
-    elif optitrack_working_flag == False:
-        err_opti_esti_pos = compute_pos_err_bt_2_points(estimated_object_pos,ros_listener.fake_opti_pos)
-        err_opti_esti_ang = compute_ang_err_bt_2_points(estimated_object_ori,ros_listener.fake_opti_ori)
-        err_opti_esti_ang = angle_correction(err_opti_esti_ang)
     # initial_parameter.particle_cloud #parameter of particle
     # initial_parameter.pybullet_particle_env_collection #env of simulation
     # initial_parameter.fake_robot_id_collection #id of robot in simulation
@@ -1647,11 +1309,11 @@ if __name__ == '__main__':
     
     # run the simulation
     Flag = True
-    # compute DOPE object old pose
-    # dope_obj_pos_old = copy.deepcopy(pw_T_obj_dope_pos)
-    # dope_obj_ori_old = copy.deepcopy(pw_T_obj_dope_ori)
-    # dope_obj_pos_old_CV = copy.deepcopy(pw_T_obj_dope_pos)
-    # dope_obj_ori_old_CV = copy.deepcopy(pw_T_obj_dope_ori)
+    # compute obse object old pose
+    # obse_obj_pos_old = copy.deepcopy(pw_T_obj_obse_pos)
+    # obse_obj_ori_old = copy.deepcopy(pw_T_obj_obse_ori)
+    # obse_obj_pos_old_CV = copy.deepcopy(pw_T_obj_obse_pos)
+    # obse_obj_ori_old_CV = copy.deepcopy(pw_T_obj_obse_ori)
     # compute pose of robot arm
     rob_link_9_pose_old_PB = p_visualisation.getLinkState(real_robot_id,9)
     rob_link_9_pose_old_CV = p_visualisation.getLinkState(real_robot_id,9)
@@ -1665,56 +1327,56 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():
         #panda robot moves in the visualization window
         franka_robot.fanka_robot_move(ros_listener.current_joint_values)
-        #get pose info from DOPE
-        dope_is_fresh = True
+        #get pose info from obse
+        obse_is_fresh = True
         if observation_cheating_flag == False:
             try:
                 if object_flag == "cracker":
-                    latest_dope_time = listener.getLatestCommonTime('/panda_link0', '/cracker')
+                    latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/cracker')
                 if object_flag == "soup":
-                    latest_dope_time = listener.getLatestCommonTime('/panda_link0', '/soup')
-                #print("latest_dope_time: ",latest_dope_time.to_sec())
+                    latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/soup')
+                #print("latest_obse_time: ",latest_obse_time.to_sec())
                 #print("rospy.get_time: ",rospy.get_time())
-                if (rospy.get_time() - latest_dope_time.to_sec()) < 0.1:
+                if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
                     if object_flag == "cracker":
                         (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
                     if object_flag == "soup":
                         (trans,rot) = listener.lookupTransform('/panda_link0', '/soup', rospy.Time(0))
-                    dope_is_fresh = True
-                    # print("dope is FRESH")
+                    obse_is_fresh = True
+                    # print("obse is FRESH")
                 else:
-                    # DOPE has not been updating for a while
-                    dope_is_fresh = False
-                    print("dope is NOT fresh")
+                    # obse has not been updating for a while
+                    obse_is_fresh = False
+                    print("obse is NOT fresh")
                 # break
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 print("can not find tf")
-            rob_T_obj_dope_pos = list(trans)
-            rob_T_obj_dope_ori = list(rot)
-            rob_T_obj_dope_3_3 = transformations.quaternion_matrix(rob_T_obj_dope_ori)
-            rob_T_obj_dope_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_dope_3_3,rob_T_obj_dope_pos)
-            pw_T_obj_dope = np.dot(pw_T_rob_sim_4_4, rob_T_obj_dope_4_4)
-            pw_T_obj_dope_pos = [pw_T_obj_dope[0][3],pw_T_obj_dope[1][3],pw_T_obj_dope[2][3]]
-            pw_T_obj_dope_ori = transformations.quaternion_from_matrix(pw_T_obj_dope)
-            pw_T_obj_dope_ang = p_visualisation.getEulerFromQuaternion(pw_T_obj_dope_ori)
-            dope_obj_pos_cur = copy.deepcopy(pw_T_obj_dope_pos)
-            dope_obj_ang_cur = copy.deepcopy(pw_T_obj_dope_ang)
-            dope_obj_ori_cur = copy.deepcopy(pw_T_obj_dope_ori)
-            dope_obj_pose_cur = [[dope_obj_pos_cur[0], dope_obj_pos_cur[1], dope_obj_pos_cur[2]],
-                                 [dope_obj_ori_cur[0], dope_obj_ori_cur[1], dope_obj_ori_cur[2], dope_obj_ori_cur[3]]]
+            rob_T_obj_obse_pos = list(trans)
+            rob_T_obj_obse_ori = list(rot)
+            rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
+            rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
+            pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
+            pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
+            pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
+            pw_T_obj_obse_ang = p_visualisation.getEulerFromQuaternion(pw_T_obj_obse_ori)
+            obse_obj_pos_cur = copy.deepcopy(pw_T_obj_obse_pos)
+            obse_obj_ang_cur = copy.deepcopy(pw_T_obj_obse_ang)
+            obse_obj_ori_cur = copy.deepcopy(pw_T_obj_obse_ori)
+            obse_obj_pose_cur = [[obse_obj_pos_cur[0], obse_obj_pos_cur[1], obse_obj_pos_cur[2]],
+                                 [obse_obj_ori_cur[0], obse_obj_ori_cur[1], obse_obj_ori_cur[2], obse_obj_ori_cur[3]]]
             
         # elif observation_cheating_flag == True
             
         
-        # display DOPE object in visual model
+        # display obse object in visual model
         if visualisation_flag == True:
-            display_real_object_in_visual_model(dope_object_id,dope_obj_pos_cur,dope_obj_ori_cur)
+            display_real_object_in_visual_model(obse_object_id,obse_obj_pos_cur,obse_obj_ori_cur)
         # get ground truth pose of robot and object
         if optitrack_working_flag == True:
             rob_T_obj_opti_4_4 = compute_transformation_matrix(ros_listener.robot_pos,
-                                                           ros_listener.robot_ori,
-                                                           ros_listener.object_pos,
-                                                           ros_listener.object_ori)
+                                                               ros_listener.robot_ori,
+                                                               ros_listener.object_pos,
+                                                               ros_listener.object_ori)
             pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
             pw_T_rob_sim_4_4 = rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
             pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
@@ -1722,34 +1384,12 @@ if __name__ == '__main__':
             pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
             pw_T_obj_pos_opti = copy.deepcopy(pw_T_obj_opti_pos)
             pw_T_obj_ori_opti = copy.deepcopy(pw_T_obj_opti_ori)
-            # when OptiTrack does not work, record the previous OptiTrack pose in the rosbag
-            if compute_error_flag == True:
-                opti_from_pre_time = time.time()
-                boss_opti_pos_x_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_obj_opti_pos[0], 'opti']
-                boss_opti_pos_y_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_obj_opti_pos[1], 'opti']
-                boss_opti_pos_z_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_obj_opti_pos[2], 'opti']
-                boss_opti_ori_x_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_obj_opti_ori[0], 'opti']
-                boss_opti_ori_y_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_obj_opti_ori[1], 'opti']
-                boss_opti_ori_z_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_obj_opti_ori[2], 'opti']
-                boss_opti_ori_w_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_obj_opti_ori[3], 'opti']
-                opti_form_previous = opti_form_previous + 1
-        # when OptiTrack does not work, record the previous OptiTrack pose in the rosbag
-        if publish_opti_pose_for_inter_flag == True:
-            pub_opti = rospy.Publisher('Opti_pose', PoseStamped, queue_size = 1)
-            pose_opti = PoseStamped()
-            pose_opti.pose.position.x = pw_T_obj_opti_pos[0]
-            pose_opti.pose.position.y = pw_T_obj_opti_pos[1]
-            pose_opti.pose.position.z = pw_T_obj_opti_pos[2]
-            pose_opti.pose.orientation.x = pw_T_obj_opti_ori[0]
-            pose_opti.pose.orientation.y = pw_T_obj_opti_ori[1]
-            pose_opti.pose.orientation.z = pw_T_obj_opti_ori[2]
-            pose_opti.pose.orientation.w = pw_T_obj_opti_ori[3]
-            pub_opti.publish(pose_opti)
-        # compute distance between old DOPE obj and cur DOPE obj (position and angle)
-        # dis_betw_cur_and_old = compute_pos_err_bt_2_points(dope_obj_pos_cur, dope_obj_pos_old)
-        # ang_betw_cur_and_old = compute_ang_err_bt_2_points(dope_obj_ori_cur, dope_obj_ori_old)
-        # dis_betw_cur_and_old_CV = compute_pos_err_bt_2_points(dope_obj_pos_cur, dope_obj_pos_old_CV)
-        # ang_betw_cur_and_old_CV = compute_ang_err_bt_2_points(dope_obj_ori_cur, dope_obj_ori_old_CV)
+            
+        # compute distance between old obse obj and cur obse obj (position and angle)
+        # dis_betw_cur_and_old = compute_pos_err_bt_2_points(obse_obj_pos_cur, obse_obj_pos_old)
+        # ang_betw_cur_and_old = compute_ang_err_bt_2_points(obse_obj_ori_cur, obse_obj_ori_old)
+        # dis_betw_cur_and_old_CV = compute_pos_err_bt_2_points(obse_obj_pos_cur, obse_obj_pos_old_CV)
+        # ang_betw_cur_and_old_CV = compute_ang_err_bt_2_points(obse_obj_ori_cur, obse_obj_ori_old_CV)
         # compute distance between old robot arm and cur robot arm (position and angle)
         rob_link_9_pose_cur_PB = p_visualisation.getLinkState(real_robot_id, 9)
         rob_link_9_pose_cur_CV = p_visualisation.getLinkState(real_robot_id, 9)
@@ -1764,53 +1404,21 @@ if __name__ == '__main__':
                 if (dis_robcur_robold_PB > d_thresh):
                     # judgement for any particles contact
                     if robot1.isAnyParticleInContact():
-                        if first_write_flag == 0 and compute_error_flag == True:
-                            # record the error
-                            t_begin = time.time()
-                            t_before_record = time.time()
-                            boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
-                            boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
-                            boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
-                            boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
-                            flag_record = flag_record + 1
-                            flag_record_dope = flag_record_dope + 1
-                            boss_PBPF_err_pos_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
-                            boss_PBPF_err_ang_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
-                            boss_err_pos_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
-                            boss_err_ang_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
-                            flag_record = flag_record + 1
-                            flag_record_PBPF = flag_record_PBPF + 1
-                            boss_CVPF_err_pos_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
-                            boss_CVPF_err_ang_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
-                            boss_err_pos_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
-                            boss_err_ang_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
-                            flag_record = flag_record + 1
-                            flag_record_CVPF = flag_record_CVPF + 1
-                            first_write_flag = 1
                         simRobot_touch_par_flag = 1
                         t_begin_PBPF = time.time()
                         flag_update_num_PB = flag_update_num_PB + 1
-                        # when OptiTrack does not work, record the previous OptiTrack pose in the rosbag
-                        if optitrack_working_flag == True:
-                            opti_obj_pos_cur = copy.deepcopy(pw_T_obj_opti_pos) # get pos of real object
-                            opti_obj_ori_cur = copy.deepcopy(pw_T_obj_opti_ori)
-                        elif optitrack_working_flag == False:
-                            opti_obj_pos_cur = ros_listener.fake_opti_pos
-                            opti_obj_ori_cur = ros_listener.fake_opti_ori
-                        nois_obj_pos_cur = copy.deepcopy(dope_obj_pos_cur)
-                        nois_obj_ori_cur = copy.deepcopy(dope_obj_ori_cur)
+                        nois_obj_pos_cur = copy.deepcopy(obse_obj_pos_cur)
+                        nois_obj_ori_cur = copy.deepcopy(obse_obj_ori_cur)
                         # execute PBPF algorithm movement
-                        robot1.real_robot_control_PB(opti_obj_pos_cur, # ground truth pos [x, y, z]
-                                                     opti_obj_ori_cur, # ground truth ori [x, y, z, w]
-                                                     ros_listener.current_joint_values, # joints of robot arm
-                                                     nois_obj_pos_cur, # DOPE value pos [x, y, z]
-                                                     nois_obj_ori_cur, # DOPE value ori [x, y, z, w]
-                                                     do_obs_update=dope_is_fresh) # flag for judging DOPE work        
+                        robot1.real_robot_control_PB(ros_listener.current_joint_values, # joints of robot arm
+                                                     nois_obj_pos_cur, # obse value pos [x, y, z]
+                                                     nois_obj_ori_cur, # obse value ori [x, y, z, w]
+                                                     do_obs_update=obse_is_fresh) # flag for judging obse work        
                         rob_link_9_pose_old_PB = copy.deepcopy(rob_link_9_pose_cur_PB)
                         if visualisation_flag == True and optitrack_working_flag == True:
                             display_real_object_in_visual_model(optitrack_object_id, pw_T_obj_opti_pos, pw_T_obj_opti_ori)
                         elif visualisation_flag == True and optitrack_working_flag == False:
-                            display_real_object_in_visual_model(optitrack_object_id,ros_listener.fake_opti_pos,ros_listener.fake_opti_ori)
+                            display_real_object_in_visual_model(optitrack_object_id, ros_listener.fake_opti_pos, ros_listener.fake_opti_ori)
                         # print("Average time of updating: ",np.mean(robot1.times))
                         t_finish_PBPF = time.time()
                         PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
@@ -1825,46 +1433,15 @@ if __name__ == '__main__':
             if run_CVPF_flag == True:
                 # if (dis_betw_cur_and_old_CV > d_thresh_CV) or (ang_betw_cur_and_old_CV > a_thresh_CV) or (dis_robcur_robold_CV > d_thresh_CV):
                 if (dis_robcur_robold_CV > d_thresh_CV) and robot2.isAnyParticleInContact():
-                    if first_write_flag == 0 and compute_error_flag == True:
-                        # record the error
-                        t_begin = time.time()
-                        t_before_record = time.time()
-                        boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
-                        boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
-                        boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
-                        boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
-                        flag_record = flag_record + 1
-                        flag_record_dope = flag_record_dope + 1
-                        boss_PBPF_err_pos_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
-                        boss_PBPF_err_ang_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
-                        boss_err_pos_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
-                        boss_err_ang_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
-                        flag_record = flag_record + 1
-                        flag_record_PBPF = flag_record_PBPF + 1
-                        boss_CVPF_err_pos_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
-                        boss_CVPF_err_ang_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
-                        boss_err_pos_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
-                        boss_err_ang_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
-                        flag_record = flag_record + 1
-                        flag_record_CVPF = flag_record_CVPF + 1
-                        first_write_flag = 1
                     flag_update_num_CV = flag_update_num_CV + 1
-                    boss_obs_pose_CVPF.append(dope_obj_pose_cur)
-                    if optitrack_working_flag == True:
-                        opti_obj_pos_cur_CV = copy.deepcopy(pw_T_obj_opti_pos) #get pos of real object
-                        opti_obj_ori_cur_CV = copy.deepcopy(pw_T_obj_opti_ori)
-                    elif optitrack_working_flag == False:
-                        opti_obj_pos_cur_CV = ros_listener.fake_opti_pos
-                        opti_obj_ori_cur_CV = ros_listener.fake_opti_ori
-                    nois_obj_pos_cur_CV = copy.deepcopy(dope_obj_pos_cur)
-                    nois_obj_ang_cur_CV = copy.deepcopy(dope_obj_ang_cur)
-                    nois_obj_ori_cur_CV = copy.deepcopy(dope_obj_ori_cur)
+                    boss_obs_pose_CVPF.append(obse_obj_pose_cur)
+                    nois_obj_pos_cur_CV = copy.deepcopy(obse_obj_pos_cur)
+                    nois_obj_ang_cur_CV = copy.deepcopy(obse_obj_ang_cur)
+                    nois_obj_ori_cur_CV = copy.deepcopy(obse_obj_ori_cur)
                     # execute CVPF algorithm movement
-                    robot2.real_robot_control_CV(opti_obj_pos_cur_CV, # ground truth pos [x, y, z]
-                                                 opti_obj_ori_cur_CV, # ground truth ori [x, y, z, w]
-                                                 nois_obj_pos_cur_CV, # DOPE value pos [x, y, z]
-                                                 nois_obj_ori_cur_CV, # DOPE value ori [x, y, z, w]
-                                                 do_obs_update=dope_is_fresh) # flag for judging DOPE work
+                    robot2.update_particle_filter_CV(nois_obj_pos_cur_CV, # obse value pos [x, y, z]
+                                                     nois_obj_ori_cur_CV, # obse value ori [x, y, z, w]
+                                                     do_obs_update=obse_is_fresh) # flag for judging obse work
                     rob_link_9_pose_old_CV = copy.deepcopy(rob_link_9_pose_cur_CV)
                     if visualisation_flag == True:
                         display_real_object_in_visual_model(optitrack_object_id, pw_T_obj_opti_pos, pw_T_obj_opti_ori)
@@ -1874,47 +1451,16 @@ if __name__ == '__main__':
                 # PBPF algorithm
                 if run_PBPF_flag == True:
                     if robot1.isAnyParticleInContact():
-                        if first_write_flag == 0 and compute_error_flag == True:
-                            # record the error
-                            t_begin = time.time()
-                            t_before_record = time.time()
-                            boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
-                            boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
-                            boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
-                            boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
-                            flag_record = flag_record + 1
-                            flag_record_dope = flag_record_dope + 1
-                            boss_PBPF_err_pos_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
-                            boss_PBPF_err_ang_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
-                            boss_err_pos_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
-                            boss_err_ang_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
-                            flag_record = flag_record + 1
-                            flag_record_PBPF = flag_record_PBPF + 1
-                            boss_CVPF_err_pos_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
-                            boss_CVPF_err_ang_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
-                            boss_err_pos_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
-                            boss_err_ang_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
-                            flag_record = flag_record + 1
-                            flag_record_CVPF = flag_record_CVPF + 1
-                            first_write_flag = 1
                         simRobot_touch_par_flag = 1
                         t_begin_PBPF = time.time()
                         flag_update_num_PB = flag_update_num_PB + 1
-                        if optitrack_working_flag == True:
-                            opti_obj_pos_cur = copy.deepcopy(pw_T_obj_opti_pos) # get pos of real object
-                            opti_obj_ori_cur = copy.deepcopy(pw_T_obj_opti_ori)
-                        elif optitrack_working_flag == False:
-                            opti_obj_pos_cur = ros_listener.fake_opti_pos
-                            opti_obj_ori_cur = ros_listener.fake_opti_ori
-                        nois_obj_pos_cur = copy.deepcopy(dope_obj_pos_cur)
-                        nois_obj_ori_cur = copy.deepcopy(dope_obj_ori_cur)
+                        nois_obj_pos_cur = copy.deepcopy(obse_obj_pos_cur)
+                        nois_obj_ori_cur = copy.deepcopy(obse_obj_ori_cur)
                         # execute PBPF algorithm movement
-                        robot1.real_robot_control_PB(opti_obj_pos_cur, # ground truth pos [x, y, z]
-                                                     opti_obj_ori_cur, # ground truth ori [x, y, z, w]
-                                                     ros_listener.current_joint_values, # joints of robot arm
-                                                     nois_obj_pos_cur, # DOPE value pos [x, y, z]
-                                                     nois_obj_ori_cur, # DOPE value ori [x, y, z, w]
-                                                     do_obs_update=dope_is_fresh) # flag for judging DOPE work
+                        robot1.real_robot_control_PB(ros_listener.current_joint_values, # joints of robot arm
+                                                     nois_obj_pos_cur, # obse value pos [x, y, z]
+                                                     nois_obj_ori_cur, # obse value ori [x, y, z, w]
+                                                     do_obs_update=obse_is_fresh) # flag for judging obse work
                         if visualisation_flag == True and optitrack_working_flag == True:
                             display_real_object_in_visual_model(optitrack_object_id, pw_T_obj_opti_pos, pw_T_obj_opti_ori)
                         elif visualisation_flag == True and optitrack_working_flag == False:
@@ -1929,46 +1475,15 @@ if __name__ == '__main__':
                 # CVPF algorithm
                 if run_CVPF_flag == True:
                     if robot2.isAnyParticleInContact():
-                        if first_write_flag == 0 and compute_error_flag == True:
-                            # record the error
-                            t_begin = time.time()
-                            t_before_record = time.time()
-                            boss_obse_err_pos_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
-                            boss_obse_err_ang_df.loc[flag_record_dope] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
-                            boss_err_pos_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_pos, 'dope']
-                            boss_err_ang_df.loc[flag_record] = [flag_record_dope, t_before_record - t_begin, err_opti_dope_ang, 'dope']
-                            flag_record = flag_record + 1
-                            flag_record_dope = flag_record_dope + 1
-                            boss_PBPF_err_pos_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
-                            boss_PBPF_err_ang_df.loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
-                            boss_err_pos_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_pos, 'PBPF']
-                            boss_err_ang_df.loc[flag_record] = [flag_record_PBPF, t_before_record - t_begin, err_opti_esti_ang, 'PBPF']
-                            flag_record = flag_record + 1
-                            flag_record_PBPF = flag_record_PBPF + 1
-                            boss_CVPF_err_pos_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
-                            boss_CVPF_err_ang_df.loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
-                            boss_err_pos_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_pos, 'CVPF']
-                            boss_err_ang_df.loc[flag_record] = [flag_record_CVPF, t_before_record - t_begin, err_opti_esti_ang, 'CVPF']
-                            flag_record = flag_record + 1
-                            flag_record_CVPF = flag_record_CVPF + 1
-                            first_write_flag = 1
                         flag_update_num_CV = flag_update_num_CV + 1
-                        boss_obs_pose_CVPF.append(dope_obj_pose_cur)
-                        if optitrack_working_flag == True:
-                            opti_obj_pos_cur_CV = copy.deepcopy(pw_T_obj_opti_pos) #get pos of real object
-                            opti_obj_ori_cur_CV = copy.deepcopy(pw_T_obj_opti_ori)
-                        elif optitrack_working_flag == False:
-                            opti_obj_pos_cur_CV = ros_listener.fake_opti_pos
-                            opti_obj_ori_cur_CV = ros_listener.fake_opti_ori
-                        nois_obj_pos_cur_CV = copy.deepcopy(dope_obj_pos_cur)
-                        nois_obj_ang_cur_CV = copy.deepcopy(dope_obj_ang_cur)
-                        nois_obj_ori_cur_CV = copy.deepcopy(dope_obj_ori_cur)
+                        boss_obs_pose_CVPF.append(obse_obj_pose_cur)
+                        nois_obj_pos_cur_CV = copy.deepcopy(obse_obj_pos_cur)
+                        nois_obj_ang_cur_CV = copy.deepcopy(obse_obj_ang_cur)
+                        nois_obj_ori_cur_CV = copy.deepcopy(obse_obj_ori_cur)
                         # execute CVPF algorithm movement
-                        robot2.real_robot_control_CV(opti_obj_pos_cur_CV, # ground truth pos [x, y, z]
-                                                     opti_obj_ori_cur_CV, # ground truth ori [x, y, z, w]
-                                                     nois_obj_pos_cur_CV, # DOPE value pos [x, y, z]
-                                                     nois_obj_ori_cur_CV, # DOPE value ori [x, y, z, w]
-                                                     do_obs_update=dope_is_fresh) # flag for judging DOPE work
+                        robot2.update_particle_filter_CV(nois_obj_pos_cur_CV, # obse value pos [x, y, z]
+                                                         nois_obj_ori_cur_CV, # obse value ori [x, y, z, w]
+                                                         do_obs_update=obse_is_fresh) # flag for judging obse work
                         if visualisation_flag == True and optitrack_working_flag == True:
                             display_real_object_in_visual_model(optitrack_object_id, pw_T_obj_opti_pos, pw_T_obj_opti_ori)
                 pf_update_rate.sleep()

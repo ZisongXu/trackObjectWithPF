@@ -39,7 +39,7 @@ from quaternion_averaging import weightedAverageQuaternions
 from Particle import Particle
 #Class of initialize the simulation model
 class InitialSimulationModel():
-    def __init__(self, object_num, particle_num, real_robot_start_pos, real_robot_start_ori, noise_obj_pos, pw_T_object_ori_dope,
+    def __init__(self, object_num, particle_num, real_robot_start_pos, real_robot_start_ori, noise_obj_pos, pw_T_object_ori_obse,
                  pw_T_base_pos, pw_T_base_ori,
                  boss_sigma_obs_x, boss_sigma_obs_y, boss_sigma_obs_z, boss_sigma_obs_ang_init, p_visualisation,
                  update_style_flag, change_sim_time, task_flag, object_flag):
@@ -48,7 +48,7 @@ class InitialSimulationModel():
         self.noise_obj_pos = noise_obj_pos
         self.real_robot_start_pos = real_robot_start_pos
         self.real_robot_start_ori = real_robot_start_ori
-        self.pw_T_object_ori_dope = pw_T_object_ori_dope
+        self.pw_T_object_ori_obse = pw_T_object_ori_obse
         self.pw_T_base_pos = pw_T_base_pos
         self.pw_T_base_ori = pw_T_base_ori
         self.particle_cloud = []
@@ -72,14 +72,14 @@ class InitialSimulationModel():
         
     def initial_particle(self):
         for i in range(self.particle_num):
-            particle_pos, particle_ori = self.generate_random_pose(self.noise_obj_pos, self.pw_T_object_ori_dope)
+            particle_pos, particle_ori = self.generate_random_pose(self.noise_obj_pos, self.pw_T_object_ori_obse)
             w = 1/self.particle_num
             particle = Particle(particle_pos, particle_ori, w, index=i)
             self.particle_cloud.append(particle)
 
-    def generate_random_pose(self, noise_object_pos, pw_T_object_ori_dope):
+    def generate_random_pose(self, noise_object_pos, pw_T_object_ori_obse):
         position = copy.deepcopy(noise_object_pos)
-        quat = copy.deepcopy(pw_T_object_ori_dope)#x,y,z,w
+        quat = copy.deepcopy(pw_T_object_ori_obse)#x,y,z,w
         quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3])#w,x,y,z
         x = self.add_noise_to_init_par(position[0], self.boss_sigma_obs_x)
         y = self.add_noise_to_init_par(position[1], self.boss_sigma_obs_y)
@@ -125,7 +125,7 @@ class InitialSimulationModel():
                                                                       particle.pos,
                                                                       particle.ori)
             if self.object_flag == "soup":
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_with_visual_small_PB_hor.urdf"),
+                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/soup_par_with_visual_PB_hor.urdf"),
                                                                       particle.pos,
                                                                       particle.ori)
             self.particle_with_visual_id_collection.append(visualize_particle_Id)
@@ -137,7 +137,7 @@ class InitialSimulationModel():
                                                                       particle.pos,
                                                                       particle.ori)
             if self.object_flag == "soup":
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_with_visual_small_CV_hor.urdf"),
+                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/soup_par_with_visual_CV_hor.urdf"),
                                                                       particle.pos,
                                                                       particle.ori)
             self.particle_with_visual_id_collection_CV.append(visualize_particle_Id)
@@ -178,7 +178,7 @@ class InitialSimulationModel():
                                                                          particle.pos,
                                                                          particle.ori)
             if self.object_flag == "soup":
-                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_no_visual_small_hor.urdf"),
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/soup/soup_par_no_visual_hor.urdf"),
                                                                          particle.pos,
                                                                          particle.ori)
             while True:
@@ -188,7 +188,7 @@ class InitialSimulationModel():
                 for contact in contacts:
                     contact_dis = contact[8]
                     if contact_dis < -0.001:
-                        particle_pos, particle_ori = self.generate_random_pose(self.noise_obj_pos, self.pw_T_object_ori_dope)
+                        particle_pos, particle_ori = self.generate_random_pose(self.noise_obj_pos, self.pw_T_object_ori_obse)
                         pybullet_simulation_env.resetBasePositionAndOrientation(particle_no_visual_id,
                                                                                 particle_pos,
                                                                                 particle_ori)
@@ -215,7 +215,7 @@ class InitialSimulationModel():
                                                                          particle.pos,
                                                                          particle.ori)
             if self.object_flag == "soup":
-                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/soup/camsoup_par_no_visual_small_hor.urdf"),
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/soup/soup_par_no_visual_hor.urdf"),
                                                                          particle.pos,
                                                                          particle.ori)
             self.particle_no_visual_id_collection_CV.append(particle_no_visual_id)

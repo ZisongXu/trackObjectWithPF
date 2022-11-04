@@ -9,7 +9,7 @@
    <link name="obj_in_sim">
      <visual>
        <geometry>
-         <cylinder length="0.1000" radius="0.033829689025878906"/>
+         <cylinder length="0.0800" radius="0.013829689025878906"/>
        </geometry>
        <material name="light_green"/>
        <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
@@ -18,6 +18,7 @@
        <geometry>
          <cylinder length="0.1000" radius="0.033829689025878906"/>
        </geometry>
+       <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
      </collision>
      <inertial>
        <mass value="1"/>

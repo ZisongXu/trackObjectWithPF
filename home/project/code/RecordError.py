@@ -162,7 +162,15 @@ signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
                 boss_opti_ori_w_df.loc[opti_form_previous] = [opti_form_previous, opti_from_pre_time - opti_from_pre_time_begin, pw_T_obj_opti_ori[3], 'opti']
                 opti_form_previous = opti_form_previous + 1
                 
-
+    # compute error
+    if optitrack_working_flag == True:
+        err_opti_obse_pos = compute_pos_err_bt_2_points(pw_T_obj_opti_pos, pw_T_obj_obse_pos)
+        err_opti_obse_ang = compute_ang_err_bt_2_points(pw_T_obj_opti_ori, pw_T_obj_obse_ori)
+        err_opti_obse_ang = angle_correction(err_opti_obse_ang)
+    elif optitrack_working_flag == False:
+        err_opti_obse_pos = compute_pos_err_bt_2_points(ros_listener.fake_opti_pos, pw_T_obj_obse_pos)
+        err_opti_obse_ang = compute_ang_err_bt_2_points(ros_listener.fake_opti_ori, pw_T_obj_obse_ori)
+        err_opti_obse_ang = angle_correction(err_opti_obse_ang)
 # when OptiTrack does not work, record the previous OptiTrack pose in the rosbag
     if compute_error_flag == True:
         estPB_from_pre_time = time.time()

@@ -6,7 +6,7 @@
    <link name="right_leg">
      <visual>
        <geometry>
-         <cylinder length="0.08185500144958496" radius="0.043829689025878906"/>
+         <cylinder length="0.1000" radius="0.033829689025878906"/>
        </geometry>
        <material name="light_green"/>
        <origin xyz="0 0 0" rpy="1.5707963 0 0"/>

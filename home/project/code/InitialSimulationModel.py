@@ -118,7 +118,6 @@ class InitialSimulationModel():
                 quaternions.append([q[0], q[1], q[2], q[3]]) # x,y,z,w
                 w_set = w_set + particle[i].w
             q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
-            particle[i].par_name
             est_obj_pose = EstimatedObjectPose(particle[i].par_name, 0, [x_set/w_set, y_set/w_set, z_set/w_set], [q[0], q[1], q[2], q[3]], i)
             self.esti_objs_cloud.append(est_obj_pose)
         return self.esti_objs_cloud
@@ -145,30 +144,31 @@ class InitialSimulationModel():
 
     def display_particle(self):
         for index, particle in enumerate(self.particle_cloud):
-            if self.object_flag == "cracker":
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_par_with_visual_PB_hor.urdf"),
-                                                                      particle.pos,
-                                                                      particle.ori)
-            if self.object_flag == "soup":
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/soup_par_with_visual_PB_hor.urdf"),
-                                                                      particle.pos,
-                                                                      particle.ori)
-            self.particle_with_visual_id_collection.append(visualize_particle_Id)
+            obj_id_list = []
+            for obj_index in range(self.object_num):
+                obj_par_name = particle[obj_index].par_name
+                obj_par_pos = particle[obj_index].pos
+                obj_par_ori = particle[obj_index].ori
+                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obj_par_name+"/"+obj_par_name+"_par_with_visual_PB_hor.urdf"),
+                                                                      obj_par_pos,
+                                                                      obj_par_ori)
+                obj_id_list.append(visualize_particle_Id)
+            self.particle_with_visual_id_collection.append(obj_id_list)
             
     def display_particle_CV(self):
         for index, particle in enumerate(self.particle_cloud_CV):
-            if self.object_flag == "cracker":
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_par_with_visual_CV_hor.urdf"),
-                                                                      particle.pos,
-                                                                      particle.ori)
-            if self.object_flag == "soup":
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/soup/soup_par_with_visual_CV_hor.urdf"),
-                                                                      particle.pos,
-                                                                      particle.ori)
-            self.particle_with_visual_id_collection_CV.append(visualize_particle_Id)
+            obj_id_list = []
+            for obj_index in range(self.object_num):
+                obj_par_name = particle[obj_index].par_name
+                obj_par_pos = particle[obj_index].pos
+                obj_par_ori = particle[obj_index].ori
+                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obj_par_name+"/"+obj_par_name+"_par_with_visual_PB_hor.urdf"),
+                                                                      obj_par_pos,
+                                                                      obj_par_ori)
+                obj_id_list.append(visualize_particle_Id)
+            self.particle_with_visual_id_collection_CV.append(obj_id_list)
 
     def initial_and_set_simulation_env(self, joint_of_robot):
-        particle_list = []
         for par_index in range(self.particle_num):
             collision_detection_obj_id = []
             pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
@@ -205,6 +205,7 @@ class InitialSimulationModel():
                 self.set_sim_robot_JointPosition(pybullet_simulation_env, fake_robot_id, joint_of_robot)
             self.fake_robot_id_collection.append(fake_robot_id)
             collision_detection_obj_id.append(fake_robot_id)
+            particle_list = []
             for obj_index in range(self.object_num):
                 obj_obse_pos = self.pw_T_obj_obse_objects_list[obj_index].pos
                 obj_obse_ori = self.pw_T_obj_obse_objects_list[obj_index].ori
@@ -230,12 +231,12 @@ class InitialSimulationModel():
                             break
                     if flag == 0:
                         break
-                    
                 objPose = Particle(obj_obse_name, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, index=par_index)
                 particle_list.append(objPose)
             self.particle_cloud.append(particle_list)
 #            self.particle_no_visual_id_collection.append(particle_no_visual_id)
-        esti_objs_cloud_temp_parameter = self.compute_estimate_pos_of_object(self.particle_cloud)  
+
+        esti_objs_cloud_temp_parameter = self.compute_estimate_pos_of_object(self.particle_cloud)
         return esti_objs_cloud_temp_parameter
         
     

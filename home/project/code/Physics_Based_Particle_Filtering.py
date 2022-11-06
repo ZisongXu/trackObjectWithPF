@@ -750,7 +750,8 @@ class PFMoveCV():
                 particle.w = particle_w
             else:
                 particle.w = 1.0/particle_num
-
+    
+    # old particle angle
     def resample_particles_CV(self):
         particles_w = []
         newParticles = []
@@ -1267,18 +1268,19 @@ if __name__ == '__main__':
         estimated_object_set = initial_parameter.initial_and_set_simulation_env(ros_listener.current_joint_values)
     elif observation_cheating_flag == True:
         estimated_object_set = initial_parameter.initial_and_set_simulation_env(0)
-    estimated_object_pos = [estimated_object_set[0], estimated_object_set[1], estimated_object_set[2]]
-    estimated_object_ori = [estimated_object_set[3], estimated_object_set[4], estimated_object_set[5], estimated_object_set[6]]
+
+    # input("stop")   
     
     boss_est_pose_CVPF.append(estimated_object_set)
     initial_parameter.initial_and_set_simulation_env_CV(ros_listener.current_joint_values)
+    input("stop")
     # display particles
     if visualisation_particle_flag == True:
         if run_PBPF_flag == True:
             initial_parameter.display_particle()
         if run_CVPF_flag == True:
             initial_parameter.display_particle_CV()
-    input("stop")
+    # input("stop")
     # load object in the sim world
     if visualisation_flag == True and object_flag == "cracker" and visualisation_mean == True:
         if run_PBPF_flag == True:

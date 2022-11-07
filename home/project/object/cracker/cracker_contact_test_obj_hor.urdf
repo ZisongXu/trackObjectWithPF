@@ -3,6 +3,9 @@
    <material name="red">
      <color rgba="1 0.498 0.3137 1"/>
    </material>
+   <material name="black">
+     <color rgba="0.0 0.0 0.0 1"/>
+   </material>
    <material name="green">
      <color rgba="0 1 0.498 1"/>
    </material>
@@ -11,7 +14,7 @@
        <geometry>
          <box size="0.14 0.19343700408935547 0.041"/>
        </geometry>
-       <material name="green"/>
+       <material name="black"/>
      </visual>
      <collision>
        <geometry>

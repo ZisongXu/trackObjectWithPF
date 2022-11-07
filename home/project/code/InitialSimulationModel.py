@@ -42,7 +42,6 @@ from EstimatedObjectPose import EstimatedObjectPose
 class InitialSimulationModel():
     def __init__(self, object_num, particle_num, real_robot_start_pos, real_robot_start_ori, 
                  pw_T_obj_obse_objects_list,
-                 noise_obj_pos, pw_T_object_ori_obse,
                  pw_T_base_pos, pw_T_base_ori,
                  p_visualisation,
                  update_style_flag, change_sim_time, task_flag, object_flag):
@@ -51,8 +50,6 @@ class InitialSimulationModel():
         self.real_robot_start_pos = real_robot_start_pos
         self.real_robot_start_ori = real_robot_start_ori
         self.pw_T_obj_obse_objects_list = pw_T_obj_obse_objects_list
-        self.noise_obj_pos = noise_obj_pos
-        self.pw_T_object_ori_obse = pw_T_object_ori_obse
         self.pw_T_base_pos = pw_T_base_pos
         self.pw_T_base_ori = pw_T_base_ori
         self.p_visualisation = p_visualisation
@@ -78,9 +75,9 @@ class InitialSimulationModel():
         self.boss_sigma_obs_ang_init = 0.0216773873 * 2.0
         
         
-    def generate_random_pose(self, noise_object_pos, pw_T_object_ori_obse):
-        position = copy.deepcopy(noise_object_pos)
-        quat = copy.deepcopy(pw_T_object_ori_obse)#x,y,z,w
+    def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):
+        position = copy.deepcopy(pw_T_obj_obse_pos)
+        quat = copy.deepcopy(pw_T_obj_obse_ori)#x,y,z,w
         quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3])#w,x,y,z
         x = self.add_noise_to_init_par(position[0], self.boss_sigma_obs_x)
         y = self.add_noise_to_init_par(position[1], self.boss_sigma_obs_y)
@@ -169,9 +166,10 @@ class InitialSimulationModel():
             self.particle_with_visual_id_collection_CV.append(obj_id_list)
 
     def initial_and_set_simulation_env(self, joint_of_robot):
+        PBPF_par_no_visual_id = [[]*self.object_num for _ in range(self.particle_num)]
         for par_index in range(self.particle_num):
             collision_detection_obj_id = []
-            pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT)#DIRECT,GUI_SERVER
+            pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
             self.pybullet_particle_env_collection.append(pybullet_simulation_env)
             if self.update_style_flag == "time":
                 pybullet_simulation_env.setTimeStep(self.change_sim_time)
@@ -209,7 +207,7 @@ class InitialSimulationModel():
             for obj_index in range(self.object_num):
                 obj_obse_pos = self.pw_T_obj_obse_objects_list[obj_index].pos
                 obj_obse_ori = self.pw_T_obj_obse_objects_list[obj_index].ori
-                obj_obse_name = self.pw_T_obj_obse_objects_list[obj_index].obs_obj_name
+                obj_obse_name = self.pw_T_obj_obse_objects_list[obj_index].obse_obj_name
                 particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
                 particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/"+obj_obse_name+"/"+obj_obse_name+"_par_no_visual_hor.urdf"),
                                                                          particle_pos,
@@ -233,8 +231,9 @@ class InitialSimulationModel():
                         break
                 objPose = Particle(obj_obse_name, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, index=par_index)
                 particle_list.append(objPose)
+                PBPF_par_no_visual_id[par_index].append(particle_no_visual_id)
             self.particle_cloud.append(particle_list)
-#            self.particle_no_visual_id_collection.append(particle_no_visual_id)
+            self.particle_no_visual_id_collection = copy.deepcopy(PBPF_par_no_visual_id)
 
         esti_objs_cloud_temp_parameter = self.compute_estimate_pos_of_object(self.particle_cloud)
         return esti_objs_cloud_temp_parameter

@@ -46,15 +46,16 @@ class InitialRealworldModel():
     
     def initial_contact_object(self, objects_pose_list):
         # object_orientation = p_visualisation.getQuaternionFromEuler(object_euler)
+        contact_obj_id_list = []
         for i in range(self.object_num):
             object_name = objects_pose_list[i].opti_obj_name
             object_pos = objects_pose_list[i].pos
             object_ori = objects_pose_list[i].ori
-            real_object_id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+object_name+"/"+object_name+"_contact_test_obj_hor.urdf"),
+            contact_obj_id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+object_name+"/"+object_name+"_contact_test_obj_hor.urdf"),
                                                            object_pos,
                                                            object_ori)
-            self.p_visualisation.changeDynamics(real_object_id,-1,mass=0.380,lateralFriction = 0.5)
-            
+            self.p_visualisation.changeDynamics(contact_obj_id, -1, mass=0.380, lateralFriction=0.5)
+            contact_obj_id_list.append(contact_obj_id)
             
 #        if self.object_flag == "cracker":
 #            real_object_id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_contact_test_obj_hor.urdf"),
@@ -65,7 +66,7 @@ class InitialRealworldModel():
 #                                                           object_pos,
 #                                                           object_orientation)
 #        self.p_visualisation.changeDynamics(real_object_id,-1,mass=0.380,lateralFriction = 0.5)
-        return real_object_id
+        return contact_obj_id_list
     
     def set_real_robot_JointPosition(self,pybullet_simulation_env,robot, position):
         num_joints = 9

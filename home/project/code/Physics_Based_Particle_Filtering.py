@@ -51,6 +51,7 @@ from InitialSimulationModel import InitialSimulationModel
 from EstimatedObjectPose import EstimatedObjectPose
 from ObservationPose import ObservationPose
 from OptitrackPose import OptitrackPose
+from Realworld import Realworld
 
 # CVPF Pose list (motion model)
 boss_obs_pose_CVPF = []
@@ -194,8 +195,8 @@ class PFMove():
     
     # synchronizing the motion of the robot in the simulation
     def sim_robot_move_direct(self, index, pybullet_env, robot_id, position):
-        if len(position) == 3:
-            a = 1
+        if len(position) == 2:
+            pybullet_env.resetBasePositionAndOrientation(robot_id, position[0], position[1])
         else:
             num_joints = 9
             for joint_index in range(num_joints):
@@ -1089,7 +1090,7 @@ if __name__ == '__main__':
     visualisation_mean = False
     visualisation_particle_flag = True
     # the flag of object judgment
-    observation_cheating_flag = False
+    observation_cheating_flag = True
     object_flag = "cracker" # cracker/soup
     # OptiTrack works fine flag
     optitrack_working_flag = True
@@ -1104,7 +1105,7 @@ if __name__ == '__main__':
     update_style_flag = "time"
     # the flag is used to determine whether the robot touches the particle in the simulation
     simRobot_touch_par_flag = 0
-    object_num = 1
+    object_num = 2
     if update_style_flag == "pose":
         particle_num = 50
     elif update_style_flag == "time":
@@ -1276,27 +1277,28 @@ if __name__ == '__main__':
         
     elif observation_cheating_flag == True:
         # load the groud truth object
-        pw_T_objs_opti_pose_list = []
-        pw_T_obj0_opti_pose = []
-        pw_T_obj1_opti_pose = []
-        pw_T_objs_obse_pose_list = []
-        # simulate getting names of objects
-        objects_name_list = ["cracker", "soup"]
-        pw_T_obj0_opti_pos = [0.4472889147344443, 0.08677179678403951, 0.0821006075425945]
-        pw_T_obj0_opti_ori = [0.52338279, 0.47884367, 0.52129429, -0.47437481]
-        pw_T_obj0_opti_pose.append(pw_T_obj0_opti_pos)
-        pw_T_obj0_opti_pose.append(pw_T_obj0_opti_ori)
-        pw_T_objs_opti_pose_list.append(pw_T_obj0_opti_pose)
-        pw_T_obj1_opti_pos = [0.4472889147344443, 0.15677179678403951, 0.05]
-        pw_T_obj1_opti_ori = [1.0, 0.0, 0.0, 1.0]
-        pw_T_obj1_opti_pose.append(pw_T_obj1_opti_pos)
-        pw_T_obj1_opti_pose.append(pw_T_obj1_opti_ori)
-        pw_T_objs_opti_pose_list.append(pw_T_obj1_opti_pose)
+        realworld = Realworld(object_num)
+#        pw_T_objs_opti_pose_list = []
+#        pw_T_obj0_opti_pose = []
+#        pw_T_obj1_opti_pose = []
+#        # simulate getting names of objects
+#        objects_name_list = ["cracker", "soup"]
+#        pw_T_obj0_opti_pos = [0.4472889147344443, 0.08677179678403951, 0.0821006075425945]
+#        pw_T_obj0_opti_ori = [0.52338279, 0.47884367, 0.52129429, -0.47437481]
+#        pw_T_obj0_opti_pose.append(pw_T_obj0_opti_pos)
+#        pw_T_obj0_opti_pose.append(pw_T_obj0_opti_ori)
+#        pw_T_objs_opti_pose_list.append(pw_T_obj0_opti_pose)
+#        pw_T_obj1_opti_pos = [0.4472889147344443, 0.15677179678403951, 0.05]
+#        pw_T_obj1_opti_ori = [1.0, 0.0, 0.0, 1.0]
+#        pw_T_obj1_opti_pose.append(pw_T_obj1_opti_pos)
+#        pw_T_obj1_opti_pose.append(pw_T_obj1_opti_ori)
+#        pw_T_objs_opti_pose_list.append(pw_T_obj1_opti_pose)
+        objects_name_list, pw_T_objs_opti_pose_list, pw_T_rob_opti_pose_list = realworld.initial_realworld()
         for i in range(object_num):
             # simulate getting ground truth of objects from OptiTrack
             opti_T_obj_opti_pos = copy.deepcopy(pw_T_objs_opti_pose_list[i][0])
             opti_T_obj_opti_ori = copy.deepcopy(pw_T_objs_opti_pose_list[i][1])
-            optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+objects_name_list[i]+"/"+objects_name_list[i]+"_real_obj_hor.urdf"),
+            optitrack_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+objects_name_list[i]+"/"+objects_name_list[i]+"_real_obj_with_visual_hor.urdf"),
                                                            opti_T_obj_opti_pos,
                                                            opti_T_obj_opti_ori)
             opti_object = OptitrackPose(objects_name_list[i], optitrack_object_id, opti_T_obj_opti_pos, opti_T_obj_opti_ori, index=i)
@@ -1480,7 +1482,9 @@ if __name__ == '__main__':
             
         elif observation_cheating_flag == True:
             # need to add robot move
-            cheat_robot_move(real_robot_id, x=0.0, y=0.028, z=0.0)
+            realworld_robot_id, realworld_pwenv_id = realworld.cheat_robot_move(x=0.0, y=0.028, z=0.0)
+            cheat_robot_move(real_robot_id, x=0.0, y=0.028, z=0.0):
+            realworld_robot_pos, realworld_robot_ori = get_item_pos(realworld_pwenv_id, realworld_robot_id)
             for i in range(object_num):
                 # get ground truth data
                 pw_T_obj_opti_name = pw_T_obj_opti_objects_list[i].opti_obj_name
@@ -1612,9 +1616,10 @@ if __name__ == '__main__':
                                                                  ros_listener.current_joint_values)
                         elif observation_cheating_flag == True:
                             real_rob_pos, real_rob_ori = get_item_pos(p_visualisation, real_robot_id)
+                            real_rob_pose = [real_rob_pos, real_rob_ori]
                             robot1.motion_update_PB_parallelised(initial_parameter.pybullet_particle_env_collection,
                                                                  initial_parameter.fake_robot_id_collection,
-                                                                 real_rob_pos)
+                                                                 real_rob_pose)
                 # CVPF algorithm
                 if run_CVPF_flag == True:
                     if robot2.isAnyParticleInContact():

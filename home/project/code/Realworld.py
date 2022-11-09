@@ -37,9 +37,7 @@ import multiprocessing
 #from sksurgerycore.algorithms.averagequaternions import average_quaternions
 from quaternion_averaging import weightedAverageQuaternions
 from Particle import Particle
-from EstimatedObjectPose import EstimatedObjectPose
-from OptitrackPose import OptitrackPose
-from ObservationPose import ObservationPose
+from Object_Pose import Object_Pose
 
 #Class of initialize the real world model
 class Realworld():
@@ -149,7 +147,7 @@ class Realworld():
                                                                   opti_T_obj_opti_pos,
                                                                   opti_T_obj_opti_ori)
             self.optitrack_object_id.append(opti_object_id)
-            opti_object = OptitrackPose(objects_name_list[i], opti_object_id, opti_T_obj_opti_pos, opti_T_obj_opti_ori, index=i)
+            opti_object = Object_Pose(objects_name_list[i], opti_object_id, opti_T_obj_opti_pos, opti_T_obj_opti_ori, index=i)
             pw_T_obj_opti_objects_list.append(opti_object)
             # simulate getting observation of objects from observation data
             pw_T_obj_obse_pos, pw_T_obj_obse_ori = self.add_noise_pose(opti_T_obj_opti_pos, opti_T_obj_opti_ori)
@@ -157,7 +155,7 @@ class Realworld():
                                                              pw_T_obj_obse_pos,
                                                              pw_T_obj_obse_ori)
             self.obsevatio_object_id.append(obse_object_id)
-            obse_object = ObservationPose(objects_name_list[i], obse_object_id, pw_T_obj_obse_pos, pw_T_obj_obse_ori, index=i)
+            obse_object = Object_Pose(objects_name_list[i], obse_object_id, pw_T_obj_obse_pos, pw_T_obj_obse_ori, index=i)
             pw_T_obj_obse_objects_list.append(obse_object)
         return objects_name_list, pw_T_objs_opti_pose_list, pw_T_rob_opti_pose_list
     

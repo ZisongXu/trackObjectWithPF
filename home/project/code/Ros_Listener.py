@@ -3,7 +3,7 @@ from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Point,PointStamped,PoseStamped,Quaternion,TransformStamped, Vector3
 
 #Class of franka robot listen to info from ROS
-class Ros_listener():
+class Ros_Listener():
     def __init__(self, optitrack_working_flag, object_flag):
         self.optitrack_working_flag = optitrack_working_flag
         self.object_flag = object_flag

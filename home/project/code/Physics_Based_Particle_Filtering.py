@@ -1090,7 +1090,7 @@ if __name__ == '__main__':
     visualisation_mean = False
     visualisation_particle_flag = True
     # the flag of object judgment
-    observation_cheating_flag = True
+    observation_cheating_flag = False
     object_flag = "cracker" # cracker/soup
     # OptiTrack works fine flag
     optitrack_working_flag = True
@@ -1105,7 +1105,7 @@ if __name__ == '__main__':
     update_style_flag = "time"
     # the flag is used to determine whether the robot touches the particle in the simulation
     simRobot_touch_par_flag = 0
-    object_num = 2
+    object_num = 1
     if update_style_flag == "pose":
         particle_num = 50
     elif update_style_flag == "time":
@@ -1483,7 +1483,7 @@ if __name__ == '__main__':
         elif observation_cheating_flag == True:
             # need to add robot move
             realworld_robot_id, realworld_pwenv_id = realworld.cheat_robot_move(x=0.0, y=0.028, z=0.0)
-            cheat_robot_move(real_robot_id, x=0.0, y=0.028, z=0.0):
+            cheat_robot_move(real_robot_id, x=0.0, y=0.028, z=0.0)
             realworld_robot_pos, realworld_robot_ori = get_item_pos(realworld_pwenv_id, realworld_robot_id)
             for i in range(object_num):
                 # get ground truth data

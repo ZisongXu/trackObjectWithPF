@@ -64,11 +64,10 @@ class InitialSimulationModel():
         self.pybullet_particle_env_collection = []
         self.fake_robot_id_collection = []
         self.particle_no_visual_id_collection = []
-        self.particle_with_visual_id_collection =[]
+        
         self.particle_cloud_CV = []
         self.pybullet_particle_env_collection_CV = []
         self.particle_no_visual_id_collection_CV = []
-        self.particle_with_visual_id_collection_CV =[]
         
         self.boss_sigma_obs_x = 0.032860982 * 2.0
         self.boss_sigma_obs_y = 0.012899399 * 1.5
@@ -124,7 +123,6 @@ class InitialSimulationModel():
 
     def display_particle(self):
         for index, particle in enumerate(self.particle_cloud):
-            obj_id_list = []
             for obj_index in range(self.object_num):
                 obj_par_name = particle[obj_index].par_name
                 obj_par_pos = particle[obj_index].pos
@@ -132,14 +130,11 @@ class InitialSimulationModel():
                 visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obj_par_name+"/"+obj_par_name+"_par_with_visual_PB_hor.urdf"),
                                                                       obj_par_pos,
                                                                       obj_par_ori)
-                obj_id_list.append(visualize_particle_Id)
                 particle[obj_index].visual_par_id = visualize_particle_Id
-            self.particle_with_visual_id_collection.append(obj_id_list)
             
             
     def display_particle_CV(self):
         for index, particle in enumerate(self.particle_cloud_CV):
-            obj_id_list = []
             for obj_index in range(self.object_num):
                 obj_par_name = particle[obj_index].par_name
                 obj_par_pos = particle[obj_index].pos
@@ -147,9 +142,7 @@ class InitialSimulationModel():
                 visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obj_par_name+"/"+obj_par_name+"_par_with_visual_CV_hor.urdf"),
                                                                       obj_par_pos,
                                                                       obj_par_ori)
-                obj_id_list.append(visualize_particle_Id)
                 particle[obj_index].visual_par_id = visualize_particle_Id
-            self.particle_with_visual_id_collection_CV.append(obj_id_list)
 
 
     def initial_and_set_simulation_env(self):
@@ -211,8 +204,7 @@ class InitialSimulationModel():
                             break
                     if flag == 0:
                         break
-#                objPose = Particle(obj_obse_name, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, index=par_index)
-                
+    
                 objPose = Particle(obj_obse_name, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, par_index, 0, 0)
                 particle_list.append(objPose)
                 PBPF_par_no_visual_id[par_index].append(particle_no_visual_id)

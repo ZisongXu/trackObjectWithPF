@@ -1159,20 +1159,10 @@ if __name__ == '__main__':
     # load object in the sim world    
     if visualisation_flag == True and visualisation_mean == True:
         visualisation_world.init_display_estimated_object(estimated_object_set, run_alg_flag)
-            
-    
-    # initial_parameter.particle_cloud #parameter of particle
-    # initial_parameter.pybullet_particle_env_collection #env of simulation
-    # initial_parameter.fake_robot_id_collection #id of robot in simulation
-    # initial_parameter.particle_no_visual_id_collection #id of particle in simulation
+
     
     # run the simulation
     Flag = True
-    # compute obse object old pose
-    # obse_obj_pos_old = copy.deepcopy(pw_T_obj_obse_pos)
-    # obse_obj_ori_old = copy.deepcopy(pw_T_obj_obse_ori)
-    # obse_obj_pos_old_CV = copy.deepcopy(pw_T_obj_obse_pos)
-    # obse_obj_ori_old_CV = copy.deepcopy(pw_T_obj_obse_ori)
     # compute pose of robot arm
     if observation_cheating_flag == False:
         rob_link_9_pose_old_PB = p_visualisation.getLinkState(real_robot_id, 9)
@@ -1267,13 +1257,6 @@ if __name__ == '__main__':
         dis_robcur_robold_PB = compute_pos_err_bt_2_points(rob_link_9_pose_cur_PB[0], rob_link_9_pose_old_PB[0])
         dis_robcur_robold_CV = compute_pos_err_bt_2_points(rob_link_9_pose_cur_CV[0], rob_link_9_pose_old_CV[0])
         
-        # compute distance between old obse obj and cur obse obj (position and angle)
-        # dis_betw_cur_and_old = compute_pos_err_bt_2_points(obse_obj_pos_cur, obse_obj_pos_old)
-        # ang_betw_cur_and_old = compute_ang_err_bt_2_points(obse_obj_ori_cur, obse_obj_ori_old)
-        # dis_betw_cur_and_old_CV = compute_pos_err_bt_2_points(obse_obj_pos_cur, obse_obj_pos_old_CV)
-        # ang_betw_cur_and_old_CV = compute_ang_err_bt_2_points(obse_obj_ori_cur, obse_obj_ori_old_CV)
-        # compute distance between old robot arm and cur robot arm (position and angle)
-
         # update according to the pose
         if update_style_flag == "pose":
             # PBPF algorithm

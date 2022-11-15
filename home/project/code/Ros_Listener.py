@@ -1,14 +1,20 @@
 import rospy
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, TransformStamped, Vector3
+from gazebo_msgs.msg import ModelStates
 
 #Class of franka robot listen to info from ROS
 class Ros_Listener():
     def __init__(self, optitrack_working_flag, object_flag):
         self.optitrack_working_flag = optitrack_working_flag
         self.object_flag = object_flag
+        self.gazebo_falg = True
         rospy.Subscriber('/joint_states', JointState, self.joint_values_callback, queue_size=1)
         self.joint_subscriber = JointState()
+        
+        rospy.Subscriber('/gazebo/model_states', ModelStates, self.model_states_callback, queue_size=1)
+        self.model_states = ModelStates()
+        
         if self.optitrack_working_flag == True:
             rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose', PoseStamped, self.robot_pose_callback, queue_size=1)
             self.robot_pose = PoseStamped()
@@ -23,14 +29,34 @@ class Ros_Listener():
             self.fake_opti_pose = PoseStamped()
         rospy.spin
     
+    def model_states_callback(self, model_states):
+        model_name = model_states.name[5]
+        model_pos = model_states.pose[5].position
+        model_ori = model_states.pose[5].orientation
+        self.model_pos = [model_pos.x, model_pos.y, model_pos.z]
+        self.model_ori = [model_ori.x, model_ori.y, model_ori.z, model_ori.w]
+        self.model_pose = [self.model_pos, self.model_ori]
+        
+        panda_name = model_states.name[9]
+        panda_pos = model_states.pose[9].position
+        panda_ori = model_states.pose[9].orientation
+        self.panda_pos = [panda_pos.x, panda_pos.y, panda_pos.z]
+        self.panda_ori = [panda_ori.x, panda_ori.y, panda_ori.z, panda_ori.w]
+        self.panda_pose = [self.panda_pos, self.panda_ori]
     
     def listen_2_object_pose(self, object_flag):
         if object_flag == "cracker":
+            if self.gazebo_falg == True:
+                return self.model_pose
             return self.object_cracker_pose
         elif object_flag == "soup":
             return self.object_soup_pose
         elif object_flag == "base":
             return self.base_pose
+            
+    
+    def listen_2_gazebo_robot_pose(self):
+        return self.panda_pose
     
     def listen_2_robot_pose(self):
         return self.robot_pose

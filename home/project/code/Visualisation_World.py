@@ -50,13 +50,15 @@ class Visualisation_World():
         self.p_visualisation = 0
         self.create_scene = Create_Scene(object_num, rob_num, other_obj_num)
         self.ros_listener = Ros_Listener(True, "cracker")
+        self.gazebo_falg = True
         
         
     def initialize_visual_world_pybullet_env(self, task_flag):
         objects_name_list = ["cracker", "soup"]
         pw_T_rob_sim_pose_list, listener_tf = self.create_scene.initialize_robot()
         pw_T_target_obj_obse_pose_lsit, pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list = self.create_scene.initialize_object()
-        
+
+
         if self.visualisation_all == True:
             p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
         elif self.visualisation_all == False:
@@ -71,6 +73,7 @@ class Visualisation_World():
             obse_obj_name = pw_T_target_obj_obse_pose_lsit[obj_index].obj_name
             obse_obj_pos = pw_T_target_obj_obse_pose_lsit[obj_index].pos
             obse_obj_ori = pw_T_target_obj_obse_pose_lsit[obj_index].ori
+            if self.gazebo_falg == True
             obse_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obse_obj_name+"/"+obse_obj_name+"_obse_obj_with_visual_hor.urdf"),
                                                       obse_obj_pos,
                                                       obse_obj_ori)
@@ -107,6 +110,7 @@ class Visualisation_World():
             pw_T_rob_sim_pose_list[rob_index].joints = joint_pos
         for i in range(240):
             p_visualisation.stepSimulation()
+        input("stop")
         return listener_tf, p_visualisation, pw_T_rob_sim_pose_list, pw_T_target_obj_obse_pose_lsit, pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list
     
     

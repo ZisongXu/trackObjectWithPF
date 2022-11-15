@@ -4,6 +4,7 @@ Created on Wed Mar 10 10:57:49 2021
 
 @author: 12106
 """
+from gazebo_msgs.msg import ModelStates
 #ROS
 from concurrent.futures.process import _threads_wakeups
 import itertools
@@ -1049,6 +1050,7 @@ if __name__ == '__main__':
     visualisation_particle_flag = True
     # the flag of object judgment
     observation_cheating_flag = False
+    gazebo_falg = True
     object_flag = "cracker" # cracker/soup
     # OptiTrack works fine flag
     optitrack_working_flag = True

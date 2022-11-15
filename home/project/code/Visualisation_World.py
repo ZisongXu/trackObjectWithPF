@@ -73,7 +73,8 @@ class Visualisation_World():
             obse_obj_name = pw_T_target_obj_obse_pose_lsit[obj_index].obj_name
             obse_obj_pos = pw_T_target_obj_obse_pose_lsit[obj_index].pos
             obse_obj_ori = pw_T_target_obj_obse_pose_lsit[obj_index].ori
-            if self.gazebo_falg == True
+            if self.gazebo_falg == True:
+                obse_obj_name = "gazebo_" + obse_obj_name
             obse_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obse_obj_name+"/"+obse_obj_name+"_obse_obj_with_visual_hor.urdf"),
                                                       obse_obj_pos,
                                                       obse_obj_ori)

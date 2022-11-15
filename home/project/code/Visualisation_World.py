@@ -82,6 +82,8 @@ class Visualisation_World():
             opti_obj_name = pw_T_target_obj_opti_pose_lsit[obj_index].obj_name
             opti_obj_pos = pw_T_target_obj_opti_pose_lsit[obj_index].pos
             opti_obj_ori = pw_T_target_obj_opti_pose_lsit[obj_index].ori
+            if self.gazebo_falg == True:
+                opti_obj_name = "gazebo_" + opti_obj_name
             opti_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+opti_obj_name+"/"+opti_obj_name+"_real_obj_with_visual_hor.urdf"),
                                                       opti_obj_pos,
                                                       opti_obj_ori)

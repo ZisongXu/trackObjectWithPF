@@ -78,13 +78,29 @@ class Create_Scene():
                 pw_T_obj_opti = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
                 pw_T_obj_opti_pos = [pw_T_obj_opti[0][3], pw_T_obj_opti[1][3], pw_T_obj_opti[2][3]]
                 pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti)
+                
+#                pw_T_obj_opti_pos = gazebo_T_obj_pos
+#                pw_T_obj_opti_ori = gazebo_T_obj_ori
+                
+#                pw_T_obj_opti_pos = [0, 0, 0]
+#                pw_T_obj_opti_ori = [0, 0, 0, 1]
+                
                 opti_obj = Object_Pose(objects_name_list[obj_index], 0, pw_T_obj_opti_pos, pw_T_obj_opti_ori, obj_index)
                 self.pw_T_target_obj_opti_pose_lsit.append(opti_obj)
                 
                 pw_T_obj_obse_pos, pw_T_obj_obse_ori = self.add_noise_pose(pw_T_obj_opti_pos, pw_T_obj_opti_ori)
+                
+                
                 obse_obj = Object_Pose(objects_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
                 self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)
-
+                
+                print("gazebo_pos:", model_pose[0])
+                print("pworld_pos:", pw_T_obj_opti_pos)
+                print("gazebo_ori:", model_pose[1])
+                print("pworld_ori:", pw_T_obj_opti_ori)
+                
+                input("stop")
+                
                 return self.pw_T_target_obj_obse_pose_lsit, self.pw_T_target_obj_opti_pose_lsit, self.pw_T_other_obj_opti_pose_list
                 
                 
@@ -140,6 +156,7 @@ class Create_Scene():
     def initialize_robot(self):
         for rob_index in range(self.rob_num):
             pw_T_rob_sim_pos = [0.0, 0.0, 0.026]
+            pw_T_rob_sim_pos = [0.0, 0.0, 0.02]
             pw_T_rob_sim_ori = [0, 0, 0, 1]
             rob_pose = Robot_Pose("pandaRobot", 0, pw_T_rob_sim_pos, pw_T_rob_sim_ori, 0, 0, rob_index)
             self.pw_T_rob_sim_pose_list.append(rob_pose)
@@ -153,9 +170,9 @@ class Create_Scene():
     
     def compute_transformation_matrix(self, a_pos, a_ori, b_pos, b_ori):
         ow_T_a_3_3 = transformations.quaternion_matrix(a_ori)
-        ow_T_a_4_4 = self.rotation_4_4_to_transformation_4_4(ow_T_a_3_3,a_pos)
+        ow_T_a_4_4 = self.rotation_4_4_to_transformation_4_4(ow_T_a_3_3, a_pos)
         ow_T_b_3_3 = transformations.quaternion_matrix(b_ori)
-        ow_T_b_4_4 = self.rotation_4_4_to_transformation_4_4(ow_T_b_3_3,b_pos)
+        ow_T_b_4_4 = self.rotation_4_4_to_transformation_4_4(ow_T_b_3_3, b_pos)
         a_T_ow_4_4 = np.linalg.inv(ow_T_a_4_4)
         a_T_b_4_4 = np.dot(a_T_ow_4_4,ow_T_b_4_4)
         return a_T_b_4_4

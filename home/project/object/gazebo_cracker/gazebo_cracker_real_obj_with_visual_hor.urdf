@@ -14,8 +14,8 @@
        <geometry>
          <box size="0.16 0.21343700408935547 0.062"/>
        </geometry>
-       <material name="blue"/>
        <origin xyz="0 0 0" rpy="1.5707963 0 1.5707963"/>
+       <material name="blue"/>
      </visual>
      <inertial>
        <mass value="0"/>

@@ -30,16 +30,16 @@ class Ros_Listener():
         rospy.spin
     
     def model_states_callback(self, model_states):
-        model_name = model_states.name[5]
-        model_pos = model_states.pose[5].position
-        model_ori = model_states.pose[5].orientation
-        self.model_pos = [model_pos.x, model_pos.y, model_pos.z-0.06]
+        model_name = model_states.name[3]
+        model_pos = model_states.pose[3].position
+        model_ori = model_states.pose[3].orientation
+        self.model_pos = [model_pos.x, model_pos.y, model_pos.z]
         self.model_ori = [model_ori.x, model_ori.y, model_ori.z, model_ori.w]
         self.model_pose = [self.model_pos, self.model_ori]
         
-        panda_name = model_states.name[9]
-        panda_pos = model_states.pose[9].position
-        panda_ori = model_states.pose[9].orientation
+        panda_name = model_states.name[7]
+        panda_pos = model_states.pose[7].position
+        panda_ori = model_states.pose[7].orientation
         self.panda_pos = [panda_pos.x, panda_pos.y, panda_pos.z]
         self.panda_ori = [panda_ori.x, panda_ori.y, panda_ori.z, panda_ori.w]
         self.panda_pose = [self.panda_pos, self.panda_ori]

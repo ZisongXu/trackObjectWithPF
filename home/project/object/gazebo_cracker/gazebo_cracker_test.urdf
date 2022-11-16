@@ -8,6 +8,7 @@
        <geometry>
          <box size="0.16 0.21343700408935547 0.061"/>
        </geometry>
+       <origin xyz="0 0 0" rpy="1.5707963 0 1.5707963"/>
        <material name="dark_green"/>
      </visual>
      <inertial>

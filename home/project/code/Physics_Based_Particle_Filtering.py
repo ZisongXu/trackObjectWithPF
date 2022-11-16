@@ -1129,7 +1129,7 @@ if __name__ == '__main__':
     visualisation_world = Visualisation_World(object_num, robot_num, other_obj_num, visualisation_all)
     listener, p_visualisation, pw_T_rob_sim_pose_list, pw_T_obj_obse_objects_list, pw_T_obj_opti_objects_list, pw_T_otherobj_opti_list = visualisation_world.initialize_visual_world_pybullet_env(task_flag)
     contact_obj_id_list = visualisation_world.initial_contact_object(pw_T_obj_obse_objects_list)
-    
+    input("stop")
     real_robot_id = pw_T_rob_sim_pose_list[0].obj_id
     pw_T_rob_sim_pos = pw_T_rob_sim_pose_list[0].pos
     pw_T_rob_sim_ori = pw_T_rob_sim_pose_list[0].ori

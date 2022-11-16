@@ -87,12 +87,6 @@ class Create_Scene():
                 pw_T_obj_opti_pos = [pw_T_obj_opti[0][3], pw_T_obj_opti[1][3], pw_T_obj_opti[2][3]]
                 pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti)
                 
-#                pw_T_obj_opti_pos = gazebo_T_obj_pos
-#                pw_T_obj_opti_ori = gazebo_T_obj_ori
-                
-#                pw_T_obj_opti_pos = [0, 0, 0]
-#                pw_T_obj_opti_ori = [0, 0, 0, 1]
-                
                 opti_obj = Object_Pose(objects_name_list[obj_index], 0, pw_T_obj_opti_pos, pw_T_obj_opti_ori, obj_index)
                 self.pw_T_target_obj_opti_pose_lsit.append(opti_obj)
                 
@@ -101,13 +95,6 @@ class Create_Scene():
                 
                 obse_obj = Object_Pose(objects_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
                 self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)
-                
-                print("gazebo_pos:", model_pose[0])
-                print("pworld_pos:", pw_T_obj_opti_pos)
-                print("gazebo_ori:", model_pose[1])
-                print("pworld_ori:", pw_T_obj_opti_ori)
-                
-                input("stop")
                 
                 return self.pw_T_target_obj_obse_pose_lsit, self.pw_T_target_obj_opti_pose_lsit, self.pw_T_other_obj_opti_pose_list
                 

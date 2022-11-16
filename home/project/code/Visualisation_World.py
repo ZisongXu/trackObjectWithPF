@@ -113,7 +113,6 @@ class Visualisation_World():
             pw_T_rob_sim_pose_list[rob_index].joints = joint_pos
         for i in range(240):
             p_visualisation.stepSimulation()
-        input("stop")
         return listener_tf, p_visualisation, pw_T_rob_sim_pose_list, pw_T_target_obj_obse_pose_lsit, pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list
     
     

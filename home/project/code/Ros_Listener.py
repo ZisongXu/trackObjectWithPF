@@ -5,28 +5,28 @@ from gazebo_msgs.msg import ModelStates
 
 #Class of franka robot listen to info from ROS
 class Ros_Listener():
-    def __init__(self, optitrack_working_flag, object_flag):
-        self.optitrack_working_flag = optitrack_working_flag
-        self.object_flag = object_flag
-        self.gazebo_falg = True
+    def __init__(self):
+        self.gazebo_falg = False
         rospy.Subscriber('/joint_states', JointState, self.joint_values_callback, queue_size=1)
         self.joint_subscriber = JointState()
         
         rospy.Subscriber('/gazebo/model_states', ModelStates, self.model_states_callback, queue_size=1)
         self.model_states = ModelStates()
         
-        if self.optitrack_working_flag == True:
-            rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose', PoseStamped, self.robot_pose_callback, queue_size=1)
-            self.robot_pose = PoseStamped()
-            rospy.Subscriber('/mocap/rigid_bodies/cheezit/pose', PoseStamped, self.object_pose_callback_cracker, queue_size=1)
-            self.object_cracker_pose = PoseStamped()
-            rospy.Subscriber('/mocap/rigid_bodies/zisongsoup/pose', PoseStamped, self.object_pose_callback_soup, queue_size=1)
-            self.object_soup_pose = PoseStamped()
-            rospy.Subscriber('/mocap/rigid_bodies/baseofcheezit/pose', PoseStamped, self.base_of_cheezit_callback, queue_size=1)
-            self.base_pose = PoseStamped()
-        elif self.optitrack_working_flag == False:
-            rospy.Subscriber('/Opti_pose', PoseStamped, self.fake_optipose_callback, queue_size=10)
-            self.fake_opti_pose = PoseStamped()
+        rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose', PoseStamped, self.robot_pose_callback, queue_size=1)
+        self.robot_pose = PoseStamped()
+        
+        rospy.Subscriber('/mocap/rigid_bodies/cheezit/pose', PoseStamped, self.object_pose_callback_cracker, queue_size=1)
+        self.object_cracker_pose = PoseStamped()
+        
+        rospy.Subscriber('/mocap/rigid_bodies/zisongsoup/pose', PoseStamped, self.object_pose_callback_soup, queue_size=1)
+        self.object_soup_pose = PoseStamped()
+        
+        rospy.Subscriber('/mocap/rigid_bodies/baseofcheezit/pose', PoseStamped, self.base_of_cheezit_callback, queue_size=1)
+        self.base_pose = PoseStamped()
+
+        rospy.Subscriber('/Opti_pose', PoseStamped, self.fake_optipose_callback, queue_size=10)
+        self.fake_opti_pose = PoseStamped()
         rospy.spin
     
     def model_states_callback(self, model_states):

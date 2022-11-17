@@ -50,9 +50,9 @@ class Create_Scene():
         self.pw_T_target_obj_obse_pose_lsit = []
         self.pw_T_rob_sim_pose_list = []
         self.pw_T_other_obj_opti_pose_list = []
-        self.ros_listener = Ros_Listener(True, "cracker")
+        self.ros_listener = Ros_Listener()
         self.listener = tf.TransformListener()
-        self.gazebo_falg = True
+        self.gazebo_falg = False
         
     def initialize_object(self):
         objects_name_list = ["cracker", "soup"]
@@ -79,8 +79,7 @@ class Create_Scene():
                 pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
                 pw_T_rob_sim_4_4 = self.rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
                 self.pw_T_rob_sim_pose_list[0].trans_matrix = pw_T_rob_sim_4_4
-                print(pw_T_rob_sim_4_4)
-                print(type(pw_T_rob_sim_4_4))
+                
                 rob_T_obj_opti_4_4 = self.compute_transformation_matrix(gazebo_T_rob_pos, gazebo_T_rob_ori, gazebo_T_obj_pos, gazebo_T_obj_ori)
                 rob_T_obj_opti_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_opti_4_4)
                 pw_T_obj_opti = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)

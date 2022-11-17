@@ -89,7 +89,7 @@ class PBPFMove():
             real_robot_joint_list.append(real_robot_info)
         return real_robot_joint_list
         
-    def set_real_robot_JointPosition(self,pybullet_env,robot, position):
+    def set_real_robot_JointPosition(self,pybullet_env, robot, position):
         num_joints = 9
         for joint_index in range(num_joints):
             if joint_index == 7 or joint_index == 8:
@@ -146,25 +146,16 @@ class PBPFMove():
                 pw_T_par_sim_id = particle[obj_index].no_visual_par_id
 #                sim_par_cur_pos, sim_par_cur_ori = self.get_item_pos(self.pybullet_env_id_collection[index], pw_T_par_sim_id)
                 sim_par_cur_pos, sim_par_cur_ori = self.get_item_pos(pw_T_par_sim_pw_env, pw_T_par_sim_id)
-                # reset pose of object in pybullet vis to the pose
-                p_visualisation.resetBasePositionAndOrientation(contact_obj_id_list[obj_index],
-                                                                sim_par_cur_pos,
-                                                                sim_par_cur_ori)
+
                 # check contact 
-                pmin, pmax = p_visualisation.getAABB(contact_obj_id_list[obj_index])
-                collide_ids = p_visualisation.getOverlappingObjects(pmin, pmax)
+                pmin, pmax = pw_T_par_sim_pw_env.getAABB(pw_T_par_sim_id)
+                collide_ids = pw_T_par_sim_pw_env.getOverlappingObjects(pmin, pmax)
                 length = len(collide_ids)
                 for t_i in range(length):
                     # print("body id: ",collide_ids[t_i][1])
                     if collide_ids[t_i][1] == 8 or collide_ids[t_i][1] == 9 or collide_ids[t_i][1] == 10 or collide_ids[t_i][1] == 11:
                         return True
-                # print("check collision")
-                # p_visualisation.stepSimulation()
-                # contacts = p_visualisation.getContactPoints(bodyA=real_robot_id, bodyB=contact_obj_id_list[obj_index])
-                # for contact in contacts:
-                #     contact_dis = contact[8]
-                #     if contact_dis < 0.001:
-                #         return True
+
         return False
     
     # update particle cloud particle angle
@@ -208,20 +199,15 @@ class PBPFMove():
                                                  targetValue=position[joint_index])
     
     def pose_sim_robot_move(self, index, pybullet_env, fake_robot_id, real_robot_joint_pos):
-        if len(real_robot_joint_pos) == 3:
-            print(len(real_robot_joint_pos))
-            print(real_robot_joint_pos)
-            input("stop")
-        else:
-            flag_set_sim = 1
-            # ensure the robot arm in the simulation moves to the final state on each update
-            while True:
-                if flag_set_sim == 0:
-                    break
-                self.set_real_robot_JointPosition(pybullet_env, fake_robot_id[index], real_robot_joint_pos)
-                pybullet_env.stepSimulation()
-                real_rob_joint_list_cur = self.get_real_robot_joint(pybullet_env, fake_robot_id[index])
-                flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur, real_robot_joint_pos)
+        flag_set_sim = 1
+        # ensure the robot arm in the simulation moves to the final state on each update
+        while True:
+            if flag_set_sim == 0:
+                break
+            self.set_real_robot_JointPosition(pybullet_env, fake_robot_id[index], real_robot_joint_pos)
+            pybullet_env.stepSimulation()
+            real_rob_joint_list_cur = self.get_real_robot_joint(pybullet_env, fake_robot_id[index])
+            flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur, real_robot_joint_pos)
             
     def function_to_parallelise(self, index, pybullet_env, fake_robot_id, real_robot_joint_pos):
         collision_detection_obj_id = []
@@ -606,24 +592,15 @@ class CVPFMove():
                 pw_T_par_sim_id = particle[obj_index].no_visual_par_id
 #                sim_par_cur_pos, sim_par_cur_ori = self.get_item_pos(self.pybullet_env_id_collection[index], pw_T_par_sim_id)
                 sim_par_cur_pos, sim_par_cur_ori = self.get_item_pos(pw_T_par_sim_pw_env, pw_T_par_sim_id)
-                # reset pose of object in pybullet vis to the pose
-                p_visualisation.resetBasePositionAndOrientation(contact_obj_id_list[obj_index],
-                                                                sim_par_cur_pos,
-                                                                sim_par_cur_ori)
                 # check contact 
-                pmin, pmax = p_visualisation.getAABB(contact_obj_id_list[obj_index])
-                collide_ids = p_visualisation.getOverlappingObjects(pmin, pmax)
+                pmin, pmax = pw_T_par_sim_pw_env.getAABB(pw_T_par_sim_id)
+                collide_ids = pw_T_par_sim_pw_env.getOverlappingObjects(pmin, pmax)
                 length = len(collide_ids)
                 for t_i in range(length):
                     # print("body id: ",collide_ids[t_i][1])
                     if collide_ids[t_i][1] == 8 or collide_ids[t_i][1] == 9 or collide_ids[t_i][1] == 10 or collide_ids[t_i][1] == 11:
                         return True
-                # p_visualisation.stepSimulation()
-                # contacts = p_visualisation.getContactPoints(bodyA=real_robot_id, bodyB=contact_obj_id_list[obj_index])
-                # for contact in contacts:
-                #     contact_dis = contact[8]
-                #     if contact_dis > 0.001:
-                #         return True
+
                 
         return False
 
@@ -1044,7 +1021,6 @@ if __name__ == '__main__':
     rospy.init_node('PF_for_obse') # ros node
     signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
     # the flag of visualisation
-    visualisation_all = True
     visualisation_flag = True # obse and OptiTrack
     visualisation_mean = True
     visualisation_particle_flag = True
@@ -1125,10 +1101,10 @@ if __name__ == '__main__':
     pw_T_obj_opti_objects_list = []
     objects_name_list = ["cracker", "soup"]
     # build an object of class "Ros_Listener"
-    ros_listener = Ros_Listener(optitrack_working_flag, object_flag)
-    visualisation_world = Visualisation_World(object_num, robot_num, other_obj_num, visualisation_all)
+    ros_listener = Ros_Listener()
+    listener = tf.TransformListener()
+    visualisation_world = Visualisation_World(object_num, robot_num, other_obj_num)
     listener, p_visualisation, pw_T_rob_sim_pose_list, pw_T_obj_obse_objects_list, pw_T_obj_opti_objects_list, pw_T_otherobj_opti_list = visualisation_world.initialize_visual_world_pybullet_env(task_flag)
-    contact_obj_id_list = visualisation_world.initial_contact_object(pw_T_obj_obse_objects_list)
     input("stop")
     real_robot_id = pw_T_rob_sim_pose_list[0].obj_id
     pw_T_rob_sim_pos = pw_T_rob_sim_pose_list[0].pos
@@ -1161,8 +1137,11 @@ if __name__ == '__main__':
     # load object in the sim world    
     if visualisation_flag == True and visualisation_mean == True:
         visualisation_world.init_display_estimated_object(estimated_object_set, run_alg_flag)
-
     
+    input("stop")
+    input("stop")
+    input("stop")
+    input("stop")
     # run the simulation
     Flag = True
     # compute pose of robot arm
@@ -1224,7 +1203,7 @@ if __name__ == '__main__':
             temp_pw_T_obj_obse_objs_list.append(obse_object)
             
             # display obse objects in visual window
-            visualisation_world.display_object_in_visual_model(pw_T_obj_obse_objects_list[i], visualisation_flag)
+            visualisation_world.display_object_in_visual_model(p_visualisation, pw_T_obj_obse_objects_list[i])
             
             opti_T_rob_opti_pos = ros_listener.listen_2_robot_pose()[0]
             opti_T_rob_opti_ori = ros_listener.listen_2_robot_pose()[1]
@@ -1322,7 +1301,7 @@ if __name__ == '__main__':
                                                      do_obs_update=obse_is_fresh) # flag for judging obse work
                         if visualisation_flag == True and optitrack_working_flag == True:
                             for obj_index in range(object_num):
-                                visualisation_world.display_object_in_visual_model(pw_T_obj_opti_objects_list[obj_index], visualisation_flag)
+                                visualisation_world.display_object_in_visual_model(p_visualisation, pw_T_obj_opti_objects_list[obj_index])
                         elif visualisation_flag == True and optitrack_working_flag == False:
                             for obj_index in range(object_num):
                                 optitrack_object_id = pw_T_obj_opti_objects_list[obj_index].obj_id

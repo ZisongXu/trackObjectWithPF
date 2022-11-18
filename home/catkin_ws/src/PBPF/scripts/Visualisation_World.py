@@ -43,10 +43,11 @@ from Ros_Listener import Ros_Listener
 
 #Class of initialize the real world model
 class Visualisation_World():
-    def __init__(self, object_num=0, rob_num=1, other_obj_num=0):
+    def __init__(self, object_num=0, rob_num=1, other_obj_num=0, particle_num=0):
         self.object_num = object_num
         self.rob_num = rob_num
         self.other_obj_num = other_obj_num
+        self.particle_num = particle_num
         self.p_visualisation = 0
         self.create_scene = Create_Scene(object_num, rob_num, other_obj_num)
         self.ros_listener = Ros_Listener()
@@ -92,7 +93,7 @@ class Visualisation_World():
                                                       opti_obj_pos,
                                                       opti_obj_ori)
             pw_T_target_obj_opti_pose_lsit[obj_index].obj_id = opti_object_id
-           
+            
         for obj_index in range(self.other_obj_num):
             other_obj_name = pw_T_other_obj_opti_pose_list[obj_index].obj_name
             other_obj_pos = pw_T_other_obj_opti_pose_list[obj_index].pos
@@ -149,18 +150,22 @@ class Visualisation_World():
                                                                 obj_ori)
             
             
-    def init_display_particle(self, particle_cloud):
-        for index, particle in enumerate(particle_cloud):
-            obj_id_list = []
-            for obj_index in range(self.object_num):
-                obj_par_name = particle[obj_index].par_name
-                obj_par_pos = particle[obj_index].pos
-                obj_par_ori = particle[obj_index].ori
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obj_par_name+"/"+obj_par_name+"_par_with_visual_PB_hor.urdf"),
-                                                                      obj_par_pos,
-                                                                      obj_par_ori)
-                obj_id_list.append(visualize_particle_Id)
-                particle[obj_index].visual_par_id = visualize_particle_Id
+    def init_display_particle(self, object_pose):
+        obj_par_name = object_pose.name
+        obj_pos_x = object_pose.pose.position.x
+        obj_pos_y = object_pose.pose.position.y
+        obj_pos_z = object_pose.pose.position.z
+        obj_pos = [obj_pos_x, obj_pos_y, obj_pos_z]
+        obj_ori_x = object_pose.pose.orientation.x
+        obj_ori_y = object_pose.pose.orientation.y
+        obj_ori_z = object_pose.pose.orientation.z
+        obj_ori_w = object_pose.pose.orientation.w
+        obj_ori = [obj_ori_x, obj_ori_y, obj_ori_z, obj_ori_w]
+
+        visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obj_par_name+"/"+obj_par_name+"_par_with_visual_PB_hor.urdf"),
+                                                              obj_pos,
+                                                              obj_ori)
+        object_pose.id = visualize_particle_Id
             
             
     def init_display_particle_CV(self, particle_cloud_CV):
@@ -202,15 +207,21 @@ class Visualisation_World():
                                                                  esti_obj_pos,
                                                                  esti_obj_ori)
         
-    def display_particle_in_visual_model(self, particle_cloud):
-        for obj_index in range(self.object_num):
-            for index, particle in enumerate(particle_cloud):
-                w_T_par_sim_id = particle[obj_index].visual_par_id
-                par_obj_pos = particle[obj_index].pos
-                par_obj_ori = particle[obj_index].ori
-                self.p_visualisation.resetBasePositionAndOrientation(w_T_par_sim_id,
-                                                                     par_obj_pos,
-                                                                     par_obj_ori)
+    def display_particle_in_visual_model(self, object_pose):
+        obj_par_id = object_pose.id
+        obj_pos_x = object_pose.pose.position.x
+        obj_pos_y = object_pose.pose.position.y
+        obj_pos_z = object_pose.pose.position.z
+        obj_pos = [obj_pos_x, obj_pos_y, obj_pos_z]
+        obj_ori_x = object_pose.pose.orientation.x
+        obj_ori_y = object_pose.pose.orientation.y
+        obj_ori_z = object_pose.pose.orientation.z
+        obj_ori_w = object_pose.pose.orientation.w
+        obj_ori = [obj_ori_x, obj_ori_y, obj_ori_z, obj_ori_w]
+        
+        self.p_visualisation.resetBasePositionAndOrientation(obj_par_id,
+                                                             obj_pos,
+                                                             obj_ori)
 
 # add position into transformation matrix
 def rotation_4_4_to_transformation_4_4(rotation_4_4, pos):
@@ -236,9 +247,11 @@ if __name__ == '__main__':
     object_num = 1
     robot_num = 1
     other_obj_num = 0
+    particle_num = 50
+    init_par_flag = 0
     object_list = ["cracker", "soup"]
     
-    visual_world = Visualisation_World(object_num, robot_num, other_obj_num)
+    visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
     visual_world.initialize_visual_world_pybullet_env("task1")
     
     listener_tf = visual_world.listener
@@ -312,7 +325,22 @@ if __name__ == '__main__':
             pw_T_other_obj_opti_pose_list_param[obj_index].pos = pw_T_base_pos
             pw_T_other_obj_opti_pose_list_param[obj_index].ori = pw_T_base_ori
             visual_world.display_object_in_visual_model(p_visual, pw_T_other_obj_opti_pose_list_param[obj_index])
-            
+        
+        # display particles
+        for obj_index in range(object_num):
+            particles_states_list = visual_world.ros_listener.listen_2_pars_states()
+            if particles_states_list.particles == 0:
+                par_list_not_pub = 0
+            else:
+#                particles_states_list.particles
+                if init_par_flag == 0:
+                    init_par_flag = 1
+                    for par_index in range(particle_num):
+                        visual_world.init_display_particle(particles_states_list.particles[par_index].objects[obj_index])
+                else:
+                    for par_index in range(particle_num):
+                        visual_world.display_particle_in_visual_model(particles_states_list.particles[par_index].objects[obj_index])
+                    
         p_visual.stepSimulation()
         
 

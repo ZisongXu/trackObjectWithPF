@@ -2,6 +2,7 @@
 import rospy
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, TransformStamped, Vector3
+from PBPF.msg import object_pose, particle_pose, particle_list
 from gazebo_msgs.msg import ModelStates
 
 #Class of franka robot listen to info from ROS
@@ -28,6 +29,10 @@ class Ros_Listener():
 
         rospy.Subscriber('/Opti_pose', PoseStamped, self.fake_optipose_callback, queue_size=10)
         self.fake_opti_pose = PoseStamped()
+        
+        rospy.Subscriber('/par_list', particle_list, self.particles_states_callback, queue_size=10)
+        self.particles_states_list = particle_pose()
+        
         rospy.spin
     
     def model_states_callback(self, model_states):
@@ -54,7 +59,9 @@ class Ros_Listener():
             return self.object_soup_pose
         elif object_flag == "base":
             return self.base_pose
-            
+    
+    def listen_2_pars_states(self):
+        return self.particles_states_list
     
     def listen_2_gazebo_robot_pose(self):
         return self.panda_pose
@@ -107,7 +114,7 @@ class Ros_Listener():
         self.object_ori = [x_ori, y_ori, z_ori, w_ori]
         self.object_soup_pose = [self.object_pos, self.object_ori]
         
-    def base_of_cheezit_callback(self,data):
+    def base_of_cheezit_callback(self, data):
         # pos
         x_pos = data.pose.position.x
         y_pos = data.pose.position.y
@@ -121,7 +128,7 @@ class Ros_Listener():
         self.base_ori = [x_ori, y_ori, z_ori, w_ori]
         self.base_pose = [self.base_pos, self.base_ori]
         
-    def fake_optipose_callback(self,data):
+    def fake_optipose_callback(self, data):
         # pos
         x_pos = data.pose.position.x
         y_pos = data.pose.position.y
@@ -134,3 +141,6 @@ class Ros_Listener():
         w_ori = data.pose.orientation.w
         self.fake_opti_ori = [x_ori, y_ori, z_ori, w_ori]
         self.fake_opti_pose = [self.fake_opti_pos, self.fake_opti_ori]
+
+    def particles_states_callback(self, pars_states_list):
+        self.particles_states_list = pars_states_list

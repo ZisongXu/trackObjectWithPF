@@ -51,8 +51,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  particles_states.msg
-  particle_state.msg
+  object_pose.msg
+  particle_pose.msg
+  particle_list.msg
 )
 
 ## Generate services in the 'srv' folder

@@ -15,7 +15,8 @@ from std_msgs.msg import Float32
 from std_msgs.msg import Int8
 from std_msgs.msg import ColorRGBA, Header
 from sensor_msgs.msg import JointState
-from geometry_msgs.msg import Point,PointStamped,PoseStamped,Quaternion,TransformStamped, Vector3
+from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, TransformStamped, Vector3
+from PBPF.msg import object_pose, particle_pose, particle_list
 import tf
 import tf.transformations as transformations
 from visualization_msgs.msg import Marker
@@ -42,23 +43,19 @@ from Object_Pose import Object_Pose
 #Class of initialize the simulation model
 class InitialSimulationModel():
     def __init__(self, object_num, robot_num, other_obj_num, particle_num, 
-                 pw_T_rob_sim_pose_list,                            
-                 pw_T_obj_obse_objects_list,
-                 pw_T_other_obj_opti_pose_list,
-                 p_visualisation,
-                 update_style_flag, change_sim_time, task_flag, object_flag):
+                 pw_T_rob_sim_pose_list_alg, 
+                 pw_T_obj_obse_obj_list_alg,
+                 pw_T_obj_obse_oto_list_alg,
+                 update_style_flag, change_sim_time):
         self.object_num = object_num
         self.robot_num = robot_num
         self.other_obj_num = other_obj_num
         self.particle_num = particle_num
-        self.pw_T_rob_sim_pose_list = pw_T_rob_sim_pose_list
-        self.pw_T_obj_obse_objects_list = pw_T_obj_obse_objects_list
-        self.pw_T_other_obj_opti_pose_list = pw_T_other_obj_opti_pose_list
-        self.p_visualisation = p_visualisation
+        self.pw_T_rob_sim_pose_list_alg = pw_T_rob_sim_pose_list_alg
+        self.pw_T_obj_obse_obj_list_alg = pw_T_obj_obse_obj_list_alg
+        self.pw_T_obj_obse_oto_list_alg = pw_T_obj_obse_oto_list_alg
         self.update_style_flag = update_style_flag
         self.change_sim_time = change_sim_time
-        self.task_flag = task_flag
-        self.object_flag = object_flag
         
         self.particle_cloud = []
         self.esti_objs_cloud = []
@@ -121,34 +118,14 @@ class InitialSimulationModel():
             self.esti_objs_cloud.append(est_obj_pose)
         return self.esti_objs_cloud
 
-
-    def display_particle(self):
-        for index, particle in enumerate(self.particle_cloud):
-            for obj_index in range(self.object_num):
-                obj_par_name = particle[obj_index].par_name
-                obj_par_pos = particle[obj_index].pos
-                obj_par_ori = particle[obj_index].ori
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obj_par_name+"/"+obj_par_name+"_par_with_visual_PB_hor.urdf"),
-                                                                      obj_par_pos,
-                                                                      obj_par_ori)
-                particle[obj_index].visual_par_id = visualize_particle_Id
-            
-            
-    def display_particle_CV(self):
-        for index, particle in enumerate(self.particle_cloud_CV):
-            for obj_index in range(self.object_num):
-                obj_par_name = particle[obj_index].par_name
-                obj_par_pos = particle[obj_index].pos
-                obj_par_ori = particle[obj_index].ori
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obj_par_name+"/"+obj_par_name+"_par_with_visual_CV_hor.urdf"),
-                                                                      obj_par_pos,
-                                                                      obj_par_ori)
-                particle[obj_index].visual_par_id = visualize_particle_Id
-
-
     def initial_and_set_simulation_env(self):
+        pub_par_pose = rospy.Publisher('/par_list', particle_list, queue_size = 10)
         PBPF_par_no_visual_id = [[]*self.object_num for _ in range(self.particle_num)]
+        
+        par_list = particle_list()
+        par_pose_list = list(range(self.particle_num))
         for par_index in range(self.particle_num):
+            par_pose = particle_pose()
             collision_detection_obj_id = []
             pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
             self.pybullet_particle_env_collection.append(pybullet_simulation_env)
@@ -156,22 +133,22 @@ class InitialSimulationModel():
                 pybullet_simulation_env.setTimeStep(self.change_sim_time)
             pybullet_simulation_env.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.5, 0.3, 0.2])
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
-            pybullet_simulation_env.setGravity(0,0,-9.81)
+            pybullet_simulation_env.setGravity(0, 0, -9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
             
             for obj_index in range(self.other_obj_num):
-                other_obj_name = self.pw_T_other_obj_opti_pose_list[obj_index].obj_name
-                other_obj_pos = self.pw_T_other_obj_opti_pose_list[obj_index].pos
-                other_obj_ori = self.pw_T_other_obj_opti_pose_list[obj_index].ori
+                other_obj_name = self.pw_T_obj_obse_oto_list_alg[obj_index].obj_name
+                other_obj_pos = self.pw_T_obj_obse_oto_list_alg[obj_index].pos
+                other_obj_ori = self.pw_T_obj_obse_oto_list_alg[obj_index].ori
                 sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/"+other_obj_name+"/base_of_cracker.urdf"),
                                                                other_obj_pos,
                                                                other_obj_ori,
                                                                useFixedBase=1)
                 
             for rob_index in range(self.robot_num):
-                real_robot_start_pos = self.pw_T_rob_sim_pose_list[rob_index].pos
-                real_robot_start_ori = self.pw_T_rob_sim_pose_list[rob_index].ori
-                joint_of_robot = self.pw_T_rob_sim_pose_list[rob_index].joints
+                real_robot_start_pos = self.pw_T_rob_sim_pose_list_alg[rob_index].pos
+                real_robot_start_ori = self.pw_T_rob_sim_pose_list_alg[rob_index].ori
+                joint_of_robot = self.pw_T_rob_sim_pose_list_alg[rob_index].joints
                 fake_robot_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
                                                                  real_robot_start_pos,
                                                                  real_robot_start_ori,
@@ -179,11 +156,15 @@ class InitialSimulationModel():
                 self.set_sim_robot_JointPosition(pybullet_simulation_env, fake_robot_id, joint_of_robot)
             self.fake_robot_id_collection.append(fake_robot_id)
             collision_detection_obj_id.append(fake_robot_id)
-            particle_list = []
+            
+            object_list = []
+            obj_pose_list = []
+            
             for obj_index in range(self.object_num):
-                obj_obse_pos = self.pw_T_obj_obse_objects_list[obj_index].pos
-                obj_obse_ori = self.pw_T_obj_obse_objects_list[obj_index].ori
-                obj_obse_name = self.pw_T_obj_obse_objects_list[obj_index].obj_name
+                obj_pose = object_pose()
+                obj_obse_pos = self.pw_T_obj_obse_obj_list_alg[obj_index].pos
+                obj_obse_ori = self.pw_T_obj_obse_obj_list_alg[obj_index].ori
+                obj_obse_name = self.pw_T_obj_obse_obj_list_alg[obj_index].obj_name
                 particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
                 particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/"+obj_obse_name+"/"+obj_obse_name+"_par_no_visual_hor.urdf"),
                                                                          particle_pos,
@@ -207,37 +188,125 @@ class InitialSimulationModel():
                         break
     
                 objPose = Particle(obj_obse_name, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, par_index, 0, 0)
-                particle_list.append(objPose)
+                object_list.append(objPose)
                 PBPF_par_no_visual_id[par_index].append(particle_no_visual_id)
-            self.particle_cloud.append(particle_list)
+                
+                obj_pose.name = obj_obse_name
+                obj_pose.pose.position.x = particle_pos[0]
+                obj_pose.pose.position.y = particle_pos[1]
+                obj_pose.pose.position.z = particle_pos[2]
+                obj_pose.pose.orientation.x = particle_ori[0]
+                obj_pose.pose.orientation.y = particle_ori[1]
+                obj_pose.pose.orientation.z = particle_ori[2]
+                obj_pose.pose.orientation.w = particle_ori[3]
+                obj_pose_list.append(obj_pose)
+                
+            self.particle_cloud.append(object_list)
             self.particle_no_visual_id_collection = copy.deepcopy(PBPF_par_no_visual_id)
-
+            
+            par_pose.objects = obj_pose_list
+            par_pose_list[par_index] = par_pose
+            
+        par_list.particles = par_pose_list
+        pub_par_pose.publish(par_list)
         esti_objs_cloud_temp_parameter = self.compute_estimate_pos_of_object(self.particle_cloud)
         return esti_objs_cloud_temp_parameter
         
     
     def initial_and_set_simulation_env_CV(self):
-        self.particle_cloud_CV = copy.deepcopy(self.particle_cloud)
-        for index, particle in enumerate(self.particle_cloud_CV):
-            pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT) # GUI_SERVER, DIRECT
+        pub_par_pose = rospy.Publisher('/par_list', particle_list, queue_size = 1)
+        CVPF_par_no_visual_id = [[]*self.object_num for _ in range(self.particle_num)]
+        
+        par_list = particle_list()
+        par_pose_list = list(range(self.particle_num))
+        for par_index in range(self.particle_num):
+            par_pose = particle_pose()
+            collision_detection_obj_id = []
+            pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
             self.pybullet_particle_env_collection_CV.append(pybullet_simulation_env)
+            pybullet_simulation_env.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.5, 0.3, 0.2])
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0, 0, -9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
+            
+            for obj_index in range(self.other_obj_num):
+                other_obj_name = self.pw_T_obj_obse_oto_list_alg[obj_index].obj_name
+                other_obj_pos = self.pw_T_obj_obse_oto_list_alg[obj_index].pos
+                other_obj_ori = self.pw_T_obj_obse_oto_list_alg[obj_index].ori
+                sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/"+other_obj_name+"/base_of_cracker.urdf"),
+                                                               other_obj_pos,
+                                                               other_obj_ori,
+                                                               useFixedBase=1)
+            
+            for rob_index in range(self.robot_num):
+                real_robot_start_pos = self.pw_T_rob_sim_pose_list_alg[rob_index].pos
+                real_robot_start_ori = self.pw_T_rob_sim_pose_list_alg[rob_index].ori
+                joint_of_robot = self.pw_T_rob_sim_pose_list_alg[rob_index].joints
+                fake_robot_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
+                                                                 real_robot_start_pos,
+                                                                 real_robot_start_ori,
+                                                                 useFixedBase=1)
+                self.set_sim_robot_JointPosition(pybullet_simulation_env, fake_robot_id, joint_of_robot)
+            self.fake_robot_id_collection.append(fake_robot_id)
+            collision_detection_obj_id.append(fake_robot_id)
+            
+            object_list = []
+            obj_pose_list = []
+                 
             for obj_index in range(self.object_num):
-                obj_par_pos = particle[obj_index].pos
-                obj_par_ori = particle[obj_index].ori
-                obj_par_name = particle[obj_index].par_name
-                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/"+obj_par_name+"/"+obj_par_name+"_par_no_visual_hor.urdf"),
-                                                                         obj_par_pos,
-                                                                         obj_par_ori)
-                particle[obj_index].no_visual_par_id = particle_no_visual_id
-#            self.particle_no_visual_id_collection_CV.append(particle_no_visual_id)
+                obj_pose = object_pose()
+                obj_obse_pos = self.pw_T_obj_obse_obj_list_alg[obj_index].pos
+                obj_obse_ori = self.pw_T_obj_obse_obj_list_alg[obj_index].ori
+                obj_obse_name = self.pw_T_obj_obse_obj_list_alg[obj_index].obj_name
+                particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/"+obj_obse_name+"/"+obj_obse_name+"_par_no_visual_hor.urdf"),
+                                                                         particle_pos,
+                                                                         particle_ori)
+                collision_detection_obj_id.append(particle_no_visual_id)
+                while True:
+                    flag = 0
+                    for check_num in range(obj_index+1):
+                        pybullet_simulation_env.stepSimulation()
+                        contacts = pybullet_simulation_env.getContactPoints(bodyA=collision_detection_obj_id[check_num], bodyB=collision_detection_obj_id[-1])
+                        for contact in contacts:
+                            contact_dis = contact[8]
+                            if contact_dis < -0.001:
+                                particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
+                                pybullet_simulation_env.resetBasePositionAndOrientation(particle_no_visual_id, particle_pos, particle_ori)
+                                flag = 1
+                                break
+                        if flag == 1:
+                            break
+                    if flag == 0:
+                        break
+    
+                objPose = Particle(obj_obse_name, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, par_index, 0, 0)
+                object_list.append(objPose)
+                CVPF_par_no_visual_id[par_index].append(particle_no_visual_id)
+                
+                obj_pose.name = obj_obse_name
+                obj_pose.pose.position.x = particle_pos[0]
+                obj_pose.pose.position.y = particle_pos[1]
+                obj_pose.pose.position.z = particle_pos[2]
+                obj_pose.pose.orientation.x = particle_ori[0]
+                obj_pose.pose.orientation.y = particle_ori[1]
+                obj_pose.pose.orientation.z = particle_ori[2]
+                obj_pose.pose.orientation.w = particle_ori[3]
+                obj_pose_list.append(obj_pose)
+                
+            self.particle_cloud_CV.append(object_list)
+            self.particle_no_visual_id_collection_CV = copy.deepcopy(CVPF_par_no_visual_id)
+            
+            par_pose.objects = obj_pose_list
+            par_pose_list[par_index] = par_pose
+            
+        par_list.particles = par_pose_list
+        pub_par_pose.publish(par_list)
         esti_objs_cloud_temp_parameter = self.compute_estimate_pos_of_object(self.particle_cloud_CV)
         return esti_objs_cloud_temp_parameter
 
 
-    def set_sim_robot_JointPosition(self,pybullet_simulation_env,robot, position):
+    def set_sim_robot_JointPosition(self, pybullet_simulation_env, robot, position):
         num_joints = 9
         for joint_index in range(num_joints):
             if joint_index == 7 or joint_index == 8:

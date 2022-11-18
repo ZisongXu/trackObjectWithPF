@@ -22,7 +22,8 @@ from std_msgs.msg import Float32
 from std_msgs.msg import Int8
 from std_msgs.msg import ColorRGBA, Header
 from sensor_msgs.msg import JointState
-from geometry_msgs.msg import Point,PointStamped,PoseStamped,Quaternion,TransformStamped, Vector3
+from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, TransformStamped, Vector3
+from PBPF.msg import particle_state, particles_states
 import tf
 import tf.transformations as transformations
 from visualization_msgs.msg import Marker
@@ -53,6 +54,7 @@ from Realworld import Realworld
 from Visualisation_World import Visualisation_World
 from Create_Scene import Create_Scene
 from Object_Pose import Object_Pose
+from Robot_Pose import Robot_Pose
 # CVPF Pose list (motion model)
 boss_obs_pose_CVPF = []
 boss_est_pose_CVPF = []
@@ -1051,6 +1053,8 @@ if __name__ == '__main__':
             particle_num = 50
         elif run_alg_flag == "CVPF":
             particle_num = 50
+    objects_name_list = ["cracker", "soup"]
+    
     print("This is "+update_style_flag+" update in scene"+task_flag)    
     # some parameters
     d_thresh = 0.005
@@ -1098,36 +1102,59 @@ if __name__ == '__main__':
     PBPF_time_cosuming_list = []
     
     # multi-objects/robot list
-    pw_T_obj_obse_objects_list = []
-    pw_T_obj_opti_objects_list = []
+    pw_T_rob_sim_pose_list_alg = []
+    pw_T_obj_obse_obj_list_alg = []
+    pw_T_obj_obse_oto_list_alg = []
     objects_name_list = ["cracker", "soup"]
     # build an object of class "Ros_Listener"
     ros_listener = Ros_Listener()
     listener = tf.TransformListener()
-    visualisation_world = Visualisation_World(object_num, robot_num, other_obj_num)
-    listener, p_visualisation, pw_T_rob_sim_pose_list, pw_T_obj_obse_objects_list, pw_T_obj_opti_objects_list, pw_T_otherobj_opti_list = visualisation_world.initialize_visual_world_pybullet_env(task_flag)
-    input("stop")
-    real_robot_id = pw_T_rob_sim_pose_list[0].obj_id
-    pw_T_rob_sim_pos = pw_T_rob_sim_pose_list[0].pos
-    pw_T_rob_sim_ori = pw_T_rob_sim_pose_list[0].ori
-    pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list[0].trans_matrix
     
-    franka_robot = Franka_robot(real_robot_id, p_visualisation)
+    for rob_index in range(robot_num):
+        pw_T_rob_sim_pos = [0.0, 0.0, 0.02]
+        pw_T_rob_sim_ori = [0, 0, 0, 1]
+        pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
+        pw_T_rob_sim_4_4 = rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
+        joint_states = ros_listener.current_joint_values
+        rob_pose = Robot_Pose("pandaRobot", 0, pw_T_rob_sim_pos, pw_T_rob_sim_ori, joint_states, pw_T_rob_sim_4_4, rob_index)
+        pw_T_rob_sim_pose_list_alg.append(rob_pose)
+        
+    for obj_index in range(object_num):
+        while True:
+            try:
+                (trans,rot) = listener.lookupTransform('/panda_link0', '/'+objects_name_list[obj_index], rospy.Time(0))
+                break
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                continue
+        rob_T_obj_obse_pos = list(trans)
+        rob_T_obj_obse_ori = list(rot)
+        rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
+        rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3, rob_T_obj_obse_pos)
+        pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
+        pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
+        pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
+        obse_obj = Object_Pose(objects_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
+        pw_T_obj_obse_obj_list_alg.append(obse_obj)
     
+    for obj_index in range(other_obj_num):
+        pw_T_obj_obse_oto_list_alg = []
     # initialize sim world (particles)
     # initial_parameter = InitialSimulationModel(particle_num, pw_T_rob_sim_pos, pw_T_rob_sim_ori, obse_obj_pos_init, obse_obj_ori_init)
     initial_parameter = InitialSimulationModel(object_num, robot_num, other_obj_num, particle_num, 
-                                               pw_T_rob_sim_pose_list, 
-                                               pw_T_obj_obse_objects_list,
-                                               pw_T_otherobj_opti_list,
-                                               p_visualisation,
-                                               update_style_flag, change_sim_time, task_flag, object_flag)
+                                               pw_T_rob_sim_pose_list_alg, 
+                                               pw_T_obj_obse_obj_list_alg,
+                                               pw_T_obj_obse_oto_list_alg,
+                                               update_style_flag, change_sim_time)
     # get estimated object
-    estimated_object_set = initial_parameter.initial_and_set_simulation_env()
-    boss_est_pose_CVPF.append(estimated_object_set) # [esti_obj1, esti_obj2]
-    
-    initial_parameter.initial_and_set_simulation_env_CV()
-
+    if run_alg_flag == "PBPF":
+        estimated_object_set = initial_parameter.initial_and_set_simulation_env()
+    if run_alg_flag == "CVPF":
+        estimated_object_set = initial_parameter.initial_and_set_simulation_env_CV()
+        boss_est_pose_CVPF.append(estimated_object_set) # [esti_obj1, esti_obj2]
+    input("stop")
+    input("stop")
+    input("stop")
+    input("stop")
     # display particles
     if visualisation_particle_flag == True:
         if run_alg_flag == "PBPF":
@@ -1139,10 +1166,7 @@ if __name__ == '__main__':
     if visualisation_flag == True and visualisation_mean == True:
         visualisation_world.init_display_estimated_object(estimated_object_set, run_alg_flag)
     
-    input("stop")
-    input("stop")
-    input("stop")
-    input("stop")
+    
     # run the simulation
     Flag = True
     # compute pose of robot arm
@@ -1166,7 +1190,6 @@ if __name__ == '__main__':
         for i in range(object_num):
             # need to change
             object_name = pw_T_obj_opti_objects_list[i].obj_name
-            franka_robot.fanka_robot_move(ros_listener.current_joint_values)
             # get obse data
             obse_is_fresh = True
             try:

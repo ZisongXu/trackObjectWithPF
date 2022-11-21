@@ -59,11 +59,12 @@ class Visualisation_World():
         self.pw_T_target_obj_opti_pose_lsit = []
         self.pw_T_other_obj_opti_pose_list = []
         
-    def initialize_visual_world_pybullet_env(self, task_flag):
-        objects_name_list = ["cracker", "soup"]
-        pw_T_rob_sim_pose_list, listener_tf = self.create_scene.initialize_robot()
-        pw_T_target_obj_obse_pose_lsit, pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list = self.create_scene.initialize_object()
+        self.objects_name_list = ["cracker", "soup"]
         
+    def initialize_visual_world_pybullet_env(self, task_flag):
+        pw_T_rob_sim_pose_list = self.create_scene.initialize_robot()
+        pw_T_target_obj_obse_pose_lsit = self.create_scene.initialize_object()
+        pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list = self.create_scene.initialize_ground_truth_objects()
         if self.visualisation_all == True:
             p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
         else:
@@ -124,7 +125,7 @@ class Visualisation_World():
         self.pw_T_target_obj_opti_pose_lsit = pw_T_target_obj_opti_pose_lsit
         self.pw_T_other_obj_opti_pose_list = pw_T_other_obj_opti_pose_list
         
-        return listener_tf, p_visualisation, pw_T_rob_sim_pose_list, pw_T_target_obj_obse_pose_lsit, pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list
+        return p_visualisation, pw_T_rob_sim_pose_list, pw_T_target_obj_obse_pose_lsit, pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list
     
     def set_real_robot_JointPosition(self, pybullet_simulation_env, robot_id, position):
         num_joints = 9

@@ -43,6 +43,7 @@ import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 import multiprocessing
+import yaml
 #from sksurgerycore.algorithms.averagequaternions import average_quaternions
 from quaternion_averaging import weightedAverageQuaternions
 #class in other files
@@ -1076,24 +1077,19 @@ if __name__ == '__main__':
     par_list = particle_list()
     pub_esti_pose = rospy.Publisher('/esti_obj_list', estimated_obj_pose, queue_size = 10)
     esti_list = estimated_obj_pose()
-    # the flag of visualisation
-    visualisation_flag = True # obse and OptiTrack
-    visualisation_mean = True
-    visualisation_particle_flag = True
-    # the flag of object judgment
-    observation_cheating_flag = False
+    
+    with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
+        parameter_info = yaml.safe_load(file)
+        
     gazebo_falg = True
-    object_flag = "cracker" # cracker/soup
-    # OptiTrack works fine flag
-    optitrack_working_flag = True
-    # number of times to run the algorithm
-    file_time = 1
-    # which algorithm to run
-    run_alg_flag = "PBPF" # PBPF/CVPF
+    
     # scene
-    task_flag = "1"
+    task_flag = '1' # parameter_info['task_flag']
+    # which algorithm to run
+    run_alg_flag = 'PBPF' # parameter_info['run_alg_flag'] # PBPF/CVPF
     # update mode (pose/time)
-    update_style_flag = "time" # time/pose
+    update_style_flag = 'time' # parameter_info['update_style_flag'] # time/pose
+
     # the flag is used to determine whether the robot touches the particle in the simulation
     simRobot_touch_par_flag = 0
     object_num = 1
@@ -1106,8 +1102,8 @@ if __name__ == '__main__':
             particle_num = 50
         elif run_alg_flag == "CVPF":
             particle_num = 50
-    objects_name_list = ["cracker", "soup"]
-    
+    objects_name_list = ["cracker", "soup"] # parameter_info['objects_name_list']
+
     print("This is "+update_style_flag+" update in scene"+task_flag)    
     # some parameters
     d_thresh = 0.005
@@ -1158,41 +1154,19 @@ if __name__ == '__main__':
     pw_T_rob_sim_pose_list_alg = []
     pw_T_obj_obse_obj_list_alg = []
     pw_T_obj_obse_oto_list_alg = []
-    objects_name_list = ["cracker", "soup"]
     # build an object of class "Ros_Listener"
     ros_listener = Ros_Listener()
+    create_scene = Create_Scene(object_num, robot_num, other_obj_num)
     listener = tf.TransformListener()
     time.sleep(0.5)
-    for rob_index in range(robot_num):
-        pw_T_rob_sim_pos = [0.0, 0.0, 0.02]
-        pw_T_rob_sim_ori = [0, 0, 0, 1]
-        pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
-        pw_T_rob_sim_4_4 = rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
-        joint_states = ros_listener.current_joint_values
-        rob_pose = Robot_Pose("pandaRobot", 0, pw_T_rob_sim_pos, pw_T_rob_sim_ori, joint_states, pw_T_rob_sim_4_4, rob_index)
-        pw_T_rob_sim_pose_list_alg.append(rob_pose)
-        
-    for obj_index in range(object_num):
-        while True:
-            try:
-                (trans,rot) = listener.lookupTransform('/panda_link0', '/'+objects_name_list[obj_index], rospy.Time(0))
-                break
-            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                continue
-        rob_T_obj_obse_pos = list(trans)
-        rob_T_obj_obse_ori = list(rot)
-        rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
-        rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3, rob_T_obj_obse_pos)
-        pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
-        pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
-        pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
-        obse_obj = Object_Pose(objects_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
-        pw_T_obj_obse_obj_list_alg.append(obse_obj)
+    
+    pw_T_rob_sim_pose_list_alg = create_scene.initialize_robot()
+    pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
+    pw_T_obj_obse_obj_list_alg = create_scene.initialize_object()
     
     for obj_index in range(other_obj_num):
         pw_T_obj_obse_oto_list_alg = []
-    # initialize sim world (particles)
-    # initial_parameter = InitialSimulationModel(particle_num, pw_T_rob_sim_pos, pw_T_rob_sim_ori, obse_obj_pos_init, obse_obj_ori_init)
+
     initial_parameter = InitialSimulationModel(object_num, robot_num, other_obj_num, particle_num, 
                                                pw_T_rob_sim_pose_list_alg, 
                                                pw_T_obj_obse_obj_list_alg,
@@ -1213,6 +1187,7 @@ if __name__ == '__main__':
     Flag = True
     # compute pose of robot arm
     
+    # get pose of the end-effector of the robot arm from joints of robot arm 
     p_sim, sim_rob_id = track_fk_sim_world()
     track_fk_world_rob_mv(p_sim, sim_rob_id, ros_listener.current_joint_values)
 
@@ -1231,17 +1206,9 @@ if __name__ == '__main__':
             # get obse data
             obse_is_fresh = True
             try:
-                if object_flag == "cracker":
-                    latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/cracker')
-                if object_flag == "soup":
-                    latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/soup')
-                #print("latest_obse_time: ",latest_obse_time.to_sec())
-                #print("rospy.get_time: ",rospy.get_time())
+                latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/'+object_name)
                 if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                    if object_flag == "cracker":
-                        (trans,rot) = listener.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
-                    if object_flag == "soup":
-                        (trans,rot) = listener.lookupTransform('/panda_link0', '/soup', rospy.Time(0))
+                    (trans,rot) = listener.lookupTransform('/panda_link0', '/'+object_name, rospy.Time(0))
                     obse_is_fresh = True
                     # print("obse is FRESH")
                 else:
@@ -1263,9 +1230,6 @@ if __name__ == '__main__':
             pw_T_obj_obse_id = 0
             obse_object = Object_Pose(pw_T_obj_obse_name, pw_T_obj_obse_id, pw_T_obj_obse_pos, pw_T_obj_obse_ori, index=i)
             temp_pw_T_obj_obse_objs_list.append(obse_object)
-            
-            # display obse objects in visual window
-#            visualisation_world.display_object_in_visual_model(p_sim, pw_T_obj_obse_objects_list[i])
             
         pw_T_obj_obse_objects_list = copy.deepcopy(temp_pw_T_obj_obse_objs_list)
         

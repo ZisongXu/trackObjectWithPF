@@ -53,16 +53,17 @@ class Create_Scene():
         self.pw_T_other_obj_opti_pose_list = []
         self.ros_listener = Ros_Listener()
         self.listener = tf.TransformListener()
+        self.objects_name_list = ["cracker", "soup"]
         self.gazebo_falg = False
         
     def initialize_object(self):
-        objects_name_list = ["cracker", "soup"]
+        
         
 #        time.sleep(0.1)
         
         if self.gazebo_falg == True:
             for obj_index in range(self.target_obj_num):
-                model_pose = self.ros_listener.listen_2_object_pose(objects_name_list[obj_index])
+                model_pose = self.ros_listener.listen_2_object_pose(self.objects_name_list[obj_index])
                 panda_pose = self.ros_listener.listen_2_gazebo_robot_pose()
                 gazebo_T_obj_pos = model_pose[0]
                 gazebo_T_obj_ori = model_pose[1]
@@ -87,27 +88,23 @@ class Create_Scene():
                 pw_T_obj_opti_pos = [pw_T_obj_opti[0][3], pw_T_obj_opti[1][3], pw_T_obj_opti[2][3]]
                 pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti)
                 
-                opti_obj = Object_Pose(objects_name_list[obj_index], 0, pw_T_obj_opti_pos, pw_T_obj_opti_ori, obj_index)
+                opti_obj = Object_Pose(self.objects_name_list[obj_index], 0, pw_T_obj_opti_pos, pw_T_obj_opti_ori, obj_index)
                 self.pw_T_target_obj_opti_pose_lsit.append(opti_obj)
                 
                 pw_T_obj_obse_pos, pw_T_obj_obse_ori = self.add_noise_pose(pw_T_obj_opti_pos, pw_T_obj_opti_ori)
                 
                 
-                obse_obj = Object_Pose(objects_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
+                obse_obj = Object_Pose(self.objects_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
                 self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)
                 
                 return self.pw_T_target_obj_obse_pose_lsit, self.pw_T_target_obj_opti_pose_lsit, self.pw_T_other_obj_opti_pose_list
                 
                 
         for obj_index in range(self.target_obj_num):
-            pw_T_rob_sim_pos = self.pw_T_rob_sim_pose_list[0].pos
-            pw_T_rob_sim_ori = self.pw_T_rob_sim_pose_list[0].ori
-            pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
-            pw_T_rob_sim_4_4 = self.rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
-            self.pw_T_rob_sim_pose_list[0].trans_matrix = pw_T_rob_sim_4_4
+            pw_T_rob_sim_4_4 = self.pw_T_rob_sim_pose_list[0].trans_matrix
             while True:
                 try:
-                    (trans,rot) = self.listener.lookupTransform('/panda_link0', '/'+objects_name_list[obj_index], rospy.Time(0))
+                    (trans,rot) = self.listener.lookupTransform('/panda_link0', '/'+self.objects_name_list[obj_index], rospy.Time(0))
                     break
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                     continue
@@ -119,12 +116,28 @@ class Create_Scene():
             pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
             pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
-            obse_obj = Object_Pose(objects_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
+            obse_obj = Object_Pose(self.objects_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
             self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)
         
+        return self.pw_T_target_obj_obse_pose_lsit
+            
+    def initialize_robot(self):
+        time.sleep(0.5)
+        for rob_index in range(self.rob_num):
+            pw_T_rob_sim_pos = [0.0, 0.0, 0.026]
+            pw_T_rob_sim_pos = [0.0, 0.0, 0.02]
+            pw_T_rob_sim_ori = [0, 0, 0, 1]
+            pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
+            pw_T_rob_sim_4_4 = self.rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
+            joint_states = self.ros_listener.current_joint_values
+            rob_pose = Robot_Pose("pandaRobot", 0, pw_T_rob_sim_pos, pw_T_rob_sim_ori, joint_states, pw_T_rob_sim_4_4, rob_index)
+            self.pw_T_rob_sim_pose_list.append(rob_pose)
+        return self.pw_T_rob_sim_pose_list
+    
+    def initialize_ground_truth_objects(self):
         opti_T_rob_opti_pos = self.ros_listener.listen_2_robot_pose()[0]
         opti_T_rob_opti_ori = self.ros_listener.listen_2_robot_pose()[1]
-
+        pw_T_rob_sim_4_4 = self.pw_T_rob_sim_pose_list[0].trans_matrix
         for obj_index in range(self.other_obj_num):
             base_of_cheezit_pos = self.ros_listener.listen_2_object_pose("base")[0]
             base_of_cheezit_ori = self.ros_listener.listen_2_object_pose("base")[1]
@@ -132,30 +145,24 @@ class Create_Scene():
             pw_T_base = np.dot(pw_T_rob_sim_4_4, robot_T_base)
             pw_T_base_pos = [pw_T_base[0][3], pw_T_base[1][3], pw_T_base[2][3]]
             pw_T_base_ori = transformations.quaternion_from_matrix(pw_T_base)
-            opti_obj = Object_Pose(objects_name_list[obj_index], 0, pw_T_base_pos, pw_T_base_ori, obj_index)
+            opti_obj = Object_Pose(self.objects_name_list[obj_index], 0, pw_T_base_pos, pw_T_base_ori, obj_index)
             self.pw_T_other_obj_opti_pose_list.append(opti_obj)
             
         for obj_index in range(self.target_obj_num):
-            obj_name = objects_name_list[obj_index]
+            obj_name = self.objects_name_list[obj_index]
             opti_T_obj_opti_pos = self.ros_listener.listen_2_object_pose(obj_name)[0]
             opti_T_obj_opti_ori = self.ros_listener.listen_2_object_pose(obj_name)[1]
             rob_T_obj_opti_4_4 = self.compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
             pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
             pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
             pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
-            opti_obj = Object_Pose(objects_name_list[obj_index], 0, pw_T_obj_opti_pos, pw_T_obj_opti_ori, obj_index)
+            opti_obj = Object_Pose(self.objects_name_list[obj_index], 0, pw_T_obj_opti_pos, pw_T_obj_opti_ori, obj_index)
             self.pw_T_target_obj_opti_pose_lsit.append(opti_obj)
-
-        return self.pw_T_target_obj_obse_pose_lsit, self.pw_T_target_obj_opti_pose_lsit, self.pw_T_other_obj_opti_pose_list
-            
-    def initialize_robot(self):
-        for rob_index in range(self.rob_num):
-            pw_T_rob_sim_pos = [0.0, 0.0, 0.026]
-            pw_T_rob_sim_pos = [0.0, 0.0, 0.02]
-            pw_T_rob_sim_ori = [0, 0, 0, 1]
-            rob_pose = Robot_Pose("pandaRobot", 0, pw_T_rob_sim_pos, pw_T_rob_sim_ori, 0, 0, rob_index)
-            self.pw_T_rob_sim_pose_list.append(rob_pose)
-        return self.pw_T_rob_sim_pose_list, self.listener
+        
+        return self.pw_T_target_obj_opti_pose_lsit, self.pw_T_other_obj_opti_pose_list
+        
+        
+        
     
     def rotation_4_4_to_transformation_4_4(self, rotation_4_4, pos):
         rotation_4_4[0][3] = pos[0]

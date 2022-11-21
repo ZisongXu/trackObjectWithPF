@@ -2,7 +2,7 @@
 import rospy
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, TransformStamped, Vector3
-from PBPF.msg import object_pose, particle_pose, particle_list
+from PBPF.msg import object_pose, particle_pose, particle_list, estimated_obj_pose
 from gazebo_msgs.msg import ModelStates
 
 #Class of franka robot listen to info from ROS
@@ -30,8 +30,13 @@ class Ros_Listener():
         rospy.Subscriber('/Opti_pose', PoseStamped, self.fake_optipose_callback, queue_size=10)
         self.fake_opti_pose = PoseStamped()
         
+        rospy.Subscriber('/esti_obj_list', estimated_obj_pose, self.esti_obj_states_callback, queue_size=10)
+        self.esti_obj_states_list = estimated_obj_pose()
+        
         rospy.Subscriber('/par_list', particle_list, self.particles_states_callback, queue_size=10)
-        self.particles_states_list = particle_pose()
+        self.particles_states_list = particle_list()
+        
+        
         
         rospy.spin
     
@@ -62,6 +67,9 @@ class Ros_Listener():
     
     def listen_2_pars_states(self):
         return self.particles_states_list
+    
+    def listen_2_estis_states(self):
+        return self.esti_obj_states_list
     
     def listen_2_gazebo_robot_pose(self):
         return self.panda_pose
@@ -144,3 +152,7 @@ class Ros_Listener():
 
     def particles_states_callback(self, pars_states_list):
         self.particles_states_list = pars_states_list
+    
+    def esti_obj_states_callback(self, esti_objs_list):
+        self.esti_obj_states_list = esti_objs_list
+        

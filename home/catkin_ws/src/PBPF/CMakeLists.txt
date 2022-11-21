@@ -54,6 +54,7 @@ add_message_files(
   object_pose.msg
   particle_pose.msg
   particle_list.msg
+  estimated_obj_pose.msg
 )
 
 ## Generate services in the 'srv' folder

@@ -167,46 +167,6 @@ class Visualisation_World():
                                                               obj_ori)
         object_pose.id = visualize_particle_Id
             
-            
-    def init_display_particle_CV(self, particle_cloud_CV):
-        for index, particle in enumerate(particle_cloud_CV):
-            obj_id_list = []
-            for obj_index in range(self.object_num):
-                obj_par_name = particle[obj_index].par_name
-                obj_par_pos = particle[obj_index].pos
-                obj_par_ori = particle[obj_index].ori
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obj_par_name+"/"+obj_par_name+"_par_with_visual_CV_hor.urdf"),
-                                                                      obj_par_pos,
-                                                                      obj_par_ori)
-                obj_id_list.append(visualize_particle_Id)
-                particle[obj_index].visual_par_id = visualize_particle_Id
-                
-    
-    def init_display_estimated_object(self, estimated_object_set, run_alg_flag):
-        for obj_index in range(self.object_num):
-            esti_obj_name = estimated_object_set[obj_index].obj_name
-            esti_obj_pos = estimated_object_set[obj_index].pos
-            esti_obj_ori = estimated_object_set[obj_index].ori
-            if run_alg_flag == "PBPF":
-                estimated_object_id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+esti_obj_name+"/"+esti_obj_name+"_est_obj_with_visual_PB_hor.urdf"),
-                                                                    esti_obj_pos,
-                                                                    esti_obj_ori)
-                estimated_object_set[obj_index].obj_id = estimated_object_id
-            if run_alg_flag == "CVPF":
-                estimated_object_id_CV = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+esti_obj_name+"/"+esti_obj_name+"_est_obj_with_visual_CV_hor.urdf"),
-                                                                       esti_obj_pos,
-                                                                       esti_obj_ori)
-                estimated_object_set[obj_index].obj_id = estimated_object_id_CV
-        
-    def display_estimated_object_in_visual_model(self, estimated_object_set):
-        for obj_index in range(self.object_num):
-            esti_obj_id = estimated_object_set[obj_index].obj_id
-            esti_obj_pos = estimated_object_set[obj_index].pos
-            esti_obj_ori = estimated_object_set[obj_index].ori
-            self.p_visualisation.resetBasePositionAndOrientation(esti_obj_id,
-                                                                 esti_obj_pos,
-                                                                 esti_obj_ori)
-        
     def display_particle_in_visual_model(self, object_pose):
         obj_par_id = object_pose.id
         obj_pos_x = object_pose.pose.position.x
@@ -222,6 +182,56 @@ class Visualisation_World():
         self.p_visualisation.resetBasePositionAndOrientation(obj_par_id,
                                                              obj_pos,
                                                              obj_ori)
+    
+    def init_display_particle_CV(self, particle_cloud_CV):
+        for index, particle in enumerate(particle_cloud_CV):
+            obj_id_list = []
+            for obj_index in range(self.object_num):
+                obj_par_name = particle[obj_index].par_name
+                obj_par_pos = particle[obj_index].pos
+                obj_par_ori = particle[obj_index].ori
+                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obj_par_name+"/"+obj_par_name+"_par_with_visual_CV_hor.urdf"),
+                                                                      obj_par_pos,
+                                                                      obj_par_ori)
+                obj_id_list.append(visualize_particle_Id)
+                particle[obj_index].visual_par_id = visualize_particle_Id
+                
+    
+    def init_display_estimated_object(self, esti_object_pose):
+        esti_obj_name = esti_object_pose.name
+        esti_obj_pos_x = esti_object_pose.pose.position.x
+        esti_obj_pos_y = esti_object_pose.pose.position.y
+        esti_obj_pos_z = esti_object_pose.pose.position.z
+        esti_obj_pos = [esti_obj_pos_x, esti_obj_pos_y, esti_obj_pos_z]
+        esti_obj_ori_x = esti_object_pose.pose.orientation.x
+        esti_obj_ori_y = esti_object_pose.pose.orientation.y
+        esti_obj_ori_z = esti_object_pose.pose.orientation.z
+        esti_obj_ori_w = esti_object_pose.pose.orientation.w
+        esti_obj_ori = [esti_obj_ori_x, esti_obj_ori_y, esti_obj_ori_z, esti_obj_ori_w]
+
+        estimated_object_id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+esti_obj_name+"/"+esti_obj_name+"_est_obj_with_visual_PB_hor.urdf"),
+                                                            esti_obj_pos,
+                                                            esti_obj_ori)
+        esti_object_pose.id = estimated_object_id
+
+        
+    def display_estimated_object_in_visual_model(self, esti_object_pose):
+        esti_obj_id = esti_object_pose.id
+        esti_obj_pos_x = esti_object_pose.pose.position.x
+        esti_obj_pos_y = esti_object_pose.pose.position.y
+        esti_obj_pos_z = esti_object_pose.pose.position.z
+        esti_obj_pos = [esti_obj_pos_x, esti_obj_pos_y, esti_obj_pos_z]
+        esti_obj_ori_x = esti_object_pose.pose.orientation.x
+        esti_obj_ori_y = esti_object_pose.pose.orientation.y
+        esti_obj_ori_z = esti_object_pose.pose.orientation.z
+        esti_obj_ori_w = esti_object_pose.pose.orientation.w
+        esti_obj_ori = [esti_obj_ori_x, esti_obj_ori_y, esti_obj_ori_z, esti_obj_ori_w]
+        
+        self.p_visualisation.resetBasePositionAndOrientation(esti_obj_id,
+                                                             esti_obj_pos,
+                                                             esti_obj_ori)
+        
+    
 
 # add position into transformation matrix
 def rotation_4_4_to_transformation_4_4(rotation_4_4, pos):
@@ -242,13 +252,20 @@ def compute_transformation_matrix(a_pos, a_ori, b_pos, b_ori):
         
         
 if __name__ == '__main__':
+#    par_obj_id = [[]*2 for _ in range(50)]
+#    print(par_obj_id)
+#    input("stop")
     rospy.init_node('visualization_world') # ros node
-    
+    time.sleep(0.5)
     object_num = 1
     robot_num = 1
     other_obj_num = 0
     particle_num = 50
     init_par_flag = 0
+    init_esti_flag = 0
+    display_par_flag = True
+    display_esti_flag = False
+    
     object_list = ["cracker", "soup"]
     
     visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
@@ -260,6 +277,10 @@ if __name__ == '__main__':
     pw_T_target_obj_obse_pose_lsit_param = visual_world.pw_T_target_obj_obse_pose_lsit
     pw_T_target_obj_opti_pose_lsit_param = visual_world.pw_T_target_obj_opti_pose_lsit
     pw_T_other_obj_opti_pose_list_param = visual_world.pw_T_other_obj_opti_pose_list
+    
+    par_obj_id = [[]*object_num for _ in range(particle_num)]
+    esti_obj_id = [0] * object_num
+    
     while True:
         # synchronize robot arm changes
         joint_states = visual_world.ros_listener.current_joint_values
@@ -327,24 +348,43 @@ if __name__ == '__main__':
             visual_world.display_object_in_visual_model(p_visual, pw_T_other_obj_opti_pose_list_param[obj_index])
         
         # display particles
-        for obj_index in range(object_num):
-            particles_states_list = visual_world.ros_listener.listen_2_pars_states()
-            if particles_states_list.particles == 0:
-                par_list_not_pub = 0
-            else:
-#                particles_states_list.particles
-                if init_par_flag == 0:
-                    init_par_flag = 1
-                    for par_index in range(particle_num):
-                        visual_world.init_display_particle(particles_states_list.particles[par_index].objects[obj_index])
+        if display_par_flag == True:
+            for obj_index in range(object_num):
+                particles_states_list = visual_world.ros_listener.listen_2_pars_states()
+                if len(particles_states_list.particles) == 0:
+                    par_list_not_pub = 0
                 else:
-                    for par_index in range(particle_num):
-                        visual_world.display_particle_in_visual_model(particles_states_list.particles[par_index].objects[obj_index])
+                    if init_par_flag == 0:
+                        init_par_flag = 1
+                        for par_index in range(particle_num):
+                            visual_world.init_display_particle(particles_states_list.particles[par_index].objects[obj_index])
+                            obj_visual_id = particles_states_list.particles[par_index].objects[obj_index].id
+                            par_obj_id[par_index].append(obj_visual_id)
+                    else:
+                        for par_index in range(particle_num):
+                            particles_states_list.particles[par_index].objects[obj_index].id = par_obj_id[par_index][obj_index]
+                            visual_world.display_particle_in_visual_model(particles_states_list.particles[par_index].objects[obj_index])
+                     
+        # display estimates object
+        if display_esti_flag == True:
+            for obj_index in range(object_num):
+                esti_obj_states_list = visual_world.ros_listener.listen_2_estis_states()
+                if len(esti_obj_states_list.objects) == 0:
+                    esti_obj_list_not_pub = 1
+                else:
+                    if init_esti_flag == 0:
+                        init_esti_flag = 1
+                        visual_world.init_display_estimated_object(esti_obj_states_list.objects[obj_index])
+                        esti_obj_id[obj_index] = esti_obj_states_list.objects[obj_index].id
+                    else:
+                        esti_obj_states_list.objects[obj_index].id = esti_obj_id[obj_index]
+                        visual_world.display_estimated_object_in_visual_model(esti_obj_states_list.objects[obj_index])
                     
         p_visual.stepSimulation()
         
 
-
+#par_obj_id = [[]*object_num for _ in range(particle_num)]
+#    esti_obj_id = [0] * object_num
         
         
         

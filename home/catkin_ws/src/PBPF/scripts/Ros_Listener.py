@@ -5,10 +5,15 @@ from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, Tran
 from PBPF.msg import object_pose, particle_pose, particle_list, estimated_obj_pose
 from gazebo_msgs.msg import ModelStates
 
+import copy
+import random
+import math
+from pyquaternion import Quaternion
 #Class of franka robot listen to info from ROS
 class Ros_Listener():
     def __init__(self):
-        self.gazebo_falg = False
+        self.gazebo_flag = True
+        
         rospy.Subscriber('/joint_states', JointState, self.joint_values_callback, queue_size=1)
         self.joint_subscriber = JointState()
         
@@ -36,7 +41,9 @@ class Ros_Listener():
         rospy.Subscriber('/par_list', particle_list, self.particles_states_callback, queue_size=10)
         self.particles_states_list = particle_list()
         
-        
+        self.pos_added_noise = []
+        self.ori_added_noise = []
+        self.model_pose_added_noise = []
         
         rospy.spin
     
@@ -48,6 +55,9 @@ class Ros_Listener():
         self.model_ori = [model_ori.x, model_ori.y, model_ori.z, model_ori.w]
         self.model_pose = [self.model_pos, self.model_ori]
         
+        self.pos_added_noise, self.ori_added_noise = self.add_noise_pose(self.model_pos, self.model_ori)
+        self.model_pose_added_noise = [self.pos_added_noise, self.ori_added_noise]
+        
         panda_name = model_states.name[7]
         panda_pos = model_states.pose[7].position
         panda_ori = model_states.pose[7].orientation
@@ -57,8 +67,8 @@ class Ros_Listener():
     
     def listen_2_object_pose(self, object_flag):
         if object_flag == "cracker":
-            if self.gazebo_falg == True:
-                return self.model_pose
+            if self.gazebo_flag == True:
+                return self.model_pose, self.model_pose_added_noise
             return self.object_cracker_pose
         elif object_flag == "soup":
             return self.object_soup_pose
@@ -156,3 +166,44 @@ class Ros_Listener():
     def esti_obj_states_callback(self, esti_objs_list):
         self.esti_obj_states_list = esti_objs_list
         
+    def add_noise_pose(self, sim_par_cur_pos, sim_par_cur_ori):
+        normal_x = self.add_noise_2_par(sim_par_cur_pos[0])
+        normal_y = self.add_noise_2_par(sim_par_cur_pos[1])
+        normal_z = self.add_noise_2_par(sim_par_cur_pos[2])
+        pos_added_noise = [normal_x, normal_y, normal_z]
+        # add noise on ang of each particle
+        quat = copy.deepcopy(sim_par_cur_ori)# x,y,z,w
+        quat_QuatStyle = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])# w,x,y,z
+        random_dir = random.uniform(0, 2*math.pi)
+        z_axis = random.uniform(-1,1)
+        x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
+        y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
+        angle_noise = self.add_noise_2_ang(0)
+        w_quat = math.cos(angle_noise/2.0)
+        x_quat = math.sin(angle_noise/2.0) * x_axis
+        y_quat = math.sin(angle_noise/2.0) * y_axis
+        z_quat = math.sin(angle_noise/2.0) * z_axis
+        ###nois_quat(w,x,y,z); new_quat(w,x,y,z)
+        nois_quat = Quaternion(x=x_quat, y=y_quat, z=z_quat, w=w_quat)
+        new_quat = nois_quat * quat_QuatStyle
+        ###pb_quat(x,y,z,w)
+        ori_added_noise = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
+        return pos_added_noise, ori_added_noise
+    
+    def add_noise_2_par(self, current_pos):
+        mean = current_pos
+        pos_noise_sigma = 0.01
+        sigma = pos_noise_sigma
+        new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
+        return new_pos_is_added_noise
+    
+    def add_noise_2_ang(self, cur_angle):
+        mean = cur_angle
+        ang_noise_sigma = 0.1
+        sigma = ang_noise_sigma
+        new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
+        return new_angle_is_added_noise
+    
+    def take_easy_gaussian_value(self, mean, sigma):
+        normal = random.normalvariate(mean, sigma)
+        return normal

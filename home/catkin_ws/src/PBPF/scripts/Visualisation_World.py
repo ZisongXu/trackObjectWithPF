@@ -53,7 +53,7 @@ class Visualisation_World():
         self.ros_listener = Ros_Listener()
         self.listener = tf.TransformListener()
         self.visualisation_all = True
-        self.gazebo_falg = False
+        self.gazebo_flag = True
         self.pw_T_rob_sim_pose_list = []
         self.pw_T_target_obj_obse_pose_lsit = []
         self.pw_T_target_obj_opti_pose_lsit = []
@@ -63,8 +63,11 @@ class Visualisation_World():
         
     def initialize_visual_world_pybullet_env(self, task_flag):
         pw_T_rob_sim_pose_list = self.create_scene.initialize_robot()
-        pw_T_target_obj_obse_pose_lsit = self.create_scene.initialize_object()
-        pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list = self.create_scene.initialize_ground_truth_objects()
+        if self.gazebo_flag == True:
+            pw_T_target_obj_obse_pose_lsit, pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list = self.create_scene.initialize_object()
+        else:
+            pw_T_target_obj_obse_pose_lsit = self.create_scene.initialize_object()
+            pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list = self.create_scene.initialize_ground_truth_objects()
         if self.visualisation_all == True:
             p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
         else:
@@ -75,11 +78,12 @@ class Visualisation_World():
         p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.3,0.1,0.2])        
         plane_id = p_visualisation.loadURDF("plane.urdf")
         
+        # load objects in the pybullet world
         for obj_index in range(self.object_num):
             obse_obj_name = pw_T_target_obj_obse_pose_lsit[obj_index].obj_name
             obse_obj_pos = pw_T_target_obj_obse_pose_lsit[obj_index].pos
             obse_obj_ori = pw_T_target_obj_obse_pose_lsit[obj_index].ori
-            if self.gazebo_falg == True:
+            if self.gazebo_flag == True:
                 obse_obj_name = "gazebo_" + obse_obj_name
             obse_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obse_obj_name+"/"+obse_obj_name+"_obse_obj_with_visual_hor.urdf"),
                                                       obse_obj_pos,
@@ -88,13 +92,14 @@ class Visualisation_World():
             opti_obj_name = pw_T_target_obj_opti_pose_lsit[obj_index].obj_name
             opti_obj_pos = pw_T_target_obj_opti_pose_lsit[obj_index].pos
             opti_obj_ori = pw_T_target_obj_opti_pose_lsit[obj_index].ori
-            if self.gazebo_falg == True:
+            if self.gazebo_flag == True:
                 opti_obj_name = "gazebo_" + opti_obj_name
             opti_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+opti_obj_name+"/"+opti_obj_name+"_real_obj_with_visual_hor.urdf"),
                                                       opti_obj_pos,
                                                       opti_obj_ori)
             pw_T_target_obj_opti_pose_lsit[obj_index].obj_id = opti_object_id
-            
+        
+        # load other objects in the pybullet world
         for obj_index in range(self.other_obj_num):
             other_obj_name = pw_T_other_obj_opti_pose_list[obj_index].obj_name
             other_obj_pos = pw_T_other_obj_opti_pose_list[obj_index].pos
@@ -103,9 +108,9 @@ class Visualisation_World():
                                                          other_obj_pos,
                                                          other_obj_ori)
             pw_T_other_obj_opti_pose_list[obj_index].obj_id = optitrack_base_id
-            
+        
+        # load robot in the pybullet world
         for rob_index in range(self.rob_num):
-            pw_T_rob_sim_pose_list
             # rob_name = pw_T_rob_sim_pose_list[obj_index].obj_name
             rob_pos = pw_T_rob_sim_pose_list[rob_index].pos
             rob_ori = pw_T_rob_sim_pose_list[rob_index].ori
@@ -266,7 +271,6 @@ if __name__ == '__main__':
     init_esti_flag = 0
     display_par_flag = True
     display_esti_flag = False
-    
     object_list = ["cracker", "soup"]
     
     visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
@@ -292,10 +296,28 @@ if __name__ == '__main__':
             
         for obj_index in range(object_num):
             # display ground truth (grtu)
-            opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
-            opti_T_rob_opti_ori = visual_world.ros_listener.listen_2_robot_pose()[1]
-            opti_T_obj_opti_pos = visual_world.ros_listener.listen_2_object_pose(object_list[obj_index])[0]
-            opti_T_obj_opti_ori = visual_world.ros_listener.listen_2_object_pose(object_list[obj_index])[1]
+            if visual_world.gazebo_flag == True:
+                model_pose, model_pose_added_noise = visual_world.ros_listener.listen_2_object_pose(object_list[obj_index])
+                panda_pose = visual_world.ros_listener.listen_2_gazebo_robot_pose()
+                
+                gazebo_T_obj_pos = model_pose[0]
+                gazebo_T_obj_ori = model_pose[1]
+                gazebo_T_obj_pos_added_noise = model_pose_added_noise[0]
+                gazebo_T_obj_ori_added_noise = model_pose_added_noise[1]
+                gazebo_T_rob_pos = panda_pose[0]
+                gazebo_T_rob_ori = panda_pose[1]
+                
+                opti_T_rob_opti_pos = copy.deepcopy(gazebo_T_rob_pos)
+                opti_T_rob_opti_ori = copy.deepcopy(gazebo_T_rob_ori)
+                opti_T_obj_opti_pos = copy.deepcopy(gazebo_T_obj_pos)
+                opti_T_obj_opti_ori = copy.deepcopy(gazebo_T_obj_ori)
+                opti_T_obj_obse_pos = copy.deepcopy(gazebo_T_obj_pos_added_noise)
+                opti_T_obj_obse_ori = copy.deepcopy(gazebo_T_obj_ori_added_noise)
+            else:
+                opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
+                opti_T_rob_opti_ori = visual_world.ros_listener.listen_2_robot_pose()[1]
+                opti_T_obj_opti_pos = visual_world.ros_listener.listen_2_object_pose(object_list[obj_index])[0]
+                opti_T_obj_opti_ori = visual_world.ros_listener.listen_2_object_pose(object_list[obj_index])[1]
             # get ground truth data 
             rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
             pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
@@ -306,25 +328,29 @@ if __name__ == '__main__':
             pw_T_target_obj_opti_pose_lsit_param[obj_index].ori = pw_T_obj_opti_ori
             visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_opti_pose_lsit_param[obj_index])
             
-            # display observation data
-            obse_is_fresh = True
-            try:
-                latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_list[obj_index])
-                if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                    (trans,rot) = listener_tf.lookupTransform('/panda_link0', '/'+object_list[obj_index], rospy.Time(0))
-                    obse_is_fresh = True
-                    # print("obse is FRESH")
-                else:
-                    # obse has not been updating for a while
-                    obse_is_fresh = False
-                    print("obse is NOT fresh")
-                # break
-            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                print("can not find tf")
-            rob_T_obj_obse_pos = list(trans)
-            rob_T_obj_obse_ori = list(rot)
-            rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
-            rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
+            # get observation data
+            if visual_world.gazebo_flag == True:
+                obse_is_fresh = True
+                rob_T_obj_obse_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_obse_pos, opti_T_obj_obse_ori)
+            else:
+                obse_is_fresh = True
+                try:
+                    latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_list[obj_index])
+                    if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
+                        (trans,rot) = listener_tf.lookupTransform('/panda_link0', '/'+object_list[obj_index], rospy.Time(0))
+                        obse_is_fresh = True
+                        # print("obse is FRESH")
+                    else:
+                        # obse has not been updating for a while
+                        obse_is_fresh = False
+                        print("obse is NOT fresh")
+                    # break
+                except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                    print("can not find tf")
+                rob_T_obj_obse_pos = list(trans)
+                rob_T_obj_obse_ori = list(rot)
+                rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
+                rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
             pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
             pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)

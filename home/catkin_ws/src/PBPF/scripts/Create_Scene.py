@@ -15,7 +15,7 @@ from std_msgs.msg import Float32
 from std_msgs.msg import Int8
 from std_msgs.msg import ColorRGBA, Header
 from sensor_msgs.msg import JointState
-from geometry_msgs.msg import Point,PointStamped,PoseStamped,Quaternion,TransformStamped, Vector3
+from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, TransformStamped, Vector3
 import tf
 import tf.transformations as transformations
 from visualization_msgs.msg import Marker
@@ -54,19 +54,19 @@ class Create_Scene():
         self.ros_listener = Ros_Listener()
         self.listener = tf.TransformListener()
         self.objects_name_list = ["cracker", "soup"]
-        self.gazebo_falg = False
+        self.gazebo_flag = True
         
     def initialize_object(self):
-        
-        
-#        time.sleep(0.1)
-        
-        if self.gazebo_falg == True:
+        if self.gazebo_flag == True:
+            time.sleep(0.5)
             for obj_index in range(self.target_obj_num):
-                model_pose = self.ros_listener.listen_2_object_pose(self.objects_name_list[obj_index])
+                model_pose, model_pose_added_noise = self.ros_listener.listen_2_object_pose(self.objects_name_list[obj_index])
                 panda_pose = self.ros_listener.listen_2_gazebo_robot_pose()
+                
                 gazebo_T_obj_pos = model_pose[0]
                 gazebo_T_obj_ori = model_pose[1]
+                gazebo_T_obj_pos_obse = model_pose_added_noise[0]
+                gazebo_T_obj_ori_obse = model_pose_added_noise[1]
                 gazebo_T_rob_pos = panda_pose[0]
                 gazebo_T_rob_ori = panda_pose[1]
                 
@@ -87,13 +87,15 @@ class Create_Scene():
                 pw_T_obj_opti = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
                 pw_T_obj_opti_pos = [pw_T_obj_opti[0][3], pw_T_obj_opti[1][3], pw_T_obj_opti[2][3]]
                 pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti)
-                
                 opti_obj = Object_Pose(self.objects_name_list[obj_index], 0, pw_T_obj_opti_pos, pw_T_obj_opti_ori, obj_index)
                 self.pw_T_target_obj_opti_pose_lsit.append(opti_obj)
                 
-                pw_T_obj_obse_pos, pw_T_obj_obse_ori = self.add_noise_pose(pw_T_obj_opti_pos, pw_T_obj_opti_ori)
-                
-                
+                # obse object                
+                rob_T_obj_obse_4_4 = self.compute_transformation_matrix(gazebo_T_rob_pos, gazebo_T_rob_ori, gazebo_T_obj_pos_obse, gazebo_T_obj_ori_obse)
+                rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
+                pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
+                pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
+                pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
                 obse_obj = Object_Pose(self.objects_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
                 self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)
                 

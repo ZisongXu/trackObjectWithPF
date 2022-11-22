@@ -427,8 +427,8 @@ if __name__ == '__main__':
     #     # #wpose.position.y += 0.15
     #     waypoints.append(copy.deepcopy(wpose))    
     #     panda.move_through_waypoints(waypoints)
-    cheezit_flag = False
-    soup_flag = True
+    cheezit_flag = True
+    soup_flag = False
     if cheezit_flag == True:
         time = 5
     if soup_flag == True:
@@ -443,12 +443,10 @@ if __name__ == '__main__':
 #        # wpose.position.y -= 0.15
 #        waypoints.append(copy.deepcopy(wpose))    
 #        panda.move_through_waypoints(waypoints)
-    targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.469608373509513, 0.9228163020693847]
-    panda.move_to_target_joints(targetPositionsJoints_test)
-#    targetPositionsJoints_test = [0.0,-0.08,0.0,-1.65,0.0,1.58,0.870]
+#    targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.469608373509513, 0.9228163020693847]
 #    panda.move_to_target_joints(targetPositionsJoints_test)
-    panda.fully_close_gripper()
-    sys.exit()
+#    panda.fully_close_gripper()
+#    sys.exit()
     for index in range(time):
         wpose = panda.moveit_group.get_current_pose().pose
         waypoints = []

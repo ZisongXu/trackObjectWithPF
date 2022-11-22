@@ -61,7 +61,7 @@ class Ros_Listener():
         panda_name = model_states.name[7]
         panda_pos = model_states.pose[7].position
         panda_ori = model_states.pose[7].orientation
-        self.panda_pos = [panda_pos.x, panda_pos.y, panda_pos.z]
+        self.panda_pos = [panda_pos.x, panda_pos.y, panda_pos.z+0.06]
         self.panda_ori = [panda_ori.x, panda_ori.y, panda_ori.z, panda_ori.w]
         self.panda_pose = [self.panda_pos, self.panda_ori]
     

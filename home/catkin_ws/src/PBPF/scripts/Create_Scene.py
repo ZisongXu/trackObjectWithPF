@@ -70,11 +70,11 @@ class Create_Scene():
                 gazebo_T_rob_pos = panda_pose[0]
                 gazebo_T_rob_ori = panda_pose[1]
                 
-                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
-                                     [0., 1., 0.,    0.],
-                                     [0., 0., 1., -0.06],
-                                     [0., 0., 0.,    1.]]
-                robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)
+#                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
+#                                     [0., 1., 0.,    0.],
+#                                     [0., 0., 1., -0.06],
+#                                     [0., 0., 0.,    1.]]
+#                robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)
                 
                 pw_T_rob_sim_pos = self.pw_T_rob_sim_pose_list[0].pos
                 pw_T_rob_sim_ori = self.pw_T_rob_sim_pose_list[0].ori
@@ -83,7 +83,7 @@ class Create_Scene():
                 self.pw_T_rob_sim_pose_list[0].trans_matrix = pw_T_rob_sim_4_4
                 
                 rob_T_obj_opti_4_4 = self.compute_transformation_matrix(gazebo_T_rob_pos, gazebo_T_rob_ori, gazebo_T_obj_pos, gazebo_T_obj_ori)
-                rob_T_obj_opti_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_opti_4_4)
+#                rob_T_obj_opti_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_opti_4_4)
                 pw_T_obj_opti = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
                 pw_T_obj_opti_pos = [pw_T_obj_opti[0][3], pw_T_obj_opti[1][3], pw_T_obj_opti[2][3]]
                 pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti)
@@ -92,7 +92,7 @@ class Create_Scene():
                 
                 # obse object                
                 rob_T_obj_obse_4_4 = self.compute_transformation_matrix(gazebo_T_rob_pos, gazebo_T_rob_ori, gazebo_T_obj_pos_obse, gazebo_T_obj_ori_obse)
-                rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
+#                rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
                 pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
                 pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
                 pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)

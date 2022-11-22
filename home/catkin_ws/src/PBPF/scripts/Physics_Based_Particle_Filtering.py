@@ -515,7 +515,7 @@ class PBPFMove():
                 quaternions.append([q[0], q[1], q[2], q[3]])
                 w_set = w_set + particle[obj_index].w
             q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
-            est_obj_pose = Object_Pose(particle[i].par_name, estimated_object_set[obj_index].obj_id, [x_set/w_set, y_set/w_set, z_set/w_set],  [q[0], q[1], q[2], q[3]], obj_index)
+            est_obj_pose = Object_Pose(particle[obj_index].par_name, estimated_object_set[obj_index].obj_id, [x_set/w_set, y_set/w_set, z_set/w_set],  [q[0], q[1], q[2], q[3]], obj_index)
             esti_objs_cloud.append(est_obj_pose)
         return esti_objs_cloud
 
@@ -860,7 +860,7 @@ class CVPFMove():
                 quaternions.append([q[0], q[1], q[2], q[3]])
                 w_set = w_set + particle[obj_index].w
             q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
-            est_obj_pose = Object_Pose(particle[i].par_name,
+            est_obj_pose = Object_Pose(particle[obj_index].par_name,
                                        estimated_object_set[obj_index].obj_id,
                                        [x_set/w_set, y_set/w_set, z_set/w_set],
                                        [q[0], q[1], q[2], q[3]], obj_index)
@@ -1081,7 +1081,7 @@ if __name__ == '__main__':
     with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
         parameter_info = yaml.safe_load(file)
         
-    gazebo_falg = True
+    gazebo_flag = True
     
     # scene
     task_flag = '1' # parameter_info['task_flag']
@@ -1162,7 +1162,11 @@ if __name__ == '__main__':
     
     pw_T_rob_sim_pose_list_alg = create_scene.initialize_robot()
     pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
-    pw_T_obj_obse_obj_list_alg = create_scene.initialize_object()
+    if gazebo_flag == True:
+        pw_T_obj_obse_obj_list_alg, _, _ = create_scene.initialize_object()
+        panda_pose = ros_listener.listen_2_gazebo_robot_pose()
+    else:
+        pw_T_obj_obse_obj_list_alg = create_scene.initialize_object()
     
     for obj_index in range(other_obj_num):
         pw_T_obj_obse_oto_list_alg = []
@@ -1200,35 +1204,51 @@ if __name__ == '__main__':
         #panda robot moves in the visualization window
         temp_pw_T_obj_obse_objs_list = []
         track_fk_world_rob_mv(p_sim, sim_rob_id, ros_listener.current_joint_values)
-        for i in range(object_num):
+        for obj_index in range(object_num):
             # need to change
-            object_name = objects_name_list[i]
+            object_name = objects_name_list[obj_index]
             # get obse data
-            obse_is_fresh = True
-            try:
-                latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/'+object_name)
-                if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                    (trans,rot) = listener.lookupTransform('/panda_link0', '/'+object_name, rospy.Time(0))
-                    obse_is_fresh = True
-                    # print("obse is FRESH")
-                else:
-                    # obse has not been updating for a while
-                    obse_is_fresh = False
-                    print("obse is NOT fresh")
-                # break
-            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                print("can not find tf")
-            rob_T_obj_obse_pos = list(trans)
-            rob_T_obj_obse_ori = list(rot)
-            rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
-            rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
+            if gazebo_flag == True:
+                model_pose, model_pose_added_noise = ros_listener.listen_2_object_pose(objects_name_list[obj_index])
+                
+                gazebo_T_obj_pos_added_noise = model_pose_added_noise[0]
+                gazebo_T_obj_ori_added_noise = model_pose_added_noise[1]
+                gazebo_T_rob_pos = panda_pose[0]
+                gazebo_T_rob_ori = panda_pose[1]
+                
+                opti_T_rob_opti_pos = copy.deepcopy(gazebo_T_rob_pos)
+                opti_T_rob_opti_ori = copy.deepcopy(gazebo_T_rob_ori)
+                opti_T_obj_obse_pos = copy.deepcopy(gazebo_T_obj_pos_added_noise)
+                opti_T_obj_obse_ori = copy.deepcopy(gazebo_T_obj_ori_added_noise)
+                
+                obse_is_fresh = True
+                rob_T_obj_obse_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_obse_pos, opti_T_obj_obse_ori)
+            else:
+                obse_is_fresh = True
+                try:
+                    latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/'+object_name)
+                    if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
+                        (trans,rot) = listener.lookupTransform('/panda_link0', '/'+object_name, rospy.Time(0))
+                        obse_is_fresh = True
+                        # print("obse is FRESH")
+                    else:
+                        # obse has not been updating for a while
+                        obse_is_fresh = False
+                        print("obse is NOT fresh")
+                    # break
+                except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                    print("can not find tf")
+                rob_T_obj_obse_pos = list(trans)
+                rob_T_obj_obse_ori = list(rot)
+                rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
+                rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
             pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
             pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
             
             pw_T_obj_obse_name = object_name
             pw_T_obj_obse_id = 0
-            obse_object = Object_Pose(pw_T_obj_obse_name, pw_T_obj_obse_id, pw_T_obj_obse_pos, pw_T_obj_obse_ori, index=i)
+            obse_object = Object_Pose(pw_T_obj_obse_name, pw_T_obj_obse_id, pw_T_obj_obse_pos, pw_T_obj_obse_ori, index=obj_index)
             temp_pw_T_obj_obse_objs_list.append(obse_object)
             
         pw_T_obj_obse_objects_list = copy.deepcopy(temp_pw_T_obj_obse_objs_list)

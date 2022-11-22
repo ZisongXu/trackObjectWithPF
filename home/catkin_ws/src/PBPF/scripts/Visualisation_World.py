@@ -104,6 +104,8 @@ class Visualisation_World():
             other_obj_name = pw_T_other_obj_opti_pose_list[obj_index].obj_name
             other_obj_pos = pw_T_other_obj_opti_pose_list[obj_index].pos
             other_obj_ori = pw_T_other_obj_opti_pose_list[obj_index].ori
+            if self.gazebo_flag == True:
+                obse_obj_name = "gazebo_" + other_obj_name
             optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+other_obj_name+"/base_of_cracker.urdf"),
                                                          other_obj_pos,
                                                          other_obj_ori)
@@ -167,7 +169,8 @@ class Visualisation_World():
         obj_ori_z = object_pose.pose.orientation.z
         obj_ori_w = object_pose.pose.orientation.w
         obj_ori = [obj_ori_x, obj_ori_y, obj_ori_z, obj_ori_w]
-
+        if self.gazebo_flag == True:
+            obj_par_name = "gazebo_" + obj_par_name
         visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obj_par_name+"/"+obj_par_name+"_par_with_visual_PB_hor.urdf"),
                                                               obj_pos,
                                                               obj_ori)
@@ -196,6 +199,8 @@ class Visualisation_World():
                 obj_par_name = particle[obj_index].par_name
                 obj_par_pos = particle[obj_index].pos
                 obj_par_ori = particle[obj_index].ori
+                if self.gazebo_flag == True:
+                    obj_par_name = "gazebo_" + obj_par_name
                 visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obj_par_name+"/"+obj_par_name+"_par_with_visual_CV_hor.urdf"),
                                                                       obj_par_pos,
                                                                       obj_par_ori)
@@ -214,7 +219,8 @@ class Visualisation_World():
         esti_obj_ori_z = esti_object_pose.pose.orientation.z
         esti_obj_ori_w = esti_object_pose.pose.orientation.w
         esti_obj_ori = [esti_obj_ori_x, esti_obj_ori_y, esti_obj_ori_z, esti_obj_ori_w]
-
+        if self.gazebo_flag == True:
+            esti_obj_name = "gazebo_" + esti_obj_name
         estimated_object_id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+esti_obj_name+"/"+esti_obj_name+"_est_obj_with_visual_PB_hor.urdf"),
                                                             esti_obj_pos,
                                                             esti_obj_ori)
@@ -283,6 +289,8 @@ if __name__ == '__main__':
     pw_T_target_obj_opti_pose_lsit_param = visual_world.pw_T_target_obj_opti_pose_lsit
     pw_T_other_obj_opti_pose_list_param = visual_world.pw_T_other_obj_opti_pose_list
     
+    panda_pose = visual_world.ros_listener.listen_2_gazebo_robot_pose()
+    
     par_obj_id = [[]*object_num for _ in range(particle_num)]
     esti_obj_id = [0] * object_num
     
@@ -298,7 +306,6 @@ if __name__ == '__main__':
             # display ground truth (grtu)
             if visual_world.gazebo_flag == True:
                 model_pose, model_pose_added_noise = visual_world.ros_listener.listen_2_object_pose(object_list[obj_index])
-                panda_pose = visual_world.ros_listener.listen_2_gazebo_robot_pose()
                 
                 gazebo_T_obj_pos = model_pose[0]
                 gazebo_T_obj_ori = model_pose[1]

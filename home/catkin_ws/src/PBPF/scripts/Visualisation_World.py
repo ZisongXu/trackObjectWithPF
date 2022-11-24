@@ -53,7 +53,7 @@ class Visualisation_World():
         self.ros_listener = Ros_Listener()
         self.listener = tf.TransformListener()
         self.visualisation_all = True
-        self.gazebo_flag = False
+        self.gazebo_flag = True
         self.pw_T_rob_sim_pose_list = []
         self.pw_T_target_obj_obse_pose_lsit = []
         self.pw_T_target_obj_opti_pose_lsit = []
@@ -63,11 +63,9 @@ class Visualisation_World():
         
     def initialize_visual_world_pybullet_env(self, task_flag):
         pw_T_rob_sim_pose_list = self.create_scene.initialize_robot()
-        if self.gazebo_flag == True:
-            pw_T_target_obj_obse_pose_lsit, pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list = self.create_scene.initialize_object()
-        else:
-            pw_T_target_obj_obse_pose_lsit = self.create_scene.initialize_object()
-            pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list = self.create_scene.initialize_ground_truth_objects()
+        pw_T_target_obj_obse_pose_lsit, trans, rot = self.create_scene.initialize_object()
+        pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list = self.create_scene.initialize_ground_truth_objects()
+        
         if self.visualisation_all == True:
             p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
         else:
@@ -289,8 +287,8 @@ if __name__ == '__main__':
     pw_T_target_obj_opti_pose_lsit_param = visual_world.pw_T_target_obj_opti_pose_lsit
     pw_T_other_obj_opti_pose_list_param = visual_world.pw_T_other_obj_opti_pose_list
     
-#    if gazebo_flag == True:
-#        panda_pose = visual_world.ros_listener.listen_2_gazebo_robot_pose()
+    if visual_world.gazebo_flag == True:
+        panda_pose = visual_world.ros_listener.listen_2_robot_pose()
     
     par_obj_id = [[]*object_num for _ in range(particle_num)]
     esti_obj_id = [0] * object_num

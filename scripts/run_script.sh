@@ -5,6 +5,8 @@ if [ ! -d "$HOME/catkin_ws/devel" ]; then
     cd $HOME/catkin_ws/src
     git clone https://github.com/ros-planning/moveit.git
     git clone https://github.com/ros-planning/panda_moveit_config.git
+    git clone https://github.com/andreasBihlmaier/pysdf.git
+    git clone https://github.com/andreasBihlmaier/gazebo2rviz.git
     cd panda_moveit_config
     git checkout noetic-devel
     cd $HOME/catkin_ws/

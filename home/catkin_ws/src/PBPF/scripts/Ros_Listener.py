@@ -85,6 +85,8 @@ class Ros_Listener():
         return self.panda_pose
     
     def listen_2_robot_pose(self):
+        if self.gazebo_flag == True:
+            return self.panda_pose
         return self.robot_pose
     
     def joint_values_callback(self, msg):

@@ -1197,8 +1197,8 @@ if __name__ == '__main__':
 
     rob_link_9_pose_old = p_sim.getLinkState(sim_rob_id, 9) # position = rob_link_9_pose_old[0], quaternion = rob_link_9_pose_old[1]
     print("Welcome to Our Approach !")
-    robot1 = PBPFMove(object_num) # PF_alg
-    robot2 = CVPFMove(object_num) 
+    PBPF_alg = PBPFMove(object_num) # PF_alg
+    CVPF_alg = CVPFMove(object_num) 
     
     while not rospy.is_shutdown():
         #panda robot moves in the visualization window
@@ -1265,81 +1265,81 @@ if __name__ == '__main__':
             if run_alg_flag == "PBPF":
                 if (dis_robcur_robold > d_thresh):
                     # judgement for any particles contact
-                    if robot1.isAnyParticleInContact():
+                    if PBPF_alg.isAnyParticleInContact():
                         simRobot_touch_par_flag = 1
                         t_begin_PBPF = time.time()
                         flag_update_num_PB = flag_update_num_PB + 1
                         pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                         # execute PBPF algorithm movement
-                        robot1.update_particle_filter_PB(ros_listener.current_joint_values, # joints of robot arm
-                                                         pw_T_obj_obse_objects_pose_list,
-                                                         do_obs_update=obse_is_fresh) # flag for judging obse work
+                        PBPF_alg.update_particle_filter_PB(ros_listener.current_joint_values, # joints of robot arm
+                                                           pw_T_obj_obse_objects_pose_list,
+                                                           do_obs_update=obse_is_fresh) # flag for judging obse work
                         rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
 
-                        # print("Average time of updating: ",np.mean(robot1.times))
+                        # print("Average time of updating: ",np.mean(PBPF_alg.times))
                         t_finish_PBPF = time.time()
                         PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
                         # print("Time consuming:", t_finish_PBPF - t_begin_PBPF)
                         simRobot_touch_par_flag = 0
                     else:
                         # also update the pose of the robot arm in the simulation when particles are not touched
-                        robot1.motion_update_PB_parallelised(initial_parameter.pybullet_particle_env_collection,
-                                                             initial_parameter.fake_robot_id_collection,
-                                                             ros_listener.current_joint_values)
+                        PBPF_alg.motion_update_PB_parallelised(initial_parameter.pybullet_particle_env_collection,
+                                                               initial_parameter.fake_robot_id_collection,
+                                                               ros_listener.current_joint_values)
 #                else:
-#                    robot1.motion_update_PB_parallelised(initial_parameter.pybullet_particle_env_collection,
+#                    PBPF_alg.motion_update_PB_parallelised(initial_parameter.pybullet_particle_env_collection,
 #                                                             initial_parameter.fake_robot_id_collection,
 #                                                             ros_listener.current_joint_values)
             # CVPF algorithm
             if run_alg_flag == "CVPF":
                 # if (dis_betw_cur_and_old_CV > d_thresh_CV) or (ang_betw_cur_and_old_CV > a_thresh_CV) or (dis_robcur_robold_CV > d_thresh_CV):
                 if (dis_robcur_robold > d_thresh_CV):
-                    if robot2.isAnyParticleInContact():
+                    if CVPF_alg.isAnyParticleInContact():
                         flag_update_num_CV = flag_update_num_CV + 1
                         boss_obs_pose_CVPF.append(pw_T_obj_obse_objects_list)
                         # execute CVPF algorithm movement
                         pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
-                        robot2.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list, # [obse_obj1_pose, obse_obj2_pose]
-                                                         do_obs_update=obse_is_fresh) # flag for judging obse work
+                        CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list, # [obse_obj1_pose, obse_obj2_pose]
+                                                           do_obs_update=obse_is_fresh) # flag for judging obse work
                         rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
                     else:
-                        robot2.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm
+                        CVPF_alg.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm
 #                else:
-#                    robot2.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm
+#                    CVPF_alg.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm
                     
         # update according to the time
         elif update_style_flag == "time":
             while True:
                 # PBPF algorithm
                 if run_alg_flag == "PBPF":
-                    if robot1.isAnyParticleInContact():
+                    if PBPF_alg.isAnyParticleInContact():
                         simRobot_touch_par_flag = 1
                         t_begin_PBPF = time.time()
                         flag_update_num_PB = flag_update_num_PB + 1
                         pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                         # execute PBPF algorithm movement
-                        robot1.update_particle_filter_PB(ros_listener.current_joint_values, # joints of robot arm
-                                                         pw_T_obj_obse_objects_pose_list, # [obse_obj1_pose, obse_obj2_pose]
-                                                         do_obs_update=obse_is_fresh) # flag for judging obse work
+                        PBPF_alg.update_particle_filter_PB(ros_listener.current_joint_values, # joints of robot arm
+                                                           pw_T_obj_obse_objects_pose_list, # [obse_obj1_pose, obse_obj2_pose]
+                                                           do_obs_update=obse_is_fresh) # flag for judging obse work
 
                         t_finish_PBPF = time.time()
                         PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
                         simRobot_touch_par_flag = 0
                     else:
-                        robot1.motion_update_PB_parallelised(initial_parameter.pybullet_particle_env_collection,
-                                                             initial_parameter.fake_robot_id_collection,
-                                                             ros_listener.current_joint_values)
+                        PBPF_alg.motion_update_PB_parallelised(initial_parameter.pybullet_particle_env_collection,
+                                                               initial_parameter.fake_robot_id_collection,
+                                                               ros_listener.current_joint_values)
                 # CVPF algorithm
                 if run_alg_flag == "CVPF":
-                    if robot2.isAnyParticleInContact():
+                    if CVPF_alg.isAnyParticleInContact():
                         flag_update_num_CV = flag_update_num_CV + 1
                         boss_obs_pose_CVPF.append(pw_T_obj_obse_objects_list)
                         # execute CVPF algorithm movement
                         pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
-                        robot2.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list,
-                                                         do_obs_update=obse_is_fresh) # flag for judging obse work
+                        CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list,
+                                                           do_obs_update=obse_is_fresh) # flag for judging obse work
                     else:
-                        robot2.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm
+                        CVPF_alg.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm
                         
                 pf_update_rate.sleep()
                 break    

@@ -54,7 +54,7 @@ class Create_Scene():
         self.ros_listener = Ros_Listener()
         self.listener = tf.TransformListener()
         self.objects_name_list = ["cracker", "soup"]
-        self.gazebo_flag = True
+        self.gazebo_flag = False
         
     def initialize_object(self):
         if self.gazebo_flag == True:

@@ -1081,7 +1081,7 @@ if __name__ == '__main__':
     with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
         parameter_info = yaml.safe_load(file)
         
-    gazebo_flag = True
+    gazebo_flag = False
     
     # scene
     task_flag = '1' # parameter_info['task_flag']
@@ -1197,8 +1197,8 @@ if __name__ == '__main__':
 
     rob_link_9_pose_old = p_sim.getLinkState(sim_rob_id, 9) # position = rob_link_9_pose_old[0], quaternion = rob_link_9_pose_old[1]
     print("Welcome to Our Approach !")
-    robot1 = PBPFMove(object_num)
-    robot2 = CVPFMove(object_num)
+    robot1 = PBPFMove(object_num) # PF_alg
+    robot2 = CVPFMove(object_num) 
     
     while not rospy.is_shutdown():
         #panda robot moves in the visualization window

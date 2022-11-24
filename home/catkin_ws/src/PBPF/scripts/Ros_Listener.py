@@ -12,7 +12,7 @@ from pyquaternion import Quaternion
 #Class of franka robot listen to info from ROS
 class Ros_Listener():
     def __init__(self):
-        self.gazebo_flag = True
+        self.gazebo_flag = False
         
         rospy.Subscriber('/joint_states', JointState, self.joint_values_callback, queue_size=1)
         self.joint_subscriber = JointState()

@@ -53,7 +53,7 @@ class Visualisation_World():
         self.ros_listener = Ros_Listener()
         self.listener = tf.TransformListener()
         self.visualisation_all = True
-        self.gazebo_flag = True
+        self.gazebo_flag = False
         self.pw_T_rob_sim_pose_list = []
         self.pw_T_target_obj_obse_pose_lsit = []
         self.pw_T_target_obj_opti_pose_lsit = []
@@ -289,7 +289,8 @@ if __name__ == '__main__':
     pw_T_target_obj_opti_pose_lsit_param = visual_world.pw_T_target_obj_opti_pose_lsit
     pw_T_other_obj_opti_pose_list_param = visual_world.pw_T_other_obj_opti_pose_list
     
-    panda_pose = visual_world.ros_listener.listen_2_gazebo_robot_pose()
+#    if gazebo_flag == True:
+#        panda_pose = visual_world.ros_listener.listen_2_gazebo_robot_pose()
     
     par_obj_id = [[]*object_num for _ in range(particle_num)]
     esti_obj_id = [0] * object_num

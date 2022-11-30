@@ -1080,9 +1080,8 @@ if __name__ == '__main__':
     
     with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
         parameter_info = yaml.safe_load(file)
-        
-    gazebo_flag = False
     
+    gazebo_flag = True
     # scene
     task_flag = '1' # parameter_info['task_flag']
     # which algorithm to run
@@ -1102,7 +1101,7 @@ if __name__ == '__main__':
             particle_num = 50
         elif run_alg_flag == "CVPF":
             particle_num = 50
-    objects_name_list = ["cracker", "soup"] # parameter_info['objects_name_list']
+    objects_name_list = ["cracker", "fish_can"] # parameter_info['objects_name_list']
 
     print("This is "+update_style_flag+" update in scene"+task_flag)    
     # some parameters
@@ -1164,8 +1163,6 @@ if __name__ == '__main__':
     pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
     
     pw_T_obj_obse_obj_list_alg, trans, rot = create_scene.initialize_object()
-#    if gazebo_flag == True:
-#        panda_pose = ros_listener.listen_2_robot_pose()
     
     for obj_index in range(other_obj_num):
         pw_T_obj_obse_oto_list_alg = []
@@ -1206,23 +1203,8 @@ if __name__ == '__main__':
         for obj_index in range(object_num):
             # need to change
             object_name = objects_name_list[obj_index]
+            
             # get obse data
-#            if gazebo_flag == True:
-#                _, model_pose_added_noise = ros_listener.listen_2_object_pose(objects_name_list[obj_index])
-#                
-#                gazebo_T_obj_pos_added_noise = model_pose_added_noise[0]
-#                gazebo_T_obj_ori_added_noise = model_pose_added_noise[1]
-#                gazebo_T_rob_pos = panda_pose[0]
-#                gazebo_T_rob_ori = panda_pose[1]
-#                
-#                opti_T_rob_opti_pos = copy.deepcopy(gazebo_T_rob_pos)
-#                opti_T_rob_opti_ori = copy.deepcopy(gazebo_T_rob_ori)
-#                opti_T_obj_obse_pos = copy.deepcopy(gazebo_T_obj_pos_added_noise)
-#                opti_T_obj_obse_ori = copy.deepcopy(gazebo_T_obj_ori_added_noise)
-#                
-#                obse_is_fresh = True
-#                rob_T_obj_obse_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_obse_pos, opti_T_obj_obse_ori)
-#            else:
             obse_is_fresh = True
             try:
                 latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/'+object_name)
@@ -1241,7 +1223,16 @@ if __name__ == '__main__':
             rob_T_obj_obse_ori = list(rot)
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
-                
+            
+            if gazebo_flag == True:
+                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
+                                     [0., 1., 0.,    0.],
+                                     [0., 0., 1., -0.06],
+                                     [0., 0., 0.,    1.]]
+                robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
+                rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
+            
+            
             pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
             pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)

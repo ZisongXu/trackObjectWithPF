@@ -5,9 +5,14 @@ from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, Tran
 from PBPF.msg import object_pose, particle_pose, particle_list, estimated_obj_pose
 from gazebo_msgs.msg import ModelStates
 
+import tf
+import tf.transformations as transformations
+
 import copy
 import random
 import math
+import numpy as np
+
 from pyquaternion import Quaternion
 #Class of franka robot listen to info from ROS
 class Ros_Listener():
@@ -44,27 +49,75 @@ class Ros_Listener():
         self.pos_added_noise = []
         self.ori_added_noise = []
         self.model_pose_added_noise = []
+        self.rob_T_obj_obse_4_4 = []
         
         rospy.spin
     
     def model_states_callback(self, model_states):
-        model_name = model_states.name[3]
-        model_pos = model_states.pose[3].position
-        model_ori = model_states.pose[3].orientation
-        self.model_pos = [model_pos.x, model_pos.y, model_pos.z]
-        self.model_ori = [model_ori.x, model_ori.y, model_ori.z, model_ori.w]
-        self.model_pose = [self.model_pos, self.model_ori]
-        
-        self.pos_added_noise, self.ori_added_noise = self.add_noise_pose(self.model_pos, self.model_ori)
-        self.model_pose_added_noise = [self.pos_added_noise, self.ori_added_noise]
-        
-        panda_name = model_states.name[7]
-        panda_pos = model_states.pose[7].position
-        panda_ori = model_states.pose[7].orientation
-        self.panda_pos = [panda_pos.x, panda_pos.y, panda_pos.z+0.06]
-        self.panda_ori = [panda_ori.x, panda_ori.y, panda_ori.z, panda_ori.w]
-        self.panda_pose = [self.panda_pos, self.panda_ori]
-    
+        gzb_T_obj_obse_4_4 = [[1., 0., 0., 0.],
+                              [0., 1., 0., 0.],
+                              [0., 0., 1., 0.],
+                              [0., 0., 0., 1.]]
+        gzb_T_obj_obse_4_4 = np.array(gzb_T_obj_obse_4_4)  
+        gzb_T_rob_obse_4_4 = [[1., 0., 0., 0.],
+                              [0., 1., 0., 0.],
+                              [0., 0., 1., 0.],
+                              [0., 0., 0., 1.]]
+        gzb_T_rob_obse_4_4 = np.array(gzb_T_rob_obse_4_4)  
+        name_lenght = len(model_states.name)
+        for name_index in range(name_lenght):
+            if model_states.name[name_index] == "cracker":
+                model_name = model_states.name[name_index]
+                model_pos = model_states.pose[name_index].position
+                model_ori = model_states.pose[name_index].orientation
+                self.model_pos = [model_pos.x, model_pos.y, model_pos.z]
+                self.model_ori = [model_ori.x, model_ori.y, model_ori.z, model_ori.w]
+                self.model_pose = [self.model_pos, self.model_ori]
+                
+                gzb_T_obj_obse_3_3 = transformations.quaternion_matrix(self.model_ori)
+                gzb_T_obj_obse_4_4 = self.rotation_4_4_to_transformation_4_4(gzb_T_obj_obse_3_3, self.model_pos)
+#                gzb_T_obj_opti_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_opti_4_4)
+            
+            if model_states.name[name_index] == "panda":
+#                self.pos_added_noise, self.ori_added_noise = self.add_noise_pose(self.model_pos, self.model_ori)
+#                self.model_pose_added_noise = [self.pos_added_noise, self.ori_added_noise]
+                panda_name = model_states.name[name_index]
+                panda_pos = model_states.pose[name_index].position
+                panda_ori = model_states.pose[name_index].orientation
+                self.panda_pos = [panda_pos.x, panda_pos.y, panda_pos.z]
+                self.panda_ori = [panda_ori.x, panda_ori.y, panda_ori.z, panda_ori.w]
+                self.panda_pose = [self.panda_pos, self.panda_ori]
+                
+                gzb_T_rob_obse_3_3 = transformations.quaternion_matrix(self.panda_ori)
+                gzb_T_rob_obse_4_4 = self.rotation_4_4_to_transformation_4_4(gzb_T_rob_obse_3_3, self.panda_ori)
+#                robpos_T_pandalink0_4_4 = [[1., 0., 0.,    0.],
+#                                           [0., 1., 0.,    0.],
+#                                           [0., 0., 1.,  0.06],
+#                                           [0., 0., 0.,    1.]]
+#                robpos_T_pandalink0_4_4 = np.array(robpos_T_pandalink0_4_4)                
+#                gazebo_T_pandalink0_opti_4_4 = np.dot(gzb_T_rob_obse_4_4, robpos_T_pandalink0_4_4)        
+                
+            if model_states.name[name_index] == "fish_can":
+                model_name = model_states.name[name_index]
+                model_pos = model_states.pose[name_index].position
+                model_ori = model_states.pose[name_index].orientation
+                self.model_pos = [model_pos.x, model_pos.y, model_pos.z]
+                self.model_ori = [model_ori.x, model_ori.y, model_ori.z, model_ori.w]
+                self.model_pose = [self.model_pos, self.model_ori]
+                
+                gzb_T_fish_obse_3_3 = transformations.quaternion_matrix(self.model_ori)
+                gzb_T_fish_obse_4_4 = self.rotation_4_4_to_transformation_4_4(gzb_T_fish_obse_3_3, self.model_pos)
+                
+        pandalink0_T_gzb_obse_4_4 = np.linalg.inv(gzb_T_rob_obse_4_4)
+#        pandalink0_T_gzb_obse_4_4 = np.linalg.inv(gazebo_T_pandalink0_opti_4_4)
+        pandalink0_T_obj_obse_4_4 = np.dot(pandalink0_T_gzb_obse_4_4, gzb_T_obj_obse_4_4)
+        pandalink0_T_fish_obse_4_4 = np.dot(pandalink0_T_gzb_obse_4_4, gzb_T_fish_obse_4_4)
+        self.rob_T_obj_obse_4_4 = pandalink0_T_obj_obse_4_4
+        self.rob_T_obj_obse_4_4 = pandalink0_T_fish_obse_4_4
+
+    def listen_2_test_matrix(self):
+        return self.rob_T_obj_obse_4_4
+
     def listen_2_object_pose(self, object_flag):
         if object_flag == "cracker":
             if self.gazebo_flag == True:
@@ -209,3 +262,9 @@ class Ros_Listener():
     def take_easy_gaussian_value(self, mean, sigma):
         normal = random.normalvariate(mean, sigma)
         return normal
+    
+    def rotation_4_4_to_transformation_4_4(self, rotation_4_4, pos):
+        rotation_4_4[0][3] = pos[0]
+        rotation_4_4[1][3] = pos[1]
+        rotation_4_4[2][3] = pos[2]
+        return rotation_4_4

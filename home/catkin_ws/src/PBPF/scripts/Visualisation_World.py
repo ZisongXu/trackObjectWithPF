@@ -40,6 +40,7 @@ from quaternion_averaging import weightedAverageQuaternions
 from Particle import Particle
 from Create_Scene import Create_Scene
 from Ros_Listener import Ros_Listener
+import yaml
 
 #Class of initialize the real world model
 class Visualisation_World():
@@ -81,18 +82,20 @@ class Visualisation_World():
             obse_obj_name = pw_T_target_obj_obse_pose_lsit[obj_index].obj_name
             obse_obj_pos = pw_T_target_obj_obse_pose_lsit[obj_index].pos
             obse_obj_ori = pw_T_target_obj_obse_pose_lsit[obj_index].ori
+            gazebo_contain = ""
             if self.gazebo_flag == True:
-                obse_obj_name = "gazebo_" + obse_obj_name
-            obse_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obse_obj_name+"/"+obse_obj_name+"_obse_obj_with_visual_hor.urdf"),
+                gazebo_contain = "gazebo_"
+            obse_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obse_obj_name+"/"+gazebo_contain+obse_obj_name+"_obse_obj_with_visual_hor.urdf"),
                                                       obse_obj_pos,
                                                       obse_obj_ori)
             pw_T_target_obj_obse_pose_lsit[obj_index].obj_id = obse_object_id
             opti_obj_name = pw_T_target_obj_opti_pose_lsit[obj_index].obj_name
             opti_obj_pos = pw_T_target_obj_opti_pose_lsit[obj_index].pos
             opti_obj_ori = pw_T_target_obj_opti_pose_lsit[obj_index].ori
+            gazebo_contain = ""
             if self.gazebo_flag == True:
-                opti_obj_name = "gazebo_" + opti_obj_name
-            opti_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+opti_obj_name+"/"+opti_obj_name+"_real_obj_with_visual_hor.urdf"),
+                gazebo_contain = "gazebo_"
+            opti_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+opti_obj_name+"/"+gazebo_contain+opti_obj_name+"_real_obj_with_visual_hor.urdf"),
                                                       opti_obj_pos,
                                                       opti_obj_ori)
             pw_T_target_obj_opti_pose_lsit[obj_index].obj_id = opti_object_id
@@ -102,9 +105,10 @@ class Visualisation_World():
             other_obj_name = pw_T_other_obj_opti_pose_list[obj_index].obj_name
             other_obj_pos = pw_T_other_obj_opti_pose_list[obj_index].pos
             other_obj_ori = pw_T_other_obj_opti_pose_list[obj_index].ori
+            gazebo_contain = ""
             if self.gazebo_flag == True:
-                obse_obj_name = "gazebo_" + other_obj_name
-            optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+other_obj_name+"/base_of_cracker.urdf"),
+                gazebo_contain = "gazebo_"
+            optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+other_obj_name+"/base_of_cracker.urdf"),
                                                          other_obj_pos,
                                                          other_obj_ori)
             pw_T_other_obj_opti_pose_list[obj_index].obj_id = optitrack_base_id
@@ -146,7 +150,6 @@ class Visualisation_World():
                                                               pybullet_simulation_env.POSITION_CONTROL,
                                                               targetPosition=position[joint_index])
         
-        
     def display_object_in_visual_model(self, pybullet_simulation_env, object_info_list):
         obj_pos = object_info_list.pos
         obj_ori = object_info_list.ori
@@ -154,7 +157,6 @@ class Visualisation_World():
         pybullet_simulation_env.resetBasePositionAndOrientation(obj_id,
                                                                 obj_pos,
                                                                 obj_ori)
-            
             
     def init_display_particle(self, object_pose):
         obj_par_name = object_pose.name
@@ -167,9 +169,10 @@ class Visualisation_World():
         obj_ori_z = object_pose.pose.orientation.z
         obj_ori_w = object_pose.pose.orientation.w
         obj_ori = [obj_ori_x, obj_ori_y, obj_ori_z, obj_ori_w]
+        gazebo_contain = ""
         if self.gazebo_flag == True:
-            obj_par_name = "gazebo_" + obj_par_name
-        visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obj_par_name+"/"+obj_par_name+"_par_with_visual_PB_hor.urdf"),
+            gazebo_contain = "gazebo_"
+        visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_par_name+"/"+gazebo_contain+obj_par_name+"_par_with_visual_PB_hor.urdf"),
                                                               obj_pos,
                                                               obj_ori)
         object_pose.id = visualize_particle_Id
@@ -197,9 +200,10 @@ class Visualisation_World():
                 obj_par_name = particle[obj_index].par_name
                 obj_par_pos = particle[obj_index].pos
                 obj_par_ori = particle[obj_index].ori
+                gazebo_contain = ""
                 if self.gazebo_flag == True:
-                    obj_par_name = "gazebo_" + obj_par_name
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+obj_par_name+"/"+obj_par_name+"_par_with_visual_CV_hor.urdf"),
+                    gazebo_contain = "gazebo_"
+                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_par_name+"/"+gazebo_contain+obj_par_name+"_par_with_visual_CV_hor.urdf"),
                                                                       obj_par_pos,
                                                                       obj_par_ori)
                 obj_id_list.append(visualize_particle_Id)
@@ -217,9 +221,10 @@ class Visualisation_World():
         esti_obj_ori_z = esti_object_pose.pose.orientation.z
         esti_obj_ori_w = esti_object_pose.pose.orientation.w
         esti_obj_ori = [esti_obj_ori_x, esti_obj_ori_y, esti_obj_ori_z, esti_obj_ori_w]
+        gazebo_contain = ""
         if self.gazebo_flag == True:
-            esti_obj_name = "gazebo_" + esti_obj_name
-        estimated_object_id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+esti_obj_name+"/"+esti_obj_name+"_est_obj_with_visual_PB_hor.urdf"),
+            gazebo_contain = "gazebo_"
+        estimated_object_id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+esti_obj_name+"/"+gazebo_contain+esti_obj_name+"_est_obj_with_visual_PB_hor.urdf"),
                                                             esti_obj_pos,
                                                             esti_obj_ori)
         esti_object_pose.id = estimated_object_id
@@ -267,10 +272,12 @@ if __name__ == '__main__':
 #    input("stop")
     rospy.init_node('visualization_world') # ros node
     time.sleep(0.5)
-    object_num = 1
+    with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
+        parameter_info = yaml.safe_load(file)
+    object_num = parameter_info['object_num']
     robot_num = 1
     other_obj_num = 0
-    particle_num = 50
+    particle_num = parameter_info['particle_num']
     init_par_flag = 0
     init_esti_flag = 0
     display_par_flag = True
@@ -317,7 +324,6 @@ if __name__ == '__main__':
 #                opti_T_obj_obse_pos = copy.deepcopy(gazebo_T_obj_pos_added_noise)
 #                opti_T_obj_obse_ori = copy.deepcopy(gazebo_T_obj_ori_added_noise)
                 obse_is_fresh = True
-                object_list[obj_index] = "fish_can"
                 try:
                     latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_list[obj_index])
                     if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
@@ -343,10 +349,10 @@ if __name__ == '__main__':
 #                rob_T_obj_opti_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_opti_4_4)
                 pandalink0_T_obj_obse_4_4_test = visual_world.ros_listener.listen_2_test_matrix()
 #                test_rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, test_rob_T_obj_obse_4_4)
-                print(object_list[obj_index]+": matrix from /gazebo/model_states:")
-                print(pandalink0_T_obj_obse_4_4_test)
-                print(object_list[obj_index]+": matrix from tf:")
-                print(rob_T_obj_opti_4_4)
+#                print(object_list[obj_index]+": matrix from /gazebo/model_states:")
+#                print(pandalink0_T_obj_obse_4_4_test)
+#                print(object_list[obj_index]+": matrix from tf:")
+#                print(rob_T_obj_opti_4_4)
             else:
                 opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
                 opti_T_rob_opti_ori = visual_world.ros_listener.listen_2_robot_pose()[1]
@@ -356,7 +362,9 @@ if __name__ == '__main__':
                 rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
             pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
             pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
+            
             pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
+            
             # update pose
             pw_T_target_obj_opti_pose_lsit_param[obj_index].pos = pw_T_obj_opti_pos
             pw_T_target_obj_opti_pose_lsit_param[obj_index].ori = pw_T_obj_opti_ori
@@ -386,13 +394,13 @@ if __name__ == '__main__':
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
             
-            if visual_world.gazebo_flag == True:
-                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
-                                     [0., 1., 0.,    0.],
-                                     [0., 0., 1., -0.06],
-                                     [0., 0., 0.,    1.]]
-                robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
-                rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
+#            if visual_world.gazebo_flag == True:
+#                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
+#                                     [0., 1., 0.,    0.],
+#                                     [0., 0., 1., -0.06],
+#                                     [0., 0., 0.,    1.]]
+#                robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
+#                rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
                 
             pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
             pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
@@ -401,7 +409,7 @@ if __name__ == '__main__':
             pw_T_target_obj_obse_pose_lsit_param[obj_index].pos = pw_T_obj_obse_pos
             pw_T_target_obj_obse_pose_lsit_param[obj_index].ori = pw_T_obj_obse_ori
             visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_obse_pose_lsit_param[obj_index])
-            
+
         # display other objects
         for obj_index in range(other_obj_num):
             opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
@@ -418,19 +426,42 @@ if __name__ == '__main__':
             visual_world.display_object_in_visual_model(p_visual, pw_T_other_obj_opti_pose_list_param[obj_index])
         
         # display particles
+#        if display_par_flag == True:
+#            particles_states_list = visual_world.ros_listener.listen_2_pars_states()
+#            print("particles_states_list:", particles_states_list)
+#            for obj_index in range(object_num):
+#                if len(particles_states_list.particles) == 0:
+#                    par_list_not_pub = 0
+#                    print("Do not publish particle information to /par_list")
+#                else:
+#                    if init_par_flag == 0:
+#                        if obj_index == object_num - 1:
+#                            init_par_flag = 1
+#                        for par_index in range(particle_num):
+#                            visual_world.init_display_particle(particles_states_list.particles[par_index].objects[obj_index])
+#                            obj_visual_id = particles_states_list.particles[par_index].objects[obj_index].id
+#                            par_obj_id[par_index].append(obj_visual_id)
+#                    else:
+#                        for par_index in range(particle_num):
+#                            particles_states_list.particles[par_index].objects[obj_index].id = par_obj_id[par_index][obj_index]
+#                            visual_world.display_particle_in_visual_model(particles_states_list.particles[par_index].objects[obj_index])
         if display_par_flag == True:
-            for obj_index in range(object_num):
-                particles_states_list = visual_world.ros_listener.listen_2_pars_states()
-                if len(particles_states_list.particles) == 0:
-                    par_list_not_pub = 0
-                else:
-                    if init_par_flag == 0:
-                        init_par_flag = 1
+            particles_states_list = visual_world.ros_listener.listen_2_pars_states()
+            if len(particles_states_list.particles) == 0:
+                par_list_not_pub = 0
+                print("Do not publish particle information to /par_list")
+            else:
+                if init_par_flag == 0:
+                    print("Begin to init particles")
+                    for obj_index in range(object_num):
+                        if obj_index == object_num - 1:
+                            init_par_flag = 1
                         for par_index in range(particle_num):
                             visual_world.init_display_particle(particles_states_list.particles[par_index].objects[obj_index])
                             obj_visual_id = particles_states_list.particles[par_index].objects[obj_index].id
                             par_obj_id[par_index].append(obj_visual_id)
-                    else:
+                else:
+                    for obj_index in range(object_num):
                         for par_index in range(particle_num):
                             particles_states_list.particles[par_index].objects[obj_index].id = par_obj_id[par_index][obj_index]
                             visual_world.display_particle_in_visual_model(particles_states_list.particles[par_index].objects[obj_index])
@@ -442,8 +473,10 @@ if __name__ == '__main__':
                 if len(esti_obj_states_list.objects) == 0:
                     esti_obj_list_not_pub = 1
                 else:
+                    print("obj_index:", obj_index)
                     if init_esti_flag == 0:
-                        init_esti_flag = 1
+                        if obj_index == object_num - 1:
+                            init_esti_flag = 1
                         visual_world.init_display_estimated_object(esti_obj_states_list.objects[obj_index])
                         esti_obj_id[obj_index] = esti_obj_states_list.objects[obj_index].id
                     else:

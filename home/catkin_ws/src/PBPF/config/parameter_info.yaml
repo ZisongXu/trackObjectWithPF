@@ -1,11 +1,11 @@
 run_alg_flag: 'PBPF' # PBPF/CVPF
 task_flag: '1'
 update_style_flag: 'time' # pose/time
-object_num: 1
+object_num: 2
 robot_num: 1
 other_obj_num: 0
 objects_name_list: ["cracker", "soup"]
-
+particle_num: 25
 
 image_height: 480
 camera_name: dope_webcam_0

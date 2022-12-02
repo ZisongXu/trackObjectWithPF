@@ -72,6 +72,7 @@ class InitialSimulationModel():
         self.boss_sigma_obs_z = 0.01
         self.boss_sigma_obs_ang_init = 0.0216773873 * 2.0
         
+        self.gazebo_flag = True
         
     def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):
         position = copy.deepcopy(pw_T_obj_obse_pos)
@@ -159,7 +160,10 @@ class InitialSimulationModel():
                 obj_obse_ori = self.pw_T_obj_obse_obj_list_alg[obj_index].ori
                 obj_obse_name = self.pw_T_obj_obse_obj_list_alg[obj_index].obj_name
                 particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
-                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/"+obj_obse_name+"/"+obj_obse_name+"_par_no_visual_hor.urdf"),
+                gazebo_contain = ""
+                if self.gazebo_flag == True:
+                    gazebo_contain = "gazebo_"
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_obse_name+"/"+gazebo_contain+obj_obse_name+"_par_no_visual_hor.urdf"),
                                                                          particle_pos,
                                                                          particle_ori)
                 collision_detection_obj_id.append(particle_no_visual_id)
@@ -190,7 +194,6 @@ class InitialSimulationModel():
         esti_objs_cloud_temp_parameter = self.compute_estimate_pos_of_object(self.particle_cloud)
         return esti_objs_cloud_temp_parameter, self.particle_cloud
         
-    
     def initial_and_set_simulation_env_CV(self):
         CVPF_par_no_visual_id = [[]*self.object_num for _ in range(self.particle_num)]
         for par_index in range(self.particle_num):
@@ -230,7 +233,10 @@ class InitialSimulationModel():
                 obj_obse_ori = self.pw_T_obj_obse_obj_list_alg[obj_index].ori
                 obj_obse_name = self.pw_T_obj_obse_obj_list_alg[obj_index].obj_name
                 particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
-                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/"+obj_obse_name+"/"+obj_obse_name+"_par_no_visual_hor.urdf"),
+                gazebo_contain = ""
+                if self.gazebo_flag == True:
+                    gazebo_contain = "gazebo_"
+                particle_no_visual_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_obse_name+"/"+gazebo_contain+obj_obse_name+"_par_no_visual_hor.urdf"),
                                                                          particle_pos,
                                                                          particle_ori)
                 collision_detection_obj_id.append(particle_no_visual_id)
@@ -255,13 +261,11 @@ class InitialSimulationModel():
                 object_list.append(objPose)
                 CVPF_par_no_visual_id[par_index].append(particle_no_visual_id)
                 
-                
             self.particle_cloud_CV.append(object_list)
             self.particle_no_visual_id_collection_CV = copy.deepcopy(CVPF_par_no_visual_id)
         
         esti_objs_cloud_temp_parameter = self.compute_estimate_pos_of_object(self.particle_cloud_CV)
         return esti_objs_cloud_temp_parameter, self.particle_cloud_CV
-
 
     def set_sim_robot_JointPosition(self, pybullet_simulation_env, robot, position):
         num_joints = 9
@@ -275,18 +279,15 @@ class InitialSimulationModel():
                                                 joint_index,
                                                 targetValue=position[joint_index])
                 
-                
     def add_noise_to_init_par(self, current_pos, sigma_init):
         mean = current_pos
         sigma = sigma_init
         new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_pos_is_added_noise
     
-    
     def take_easy_gaussian_value(self, mean,sigma):
         normal = random.normalvariate(mean, sigma)
         return normal
-    
     
     # make sure all quaternions all between -pi and +pi
     def quaternion_correction(self, quaternion): # x,y,z,w

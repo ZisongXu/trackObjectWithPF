@@ -105,13 +105,13 @@ class Create_Scene():
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = self.rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3, rob_T_obj_obse_pos)
             
-            if self.gazebo_flag == True:
-                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
-                                     [0., 1., 0.,    0.],
-                                     [0., 0., 1., -0.06],
-                                     [0., 0., 0.,    1.]]
-                robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
-                rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
+#            if self.gazebo_flag == True:
+#                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
+#                                     [0., 1., 0.,    0.],
+#                                     [0., 0., 1., -0.06],
+#                                     [0., 0., 0.,    1.]]
+#                robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
+#                rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
                 
             pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
             pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]

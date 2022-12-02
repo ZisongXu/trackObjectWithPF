@@ -1091,16 +1091,16 @@ if __name__ == '__main__':
 
     # the flag is used to determine whether the robot touches the particle in the simulation
     simRobot_touch_par_flag = 0
-    object_num = 1
+    object_num = parameter_info['object_num']
     robot_num = 1
     other_obj_num = 0
     if update_style_flag == "pose":
-        particle_num = 50
+        particle_num = parameter_info['particle_num']
     elif update_style_flag == "time":
         if run_alg_flag == "PBPF":
-            particle_num = 50
+            particle_num = parameter_info['particle_num']
         elif run_alg_flag == "CVPF":
-            particle_num = 50
+            particle_num = parameter_info['particle_num']
     objects_name_list = ["cracker", "fish_can"] # parameter_info['objects_name_list']
 
     print("This is "+update_style_flag+" update in scene"+task_flag)    
@@ -1224,13 +1224,13 @@ if __name__ == '__main__':
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
             
-            if gazebo_flag == True:
-                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
-                                     [0., 1., 0.,    0.],
-                                     [0., 0., 1., -0.06],
-                                     [0., 0., 0.,    1.]]
-                robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
-                rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
+#            if gazebo_flag == True:
+#                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
+#                                     [0., 1., 0.,    0.],
+#                                     [0., 0., 1., -0.06],
+#                                     [0., 0., 0.,    1.]]
+#                robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
+#                rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
             
             
             pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)

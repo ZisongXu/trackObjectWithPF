@@ -8,7 +8,7 @@
        <geometry>
          <cylinder length="0.03429" radius="0.043688"/>
        </geometry>
-       <origin xyz="0 0 0" rpy="0 0 0"/>
+       <origin xyz="-0.021844 -0.021844 0.01715" rpy="0 0 0"/>
        <material name="dark_green"/>
      </visual>
      <inertial>

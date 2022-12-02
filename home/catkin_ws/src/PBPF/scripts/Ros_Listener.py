@@ -90,12 +90,12 @@ class Ros_Listener():
                 
                 gzb_T_rob_obse_3_3 = transformations.quaternion_matrix(self.panda_ori)
                 gzb_T_rob_obse_4_4 = self.rotation_4_4_to_transformation_4_4(gzb_T_rob_obse_3_3, self.panda_ori)
-#                robpos_T_pandalink0_4_4 = [[1., 0., 0.,    0.],
-#                                           [0., 1., 0.,    0.],
-#                                           [0., 0., 1.,  0.06],
-#                                           [0., 0., 0.,    1.]]
-#                robpos_T_pandalink0_4_4 = np.array(robpos_T_pandalink0_4_4)                
-#                gazebo_T_pandalink0_opti_4_4 = np.dot(gzb_T_rob_obse_4_4, robpos_T_pandalink0_4_4)        
+                robpos_T_pandalink0_4_4 = [[1., 0., 0.,    0.],
+                                           [0., 1., 0.,    0.],
+                                           [0., 0., 1.,  0.06],
+                                           [0., 0., 0.,    1.]]
+                robpos_T_pandalink0_4_4 = np.array(robpos_T_pandalink0_4_4)                
+                gazebo_T_pandalink0_opti_4_4 = np.dot(gzb_T_rob_obse_4_4, robpos_T_pandalink0_4_4)        
                 
             if model_states.name[name_index] == "fish_can":
                 model_name = model_states.name[name_index]
@@ -108,12 +108,12 @@ class Ros_Listener():
                 gzb_T_fish_obse_3_3 = transformations.quaternion_matrix(self.model_ori)
                 gzb_T_fish_obse_4_4 = self.rotation_4_4_to_transformation_4_4(gzb_T_fish_obse_3_3, self.model_pos)
                 
-        pandalink0_T_gzb_obse_4_4 = np.linalg.inv(gzb_T_rob_obse_4_4)
-#        pandalink0_T_gzb_obse_4_4 = np.linalg.inv(gazebo_T_pandalink0_opti_4_4)
+#        pandalink0_T_gzb_obse_4_4 = np.linalg.inv(gzb_T_rob_obse_4_4)
+        pandalink0_T_gzb_obse_4_4 = np.linalg.inv(gazebo_T_pandalink0_opti_4_4)
         pandalink0_T_obj_obse_4_4 = np.dot(pandalink0_T_gzb_obse_4_4, gzb_T_obj_obse_4_4)
         pandalink0_T_fish_obse_4_4 = np.dot(pandalink0_T_gzb_obse_4_4, gzb_T_fish_obse_4_4)
         self.rob_T_obj_obse_4_4 = pandalink0_T_obj_obse_4_4
-        self.rob_T_obj_obse_4_4 = pandalink0_T_fish_obse_4_4
+#        self.rob_T_obj_obse_4_4 = pandalink0_T_fish_obse_4_4
 
     def listen_2_test_matrix(self):
         return self.rob_T_obj_obse_4_4

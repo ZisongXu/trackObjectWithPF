@@ -562,7 +562,6 @@ class CVPFMove():
         boss_est_pose_CVPF.append(object_estimate_pose_CV)
 
         # publish pose of particles
-        print("publish pose info")
         publish_par_pose_info(self.particle_cloud_CV)
         publish_esti_pose_info(object_estimate_pose_CV)
         return
@@ -1039,7 +1038,6 @@ def publish_esti_pose_info(estimated_object_set):
         esti_pose.pose.orientation.z = esti_obj_info.ori[2]
         esti_pose.pose.orientation.w = esti_obj_info.ori[3]
         esti_pose_list.append(esti_pose)
-        esti_pose_list.append(esti_pose)
     esti_list.objects = esti_pose_list 
     pub_esti_pose.publish(esti_list)
 
@@ -1081,13 +1079,13 @@ if __name__ == '__main__':
     with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
         parameter_info = yaml.safe_load(file)
     
-    gazebo_flag = True
+    gazebo_flag = parameter_info['gazebo_flag']
     # scene
     task_flag = '1' # parameter_info['task_flag']
     # which algorithm to run
-    run_alg_flag = 'PBPF' # parameter_info['run_alg_flag'] # PBPF/CVPF
+    run_alg_flag = parameter_info['run_alg_flag'] # PBPF/CVPF
     # update mode (pose/time)
-    update_style_flag = 'time' # parameter_info['update_style_flag'] # time/pose
+    update_style_flag = parameter_info['update_style_flag'] # time/pose
 
     # the flag is used to determine whether the robot touches the particle in the simulation
     simRobot_touch_par_flag = 0

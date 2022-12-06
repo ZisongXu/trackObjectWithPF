@@ -3,12 +3,10 @@ source /opt/ros/noetic/setup.bash
 
 if [ ! -d "$HOME/catkin_ws/devel" ]; then
     cd $HOME/catkin_ws/src
-    git clone https://github.com/ros-planning/moveit.git
-    git clone https://github.com/ros-planning/panda_moveit_config.git
-    git clone https://github.com/andreasBihlmaier/pysdf.git
-    git clone https://github.com/andreasBihlmaier/gazebo2rviz.git
-    cd panda_moveit_config
-    git checkout noetic-devel
+    git clone git@github.com:roboticsleeds/moveit.git; cd moveit; git checkout noetic-devel; cd ..
+    git clone git@github.com:roboticsleeds/moveit_msgs
+    git clone git@github.com:roboticsleeds/panda_moveit_config.git
+    git clone git@github.com:roboticsleeds/franka_ros.git
     cd $HOME/catkin_ws/
     catkin_make
     pip install pyquaternion

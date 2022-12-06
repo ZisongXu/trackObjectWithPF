@@ -40,6 +40,7 @@ import multiprocessing
 from quaternion_averaging import weightedAverageQuaternions
 from Particle import Particle
 from Object_Pose import Object_Pose
+import yaml
 #Class of initialize the simulation model
 class InitialSimulationModel():
     def __init__(self, object_num, robot_num, other_obj_num, particle_num, 
@@ -72,7 +73,9 @@ class InitialSimulationModel():
         self.boss_sigma_obs_z = 0.01
         self.boss_sigma_obs_ang_init = 0.0216773873 * 2.0
         
-        self.gazebo_flag = True
+        with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
+            self.parameter_info = yaml.safe_load(file)
+        self.gazebo_flag = self.parameter_info['gazebo_flag']
         
     def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):
         position = copy.deepcopy(pw_T_obj_obse_pos)

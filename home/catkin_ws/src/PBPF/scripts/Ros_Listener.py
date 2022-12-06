@@ -14,10 +14,14 @@ import math
 import numpy as np
 
 from pyquaternion import Quaternion
+import yaml
+import os
 #Class of franka robot listen to info from ROS
 class Ros_Listener():
     def __init__(self):
-        self.gazebo_flag = False
+        with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
+            self.parameter_info = yaml.safe_load(file)
+        self.gazebo_flag = self.parameter_info['gazebo_flag']
         
         rospy.Subscriber('/joint_states', JointState, self.joint_values_callback, queue_size=1)
         self.joint_subscriber = JointState()

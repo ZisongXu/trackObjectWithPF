@@ -41,6 +41,7 @@ from Particle import Particle
 from Ros_Listener import Ros_Listener
 from Object_Pose import Object_Pose
 from Robot_Pose import Robot_Pose
+import yaml
 #Class of initialize the real world model
 class Create_Scene():
     def __init__(self, target_obj_num=0, rob_num=0, other_obj_num=0):
@@ -54,7 +55,9 @@ class Create_Scene():
         self.ros_listener = Ros_Listener()
         self.listener = tf.TransformListener()
         self.objects_name_list = ["cracker", "fish_can"]
-        self.gazebo_flag = True
+        with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
+            self.parameter_info = yaml.safe_load(file)
+        self.gazebo_flag = self.parameter_info['gazebo_flag']
         
     def initialize_object(self):
 #        if self.gazebo_flag == True:

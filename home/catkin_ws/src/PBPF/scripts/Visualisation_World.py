@@ -54,7 +54,9 @@ class Visualisation_World():
         self.ros_listener = Ros_Listener()
         self.listener = tf.TransformListener()
         self.visualisation_all = True
-        self.gazebo_flag = True
+        with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
+            self.parameter_info = yaml.safe_load(file)
+        self.gazebo_flag = self.parameter_info['gazebo_flag']
         self.pw_T_rob_sim_pose_list = []
         self.pw_T_target_obj_obse_pose_lsit = []
         self.pw_T_target_obj_opti_pose_lsit = []
@@ -281,7 +283,7 @@ if __name__ == '__main__':
     init_par_flag = 0
     init_esti_flag = 0
     display_par_flag = True
-    display_esti_flag = False
+    display_esti_flag = True
     object_list = ["cracker", "fish_can"]
     
     visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
@@ -337,10 +339,10 @@ if __name__ == '__main__':
                     # break
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                     print("can not find tf")
-                rob_T_obj_obse_pos = list(trans)
-                rob_T_obj_obse_ori = list(rot)
-                rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
-                rob_T_obj_opti_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
+                rob_T_obj_opti_pos = list(trans)
+                rob_T_obj_opti_ori = list(rot)
+                rob_T_obj_opti_3_3 = transformations.quaternion_matrix(rob_T_obj_opti_ori)
+                rob_T_obj_opti_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_opti_3_3, rob_T_obj_opti_pos)
 #                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
 #                                     [0., 1., 0.,    0.],
 #                                     [0., 0., 1., -0.06],
@@ -361,8 +363,8 @@ if __name__ == '__main__':
                 # get ground truth data 
                 rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
             pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
-            pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
             
+            pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
             pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
             
             # update pose
@@ -449,10 +451,8 @@ if __name__ == '__main__':
             particles_states_list = visual_world.ros_listener.listen_2_pars_states()
             if len(particles_states_list.particles) == 0:
                 par_list_not_pub = 0
-                print("Do not publish particle information to /par_list")
             else:
                 if init_par_flag == 0:
-                    print("Begin to init particles")
                     for obj_index in range(object_num):
                         if obj_index == object_num - 1:
                             init_par_flag = 1
@@ -470,10 +470,10 @@ if __name__ == '__main__':
         if display_esti_flag == True:
             for obj_index in range(object_num):
                 esti_obj_states_list = visual_world.ros_listener.listen_2_estis_states()
+
                 if len(esti_obj_states_list.objects) == 0:
                     esti_obj_list_not_pub = 1
                 else:
-                    print("obj_index:", obj_index)
                     if init_esti_flag == 0:
                         if obj_index == object_num - 1:
                             init_esti_flag = 1

@@ -7,6 +7,10 @@ other_obj_num: 0
 objects_name_list: ["cracker", "soup"]
 particle_num: 25
 
+gazebo_flag: True
+
+
+
 image_height: 480
 camera_name: dope_webcam_0
 camera_matrix:

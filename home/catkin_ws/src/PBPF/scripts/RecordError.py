@@ -59,7 +59,7 @@ compute_error_flag = True
 update_style_flag = parameter_info['update_style_flag'] # time/pose
 run_alg_flag = parameter_info['run_alg_flag'] # PBPF/CVPF
 task_flag = "1" # 1/2/3/4
-file_time = 1 # 1~10
+file_time = 5 # 1~10
 # when optitrack does not work
 write_opti_pose_flag = "False"
 write_estPB_pose_flag = "False"

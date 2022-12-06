@@ -15,13 +15,13 @@ flag_ang = True
 flag_PFPM = False
 correct_time_flag = False
 update_style_flag = "time"
-task_flag = "1b"
-loop_flag = 1
-if task_flag == "1a":
+task_flag = "1"
+loop_flag = 5
+if task_flag == "1":
     if update_style_flag == "pose":
         prepare_time = 1900
     else:
-        prepare_time = 2100
+        prepare_time = 6300
 elif task_flag == "1b":
     if update_style_flag == "pose":
         prepare_time = 1900
@@ -35,13 +35,13 @@ elif task_flag == "2":
 else:
     if update_style_flag == "time":
         prepare_time = 2300
-
-file_name_obse_pos = update_style_flag+'_scene'+task_flag+'_obse_err_pos.csv'
-file_name_PFPE_pos = update_style_flag+'_scene'+task_flag+'_PFPE_err_pos.csv'
-file_name_PFPM_pos = update_style_flag+'_scene'+task_flag+'_PFPM_err_pos.csv'
-file_name_obse_ang = update_style_flag+'_scene'+task_flag+'_obse_err_ang.csv'
-file_name_PFPE_ang = update_style_flag+'_scene'+task_flag+'_PFPE_err_ang.csv'
-file_name_PFPM_ang = update_style_flag+'_scene'+task_flag+'_PFPM_err_ang.csv'
+test = "fish_can_"
+file_name_obse_pos = test+update_style_flag+'_scene'+task_flag+'_obse_err_pos.csv'
+file_name_PFPE_pos = test+update_style_flag+'_scene'+task_flag+'_PBPF_err_pos.csv'
+file_name_PFPM_pos = test+update_style_flag+'_scene'+task_flag+'_PFPM_err_pos.csv'
+file_name_obse_ang = test+update_style_flag+'_scene'+task_flag+'_obse_err_ang.csv'
+file_name_PFPE_ang = test+update_style_flag+'_scene'+task_flag+'_PBPF_err_ang.csv'
+file_name_PFPM_ang = test+update_style_flag+'_scene'+task_flag+'_PFPM_err_ang.csv'
 file_name_pos = update_style_flag+'_scene'+task_flag+'_pos.csv'
 file_name_ang = update_style_flag+'_scene'+task_flag+'_ang.csv'
 # pos

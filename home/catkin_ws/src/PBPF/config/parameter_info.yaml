@@ -4,7 +4,7 @@ update_style_flag: 'time' # pose/time
 object_num: 2
 robot_num: 1
 other_obj_num: 0
-objects_name_list: ["cracker", "soup"]
+object_name_list: ["cracker", "fish_can"]
 particle_num: 25
 
 gazebo_flag: True

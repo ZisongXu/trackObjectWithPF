@@ -62,7 +62,7 @@ class Visualisation_World():
         self.pw_T_target_obj_opti_pose_lsit = []
         self.pw_T_other_obj_opti_pose_list = []
         
-        self.objects_name_list = ["cracker", "fish_can"]
+        self.object_name_list = self.parameter_info['object_name_list']
         
     def initialize_visual_world_pybullet_env(self, task_flag):
         pw_T_rob_sim_pose_list = self.create_scene.initialize_robot()
@@ -284,7 +284,7 @@ if __name__ == '__main__':
     init_esti_flag = 0
     display_par_flag = True
     display_esti_flag = True
-    object_list = ["cracker", "fish_can"]
+    object_name_list = parameter_info['object_name_list']
     
     visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
     trans, rot = visual_world.initialize_visual_world_pybullet_env("task1")
@@ -310,7 +310,7 @@ if __name__ == '__main__':
         for obj_index in range(object_num):
             # display ground truth (grtu)
             if visual_world.gazebo_flag == True:
-#                model_pose, model_pose_added_noise = visual_world.ros_listener.listen_2_object_pose(object_list[obj_index])
+#                model_pose, model_pose_added_noise = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])
 #                
 #                gazebo_T_obj_pos = model_pose[0]
 #                gazebo_T_obj_ori = model_pose[1]
@@ -327,9 +327,9 @@ if __name__ == '__main__':
 #                opti_T_obj_obse_ori = copy.deepcopy(gazebo_T_obj_ori_added_noise)
                 obse_is_fresh = True
                 try:
-                    latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_list[obj_index])
+                    latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index])
                     if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                        (trans,rot) = listener_tf.lookupTransform('/panda_link0', '/'+object_list[obj_index], rospy.Time(0))
+                        (trans,rot) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
                         obse_is_fresh = True
                         # print("obse is FRESH")
                     else:
@@ -351,15 +351,15 @@ if __name__ == '__main__':
 #                rob_T_obj_opti_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_opti_4_4)
                 pandalink0_T_obj_obse_4_4_test = visual_world.ros_listener.listen_2_test_matrix()
 #                test_rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, test_rob_T_obj_obse_4_4)
-#                print(object_list[obj_index]+": matrix from /gazebo/model_states:")
+#                print(object_name_list[obj_index]+": matrix from /gazebo/model_states:")
 #                print(pandalink0_T_obj_obse_4_4_test)
-#                print(object_list[obj_index]+": matrix from tf:")
+#                print(object_name_list[obj_index]+": matrix from tf:")
 #                print(rob_T_obj_opti_4_4)
             else:
                 opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
                 opti_T_rob_opti_ori = visual_world.ros_listener.listen_2_robot_pose()[1]
-                opti_T_obj_opti_pos = visual_world.ros_listener.listen_2_object_pose(object_list[obj_index])[0]
-                opti_T_obj_opti_ori = visual_world.ros_listener.listen_2_object_pose(object_list[obj_index])[1]
+                opti_T_obj_opti_pos = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[0]
+                opti_T_obj_opti_ori = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[1]
                 # get ground truth data 
                 rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
             pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
@@ -379,9 +379,9 @@ if __name__ == '__main__':
             # else:
             obse_is_fresh = True
             try:
-                latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_list[obj_index])
+                latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index])
                 if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                    (trans,rot) = listener_tf.lookupTransform('/panda_link0', '/'+object_list[obj_index], rospy.Time(0))
+                    (trans,rot) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
                     obse_is_fresh = True
                     # print("obse is FRESH")
                 else:

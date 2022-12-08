@@ -1099,7 +1099,7 @@ if __name__ == '__main__':
             particle_num = parameter_info['particle_num']
         elif run_alg_flag == "CVPF":
             particle_num = parameter_info['particle_num']
-    objects_name_list = ["cracker", "fish_can"] # parameter_info['objects_name_list']
+    object_name_list = parameter_info['object_name_list']
 
     print("This is "+update_style_flag+" update in scene"+task_flag)    
     # some parameters
@@ -1200,7 +1200,7 @@ if __name__ == '__main__':
         track_fk_world_rob_mv(p_sim, sim_rob_id, ros_listener.current_joint_values)
         for obj_index in range(object_num):
             # need to change
-            object_name = objects_name_list[obj_index]
+            object_name = object_name_list[obj_index]
             
             # get obse data
             obse_is_fresh = True

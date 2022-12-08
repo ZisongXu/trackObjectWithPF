@@ -148,10 +148,10 @@ def compute_transformation_matrix(a_pos, a_ori, b_pos, b_ori):
 def signal_handler(sig, frame):
     if run_alg_flag == "PBPF":
         for obj_index in range(object_num):
-            file_name_obse_pos = object_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_obse_err_pos.csv'
-            file_name_PBPF_pos = object_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_PBPF_err_pos.csv'
-            file_name_obse_ang = object_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_obse_err_ang.csv'
-            file_name_PBPF_ang = object_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_PBPF_err_ang.csv'
+            file_name_obse_pos = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_obse_err_pos.csv'
+            file_name_PBPF_pos = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_PBPF_err_pos.csv'
+            file_name_obse_ang = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_obse_err_ang.csv'
+            file_name_PBPF_ang = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_PBPF_err_ang.csv'
 
             boss_obse_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file/'+str(file_time)+file_name_obse_pos,index=0,header=0,mode='a')
             boss_obse_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file/'+str(file_time)+file_name_obse_ang,index=0,header=0,mode='a')
@@ -162,8 +162,8 @@ def signal_handler(sig, frame):
             
     if run_alg_flag == "CVPF":
         for obj_index in range(object_num):
-            file_name_CVPF_pos = object_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_CVPF_err_pos.csv'
-            file_name_CVPF_ang = object_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_CVPF_err_ang.csv'
+            file_name_CVPF_pos = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_CVPF_err_pos.csv'
+            file_name_CVPF_ang = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_CVPF_err_ang.csv'
             
             boss_CVPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file/'+str(file_time)+file_name_CVPF_pos,index=0,header=0,mode='a')
             boss_CVPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file/'+str(file_time)+file_name_CVPF_ang,index=0,header=0,mode='a')
@@ -183,7 +183,7 @@ if __name__ == '__main__':
     other_obj_num = 0
     particle_num = parameter_info['particle_num']
     
-    object_list = ["cracker", "fish_can"]
+    object_name_list = parameter_info['object_name_list']
     init_esti_flag = 0
     flag_record_obse = 0
     flag_record_PBPF = 0
@@ -238,7 +238,7 @@ if __name__ == '__main__':
                     first_get_info_from_tf_flag = 1
                 while True:
                     try:
-                        (trans,rot) = listener_tf.lookupTransform('/panda_link0', '/'+object_list[obj_index], rospy.Time(0))
+                        (trans,rot) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
                         break
                     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                         continue
@@ -247,9 +247,9 @@ if __name__ == '__main__':
             # observation
             obse_is_fresh = True
             try:
-                latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_list[obj_index])
+                latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index])
                 if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                    (trans,rot) = listener_tf.lookupTransform('/panda_link0', '/'+object_list[obj_index], rospy.Time(0))
+                    (trans,rot) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
                     obse_is_fresh = True
                     # print("obse is FRESH")
                 else:
@@ -279,7 +279,7 @@ if __name__ == '__main__':
                 pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
                 pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
             else:
-                obj_name = object_list[obj_index]
+                obj_name = object_name_list[obj_index]
                 opti_T_rob_opti_pos = ros_listener.listen_2_robot_pose()[0]
                 opti_T_rob_opti_ori = ros_listener.listen_2_robot_pose()[1]
                 opti_T_obj_opti_pos = ros_listener.listen_2_object_pose(obj_name)[0]

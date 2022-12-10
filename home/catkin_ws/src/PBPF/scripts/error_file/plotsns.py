@@ -11,8 +11,8 @@ import seaborn as sns
 import copy
 import math
 import numpy as np
-flag_plot_ang = True
-flag_plot_pos = False
+flag_plot_ang = False
+flag_plot_pos = True
 task_flag = "1"
 update_style_flag = "time"
 
@@ -33,8 +33,8 @@ if flag_plot_ang == True:
     figure_ang = sns.lineplot(x="time", y="Rotational Error (rad)", data=dataset_ang, hue = 'alg', errorbar=('ci', 95), legend=False, linewidth = 0.5)
     figure_ang.set(xlabel = None, ylabel = None)
     # figure_ang.set_xlabel(None)
-    x = range(0,65,2)
-    y = np.arange(0,math.pi/2.0+0.2, 0.2)
+    x = range(0,55,4)
+    y = np.arange(0, 0.3, 0.2)
     plt.xticks(x)
     plt.yticks(y)
     plt.tick_params(labelsize=15)
@@ -50,13 +50,13 @@ if flag_plot_pos == True:
     dataset_pos.columns=["index","time","Positional Error (m)","alg"]
     figure_pos = sns.lineplot(x="time", y="Positional Error (m)", data=dataset_pos, hue = 'alg', errorbar=('ci', 95), legend=False, linewidth = 0.5)
     figure_pos.set(xlabel = None, ylabel = None)
-    x = range(0,65,2)
-    y = np.arange(0, 0.2, 0.02)
+    x = range(0,55,4)
+    y = np.arange(0, 0.1, 0.02)
     plt.xticks(x)
     plt.yticks(y)
     plt.tick_params(labelsize=15)
-    plt.xlim(0,65)
-    plt.ylim(0,ymax)
+    plt.xlim(0, 65)
+    plt.ylim(0, ymax)
     plt.title(title_pos, fontsize=16)
     svg_fig_pos = figure_pos.get_figure()
     svg_fig_pos.savefig(file_name_pos+".svg",format="svg")

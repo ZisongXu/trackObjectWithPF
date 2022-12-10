@@ -1160,7 +1160,7 @@ if __name__ == '__main__':
     pw_T_rob_sim_pose_list_alg = create_scene.initialize_robot()
     pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
     
-    pw_T_obj_obse_obj_list_alg, trans, rot = create_scene.initialize_object()
+    pw_T_obj_obse_obj_list_alg, trans_ob, rot_ob = create_scene.initialize_object()
     
     for obj_index in range(other_obj_num):
         pw_T_obj_obse_oto_list_alg = []
@@ -1201,13 +1201,15 @@ if __name__ == '__main__':
         for obj_index in range(object_num):
             # need to change
             object_name = object_name_list[obj_index]
-            
+            use_gazebo = ""
+            if gazebo_flag == True:
+                use_gazebo = '_noise'
             # get obse data
             obse_is_fresh = True
             try:
-                latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/'+object_name)
+                latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/'+object_name+use_gazebo)
                 if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                    (trans,rot) = listener.lookupTransform('/panda_link0', '/'+object_name, rospy.Time(0))
+                    (trans_ob,rot_ob) = listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
                     obse_is_fresh = True
                     # print("obse is FRESH")
                 else:
@@ -1217,8 +1219,8 @@ if __name__ == '__main__':
                 # break
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 print("can not find tf")
-            rob_T_obj_obse_pos = list(trans)
-            rob_T_obj_obse_ori = list(rot)
+            rob_T_obj_obse_pos = list(trans_ob)
+            rob_T_obj_obse_ori = list(rot_ob)
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
             

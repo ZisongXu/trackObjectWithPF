@@ -115,9 +115,9 @@ def rotation_4_4_to_transformation_4_4(rotation_4_4, pos):
 
 # add noise
 def add_noise_pose(sim_par_cur_pos, sim_par_cur_ori):
-    normal_x = add_noise_2_par(sim_par_cur_pos[0])
-    normal_y = add_noise_2_par(sim_par_cur_pos[1])
-    normal_z = add_noise_2_par(sim_par_cur_pos[2])
+    normal_x = add_noise_2_par(sim_par_cur_pos[0], "x")
+    normal_y = add_noise_2_par(sim_par_cur_pos[1], "y")
+    normal_z = add_noise_2_par(sim_par_cur_pos[2], "z")
     pos_added_noise = [normal_x, normal_y, normal_z]
     # add noise on ang of each particle
     quat = copy.deepcopy(sim_par_cur_ori)# x,y,z,w
@@ -138,9 +138,11 @@ def add_noise_pose(sim_par_cur_pos, sim_par_cur_ori):
     ori_added_noise = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
     return pos_added_noise, ori_added_noise
 
-def add_noise_2_par(current_pos):
+def add_noise_2_par(current_pos, axis):
     mean = current_pos
-    pos_noise_sigma = 0.01
+    pos_noise_sigma = 0.02
+    if axis == "z":
+        pos_noise_sigma = 0.001
     sigma = pos_noise_sigma
     new_pos_is_added_noise = take_easy_gaussian_value(mean, sigma)
     return new_pos_is_added_noise
@@ -194,27 +196,27 @@ if __name__ == '__main__':
                     first_run_flag = 1
                 while True:
                     try:
-                        (trans,rot) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
+                        (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
                         break
                     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                         continue
-            else:
-                try:
-                    latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index])
-                    if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                        (trans,rot) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
-                        obse_is_fresh = True
-                        # print("obse is FRESH")
-                    else:
-                        # obse has not been updating for a while
-                        obse_is_fresh = False
-                        print("obse is NOT fresh")
-                    # break
-                except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                    print("can not find tf")
+            obse_is_fresh = True
+            try:
+                latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index])
+                if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
+                    (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
+                    obse_is_fresh = True
+                    # print("obse is FRESH")
+                else:
+                    # obse has not been updating for a while
+                    obse_is_fresh = False
+                    print("obse is NOT fresh")
+                # break
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                print("can not find tf")
                     
-            rob_T_obj_obse_pos = list(trans)
-            rob_T_obj_obse_ori = list(rot)
+            rob_T_obj_obse_pos = list(trans_ob)
+            rob_T_obj_obse_ori = list(rot_ob)
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3, rob_T_obj_obse_pos)
             

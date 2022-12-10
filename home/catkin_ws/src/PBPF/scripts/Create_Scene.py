@@ -98,14 +98,19 @@ class Create_Scene():
                 
         for obj_index in range(self.target_obj_num):
             pw_T_rob_sim_4_4 = self.pw_T_rob_sim_pose_list[0].trans_matrix
+            
+            # observation
+            use_gazebo = ""
+            if self.gazebo_flag == True:
+                use_gazebo = '_noise'
             while True:
                 try:
-                    (trans,rot) = self.listener.lookupTransform('/panda_link0', '/'+self.object_name_list[obj_index], rospy.Time(0))
+                    (trans_ob,rot_ob) = self.listener.lookupTransform('/panda_link0', '/'+self.object_name_list[obj_index]+use_gazebo, rospy.Time(0))
                     break
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                     continue
-            rob_T_obj_obse_pos = list(trans)
-            rob_T_obj_obse_ori = list(rot)
+            rob_T_obj_obse_pos = list(trans_ob)
+            rob_T_obj_obse_ori = list(rot_ob)
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = self.rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3, rob_T_obj_obse_pos)
             
@@ -123,7 +128,7 @@ class Create_Scene():
             obse_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
             self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)
         
-        return self.pw_T_target_obj_obse_pose_lsit, trans, rot
+        return self.pw_T_target_obj_obse_pose_lsit, trans_ob, rot_ob
             
     def initialize_robot(self):
         time.sleep(0.5)
@@ -142,14 +147,16 @@ class Create_Scene():
         if self.gazebo_flag == True:
             for obj_index in range(self.target_obj_num):
                 pw_T_rob_sim_4_4 = self.pw_T_rob_sim_pose_list[0].trans_matrix
+                
+                # ground truth
                 while True:
                     try:
-                        (trans,rot) = self.listener.lookupTransform('/panda_link0', '/'+self.object_name_list[obj_index], rospy.Time(0))
+                        (trans_gt,rot_gt) = self.listener.lookupTransform('/panda_link0', '/'+self.object_name_list[obj_index], rospy.Time(0))
                         break
                     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                         continue
-                rob_T_obj_opti_pos = list(trans)
-                rob_T_obj_opti_ori = list(rot)
+                rob_T_obj_opti_pos = list(trans_gt)
+                rob_T_obj_opti_ori = list(rot_gt)
                 rob_T_obj_opti_3_3 = transformations.quaternion_matrix(rob_T_obj_opti_ori)
                 rob_T_obj_opti_4_4 = self.rotation_4_4_to_transformation_4_4(rob_T_obj_opti_3_3, rob_T_obj_opti_pos)
                 
@@ -180,7 +187,7 @@ class Create_Scene():
             for obj_index in range(self.other_obj_num):
                 self.pw_T_other_obj_opti_pose_list = []
                 
-            return self.pw_T_target_obj_opti_pose_lsit, self.pw_T_other_obj_opti_pose_list
+            return self.pw_T_target_obj_opti_pose_lsit, self.pw_T_other_obj_opti_pose_list, trans_gt, rot_gt
         
         opti_T_rob_opti_pos = self.ros_listener.listen_2_robot_pose()[0]
         opti_T_rob_opti_ori = self.ros_listener.listen_2_robot_pose()[1]

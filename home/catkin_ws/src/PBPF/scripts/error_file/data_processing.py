@@ -16,12 +16,12 @@ flag_PFPM = False
 correct_time_flag = False
 update_style_flag = "time"
 task_flag = "1"
-loop_flag = 5
+loop_flag = 10
 if task_flag == "1":
     if update_style_flag == "pose":
         prepare_time = 1900
     else:
-        prepare_time = 6300
+        prepare_time = 5500
 elif task_flag == "1b":
     if update_style_flag == "pose":
         prepare_time = 1900
@@ -35,7 +35,7 @@ elif task_flag == "2":
 else:
     if update_style_flag == "time":
         prepare_time = 2300
-test = "fish_can_"
+test = "cracker_" # cracker_/fish_can_
 file_name_obse_pos = test+update_style_flag+'_scene'+task_flag+'_obse_err_pos.csv'
 file_name_PFPE_pos = test+update_style_flag+'_scene'+task_flag+'_PBPF_err_pos.csv'
 file_name_PFPM_pos = test+update_style_flag+'_scene'+task_flag+'_PFPM_err_pos.csv'

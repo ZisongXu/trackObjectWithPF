@@ -66,8 +66,8 @@ class Visualisation_World():
         
     def initialize_visual_world_pybullet_env(self, task_flag):
         pw_T_rob_sim_pose_list = self.create_scene.initialize_robot()
-        pw_T_target_obj_obse_pose_lsit, trans, rot = self.create_scene.initialize_object()
-        pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list = self.create_scene.initialize_ground_truth_objects()
+        pw_T_target_obj_obse_pose_lsit, trans_ob, rot_ob = self.create_scene.initialize_object()
+        pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list, trans_gt, rot_gt = self.create_scene.initialize_ground_truth_objects()
         
         if self.visualisation_all == True:
             p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
@@ -84,20 +84,20 @@ class Visualisation_World():
             obse_obj_name = pw_T_target_obj_obse_pose_lsit[obj_index].obj_name
             obse_obj_pos = pw_T_target_obj_obse_pose_lsit[obj_index].pos
             obse_obj_ori = pw_T_target_obj_obse_pose_lsit[obj_index].ori
-            gazebo_contain = ""
+            use_gazebo = ""
             if self.gazebo_flag == True:
-                gazebo_contain = "gazebo_"
-            obse_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obse_obj_name+"/"+gazebo_contain+obse_obj_name+"_obse_obj_with_visual_hor.urdf"),
+                use_gazebo = "gazebo_"
+            obse_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+use_gazebo+obse_obj_name+"/"+use_gazebo+obse_obj_name+"_obse_obj_with_visual_hor.urdf"),
                                                       obse_obj_pos,
                                                       obse_obj_ori)
             pw_T_target_obj_obse_pose_lsit[obj_index].obj_id = obse_object_id
             opti_obj_name = pw_T_target_obj_opti_pose_lsit[obj_index].obj_name
             opti_obj_pos = pw_T_target_obj_opti_pose_lsit[obj_index].pos
             opti_obj_ori = pw_T_target_obj_opti_pose_lsit[obj_index].ori
-            gazebo_contain = ""
+            use_gazebo = ""
             if self.gazebo_flag == True:
-                gazebo_contain = "gazebo_"
-            opti_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+opti_obj_name+"/"+gazebo_contain+opti_obj_name+"_real_obj_with_visual_hor.urdf"),
+                use_gazebo = "gazebo_"
+            opti_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+use_gazebo+opti_obj_name+"/"+use_gazebo+opti_obj_name+"_real_obj_with_visual_hor.urdf"),
                                                       opti_obj_pos,
                                                       opti_obj_ori)
             pw_T_target_obj_opti_pose_lsit[obj_index].obj_id = opti_object_id
@@ -107,10 +107,10 @@ class Visualisation_World():
             other_obj_name = pw_T_other_obj_opti_pose_list[obj_index].obj_name
             other_obj_pos = pw_T_other_obj_opti_pose_list[obj_index].pos
             other_obj_ori = pw_T_other_obj_opti_pose_list[obj_index].ori
-            gazebo_contain = ""
+            use_gazebo = ""
             if self.gazebo_flag == True:
-                gazebo_contain = "gazebo_"
-            optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+other_obj_name+"/base_of_cracker.urdf"),
+                use_gazebo = "gazebo_"
+            optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+use_gazebo+other_obj_name+"/base_of_cracker.urdf"),
                                                          other_obj_pos,
                                                          other_obj_ori)
             pw_T_other_obj_opti_pose_list[obj_index].obj_id = optitrack_base_id
@@ -136,7 +136,7 @@ class Visualisation_World():
         self.pw_T_target_obj_opti_pose_lsit = pw_T_target_obj_opti_pose_lsit
         self.pw_T_other_obj_opti_pose_list = pw_T_other_obj_opti_pose_list
         
-        return trans, rot
+        return trans_ob, rot_ob, trans_gt, rot_gt
     
     def set_real_robot_JointPosition(self, pybullet_simulation_env, robot_id, position):
         num_joints = 9
@@ -171,10 +171,10 @@ class Visualisation_World():
         obj_ori_z = object_pose.pose.orientation.z
         obj_ori_w = object_pose.pose.orientation.w
         obj_ori = [obj_ori_x, obj_ori_y, obj_ori_z, obj_ori_w]
-        gazebo_contain = ""
+        use_gazebo = ""
         if self.gazebo_flag == True:
-            gazebo_contain = "gazebo_"
-        visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_par_name+"/"+gazebo_contain+obj_par_name+"_par_with_visual_PB_hor.urdf"),
+            use_gazebo = "gazebo_"
+        visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+use_gazebo+obj_par_name+"/"+use_gazebo+obj_par_name+"_par_with_visual_PB_hor.urdf"),
                                                               obj_pos,
                                                               obj_ori)
         object_pose.id = visualize_particle_Id
@@ -202,10 +202,10 @@ class Visualisation_World():
                 obj_par_name = particle[obj_index].par_name
                 obj_par_pos = particle[obj_index].pos
                 obj_par_ori = particle[obj_index].ori
-                gazebo_contain = ""
+                use_gazebo = ""
                 if self.gazebo_flag == True:
-                    gazebo_contain = "gazebo_"
-                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_par_name+"/"+gazebo_contain+obj_par_name+"_par_with_visual_CV_hor.urdf"),
+                    use_gazebo = "gazebo_"
+                visualize_particle_Id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+use_gazebo+obj_par_name+"/"+use_gazebo+obj_par_name+"_par_with_visual_CV_hor.urdf"),
                                                                       obj_par_pos,
                                                                       obj_par_ori)
                 obj_id_list.append(visualize_particle_Id)
@@ -223,10 +223,10 @@ class Visualisation_World():
         esti_obj_ori_z = esti_object_pose.pose.orientation.z
         esti_obj_ori_w = esti_object_pose.pose.orientation.w
         esti_obj_ori = [esti_obj_ori_x, esti_obj_ori_y, esti_obj_ori_z, esti_obj_ori_w]
-        gazebo_contain = ""
+        use_gazebo = ""
         if self.gazebo_flag == True:
-            gazebo_contain = "gazebo_"
-        estimated_object_id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+esti_obj_name+"/"+gazebo_contain+esti_obj_name+"_est_obj_with_visual_PB_hor.urdf"),
+            use_gazebo = "gazebo_"
+        estimated_object_id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+use_gazebo+esti_obj_name+"/"+use_gazebo+esti_obj_name+"_est_obj_with_visual_PB_hor.urdf"),
                                                             esti_obj_pos,
                                                             esti_obj_ori)
         esti_object_pose.id = estimated_object_id
@@ -267,12 +267,16 @@ def compute_transformation_matrix(a_pos, a_ori, b_pos, b_ori):
     a_T_b_4_4 = np.dot(a_T_ow_4_4,ow_T_b_4_4)
     return a_T_b_4_4        
         
-        
+# ctrl-c write down the error file
+def signal_handler(sig, frame):
+    sys.exit()
+    
 if __name__ == '__main__':
 #    par_obj_id = [[]*2 for _ in range(50)]
 #    print(par_obj_id)
 #    input("stop")
     rospy.init_node('visualization_world') # ros node
+    signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
     time.sleep(0.5)
     with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
         parameter_info = yaml.safe_load(file)
@@ -287,7 +291,7 @@ if __name__ == '__main__':
     object_name_list = parameter_info['object_name_list']
     
     visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
-    trans, rot = visual_world.initialize_visual_world_pybullet_env("task1")
+    trans_ob, rot_ob, trans_gt, rot_gt = visual_world.initialize_visual_world_pybullet_env("task1")
 #    input("stop")
     listener_tf = visual_world.listener
     p_visual = visual_world.p_visualisation
@@ -329,7 +333,7 @@ if __name__ == '__main__':
                 try:
                     latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index])
                     if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                        (trans,rot) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
+                        (trans_gt,rot_gt) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
                         obse_is_fresh = True
                         # print("obse is FRESH")
                     else:
@@ -339,8 +343,8 @@ if __name__ == '__main__':
                     # break
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                     print("can not find tf")
-                rob_T_obj_opti_pos = list(trans)
-                rob_T_obj_opti_ori = list(rot)
+                rob_T_obj_opti_pos = list(trans_gt)
+                rob_T_obj_opti_ori = list(rot_gt)
                 rob_T_obj_opti_3_3 = transformations.quaternion_matrix(rob_T_obj_opti_ori)
                 rob_T_obj_opti_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_opti_3_3, rob_T_obj_opti_pos)
 #                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
@@ -377,11 +381,14 @@ if __name__ == '__main__':
             #    obse_is_fresh = True
             #    rob_T_obj_obse_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_obse_pos, opti_T_obj_obse_ori)
             # else:
+            use_gazebo = ""
+            if visual_world.gazebo_flag == True:
+                use_gazebo = '_noise'
             obse_is_fresh = True
             try:
-                latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index])
+                latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo)
                 if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                    (trans,rot) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
+                    (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
                     obse_is_fresh = True
                     # print("obse is FRESH")
                 else:
@@ -391,8 +398,8 @@ if __name__ == '__main__':
                 # break
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 print("can not find tf")
-            rob_T_obj_obse_pos = list(trans)
-            rob_T_obj_obse_ori = list(rot)
+            rob_T_obj_obse_pos = list(trans_ob)
+            rob_T_obj_obse_ori = list(rot_ob)
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
             

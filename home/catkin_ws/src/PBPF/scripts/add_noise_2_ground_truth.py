@@ -18,7 +18,7 @@ from std_msgs.msg import ColorRGBA, Header
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Point,PointStamped,PoseStamped,Quaternion,TransformStamped, Vector3
 from gazebo_msgs.msg import ModelStates
-from PBPF.msg import particle_state, particles_states
+from PBPF.msg import estimated_obj_pose, object_pose, particle_list, particle_pose
 import tf
 import tf.transformations as transformations
 from visualization_msgs.msg import Marker

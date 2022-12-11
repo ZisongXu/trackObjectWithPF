@@ -11,8 +11,8 @@ import seaborn as sns
 import copy
 import math
 import numpy as np
-flag_plot_ang = False
-flag_plot_pos = True
+flag_plot_ang = True
+flag_plot_pos = False
 task_flag = "1"
 update_style_flag = "time"
 
@@ -39,13 +39,13 @@ if flag_plot_ang == True:
     plt.yticks(y)
     plt.tick_params(labelsize=15)
     plt.xlim(0,65)
-    plt.ylim(0, math.pi / 2.0)
+    plt.ylim(0, 0.3)
     plt.title(title_ang, fontsize=16)
     svg_fig_ang = figure_ang.get_figure()
     svg_fig_ang.savefig(file_name_ang+".svg",format="svg")
 if flag_plot_pos == True:
     print("Ready to plot the figure of pos")
-    ymax = 0.4/2.0
+    ymax = 0.16/2.0
     dataset_pos = pd.read_csv(file_name_pos+'.csv')
     dataset_pos.columns=["index","time","Positional Error (m)","alg"]
     figure_pos = sns.lineplot(x="time", y="Positional Error (m)", data=dataset_pos, hue = 'alg', errorbar=('ci', 95), legend=False, linewidth = 0.5)

@@ -35,7 +35,7 @@ elif task_flag == "2":
 else:
     if update_style_flag == "time":
         prepare_time = 2300
-test = "cracker_" # cracker_/fish_can_
+test = "fish_can_" # cracker_/fish_can_
 file_name_obse_pos = test+update_style_flag+'_scene'+task_flag+'_obse_err_pos.csv'
 file_name_PFPE_pos = test+update_style_flag+'_scene'+task_flag+'_PBPF_err_pos.csv'
 file_name_PFPM_pos = test+update_style_flag+'_scene'+task_flag+'_PFPM_err_pos.csv'

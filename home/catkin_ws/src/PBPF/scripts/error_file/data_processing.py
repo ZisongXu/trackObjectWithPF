@@ -42,8 +42,8 @@ file_name_PFPM_pos = test+update_style_flag+'_scene'+task_flag+'_PFPM_err_pos.cs
 file_name_obse_ang = test+update_style_flag+'_scene'+task_flag+'_obse_err_ang.csv'
 file_name_PFPE_ang = test+update_style_flag+'_scene'+task_flag+'_PBPF_err_ang.csv'
 file_name_PFPM_ang = test+update_style_flag+'_scene'+task_flag+'_PFPM_err_ang.csv'
-file_name_pos = update_style_flag+'_scene'+task_flag+'_pos.csv'
-file_name_ang = update_style_flag+'_scene'+task_flag+'_ang.csv'
+file_name_pos = test+update_style_flag+'_scene'+task_flag+'_pos.csv'
+file_name_ang = test+update_style_flag+'_scene'+task_flag+'_ang.csv'
 # pos
 
 def correct_time(datasetcopy):

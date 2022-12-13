@@ -140,7 +140,7 @@ def add_noise_pose(sim_par_cur_pos, sim_par_cur_ori):
 
 def add_noise_2_par(current_pos, axis):
     mean = current_pos
-    pos_noise_sigma = 0.02
+    pos_noise_sigma = 0.04
     if axis == "z":
         pos_noise_sigma = 0.001
     sigma = pos_noise_sigma
@@ -149,7 +149,7 @@ def add_noise_2_par(current_pos, axis):
 
 def add_noise_2_ang(cur_angle):
     mean = cur_angle
-    ang_noise_sigma = 0.1
+    ang_noise_sigma = 0.2
     sigma = ang_noise_sigma
     new_angle_is_added_noise = take_easy_gaussian_value(mean, sigma)
     return new_angle_is_added_noise

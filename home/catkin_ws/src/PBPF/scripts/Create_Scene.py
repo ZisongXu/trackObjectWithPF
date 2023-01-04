@@ -213,8 +213,9 @@ class Create_Scene():
             pw_T_base_ori = transformations.quaternion_from_matrix(pw_T_base)
             opti_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_base_pos, pw_T_base_ori, obj_index)
             self.pw_T_other_obj_opti_pose_list.append(opti_obj)
-
-        return self.pw_T_target_obj_opti_pose_lsit, self.pw_T_other_obj_opti_pose_list
+        trans_gt = 0
+        rot_gt = 0
+        return self.pw_T_target_obj_opti_pose_lsit, self.pw_T_other_obj_opti_pose_list, trans_gt, rot_gt
         
         
         

@@ -1,13 +1,13 @@
 run_alg_flag: 'PBPF' # PBPF/CVPF
 task_flag: '1'
 update_style_flag: 'time' # pose/time
-object_num: 2
+object_num: 1
 robot_num: 1
 other_obj_num: 0
 object_name_list: ["cracker", "fish_can"]
-particle_num: 25
+particle_num: 1
 
-gazebo_flag: True
+gazebo_flag: False
 
 
 

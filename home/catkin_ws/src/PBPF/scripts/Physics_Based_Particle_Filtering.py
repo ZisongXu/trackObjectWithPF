@@ -1075,6 +1075,8 @@ if __name__ == '__main__':
     par_list = particle_list()
     pub_esti_pose = rospy.Publisher('/esti_obj_list', estimated_obj_pose, queue_size = 10)
     esti_list = estimated_obj_pose()
+    # only for drawing box
+    pub_DOPE = rospy.Publisher('DOPE_pose', PoseStamped, queue_size = 1)
     
     with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
         parameter_info = yaml.safe_load(file)
@@ -1250,6 +1252,20 @@ if __name__ == '__main__':
         
         dis_robcur_robold = compute_pos_err_bt_2_points(rob_link_9_pose_cur[0], rob_link_9_pose_old[0])
         
+        # only for drawing box
+        obse_obj_pos_draw = copy.deepcopy(pw_T_obj_obse_objects_list[0].pos)
+        obse_obj_ori_draw = copy.deepcopy(pw_T_obj_obse_objects_list[0].ori) # pybullet x,y,z,w
+        pose_DOPE = PoseStamped()
+        pose_DOPE.pose.position.x = obse_obj_pos_draw[0]
+        pose_DOPE.pose.position.y = obse_obj_pos_draw[1]
+        pose_DOPE.pose.position.z = obse_obj_pos_draw[2]
+        pose_DOPE.pose.orientation.x = obse_obj_ori_draw[0]
+        pose_DOPE.pose.orientation.y = obse_obj_ori_draw[1]
+        pose_DOPE.pose.orientation.z = obse_obj_ori_draw[2]
+        pose_DOPE.pose.orientation.w = obse_obj_ori_draw[3]
+        # print(pose_DOPE)
+        pub_DOPE.publish(pose_DOPE)
+
         # update according to the pose
         if update_style_flag == "pose":
             # PBPF algorithm

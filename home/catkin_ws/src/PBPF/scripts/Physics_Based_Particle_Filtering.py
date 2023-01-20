@@ -1083,7 +1083,7 @@ if __name__ == '__main__':
     
     gazebo_flag = parameter_info['gazebo_flag']
     # scene
-    task_flag = '1' # parameter_info['task_flag']
+    task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
     # which algorithm to run
     run_alg_flag = parameter_info['run_alg_flag'] # PBPF/CVPF
     # update mode (pose/time)
@@ -1338,15 +1338,15 @@ if __name__ == '__main__':
                                                                ros_listener.current_joint_values)
                 # CVPF algorithm
                 if run_alg_flag == "CVPF":
-                    if CVPF_alg.isAnyParticleInContact():
-                        flag_update_num_CV = flag_update_num_CV + 1
-                        boss_obs_pose_CVPF.append(pw_T_obj_obse_objects_list)
-                        # execute CVPF algorithm movement
-                        pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
-                        CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list,
-                                                           do_obs_update=obse_is_fresh) # flag for judging obse work
-                    else:
-                        CVPF_alg.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm
+                    # if CVPF_alg.isAnyParticleInContact():
+                    flag_update_num_CV = flag_update_num_CV + 1
+                    boss_obs_pose_CVPF.append(pw_T_obj_obse_objects_list)
+                    # execute CVPF algorithm movement
+                    pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
+                    CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list,
+                                                        do_obs_update=obse_is_fresh) # flag for judging obse work
+                    # else:
+                    #     CVPF_alg.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm
                         
                 pf_update_rate.sleep()
                 break    

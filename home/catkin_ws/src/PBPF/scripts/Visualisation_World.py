@@ -156,8 +156,8 @@ class Visualisation_World():
     def display_object_in_visual_model(self, pybullet_simulation_env, object_info_list):
         obj_pos = object_info_list.pos
         obj_ori = object_info_list.ori
-        obj_id = object_info_list.obj_id
-        pybullet_simulation_env.resetBasePositionAndOrientation(obj_id,
+        object_id = object_info_list.obj_id
+        pybullet_simulation_env.resetBasePositionAndOrientation(object_id,
                                                                 obj_pos,
                                                                 obj_ori)
             
@@ -212,7 +212,32 @@ class Visualisation_World():
                 obj_id_list.append(visualize_particle_Id)
                 particle[obj_index].visual_par_id = visualize_particle_Id
                 
-    
+    def init_display_ground_truth_object(self, gt_object_pose):
+        gt_obj_name = gt_object_pose.obj_name
+        gt_obj_pos = copy.deepcopy(gt_object_pose.pos)
+        gt_obj_ori = copy.deepcopy(gt_object_pose.ori)
+        use_gazebo = ""
+        if self.gazebo_flag == True:
+            use_gazebo = "gazebo_"
+        ground_truth_object_id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+use_gazebo+gt_obj_name+"/"+use_gazebo+gt_obj_name+"_real_obj_with_visual_hor.urdf"),
+                                                               gt_obj_pos,
+                                                               gt_obj_ori)
+        gt_object_pose.obj_id = ground_truth_object_id
+
+    def init_display_observation_object(self, obse_object_pose):
+        print("i am here")
+        obse_obj_name = obse_object_pose.obj_name
+        obse_obj_pos = copy.deepcopy(obse_object_pose.pos)
+        obse_obj_ori = copy.deepcopy(obse_object_pose.ori)
+        use_gazebo = ""
+        if self.gazebo_flag == True:
+            use_gazebo = "gazebo_"
+        observation_object_id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+use_gazebo+obse_obj_name+"/"+use_gazebo+obse_obj_name+"_obse_obj_with_visual_hor.urdf"),
+                                                            obse_obj_pos,
+                                                            obse_obj_ori)
+        obse_object_pose.obj_id = observation_object_id
+
+
     def init_display_estimated_object(self, esti_object_pose):
         esti_obj_name = esti_object_pose.name
         esti_obj_pos_x = esti_object_pose.pose.position.x
@@ -285,16 +310,20 @@ if __name__ == '__main__':
     robot_num = 1
     other_obj_num = 0
     particle_num = parameter_info['particle_num']
+    init_gt_obj_flag = 0
+    init_obse_flag = 0
     init_par_flag = 0
     init_esti_flag = 0
     display_par_flag = True
     display_esti_flag = False
-    display_ground_truth_flag = False
+    display_gt_flag = True
+    display_obse_flag = True
     object_name_list = parameter_info['object_name_list']
-    
+    task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
+
     visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
-    trans_ob, rot_ob, trans_gt, rot_gt = visual_world.initialize_visual_world_pybullet_env("task1")
-#    input("stop")
+    trans_ob, rot_ob, trans_gt, rot_gt = visual_world.initialize_visual_world_pybullet_env(task_flag)
+    # input("stop")
     listener_tf = visual_world.listener
     p_visual = visual_world.p_visualisation
     pw_T_rob_sim_pose_list_param = visual_world.pw_T_rob_sim_pose_list
@@ -304,7 +333,7 @@ if __name__ == '__main__':
     
     par_obj_id = [[]*object_num for _ in range(particle_num)]
     esti_obj_id = [0] * object_num
-    
+    # input("stop")
     while True:
         # synchronize robot arm changes
         joint_states = visual_world.ros_listener.current_joint_values
@@ -312,10 +341,11 @@ if __name__ == '__main__':
             rob_id = pw_T_rob_sim_pose_list_param[rob_index].obj_id
             pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_param[rob_index].trans_matrix
             visual_world.set_real_robot_JointPosition(p_visual, rob_id, joint_states)
-        if display_ground_truth_flag == True:
+        if display_gt_flag == True:
             for obj_index in range(object_num):
                 # display ground truth (grtu)
                 if visual_world.gazebo_flag == True:
+                    # print("Hello")
     #                model_pose, model_pose_added_noise = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])
     #                
     #                gazebo_T_obj_pos = model_pose[0]
@@ -368,12 +398,17 @@ if __name__ == '__main__':
                     opti_T_obj_opti_ori = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[1]
                     # get ground truth data 
                     rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
-                pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
+                # init gt object
+                if init_gt_obj_flag == 0:
+                    if obj_index == object_num - 1:
+                        init_gt_obj_flag = 1
+                    visual_world.init_display_ground_truth_object(pw_T_target_obj_opti_pose_lsit_param[obj_index])
                 
+                pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
                 pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
                 pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
-                
-                # update pose
+ 
+                # display gt object update pose
                 pw_T_target_obj_opti_pose_lsit_param[obj_index].pos = pw_T_obj_opti_pos
                 pw_T_target_obj_opti_pose_lsit_param[obj_index].ori = pw_T_obj_opti_ori
                 visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_opti_pose_lsit_param[obj_index])
@@ -383,6 +418,14 @@ if __name__ == '__main__':
                 #    obse_is_fresh = True
                 #    rob_T_obj_obse_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_obse_pos, opti_T_obj_obse_ori)
                 # else:
+
+        if display_obse_flag == True:
+            for obj_index in range(object_num):
+                if init_obse_flag == 0:
+                    if obj_index == object_num - 1:
+                        init_obse_flag = 1
+                    visual_world.init_display_observation_object(pw_T_target_obj_obse_pose_lsit_param[obj_index])
+                
                 use_gazebo = ""
                 if visual_world.gazebo_flag == True:
                     use_gazebo = '_noise'
@@ -404,18 +447,12 @@ if __name__ == '__main__':
                 rob_T_obj_obse_ori = list(rot_ob)
                 rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
                 rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
-                
-    #            if visual_world.gazebo_flag == True:
-    #                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
-    #                                     [0., 1., 0.,    0.],
-    #                                     [0., 0., 1., -0.06],
-    #                                     [0., 0., 0.,    1.]]
-    #                robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
-    #                rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
-                    
+
                 pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
                 pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
                 pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
+                # print(pw_T_obj_obse_pos)
+                # print(pw_T_obj_obse_ori)
                 # update pose
                 pw_T_target_obj_obse_pose_lsit_param[obj_index].pos = pw_T_obj_obse_pos
                 pw_T_target_obj_obse_pose_lsit_param[obj_index].ori = pw_T_obj_obse_ori

@@ -58,8 +58,8 @@ with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"),
 compute_error_flag = True
 update_style_flag = parameter_info['update_style_flag'] # time/pose
 run_alg_flag = parameter_info['run_alg_flag'] # PBPF/CVPF
-task_flag = "1" # 1/2/3/4
-file_time = 10 # 1~10
+task_flag = parameter_info['task_flag'] # 1/2/3/4 parameter_info['task_flag']
+file_time = 1 # 1~10
 # when optitrack does not work
 write_opti_pose_flag = "False"
 write_estPB_pose_flag = "False"
@@ -363,11 +363,11 @@ if __name__ == '__main__':
                 else:
                     err_opti_CVPF_pos = compute_pos_err_bt_2_points(pw_T_obj_opti_pos, pw_T_obj_CVPF_pos)
                     err_opti_CVPF_ang = compute_ang_err_bt_2_points(pw_T_obj_opti_ori, pw_T_obj_CVPF_ori)
-                    err_opti_CVPF_ang = angle_correction(err_opti_PBPF_ang)
-                    
+                    err_opti_CVPF_ang = angle_correction(err_opti_CVPF_ang)
+
                     t_before_record = time.time()
-                    boss_obse_err_pos_df_list[obj_index].loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_obse_pos, 'obse']
-                    boss_obse_err_ang_df_list[obj_index].loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_obse_ang, 'obse']
+                    boss_CVPF_err_pos_df_list[obj_index].loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_pos, 'CVPF']
+                    boss_CVPF_err_ang_df_list[obj_index].loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_ang, 'CVPF']
                     flag_record_CVPF = flag_record_CVPF + 1
                 
                 

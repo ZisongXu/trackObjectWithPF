@@ -497,9 +497,9 @@ def main():
         rospy.spin()
     except rospy.ROSInterruptException:
         pass
-_camera_intrinsic_matrix = [[504.91994222,          0.0, 259.28746541],
-                            [         0.0, 503.71668498, 212.89422353],
-                            [         0.0,          0.0,          1.0]]
+_camera_intrinsic_matrix = [[908.8558959960938,               0.0, 626.7174072265625],
+                            [              0.0, 906.6900634765625, 383.2095947265625],
+                            [              0.0,               0.0,               1.0]]
 _dist_coeffs = [[0.], [0.], [0.], [0.]]
 pybullet_robot_pos = [0.0, 0.0, 0.026]
 pybullet_robot_ori = [0,0,0,1]

@@ -204,6 +204,7 @@ class Ros_Listener():
         w_ori = data.pose.orientation.w
         self.base_ori = [x_ori, y_ori, z_ori, w_ori]
         self.base_pose = [self.base_pos, self.base_ori]
+        # print("self.base_pose:", self.base_pose)
         
     def fake_optipose_callback(self, data):
         # pos

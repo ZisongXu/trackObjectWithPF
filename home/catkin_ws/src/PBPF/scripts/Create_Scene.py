@@ -59,6 +59,7 @@ class Create_Scene():
             self.parameter_info = yaml.safe_load(file)
         self.gazebo_flag = self.parameter_info['gazebo_flag']
         self.object_name_list = self.parameter_info['object_name_list']
+        self.oto_name_list = self.parameter_info['oto_name_list']
         
     def initialize_object(self):
 #        if self.gazebo_flag == True:
@@ -143,6 +144,22 @@ class Create_Scene():
             self.pw_T_rob_sim_pose_list.append(rob_pose)
         return self.pw_T_rob_sim_pose_list
     
+    def initialize_base_of_cheezit(self):
+        opti_T_rob_opti_pos = self.ros_listener.listen_2_robot_pose()[0]
+        opti_T_rob_opti_ori = self.ros_listener.listen_2_robot_pose()[1]
+        pw_T_rob_sim_4_4 = self.pw_T_rob_sim_pose_list[0].trans_matrix
+        for oto_index in range(self.other_obj_num):
+            base_of_cheezit_pos = self.ros_listener.listen_2_object_pose("base")[0]
+            base_of_cheezit_ori = self.ros_listener.listen_2_object_pose("base")[1]
+            robot_T_base = self.compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, base_of_cheezit_pos, base_of_cheezit_ori)
+            pw_T_base = np.dot(pw_T_rob_sim_4_4, robot_T_base)
+            pw_T_base_pos = [pw_T_base[0][3], pw_T_base[1][3], pw_T_base[2][3]]
+            pw_T_base_ori = transformations.quaternion_from_matrix(pw_T_base)
+            opti_obj = Object_Pose(self.oto_name_list[oto_index], 0, pw_T_base_pos, pw_T_base_ori, oto_index)
+            self.pw_T_other_obj_opti_pose_list.append(opti_obj)
+        return self.pw_T_other_obj_opti_pose_list
+
+
     def initialize_ground_truth_objects(self):
         if self.gazebo_flag == True:
             for obj_index in range(self.target_obj_num):
@@ -207,6 +224,8 @@ class Create_Scene():
         for obj_index in range(self.other_obj_num):
             base_of_cheezit_pos = self.ros_listener.listen_2_object_pose("base")[0]
             base_of_cheezit_ori = self.ros_listener.listen_2_object_pose("base")[1]
+            print(base_of_cheezit_pos)
+            print(base_of_cheezit_ori)
             robot_T_base = self.compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, base_of_cheezit_pos, base_of_cheezit_ori)
             pw_T_base = np.dot(pw_T_rob_sim_4_4, robot_T_base)
             pw_T_base_pos = [pw_T_base[0][3], pw_T_base[1][3], pw_T_base[2][3]]

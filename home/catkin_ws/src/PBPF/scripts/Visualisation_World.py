@@ -308,7 +308,7 @@ if __name__ == '__main__':
         parameter_info = yaml.safe_load(file)
     object_num = parameter_info['object_num']
     robot_num = 1
-    other_obj_num = 0
+    other_obj_num = parameter_info['other_obj_num']
     particle_num = parameter_info['particle_num']
     init_gt_obj_flag = 0
     init_obse_flag = 0

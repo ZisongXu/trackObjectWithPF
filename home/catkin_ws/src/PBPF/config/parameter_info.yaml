@@ -1,10 +1,11 @@
 run_alg_flag: 'PBPF' # PBPF/CVPF
-task_flag: '2'
+task_flag: '4'
 update_style_flag: 'time' # pose/time
 object_num: 1
 robot_num: 1
-other_obj_num: 0
-object_name_list: ["soup", "fish_can"] # ["cracker", "fish_can"]/["soup", "fish_can"]
+other_obj_num: 1
+object_name_list: ["cracker", "fish_can"] # ["cracker", "fish_can"]/["soup", "fish_can"]
+oto_name_list: ["base_of_cracker", "fish_can"] # ["cracker", "fish_can"]/["soup", "fish_can"]
 particle_num: 70
 
 gazebo_flag: False

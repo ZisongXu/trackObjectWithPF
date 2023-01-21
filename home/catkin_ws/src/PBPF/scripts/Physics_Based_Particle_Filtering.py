@@ -1093,7 +1093,7 @@ if __name__ == '__main__':
     simRobot_touch_par_flag = 0
     object_num = parameter_info['object_num']
     robot_num = 1
-    other_obj_num = 0
+    other_obj_num = parameter_info['other_obj_num']
     if update_style_flag == "pose":
         particle_num = parameter_info['particle_num']
     elif update_style_flag == "time":
@@ -1163,9 +1163,9 @@ if __name__ == '__main__':
     pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
     
     pw_T_obj_obse_obj_list_alg, trans_ob, rot_ob = create_scene.initialize_object()
-    
+
     for obj_index in range(other_obj_num):
-        pw_T_obj_obse_oto_list_alg = []
+        pw_T_obj_obse_oto_list_alg = create_scene.initialize_base_of_cheezit()
 
     initial_parameter = InitialSimulationModel(object_num, robot_num, other_obj_num, particle_num, 
                                                pw_T_rob_sim_pose_list_alg, 

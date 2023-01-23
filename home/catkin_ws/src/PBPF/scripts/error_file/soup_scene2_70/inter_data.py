@@ -13,10 +13,10 @@ import yaml
 with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
     parameter_info = yaml.safe_load(file)
 object_name_list = parameter_info['object_name_list']
-pos_flag = True
-ang_flag = False
+pos_flag = False
+ang_flag = True
 object_flag = object_name_list[0]
-task_flag = "2" #1/2/3/4
+task_flag = parameter_info['task_flag'] #1/2/3/4  
 def stackcsv(content_folder):
     with open(file_name, "w") as fdout:
         entries = os.listdir(content_folder)
@@ -35,7 +35,7 @@ if ang_flag == True:
 
 
 file_name = object_flag+"_time_scene"+task_flag+"_"+style+".csv"
-content_folder = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/error_file/cracker_scene2_70/inter_data_"+style+"/")
+content_folder = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/error_file/"+object_flag+"_scene"+task_flag+"_70/inter_data_"+style+"/")
 
 
 stackcsv(content_folder)

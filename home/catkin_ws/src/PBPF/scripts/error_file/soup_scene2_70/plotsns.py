@@ -11,11 +11,21 @@ import seaborn as sns
 import copy
 import math
 import numpy as np
+import os
+import yaml
+
+with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
+    parameter_info = yaml.safe_load(file)
+object_name_list = parameter_info['object_name_list']
+object_flag = object_name_list[0]
+task_flag = parameter_info['task_flag'] #1/2/3/4  
+test = object_flag+"_" # cracker_/fish_can_
+update_style_flag = parameter_info['update_style_flag']
+
 flag_plot_ang = True
 flag_plot_pos = False
-task_flag = "2"
-update_style_flag = "time"
-test = "cracker_" # cracker_/fish_can_
+
+
 if update_style_flag == "pose":
     title_name = "Pose"
 elif update_style_flag == "time":

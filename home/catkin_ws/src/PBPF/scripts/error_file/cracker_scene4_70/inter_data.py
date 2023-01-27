@@ -13,8 +13,8 @@ import yaml
 with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
     parameter_info = yaml.safe_load(file)
 object_name_list = parameter_info['object_name_list']
-pos_flag = False
-ang_flag = True
+pos_flag = True
+ang_flag = False
 object_flag = object_name_list[0]
 task_flag = parameter_info['task_flag'] #1/2/3/4  
 def stackcsv(content_folder):

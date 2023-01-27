@@ -18,12 +18,12 @@ with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"),
     parameter_info = yaml.safe_load(file)
 object_name_list = parameter_info['object_name_list']
 object_flag = object_name_list[0]
-task_flag = parameter_info['task_flag'] #1/2/3/4  
+task_flag = "2" # parameter_info['task_flag'] #1/2/3/4  
 test = object_flag+"_" # cracker_/fish_can_
 update_style_flag = parameter_info['update_style_flag']
 
-flag_plot_ang = True
-flag_plot_pos = False
+flag_plot_ang = False
+flag_plot_pos = True
 
 
 if update_style_flag == "pose":

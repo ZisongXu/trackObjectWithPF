@@ -59,6 +59,7 @@ if flag_pos == True:
     for j in range(loop_flag):
         dataset = pd.read_csv(str(j+1)+file_name_obse_pos)
         dataset.columns=["index","time","error","alg"]
+        dataset.time = dataset.time - 4.3
         datasetcopy = copy.deepcopy(dataset)
         newdataset = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
         timestep_list = []
@@ -85,6 +86,7 @@ if flag_pos == True:
     for j in range(loop_flag):
         dataset = pd.read_csv(str(j+1)+file_name_PFPE_pos)
         dataset.columns=["index","time","error","alg"]
+        dataset.time = dataset.time - 4.3
         datasetcopy = copy.deepcopy(dataset)
         newdataset = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
         # timedf = dataset['time']
@@ -138,6 +140,7 @@ if flag_ang == True:
     for j in range(loop_flag):
         dataset = pd.read_csv(str(j+1)+file_name_obse_ang)
         dataset.columns=["index","time","error","alg"]
+        dataset.time = dataset.time - 4.3
         datasetcopy = copy.deepcopy(dataset)
         newdataset = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
         # timedf = dataset['time']
@@ -163,6 +166,7 @@ if flag_ang == True:
     for j in range(loop_flag):
         dataset = pd.read_csv(str(j+1)+file_name_PFPE_ang)
         dataset.columns=["index","time","error","alg"]
+        dataset.time = dataset.time - 4.3
         datasetcopy = copy.deepcopy(dataset)
         newdataset = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
         # timedf = dataset['time']

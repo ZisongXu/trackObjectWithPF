@@ -1,33 +1,14 @@
-run_alg_flag: 'PBPF' # PBPF/CVPF
-task_flag: '4'
-update_style_flag: 'time' # pose/time
+gazebo_flag: false
+object_name_list:
+- soup
+- fish_can
 object_num: 1
-robot_num: 1
-other_obj_num: 1
-object_name_list: ["cracker", "fish_can"] # ["cracker", "fish_can"]/["soup", "fish_can"]
-oto_name_list: ["base_of_cracker", "fish_can"] # ["cracker", "fish_can"]/["soup", "fish_can"]
+other_obj_num: 0
+oto_name_list:
+- base_of_cracker
+- fish_can
 particle_num: 70
-
-gazebo_flag: False
-
-
-
-image_height: 480
-camera_name: dope_webcam_0
-camera_matrix:
-  rows: 3
-  cols: 3
-  data: [641.5, 0, 320.0, 0, 641.5, 240.0, 0, 0, 1]
-distortion_model: plumb_bob
-distortion_coefficients:
-  rows: 1
-  cols: 5
-  data: [0, 0, 0, 0, 0]
-rectification_matrix:
-  rows: 3
-  cols: 3
-  data: [1, 0, 0, 0, 1, 0, 0, 0, 1]
-projection_matrix:
-  rows: 3
-  cols: 4
-  data: [641.5, 0, 320.0, 0, 0, 641.5, 240.0, 0, 0, 0, 1, 0]
+robot_num: 1
+run_alg_flag: PBPF
+task_flag: '3'
+update_style_flag: time

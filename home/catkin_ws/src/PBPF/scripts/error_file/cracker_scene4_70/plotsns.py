@@ -22,8 +22,8 @@ task_flag = parameter_info['task_flag'] #1/2/3/4
 test = object_flag+"_" # cracker_/fish_can_
 update_style_flag = parameter_info['update_style_flag']
 
-flag_plot_ang = False
-flag_plot_pos = True
+flag_plot_ang = True
+flag_plot_pos = False
 
 
 if update_style_flag == "pose":

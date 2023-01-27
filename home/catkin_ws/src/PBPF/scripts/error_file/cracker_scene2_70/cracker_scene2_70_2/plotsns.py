@@ -13,7 +13,7 @@ import math
 import numpy as np
 flag_plot_ang = False
 flag_plot_pos = True
-task_flag = "1"
+task_flag = "2"
 update_style_flag = "time"
 test = "cracker_" # cracker_/fish_can_
 if update_style_flag == "pose":
@@ -28,6 +28,13 @@ title_pos = "Positional errors (m) vs Time (s)"
 
 if flag_plot_ang == True:
     if task_flag == "1":
+        x_range_max = 30
+        x_range_unit = 2
+        y_range_max = math.pi
+        y_range_unit = 0.4
+        x_xlim = 32
+        y_ylim = 3.2
+    if task_flag == "2":
         x_range_max = 30
         x_range_unit = 2
         y_range_max = math.pi
@@ -52,6 +59,13 @@ if flag_plot_ang == True:
     svg_fig_ang.savefig(file_name_ang+".svg",format="svg")
 if flag_plot_pos == True:
     if task_flag == "1":
+        x_range_max = 30
+        x_range_unit = 2
+        y_range_max = 0.4
+        y_range_unit = 0.05
+        x_xlim = 32
+        y_ylim = 0.5
+    if task_flag == "2":
         x_range_max = 30
         x_range_unit = 2
         y_range_max = 0.4

@@ -16,7 +16,7 @@ object_name_list = parameter_info['object_name_list']
 pos_flag = False
 ang_flag = True
 object_flag = object_name_list[0]
-task_flag = parameter_info['task_flag'] #1/2/3/4  
+task_flag = "2"# parameter_info['task_flag'] #1/2/3/4  
 def stackcsv(content_folder):
     with open(file_name, "w") as fdout:
         entries = os.listdir(content_folder)

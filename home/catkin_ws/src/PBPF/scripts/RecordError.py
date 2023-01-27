@@ -59,12 +59,13 @@ compute_error_flag = True
 update_style_flag = parameter_info['update_style_flag'] # time/pose
 run_alg_flag = parameter_info['run_alg_flag'] # PBPF/CVPF
 task_flag = parameter_info['task_flag'] # 1/2/3/4 parameter_info['task_flag']
-file_time = 1 # 1~10
+file_name = sys.argv[1]
+# file_time = 11 # 1~10
 # when optitrack does not work
 write_opti_pose_flag = "False"
 write_estPB_pose_flag = "False"
 write_estDO_pose_flag = "False"
-
+print("The "+str(file_name)+"th time")
 # panda data frame to record the error and to compare them
 # pos
 if compute_error_flag == True:
@@ -148,27 +149,35 @@ def compute_transformation_matrix(a_pos, a_ori, b_pos, b_ori):
 def signal_handler(sig, frame):
     if run_alg_flag == "PBPF":
         for obj_index in range(object_num):
-            file_name_obse_pos = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_obse_err_pos.csv'
-            file_name_PBPF_pos = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_PBPF_err_pos.csv'
-            file_name_obse_ang = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_obse_err_ang.csv'
-            file_name_PBPF_ang = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_PBPF_err_ang.csv'
+            # file_name_obse_pos = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_obse_err_pos.csv'
+            # file_name_PBPF_pos = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_PBPF_err_pos.csv'
+            # file_name_obse_ang = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_obse_err_ang.csv'
+            # file_name_PBPF_ang = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_PBPF_err_ang.csv'
 
-            boss_obse_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file/'+str(file_time)+file_name_obse_pos,index=0,header=0,mode='a')
-            boss_obse_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file/'+str(file_time)+file_name_obse_ang,index=0,header=0,mode='a')
+            file_name_obse_pos = update_style_flag+'_obse_err_pos.csv'
+            file_name_PBPF_pos = update_style_flag+'_PBPF_err_pos.csv'
+            file_name_obse_ang = update_style_flag+'_obse_err_ang.csv'
+            file_name_PBPF_ang = update_style_flag+'_PBPF_err_ang.csv'
+
+            boss_obse_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_diff_par_num/35/'+str(file_name)+file_name_obse_pos,index=0,header=0,mode='a')
+            boss_obse_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_diff_par_num/35/'+str(file_name)+file_name_obse_ang,index=0,header=0,mode='a')
             print("write obser file")
-            boss_PBPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file/'+str(file_time)+file_name_PBPF_pos,index=0,header=0,mode='a')
-            boss_PBPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file/'+str(file_time)+file_name_PBPF_ang,index=0,header=0,mode='a')
+            boss_PBPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_diff_par_num/35/'+str(file_name)+file_name_PBPF_pos,index=0,header=0,mode='a')
+            boss_PBPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_diff_par_num/35/'+str(file_name)+file_name_PBPF_ang,index=0,header=0,mode='a')
             print("write PBPF file")
             
     if run_alg_flag == "CVPF":
         for obj_index in range(object_num):
-            file_name_CVPF_pos = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_CVPF_err_pos.csv'
-            file_name_CVPF_ang = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_CVPF_err_ang.csv'
+            # file_name_CVPF_pos = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_CVPF_err_pos.csv'
+            # file_name_CVPF_ang = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_CVPF_err_ang.csv'
+
+            file_name_CVPF_pos = update_style_flag+'_CVPF_err_pos.csv'
+            file_name_CVPF_ang = update_style_flag+'_CVPF_err_ang.csv'
             
-            boss_CVPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file/'+str(file_time)+file_name_CVPF_pos,index=0,header=0,mode='a')
-            boss_CVPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file/'+str(file_time)+file_name_CVPF_ang,index=0,header=0,mode='a')
+            boss_CVPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_CVPF_70/'+str(file_name)+file_name_CVPF_pos,index=0,header=0,mode='a')
+            boss_CVPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_CVPF_70/'+str(file_name)+file_name_CVPF_ang,index=0,header=0,mode='a')
             print("write CVPF file")
-    print("file_time:", file_time)
+    print("file_name:", file_name)
 
     sys.exit()
 

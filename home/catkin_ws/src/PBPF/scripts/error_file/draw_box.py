@@ -21,18 +21,34 @@ from cv_bridge import CvBridge
 # from dope.inference.detector import ModelData, ObjectDetector
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import CameraInfo, Image as ImageSensor_msg
+from PBPF.msg import estimated_obj_pose, object_pose, particle_list, particle_pose
 # from std_msgs.msg import String
 # from vision_msgs.msg import Detection3D, Detection3DArray, ObjectHypothesisWithPose
 # from visualization_msgs.msg import Marker, MarkerArray
 import tf
 import tf.transformations as transformations
 import time
+import os
+import yaml
 
-class Ros_listener_PFPE():
+with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
+    parameter_info = yaml.safe_load(file)
+
+object_num = parameter_info['object_num']
+object_name_list = parameter_info['object_name_list']
+
+# the flag is used to determine whether the robot touches the particle in the simulation
+simRobot_touch_par_flag = 0
+
+robot_num = 1
+class Ros_listener_PBPF():
     def __init__(self):
-        pose_PFPE = rospy.Subscriber('PFPE_pose', PoseStamped, self.pose_PFPE_callback, queue_size=1)
+
+        pose_PFPE = rospy.Subscriber('/esti_obj_list', estimated_obj_pose, self.pose_PFPE_callback, queue_size=1)
+
+        # pose_PFPE = rospy.Subscriber('PFPE_pose', PoseStamped, self.pose_PFPE_callback, queue_size=1)
         pose_DOPE = rospy.Subscriber('DOPE_pose', PoseStamped, self.pose_DOPE_callback, queue_size=1)
-        pose_Opti = rospy.Subscriber('Opti_pose', PoseStamped, self.pose_Opti_callback, queue_size=1)
+        # pose_Opti = rospy.Subscriber('Opti_pose', PoseStamped, self.pose_Opti_callback, queue_size=1)
         self.current_joint_values = [-1.57,0.0,0.0,-2.8,1.7,1.57,1.1]
         self.PFPE_pos = [ 0.139080286026,
                          -0.581342339516,
@@ -64,17 +80,28 @@ class Ros_listener_PFPE():
         rospy.spin
 
     def pose_PFPE_callback(self, data):
-        #pos
-        x_pos = data.pose.position.x
-        y_pos = data.pose.position.y
-        z_pos = data.pose.position.z
-        self.PFPE_pos = [x_pos,y_pos,z_pos]
-        #ori
-        x_ori = data.pose.orientation.x
-        y_ori = data.pose.orientation.y
-        z_ori = data.pose.orientation.z
-        w_ori = data.pose.orientation.w
-        self.PFPE_ori = [x_ori,y_ori,z_ori,w_ori]
+        # need to change
+        for obj_index in range(object_num):
+            esti_obj_pos_x = data.objects[obj_index].pose.position.x
+            esti_obj_pos_y = data.objects[obj_index].pose.position.y
+            esti_obj_pos_z = data.objects[obj_index].pose.position.z
+            
+            esti_obj_ori_x = data.objects[obj_index].pose.orientation.x
+            esti_obj_ori_y = data.objects[obj_index].pose.orientation.y
+            esti_obj_ori_z = data.objects[obj_index].pose.orientation.z
+            esti_obj_ori_w = data.objects[obj_index].pose.orientation.w
+
+            #pos
+            # x_pos = data.pose.position.x
+            # y_pos = data.pose.position.y
+            # z_pos = data.pose.position.z
+            self.PFPE_pos = [esti_obj_pos_x, esti_obj_pos_y, esti_obj_pos_z]
+            #ori
+            # x_ori = data.pose.orientation.x
+            # y_ori = data.pose.orientation.y
+            # z_ori = data.pose.orientation.z
+            # w_ori = data.pose.orientation.w
+            self.PFPE_ori = [esti_obj_ori_x, esti_obj_ori_y, esti_obj_ori_z, esti_obj_ori_w]
     def pose_DOPE_callback(self, data):
         #pos
         x_pos = data.pose.position.x
@@ -513,6 +540,6 @@ if __name__ == "__main__":
     task_flag = "1b"
     rospy.init_node('draw_box')
     listener = tf.TransformListener()
-    PFPE_listener = Ros_listener_PFPE()
+    PFPE_listener = Ros_listener_PBPF()
     OPTI_listener = Ros_listener_OPTI()
     ros_listener = Ros_listener()

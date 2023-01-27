@@ -308,7 +308,7 @@ if __name__ == '__main__':
         parameter_info = yaml.safe_load(file)
     object_num = parameter_info['object_num']
     robot_num = 1
-    other_obj_num = parameter_info['other_obj_num']
+
     particle_num = parameter_info['particle_num']
     init_gt_obj_flag = 0
     init_obse_flag = 0
@@ -320,6 +320,11 @@ if __name__ == '__main__':
     display_obse_flag = True
     object_name_list = parameter_info['object_name_list']
     task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
+    if task_flag == "4":
+        other_obj_num = 1 # parameter_info['other_obj_num']
+    else:
+        other_obj_num = 0 # parameter_info['other_obj_num']
+
 
     visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
     trans_ob, rot_ob, trans_gt, rot_gt = visual_world.initialize_visual_world_pybullet_env(task_flag)

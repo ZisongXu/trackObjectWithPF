@@ -697,8 +697,8 @@ class CVPFMove():
             normal_y = self.add_noise_2_par(pw_T_parN_pos[1])
             normal_z = self.add_noise_2_par(pw_T_parN_pos[2])
             
-            quat = copy.deepcopy(pw_T_obj_obse_objects_list[obj_index].ori)
-#            quat = copy.deepcopy(nois_obj_ori_cur) # x,y,z,w
+            # quat = copy.deepcopy(pw_T_obj_obse_objects_list[obj_index].ori) # use ori from dope
+            quat = copy.deepcopy(pw_T_parO_ori) # x,y,z,w / use ori from CV
             quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3]) # w,x,y,z
             random_dir = random.uniform(0, 2*math.pi)
             z_axis = random.uniform(-1,1)
@@ -1041,6 +1041,19 @@ def publish_esti_pose_info(estimated_object_set):
     esti_list.objects = esti_pose_list 
     pub_esti_pose.publish(esti_list)
 
+    # need to change
+    pub = rospy.Publisher('PBPF_pose', PoseStamped, queue_size = 1)
+    pose_PBPF = PoseStamped()
+    pose_PBPF.pose.position.x = esti_obj_info.pos[0]
+    pose_PBPF.pose.position.y = esti_obj_info.pos[1]
+    pose_PBPF.pose.position.z = esti_obj_info.pos[2]
+    pose_PBPF.pose.orientation.x = esti_obj_info.ori[0]
+    pose_PBPF.pose.orientation.y = esti_obj_info.ori[1]
+    pose_PBPF.pose.orientation.z = esti_obj_info.ori[2]
+    pose_PBPF.pose.orientation.w = esti_obj_info.ori[3]
+    pub.publish(pose_PBPF)
+
+
 
 def track_fk_sim_world():
     p_track_fk_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
@@ -1076,8 +1089,8 @@ if __name__ == '__main__':
     pub_esti_pose = rospy.Publisher('/esti_obj_list', estimated_obj_pose, queue_size = 10)
     esti_list = estimated_obj_pose()
     # only for drawing box
-    pub_DOPE = rospy.Publisher('DOPE_pose', PoseStamped, queue_size = 1)
-    
+    publish_DOPE_pose_flag = True
+
     with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
         parameter_info = yaml.safe_load(file)
     
@@ -1093,7 +1106,11 @@ if __name__ == '__main__':
     simRobot_touch_par_flag = 0
     object_num = parameter_info['object_num']
     robot_num = 1
-    other_obj_num = parameter_info['other_obj_num']
+    if task_flag == "4": 
+        other_obj_num = 1 # parameter_info['other_obj_num']
+    else:
+        other_obj_num = 0 # parameter_info['other_obj_num']
+
     if update_style_flag == "pose":
         particle_num = parameter_info['particle_num']
     elif update_style_flag == "time":
@@ -1102,7 +1119,8 @@ if __name__ == '__main__':
         elif run_alg_flag == "CVPF":
             particle_num = parameter_info['particle_num']
     object_name_list = parameter_info['object_name_list']
-
+    if run_alg_flag == 'CVPF':
+        particle_num = 140
     print("This is "+update_style_flag+" update in scene"+task_flag)    
     # some parameters
     d_thresh = 0.005
@@ -1225,7 +1243,7 @@ if __name__ == '__main__':
             rob_T_obj_obse_ori = list(rot_ob)
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
-            
+
 #            if gazebo_flag == True:
 #                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
 #                                     [0., 1., 0.,    0.],
@@ -1238,7 +1256,20 @@ if __name__ == '__main__':
             pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
             pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
-            
+
+            # only for drawing BOX/ need to change
+            if publish_DOPE_pose_flag == True:
+                pub_DOPE = rospy.Publisher('DOPE_pose', PoseStamped, queue_size = 1)
+                pose_DOPE = PoseStamped()
+                pose_DOPE.pose.position.x = pw_T_obj_obse_pos[0]
+                pose_DOPE.pose.position.y = pw_T_obj_obse_pos[1]
+                pose_DOPE.pose.position.z = pw_T_obj_obse_pos[2]
+                pose_DOPE.pose.orientation.x = pw_T_obj_obse_ori[0]
+                pose_DOPE.pose.orientation.y = pw_T_obj_obse_ori[1]
+                pose_DOPE.pose.orientation.z = pw_T_obj_obse_ori[2]
+                pose_DOPE.pose.orientation.w = pw_T_obj_obse_ori[3]
+                pub_DOPE.publish(pose_DOPE)
+
             pw_T_obj_obse_name = object_name
             pw_T_obj_obse_id = 0
             obse_object = Object_Pose(pw_T_obj_obse_name, pw_T_obj_obse_id, pw_T_obj_obse_pos, pw_T_obj_obse_ori, index=obj_index)

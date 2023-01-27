@@ -11,8 +11,8 @@ import seaborn as sns
 import copy
 import math
 import numpy as np
-flag_plot_ang = False
-flag_plot_pos = True
+flag_plot_ang = True
+flag_plot_pos = False
 task_flag = "1"
 update_style_flag = "time"
 test = "cracker_" # cracker_/fish_can_

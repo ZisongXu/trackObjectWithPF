@@ -1,48 +1,60 @@
 #!/bin/bash
 
-# declare -a objectNames=("cracker" "soup")
-# declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a objectNames=("soup")
+declare -a objectNames=("cracker" "soup")
 declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a particleNumbers=(35)
+# declare -a objectNames=("cracker")
+# declare -a sceneNames=("scene2")
+declare -a particleNumbers=(17)
+declare -a runAlgFlags=("PBPF")
 
-for particleNumber in "${particleNumbers[@]}"
+for runAlgFlag in "${runAlgFlags[@]}"
 do
-	for objectName in "${objectNames[@]}"
+	for particleNumber in "${particleNumbers[@]}"
 	do
-		
-		for sceneName in "${sceneNames[@]}"
+		for objectName in "${objectNames[@]}"
 		do
-			if [[ "$objectName" == "soup" ]]; then
-				if [[ "$sceneName" == "scene4" ]]; then
-					continue
-				fi
-			fi
 			
-			python3 update_yaml_file_automated.py "${objectName}" "${particleNumber}" "${sceneName}"
-			
-			for rosbag in {1..10}
+			for sceneName in "${sceneNames[@]}"
 			do
-				for repeat in {1..10}
+				if [[ "$objectName" == "soup" ]]; then
+					if [[ "$sceneName" == "scene4" ]]; then
+						continue
+					fi
+				fi
+				
+				python3 update_yaml_file_automated.py "${objectName}" "${particleNumber}" "${sceneName}" "${runAlgFlag}"
+				
+				for rosbag in {1..10}
+				# for ((rosbag=7;rosbag<=7;rosbag++)); 
 				do
-					rosbag play "rosbag/new_rosbag/${objectName}_${sceneName}/${objectName}_${sceneName}_70_${rosbag}.bag" --clock &
-					ROSBAGPID=$!
-					
-					rosrun PBPF Physics_Based_Particle_Filtering.py &
-					PBPF_PID=$!
-					
-					fileName="${particleNumber}_${objectName}_${sceneName}_rosbag${rosbag}_repeat${repeat}_"
-					rosrun PBPF RecordError.py "${fileName}" &
-					REPID=$!
-					
-					sleep 40
-					
-					kill -SIGINT $REPID
-					kill $ROSBAGPID
-					kill -SIGINT $PBPF_PID
-				done
-			done
+					for repeat in {1..10}
+					# for ((repeat=2;repeat<=2;repeat++));
+					do
+						rosbag play "rosbag/new_rosbag/${objectName}_${sceneName}/${objectName}_${sceneName}_70_${rosbag}.bag" --clock  > /dev/null 2>&1 & 
+						ROSBAGPID=$!
+						
+						rosrun PBPF Physics_Based_Particle_Filtering.py &
+						PBPF_PID=$!
+						
+						fileName="${particleNumber}_${objectName}_${sceneName}_rosbag${rosbag}_repeat${repeat}_"
+						rosrun PBPF RecordError.py "${fileName}" &
+						REPID=$!
+						
+						sleep 50
+						
+						kill -SIGINT $REPID
+						kill -SIGINT $PBPF_PID
+						pkill -9 Physics_Based_*
 
+						sleep 10
+
+						pkill -9 RecordE*
+
+						sleep 5
+					done
+				done
+
+			done
 		done
 	done
 done

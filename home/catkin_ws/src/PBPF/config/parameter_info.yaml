@@ -1,14 +1,14 @@
 gazebo_flag: false
 object_name_list:
-- soup
+- cracker
 - fish_can
 object_num: 1
 other_obj_num: 0
 oto_name_list:
 - base_of_cracker
 - fish_can
-particle_num: 70
+particle_num: 17
 robot_num: 1
 run_alg_flag: PBPF
-task_flag: '3'
+task_flag: '1'
 update_style_flag: time

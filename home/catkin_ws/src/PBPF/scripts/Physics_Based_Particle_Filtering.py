@@ -292,9 +292,9 @@ class PBPFMove():
             
             # make sure theta between -pi and pi
             obse_obj_ori_corr = quaternion_correction(obse_obj_ori)
-#            nois_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3]) # w,x,y,z
-#            cos_theta_over_2 = nois_obj_quat.w
-#            sin_theta_over_2 = math.sqrt(nois_obj_quat.x ** 2 + nois_obj_quat.y ** 2 + nois_obj_quat.z ** 2)
+#            obse_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3]) # w,x,y,z
+#            cos_theta_over_2 = obse_obj_quat.w
+#            sin_theta_over_2 = math.sqrt(obse_obj_quat.x ** 2 + obse_obj_quat.y ** 2 + obse_obj_quat.z ** 2)
 #            theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
 #            theta = theta_over_2 * 2
 #            if theta >= math.pi or theta <= -math.pi:
@@ -313,12 +313,12 @@ class PBPFMove():
                 weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
                 # rotation weight
                 par_ori = quaternion_correction(particle[obj_index].ori)
-                nois_obj_quat = Quaternion(x=obse_obj_ori_corr[0], 
+                obse_obj_quat = Quaternion(x=obse_obj_ori_corr[0], 
                                            y=obse_obj_ori_corr[1], 
                                            z=obse_obj_ori_corr[2], 
                                            w=obse_obj_ori_corr[3]) # Quaternion(): w,x,y,z
                 par_quat = Quaternion(x=par_ori[0], y=par_ori[1], z=par_ori[2], w=par_ori[3])
-                err_bt_par_obse = par_quat * nois_obj_quat.inverse
+                err_bt_par_obse = par_quat * obse_obj_quat.inverse
                 cos_theta_over_2 = err_bt_par_obse.w
                 sin_theta_over_2 = math.sqrt(err_bt_par_obse.x ** 2 + err_bt_par_obse.y ** 2 + err_bt_par_obse.z ** 2)
                 theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
@@ -639,9 +639,9 @@ class CVPFMove():
                 
             # make sure theta between -pi and pi
             obse_obj_ori_corr = quaternion_correction(obse_obj_ori)
-#            nois_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3]) # w,x,y,z
-#            cos_theta_over_2 = nois_obj_quat.w
-#            sin_theta_over_2 = math.sqrt(nois_obj_quat.x ** 2 + nois_obj_quat.y ** 2 + nois_obj_quat.z ** 2)
+#            obse_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3]) # w,x,y,z
+#            cos_theta_over_2 = obse_obj_quat.w
+#            sin_theta_over_2 = math.sqrt(obse_obj_quat.x ** 2 + obse_obj_quat.y ** 2 + obse_obj_quat.z ** 2)
 #            theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
 #            theta = theta_over_2 * 2
 #            if theta >= math.pi or theta <= -math.pi:
@@ -660,12 +660,12 @@ class CVPFMove():
                 weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
                 # rotation weight    
                 par_ori = quaternion_correction(particle[obj_index].ori)
-                nois_obj_quat = Quaternion(x=obse_obj_ori_corr[0], 
+                obse_obj_quat = Quaternion(x=obse_obj_ori_corr[0], 
                                            y=obse_obj_ori_corr[1], 
                                            z=obse_obj_ori_corr[2], 
                                            w=obse_obj_ori_corr[3]) # Quaternion(): w,x,y,z
                 par_quat = Quaternion(x=par_ori[0], y=par_ori[1], z=par_ori[2], w=par_ori[3])
-                err_bt_par_obse = par_quat * nois_obj_quat.inverse
+                err_bt_par_obse = par_quat * obse_obj_quat.inverse
                 cos_theta_over_2 = err_bt_par_obse.w
                 sin_theta_over_2 = math.sqrt(err_bt_par_obse.x ** 2 + err_bt_par_obse.y ** 2 + err_bt_par_obse.z ** 2)
                 theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
@@ -906,14 +906,18 @@ def compute_ang_err_bt_2_points(object1_ori, object2_ori):
     #[x, y, z, w]
     obj1_ori = copy.deepcopy(object1_ori)
     obj2_ori = copy.deepcopy(object2_ori)
+    obj1_ori_quat = quaternion_correction(obj1_ori) # x,y,z,w
+    obj2_ori_quat = quaternion_correction(obj2_ori) # x,y,z,w
+
     #[w, x, y, z]
-    obj1_quat = Quaternion(x = obj1_ori[0], y = obj1_ori[1], z = obj1_ori[2], w = obj1_ori[3])
-    obj2_quat = Quaternion(x = obj2_ori[0], y = obj2_ori[1], z = obj2_ori[2], w = obj2_ori[3])
+    obj1_quat = Quaternion(x = obj1_ori_quat[0], y = obj1_ori_quat[1], z = obj1_ori_quat[2], w = obj1_ori_quat[3]) # Quaternion(): w,x,y,z
+    obj2_quat = Quaternion(x = obj2_ori_quat[0], y = obj2_ori_quat[1], z = obj2_ori_quat[2], w = obj2_ori_quat[3]) # Quaternion(): w,x,y,z
     diff_bt_o1_o2 = obj2_quat * obj1_quat.inverse
     cos_theta_over_2 = diff_bt_o1_o2.w
     sin_theta_over_2 = math.sqrt(diff_bt_o1_o2.x ** 2 + diff_bt_o1_o2.y ** 2 + diff_bt_o1_o2.z ** 2)
     theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
     theta = theta_over_2 * 2
+    theta = abs(theta)
     return theta
 # compute the transformation matrix represent that the pose of object in the robot world
 def compute_transformation_matrix(a_pos, a_ori, b_pos, b_ori):
@@ -999,7 +1003,7 @@ def quaternion_correction(quaternion): # x,y,z,w
     if theta >= math.pi or theta <= -math.pi:
         new_quaternion = [-quaternion[0], -quaternion[1], -quaternion[2], -quaternion[3]]
         return new_quaternion
-    return quaternion
+    return quaternion # x,y,z,w
 
 def publish_par_pose_info(particle_cloud_pub):
     par_pose_list = list(range(particle_num))
@@ -1125,6 +1129,8 @@ if __name__ == '__main__':
     # some parameters
     d_thresh = 0.005
     a_thresh = 0.01
+    d_thresh_obse = 0.05
+    a_thresh_obse = math.pi / 2
     d_thresh_CV = 0.0002
     a_thresh_CV = 0.0010
     flag_record = 0
@@ -1210,10 +1216,13 @@ if __name__ == '__main__':
     track_fk_world_rob_mv(p_sim, sim_rob_id, ros_listener.current_joint_values)
 
     rob_link_9_pose_old = p_sim.getLinkState(sim_rob_id, 9) # position = rob_link_9_pose_old[0], quaternion = rob_link_9_pose_old[1]
+    rob_T_obj_obse_pos_old = list(trans_ob)
+    rob_T_obj_obse_ori_old = list(rot_ob)
+
     print("Welcome to Our Approach !")
     PBPF_alg = PBPFMove(object_num) # PF_alg
     CVPF_alg = CVPFMove(object_num) 
-    
+
     while not rospy.is_shutdown():
         #panda robot moves in the visualization window
         temp_pw_T_obj_obse_objs_list = []
@@ -1243,7 +1252,17 @@ if __name__ == '__main__':
             rob_T_obj_obse_ori = list(rot_ob)
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
+            
+            rob_T_obj_obse_pos_new = list(trans_ob)
+            rob_T_obj_obse_ori_new = list(rot_ob)
+            dis_obseCur_obseOld = compute_pos_err_bt_2_points(rob_T_obj_obse_pos_new, rob_T_obj_obse_pos_old)
+            ang_obseCur_obseOld = compute_ang_err_bt_2_points(rob_T_obj_obse_ori_new, rob_T_obj_obse_ori_old)
 
+            if dis_obseCur_obseOld > d_thresh_obse or ang_obseCur_obseOld > a_thresh_obse:
+                print("DOPE move more than 5 cm or 45 degrees")
+                obse_is_fresh = False
+            rob_T_obj_obse_pos_old = rob_T_obj_obse_pos_new
+            rob_T_obj_obse_ori_old = rob_T_obj_obse_ori_new
 #            if gazebo_flag == True:
 #                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
 #                                     [0., 1., 0.,    0.],

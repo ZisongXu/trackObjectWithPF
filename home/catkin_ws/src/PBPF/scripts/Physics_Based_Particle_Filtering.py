@@ -121,12 +121,12 @@ class PBPFMove():
         if do_obs_update:
             self.observation_update_PB(pw_T_obj_obse_objects_pose_list)
         # Compute mean of particles
-        object_estimate_pose = self.compute_estimate_pos_of_object(self.particle_cloud)
+        object_estimate_pose, dis_std_list, ang_std_list = self.compute_estimate_pos_of_object(self.particle_cloud)
         
         # publish pose of particles
         publish_par_pose_info(self.particle_cloud)
         publish_esti_pose_info(object_estimate_pose)
-        return
+        return object_estimate_pose, dis_std_list, ang_std_list
     
     # judge if any particles are contact
     def isAnyParticleInContact(self):
@@ -381,7 +381,7 @@ class PBPFMove():
         sigma = pos_noise
         new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_pos_is_added_noise
-    
+
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
         sigma = boss_sigma_obs_ang
@@ -499,6 +499,9 @@ class PBPFMove():
 
     def compute_estimate_pos_of_object(self, particle_cloud): # need to change
         esti_objs_cloud = []
+        dis_std_list = []
+        ang_std_list = []
+        # remenber after resampling weight of each particle is the same
         for obj_index in range(self.obj_num):
             x_set = 0
             y_set = 0
@@ -515,9 +518,41 @@ class PBPFMove():
                 quaternions.append([q[0], q[1], q[2], q[3]])
                 w_set = w_set + particle[obj_index].w
             q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
+            ###################################
+            esti_obj_pos_x = x_set/w_set
+            esti_obj_pos_y = y_set/w_set
+            esti_obj_pos_z = z_set/w_set
+            esti_obj_pos = [esti_obj_pos_x, esti_obj_pos_y, esti_obj_pos_z]
+            esti_obj_ori_x = q[0]
+            esti_obj_ori_y = q[1]
+            esti_obj_ori_z = q[2]
+            esti_obj_ori_w = q[3]
+            esti_obj_ori = [esti_obj_ori_x, esti_obj_ori_y, esti_obj_ori_z, esti_obj_ori_w]
+            mean_pose = [esti_obj_pos, esti_obj_ori]
+            dis_std, ang_std = self.compute_std(mean_pose, particle_cloud)
+            ###################################
             est_obj_pose = Object_Pose(particle[obj_index].par_name, estimated_object_set[obj_index].obj_id, [x_set/w_set, y_set/w_set, z_set/w_set],  [q[0], q[1], q[2], q[3]], obj_index)
             esti_objs_cloud.append(est_obj_pose)
-        return esti_objs_cloud
+            dis_std_list.append(dis_std)
+            ang_std_list.append(ang_std)
+        return esti_objs_cloud, dis_std_list, ang_std_list
+
+    def compute_std(self, mean_pose, particle_cloud):
+        mean_pos = copy.deepcopy(mean_pose[0])
+        mean_ori = copy.deepcopy(mean_pose[1]) # x,y,z,w
+        dis_list = []
+        ang_list = []
+        for index, particle in enumerate(particle_cloud):
+            pos_set = copy.deepcopy(particle[obj_index].pos)
+            q = quaternion_correction(particle[obj_index].ori)
+            ori_set = copy.deepcopy(q)
+            dis_mean_eachPar = compute_pos_err_bt_2_points(pos_set, mean_pos)
+            ang_mean_eachPar = compute_ang_err_bt_2_points(ori_set, mean_ori)
+            dis_list.append(dis_mean_eachPar)
+            ang_list.append(ang_mean_eachPar)
+        dis_std = np.std(dis_list)
+        ang_std = np.std(ang_list)
+        return dis_std, ang_std
 
     def rotation_4_4_to_transformation_4_4(self, rotation_4_4,pos):
         rotation_4_4[0][3] = pos[0]
@@ -557,14 +592,14 @@ class CVPFMove():
         if do_obs_update:
             self.observation_update_CV(pw_T_obj_obse_objects_pose_list)
         # Compute mean of particles
-        object_estimate_pose_CV = self.compute_estimate_pos_of_object(self.particle_cloud_CV)
+        object_estimate_pose_CV, dis_std_list, ang_std_list = self.compute_estimate_pos_of_object(self.particle_cloud_CV)
         
         boss_est_pose_CVPF.append(object_estimate_pose_CV)
 
         # publish pose of particles
         publish_par_pose_info(self.particle_cloud_CV)
         publish_esti_pose_info(object_estimate_pose_CV)
-        return
+        return object_estimate_pose_CV, dis_std_list, ang_std_list
 
     def isAnyParticleInContact(self):
         for index, particle in enumerate(self.particle_cloud_CV):
@@ -843,6 +878,8 @@ class CVPFMove():
 
     def compute_estimate_pos_of_object(self, particle_cloud):
         esti_objs_cloud = []
+        dis_std_list = []
+        ang_std_list = []
         for obj_index in range(self.obj_num):
             x_set = 0
             y_set = 0
@@ -859,13 +896,45 @@ class CVPFMove():
                 quaternions.append([q[0], q[1], q[2], q[3]])
                 w_set = w_set + particle[obj_index].w
             q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
+            ###################################
+            esti_obj_pos_x = x_set/w_set
+            esti_obj_pos_y = y_set/w_set
+            esti_obj_pos_z = z_set/w_set
+            esti_obj_pos = [esti_obj_pos_x, esti_obj_pos_y, esti_obj_pos_z]
+            esti_obj_ori_x = q[0]
+            esti_obj_ori_y = q[1]
+            esti_obj_ori_z = q[2]
+            esti_obj_ori_w = q[3]
+            esti_obj_ori = [esti_obj_ori_x, esti_obj_ori_y, esti_obj_ori_z, esti_obj_ori_w]
+            mean_pose = [esti_obj_pos, esti_obj_ori]
+            dis_std, ang_std = self.compute_std(mean_pose, particle_cloud)
+            ###################################
             est_obj_pose = Object_Pose(particle[obj_index].par_name,
                                        estimated_object_set[obj_index].obj_id,
                                        [x_set/w_set, y_set/w_set, z_set/w_set],
                                        [q[0], q[1], q[2], q[3]], obj_index)
             esti_objs_cloud.append(est_obj_pose)
-        return esti_objs_cloud
-
+            dis_std_list.append(dis_std)
+            ang_std_list.append(ang_std)
+        return esti_objs_cloud, dis_std_list, ang_std_list
+    
+    def compute_std(self, mean_pose, particle_cloud):
+        mean_pos = copy.deepcopy(mean_pose[0])
+        mean_ori = copy.deepcopy(mean_pose[1]) # x,y,z,w
+        dis_list = []
+        ang_list = []
+        for index, particle in enumerate(particle_cloud):
+            pos_set = copy.deepcopy(particle[obj_index].pos)
+            q = quaternion_correction(particle[obj_index].ori)
+            ori_set = copy.deepcopy(q)
+            dis_mean_eachPar = compute_pos_err_bt_2_points(pos_set, mean_pos)
+            ang_mean_eachPar = compute_ang_err_bt_2_points(ori_set, mean_ori)
+            dis_list.append(dis_mean_eachPar)
+            ang_list.append(ang_mean_eachPar)
+        dis_std = np.std(dis_list)
+        ang_std = np.std(ang_list)
+        return dis_std, ang_std
+    
     def compute_transformation_matrix(self, a_pos, a_ori, b_pos, b_ori):
         ow_T_a_3_3 = transformations.quaternion_matrix(a_ori)
         ow_T_a_4_4 = self.rotation_4_4_to_transformation_4_4(ow_T_a_3_3,a_pos)
@@ -1057,7 +1126,21 @@ def publish_esti_pose_info(estimated_object_set):
     pose_PBPF.pose.orientation.w = esti_obj_info.ori[3]
     pub.publish(pose_PBPF)
 
-
+# need to change
+def process_esti_pose_from_rostopic(estimated_object_set):
+    esti_pose_list = []
+    for obj_index in range(object_num):
+        esti_obj_info = copy.deepcopy(estimated_object_set[obj_index])
+        esti_obj_pos_x = esti_obj_info.pos[0]
+        esti_obj_pos_y = esti_obj_info.pos[1]
+        esti_obj_pos_z = esti_obj_info.pos[2]
+        esti_obj_ori_x = esti_obj_info.ori[0]
+        esti_obj_ori_y = esti_obj_info.ori[1]
+        esti_obj_ori_z = esti_obj_info.ori[2]
+        esti_obj_ori_w = esti_obj_info.ori[3]
+        esti_pose = [[esti_obj_pos_x, esti_obj_pos_y, esti_obj_pos_z], [esti_obj_ori_x, esti_obj_ori_y, esti_obj_ori_z, esti_obj_ori_w]]
+        esti_pose_list.append(esti_pose)
+    return esti_pose_list
 
 def track_fk_sim_world():
     p_track_fk_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
@@ -1110,6 +1193,7 @@ if __name__ == '__main__':
     simRobot_touch_par_flag = 0
     object_num = parameter_info['object_num']
     robot_num = 1
+    check_dope_work_flag_init = 0
     if task_flag == "4": 
         other_obj_num = 1 # parameter_info['other_obj_num']
     else:
@@ -1129,8 +1213,8 @@ if __name__ == '__main__':
     # some parameters
     d_thresh = 0.005
     a_thresh = 0.01
-    d_thresh_obse = 0.05
-    a_thresh_obse = math.pi / 2
+    d_thresh_obse = 0.15
+    a_thresh_obse = math.pi * 2 / 3.0
     d_thresh_CV = 0.0002
     a_thresh_CV = 0.0010
     flag_record = 0
@@ -1177,6 +1261,8 @@ if __name__ == '__main__':
     pw_T_rob_sim_pose_list_alg = []
     pw_T_obj_obse_obj_list_alg = []
     pw_T_obj_obse_oto_list_alg = []
+    dis_std_list = [d_thresh_obse]
+    ang_std_list = [a_thresh_obse]
     # build an object of class "Ros_Listener"
     ros_listener = Ros_Listener()
     create_scene = Create_Scene(object_num, robot_num, other_obj_num)
@@ -1206,7 +1292,10 @@ if __name__ == '__main__':
     # publish particles/estimated object
     publish_par_pose_info(particle_cloud_pub)
     publish_esti_pose_info(estimated_object_set)
-    
+    estimated_object_set_old = copy.deepcopy(estimated_object_set)
+    estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
+
+
     # run the simulation
     Flag = True
     # compute pose of robot arm
@@ -1237,14 +1326,31 @@ if __name__ == '__main__':
             obse_is_fresh = True
             try:
                 latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/'+object_name+use_gazebo)
-                if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
+                # print("rospy.get_time():")
+                # print(rospy.get_time())
+                # print("latest_obse_time.to_sec():")
+                # print(latest_obse_time.to_sec())
+                # old_obse_time = latest_obse_time.to_sec()
+                # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
+                #     (trans_ob,rot_ob) = listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
+                #     obse_is_fresh = True
+                #     print("obse is FRESH")
+
+                if check_dope_work_flag_init == 0:
+                    check_dope_work_flag_init = 1
+                    old_obse_time = latest_obse_time.to_sec()
+                # print("latest_obse_time.to_sec():")
+                # print(latest_obse_time.to_sec())
+                # print("difference:", latest_obse_time.to_sec() - old_obse_time)
+                if (latest_obse_time.to_sec() > old_obse_time):
                     (trans_ob,rot_ob) = listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
                     obse_is_fresh = True
                     # print("obse is FRESH")
                 else:
                     # obse has not been updating for a while
                     obse_is_fresh = False
-                    print("obse is NOT fresh")
+                    # print("obse is NOT fresh")
+                old_obse_time = latest_obse_time.to_sec()
                 # break
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 print("can not find tf")
@@ -1252,17 +1358,7 @@ if __name__ == '__main__':
             rob_T_obj_obse_ori = list(rot_ob)
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
-            
-            rob_T_obj_obse_pos_new = list(trans_ob)
-            rob_T_obj_obse_ori_new = list(rot_ob)
-            dis_obseCur_obseOld = compute_pos_err_bt_2_points(rob_T_obj_obse_pos_new, rob_T_obj_obse_pos_old)
-            ang_obseCur_obseOld = compute_ang_err_bt_2_points(rob_T_obj_obse_ori_new, rob_T_obj_obse_ori_old)
 
-            if dis_obseCur_obseOld > d_thresh_obse or ang_obseCur_obseOld > a_thresh_obse:
-                print("DOPE move more than 5 cm or 45 degrees")
-                obse_is_fresh = False
-            rob_T_obj_obse_pos_old = rob_T_obj_obse_pos_new
-            rob_T_obj_obse_ori_old = rob_T_obj_obse_ori_new
 #            if gazebo_flag == True:
 #                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
 #                                     [0., 1., 0.,    0.],
@@ -1275,6 +1371,22 @@ if __name__ == '__main__':
             pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
             pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
+
+            # need to change when we run alg in multi-object tracking scene
+            # in the futrue we need to use "for obj_index in range(object_num):"
+            pw_T_obj_obse_pos_new = copy.deepcopy(pw_T_obj_obse_pos)
+            pw_T_obj_obse_ori_new = copy.deepcopy(pw_T_obj_obse_ori)
+            pw_T_esti_obj_pose_old = copy.deepcopy(estimated_object_set_old_list[obj_index])
+            pw_T_esti_obj_pos_old = copy.deepcopy(pw_T_esti_obj_pose_old[0])
+            pw_T_esti_obj_ori_old = copy.deepcopy(pw_T_esti_obj_pose_old[1])
+
+            dis_obseCur_estiOld = compute_pos_err_bt_2_points(pw_T_obj_obse_pos_new, pw_T_esti_obj_pos_old)
+            ang_obseCur_estiOld = compute_ang_err_bt_2_points(pw_T_obj_obse_ori_new, pw_T_esti_obj_ori_old)
+
+            # if dis_obseCur_estiOld > dis_std_list[obj_index]*3 or ang_obseCur_estiOld > ang_std_list[obj_index]*3:
+            if dis_obseCur_estiOld > 0.15 or ang_obseCur_estiOld > math.pi * 2 / 3.0:
+                # print("DOPE becomes crazy")
+                obse_is_fresh = False
 
             # only for drawing BOX/ need to change
             if publish_DOPE_pose_flag == True:
@@ -1328,9 +1440,9 @@ if __name__ == '__main__':
                         flag_update_num_PB = flag_update_num_PB + 1
                         pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                         # execute PBPF algorithm movement
-                        PBPF_alg.update_particle_filter_PB(ros_listener.current_joint_values, # joints of robot arm
-                                                           pw_T_obj_obse_objects_pose_list,
-                                                           do_obs_update=obse_is_fresh) # flag for judging obse work
+                        estimated_object_set, dis_std_list, ang_std_list = PBPF_alg.update_particle_filter_PB(ros_listener.current_joint_values, # joints of robot arm
+                                                                                  pw_T_obj_obse_objects_pose_list,
+                                                                                  do_obs_update=obse_is_fresh) # flag for judging obse work
                         rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
 
                         # print("Average time of updating: ",np.mean(PBPF_alg.times))
@@ -1356,8 +1468,8 @@ if __name__ == '__main__':
                         boss_obs_pose_CVPF.append(pw_T_obj_obse_objects_list)
                         # execute CVPF algorithm movement
                         pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
-                        CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list, # [obse_obj1_pose, obse_obj2_pose]
-                                                           do_obs_update=obse_is_fresh) # flag for judging obse work
+                        estimated_object_set, dis_std_list, ang_std_list = CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list, # [obse_obj1_pose, obse_obj2_pose]
+                                                                                  do_obs_update=obse_is_fresh) # flag for judging obse work
                         rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
                     else:
                         CVPF_alg.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm
@@ -1375,9 +1487,9 @@ if __name__ == '__main__':
                         flag_update_num_PB = flag_update_num_PB + 1
                         pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                         # execute PBPF algorithm movement
-                        PBPF_alg.update_particle_filter_PB(ros_listener.current_joint_values, # joints of robot arm
-                                                           pw_T_obj_obse_objects_pose_list, # [obse_obj1_pose, obse_obj2_pose]
-                                                           do_obs_update=obse_is_fresh) # flag for judging obse work
+                        estimated_object_set, dis_std_list, ang_std_list = PBPF_alg.update_particle_filter_PB(ros_listener.current_joint_values, # joints of robot arm
+                                                                                  pw_T_obj_obse_objects_pose_list, # [obse_obj1_pose, obse_obj2_pose]
+                                                                                  do_obs_update=obse_is_fresh) # flag for judging obse work
 
                         t_finish_PBPF = time.time()
                         PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
@@ -1393,11 +1505,13 @@ if __name__ == '__main__':
                     boss_obs_pose_CVPF.append(pw_T_obj_obse_objects_list)
                     # execute CVPF algorithm movement
                     pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
-                    CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list,
-                                                        do_obs_update=obse_is_fresh) # flag for judging obse work
+                    estimated_object_set, dis_std_list, ang_std_list = CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list,
+                                                                              do_obs_update=obse_is_fresh) # flag for judging obse work
                     # else:
                     #     CVPF_alg.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm
                         
+                estimated_object_set_old = copy.deepcopy(estimated_object_set)
+                estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
                 pf_update_rate.sleep()
                 break    
         t_end_while = time.time()

@@ -1,9 +1,9 @@
 #!/bin/bash
 
-declare -a objectNames=("cracker" "soup")
-declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-# declare -a objectNames=("soup")
-# declare -a sceneNames=("scene2")
+# declare -a objectNames=("cracker" "soup")
+# declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
+declare -a objectNames=("soup")
+declare -a sceneNames=("scene3")
 declare -a particleNumbers=(30)
 declare -a runAlgFlags=("PBPF")
 
@@ -24,13 +24,13 @@ do
 				
 				python3 update_yaml_file_automated.py "${objectName}" "${particleNumber}" "${sceneName}" "${runAlgFlag}"
 				
-				for rosbag in {1..10}
-				# for ((rosbag=10;rosbag<=10;rosbag++)); 
+				# for rosbag in {1..10}
+				for ((rosbag=5;rosbag<=5;rosbag++)); 
 				do
 					duration=$(python3 get_info_from_rosbag.py "${objectName}" "${particleNumber}" "${sceneName}" "${rosbag}")
 
-					for repeat in {1..10}
-					# for ((repeat=9;repeat<=9;repeat++));
+					# for repeat in {1..10}
+					for ((repeat=10;repeat<=10;repeat++));
 					do
 						echo "I will sleep for $duration seconds"
 						rosbag play "rosbag/new_rosbag/${objectName}_${sceneName}/${objectName}_${sceneName}_70_${rosbag}.bag" --clock  > /dev/null 2>&1 & 

@@ -75,7 +75,8 @@ class PBPFMove():
         self.object_estimate_pose_y = []
         self.object_real_____pose_x = []
         self.object_real_____pose_y = []
-    
+        self.do_obs_update = True
+        
     def get_real_robot_joint(self, pybullet_env_id, real_robot_id):
         real_robot_joint_list = []
         for index in range(self.joint_num):
@@ -109,6 +110,7 @@ class PBPFMove():
         global flag_record_obse
         global flag_record_PBPF
         global flag_record
+        self.do_obs_update = do_obs_update
         pybullet_sim_env = self.pybullet_env_id_collection
         fake_robot_id = self.pybullet_sim_fake_robot_id_collection
         self.times = []
@@ -120,6 +122,9 @@ class PBPFMove():
         # observation model
         if do_obs_update:
             self.observation_update_PB(pw_T_obj_obse_objects_pose_list)
+        if version == "ray" and do_obs_update == False:
+            self.resample_particles_update()
+            self.set_paticle_in_each_sim_env()
         # Compute mean of particles
         object_estimate_pose, dis_std_list, ang_std_list = self.compute_estimate_pos_of_object(self.particle_cloud)
         
@@ -155,6 +160,17 @@ class PBPFMove():
         self.particle_cloud[index][obj_index].ori = copy.deepcopy(ori)
         self.particle_cloud[index][obj_index].linearVelocity = linearVelocity
         self.particle_cloud[index][obj_index].angularVelocity = angularVelocity
+        
+        if version == "ray" and self.do_obs_update == False:
+            pw_T_par_sim_pos = copy.deepcopy([x, y, z])
+            # pybullet_sim_env[index]
+            rayTest_info = p_sim.rayTest(pw_T_cam_tf_pos, pw_T_par_sim_pos)
+            hit_obj_id = rayTest_info[0][0]
+            if hit_obj_id == -1:
+                weight = 0.1
+            else:
+                weight = 0.9
+            self.particle_cloud[index][obj_index].w = weight
         
     # motion model
     def motion_update_PB_parallelised(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
@@ -256,7 +272,7 @@ class PBPFMove():
                     break
             self.update_partcile_cloud_pose_PB(index, obj_index, normal_x, normal_y, normal_z, P_quat, linearVelocity, angularVelocity)
         # pipe.send()
-    
+ 
     # add noise
     def add_noise_pose(self, sim_par_cur_pos, sim_par_cur_ori):
         normal_x = self.add_noise_2_par(sim_par_cur_pos[0])
@@ -325,6 +341,18 @@ class PBPFMove():
                 theta = theta_over_2 * 2
                 weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
                 weight = weight_xyz * weight_ang
+                
+                if version == "ray":
+                    pw_T_par_sim_pos = [particle_x, particle_y, particle_z]
+                    # pybullet_sim_env[index]
+                    rayTest_info = p_sim.rayTest(pw_T_cam_tf_pos, pw_T_par_sim_pos)
+                    hit_obj_id = rayTest_info[0][0]
+                    if hit_obj_id == -1:
+                        weight = weight
+                    else:
+                        weight = weight / 2.0
+                
+                
                 particle[obj_index].w = weight
             # old resample function
             # Flag = self.normalize_particles()
@@ -1207,6 +1235,7 @@ if __name__ == '__main__':
         elif run_alg_flag == "CVPF":
             particle_num = parameter_info['particle_num']
     object_name_list = parameter_info['object_name_list']
+    version = parameter_info['version'] # old/ray
     if run_alg_flag == 'CVPF':
         particle_num = 140
     print("This is "+update_style_flag+" update in scene"+task_flag)    
@@ -1295,6 +1324,21 @@ if __name__ == '__main__':
     estimated_object_set_old = copy.deepcopy(estimated_object_set)
     estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
 
+    if version == "ray":
+        while True:
+            print("I am here")
+            try:
+                (trans_camera, rot_camera) = listener.lookupTransform('/panda_link0', '/RealSense', rospy.Time(0))
+                break
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                continue
+        rob_T_cam_tf_pos = list(trans_camera)
+        rob_T_cam_tf_ori = list(rot_camera)
+        rob_T_cam_tf_3_3 = transformations.quaternion_matrix(rob_T_cam_tf_ori)
+        rob_T_cam_tf_4_4 = rotation_4_4_to_transformation_4_4(rob_T_cam_tf_3_3, rob_T_cam_tf_pos)
+        pw_T_cam_tf = np.dot(pw_T_rob_sim_4_4, rob_T_cam_tf_4_4)
+        pw_T_cam_tf_pos = [pw_T_cam_tf[0][3], pw_T_cam_tf[1][3], pw_T_cam_tf[2][3]]
+        
 
     # run the simulation
     Flag = True

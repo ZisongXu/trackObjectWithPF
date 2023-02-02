@@ -76,7 +76,7 @@ test2_objID = p_visualisation.loadURDF(os.path.expanduser("~/project/object/base
                                       other_obj_pos,
                                       other_obj_ori)
 
-test_point1 = [0., 0.3, 0.0841]
+test_point1 = [0., 0, 0.0841]
 test_point2 = [0.,-0.3, 0.0841]
 #test_point2 = [0., 0., 0.7]
 

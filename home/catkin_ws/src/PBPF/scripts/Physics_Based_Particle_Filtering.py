@@ -181,7 +181,7 @@ class PBPFMove():
             pw_T_parC_3_3 = transformations.quaternion_matrix(pw_T_parC_ori)
             pw_T_parC_4_4 = rotation_4_4_to_transformation_4_4(pw_T_parC_3_3, pw_T_parC_pos)
             
-            point_list, point_pos_list = generate_point_for_ray(pw_T_parC_pos, pw_T_parC_4_4)
+            point_list, point_pos_list = generate_point_for_ray(pw_T_parC_pos, pw_T_parC_4_4, obj_index)
             point_pos_list.append(pw_T_parC_pos)
             camera_pos_list = []
             list_length = len(point_pos_list)
@@ -390,7 +390,7 @@ class PBPFMove():
                     pw_T_parC_3_3 = transformations.quaternion_matrix(pw_T_parC_ori)
                     pw_T_parC_4_4 = rotation_4_4_to_transformation_4_4(pw_T_parC_3_3, pw_T_parC_pos)
                     
-                    point_list, point_pos_list = generate_point_for_ray(pw_T_parC_pos, pw_T_parC_4_4)
+                    point_list, point_pos_list = generate_point_for_ray(pw_T_parC_pos, pw_T_parC_4_4, obj_index)
                     point_pos_list.append(pw_T_parC_pos)
                     camera_pos_list = []
                     list_length = len(point_pos_list)
@@ -814,7 +814,7 @@ class CVPFMove():
                     pw_T_parC_3_3 = transformations.quaternion_matrix(pw_T_parC_ori)
                     pw_T_parC_4_4 = rotation_4_4_to_transformation_4_4(pw_T_parC_3_3, pw_T_parC_pos)
                     
-                    point_list, point_pos_list = generate_point_for_ray(pw_T_parC_pos, pw_T_parC_4_4)
+                    point_list, point_pos_list = generate_point_for_ray(pw_T_parC_pos, pw_T_parC_4_4, obj_index)
                     point_pos_list.append(pw_T_parC_pos)
                     camera_pos_list = []
                     list_length = len(point_pos_list)
@@ -901,7 +901,7 @@ class CVPFMove():
                 pw_T_parC_3_3 = transformations.quaternion_matrix(pw_T_parC_ori)
                 pw_T_parC_4_4 = rotation_4_4_to_transformation_4_4(pw_T_parC_3_3, pw_T_parC_pos)
                 
-                point_list, point_pos_list = generate_point_for_ray(pw_T_parC_pos, pw_T_parC_4_4)
+                point_list, point_pos_list = generate_point_for_ray(pw_T_parC_pos, pw_T_parC_4_4, obj_index)
                 point_pos_list.append(pw_T_parC_pos)
                 camera_pos_list = []
                 list_length = len(point_pos_list)
@@ -1313,7 +1313,7 @@ def process_esti_pose_from_rostopic(estimated_object_set):
         esti_pose_list.append(esti_pose)
     return esti_pose_list
 
-def generate_point_for_ray(pw_T_c_pos, pw_T_parC_4_4):
+def generate_point_for_ray(pw_T_c_pos, pw_T_parC_4_4, obj_index):
     vector_list = [[1,1,1], [1,1,-1], [1,-1,1], [1,-1,-1],
                    [-1,1,1], [-1,1,-1], [-1,-1,1], [-1,-1,-1],
                    [1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1],
@@ -1323,6 +1323,14 @@ def generate_point_for_ray(pw_T_c_pos, pw_T_parC_4_4):
                    [0.5,-1,0.5], [0.5,-1,-0.5], [-0.5,-1,0.5], [-0.5,-1,-0.5],
                    [0.5,0.5,1], [0.5,-0.5,1], [-0.5,0.5,1], [-0.5,-0.5,1],
                    [0.5,0.5,-1], [0.5,-0.5,-1], [-0.5,0.5,-1], [-0.5,-0.5,-1]]
+    r = math.sqrt(2)
+    if object_name_list[obj_index] == "soup":
+        vector_list = [[0,0,1], [0,0,-1],
+                       [2,2,1], [2,-2,1], [-2,2,1], [-2,-2,1], [r,r,1], [r,-r,1], [-r,r,1], [-r,-r,1],
+                       [2,2,0.5], [2,-2,0.5], [-2,2,0.5], [-2,-2,0.5], [r,r,0.5], [r,-r,0.5], [-r,r,0.5], [-r,-r,0.5]
+                       [2,2,0], [2,-2,0], [-2,2,0], [-2,-2,0], [r,r,0], [r,-r,0], [-r,r,0], [-r,-r,0],
+                       [2,2,-0.5], [2,-2,-0.5], [-2,2,-0.5], [-2,-2,-0.5], [r,r,-0.5], [r,-r,-0.5], [-r,r,-0.5], [-r,-r,-0.5],
+                       [2,2,-1], [2,-2,-1], [-2,2,-1], [-2,-2,-1], [r,r,-1], [r,-r,-1], [-r,r,-1], [-r,-r,-1]]
     point_list = []
     point_pos_list = []
     for index in range(38):

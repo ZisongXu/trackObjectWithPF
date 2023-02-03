@@ -6,6 +6,12 @@
    <material name="box_size">
      <color rgba="0.220 0.1902 0.0732 1"/>
    </material>
+   <material name="box_size2">
+     <color rgba="0.207 0.2185 0.1681 1"/>
+   </material>
+   
+   
+   
    <link name="right_leg">
      <visual>
        <geometry>

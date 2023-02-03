@@ -16,3 +16,4 @@ run_alg_flag: PBPF
 task_flag: '1'
 update_style_flag: time
 version: ray
+ray_point_num: 8

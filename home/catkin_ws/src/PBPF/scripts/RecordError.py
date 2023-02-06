@@ -226,7 +226,7 @@ if __name__ == '__main__':
     pw_T_rob_sim_4_4 = rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
     
     signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
-    
+    esti_obj_list_not_pub = 2
     while True:
         for obj_index in range(object_num):
             if first_get_info_from_tf_flag == 0:
@@ -325,11 +325,12 @@ if __name__ == '__main__':
                 pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
             
             # PBPF pose information
+            
             esti_obj_states_list = ros_listener.listen_2_estis_states()
             if len(esti_obj_states_list.objects) == 0:
                 esti_obj_list_not_pub = 1
-            else:            
-                if esti_obj_list_not_pub == 1:
+            else:
+                if esti_obj_list_not_pub == 1 or esti_obj_list_not_pub == 2:
                     t_begin = time.time()
                 esti_obj_list_not_pub = 0
                 esti_object_pose = copy.deepcopy(esti_obj_states_list.objects[obj_index])

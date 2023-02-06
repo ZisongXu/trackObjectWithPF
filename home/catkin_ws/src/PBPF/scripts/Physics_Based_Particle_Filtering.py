@@ -172,7 +172,8 @@ class PBPFMove():
                 weight = 0.1
             else:
                 weight = 0.9
-#            self.particle_cloud[index][obj_index].w = weight
+            self.particle_cloud[index][obj_index].w = weight
+            
         elif version == "multiray" and self.do_obs_update == False:
             # need to change
             pw_T_parC_pos = copy.deepcopy([x, y, z])
@@ -200,8 +201,7 @@ class PBPFMove():
                 weight = 0.9
             else:
                 weight = 0.1
-                    
-        self.particle_cloud[index][obj_index].w = weight
+            self.particle_cloud[index][obj_index].w = weight
             
             
     # motion model
@@ -1327,7 +1327,7 @@ def generate_point_for_ray(pw_T_c_pos, pw_T_parC_4_4, obj_index):
     if object_name_list[obj_index] == "soup":
         vector_list = [[0,0,1], [0,0,-1],
                        [2,2,1], [2,-2,1], [-2,2,1], [-2,-2,1], [r,r,1], [r,-r,1], [-r,r,1], [-r,-r,1],
-                       [2,2,0.5], [2,-2,0.5], [-2,2,0.5], [-2,-2,0.5], [r,r,0.5], [r,-r,0.5], [-r,r,0.5], [-r,-r,0.5]
+                       [2,2,0.5], [2,-2,0.5], [-2,2,0.5], [-2,-2,0.5], [r,r,0.5], [r,-r,0.5], [-r,r,0.5], [-r,-r,0.5],
                        [2,2,0], [2,-2,0], [-2,2,0], [-2,-2,0], [r,r,0], [r,-r,0], [-r,r,0], [-r,-r,0],
                        [2,2,-0.5], [2,-2,-0.5], [-2,2,-0.5], [-2,-2,-0.5], [r,r,-0.5], [r,-r,-0.5], [-r,r,-0.5], [-r,-r,-0.5],
                        [2,2,-1], [2,-2,-1], [-2,2,-1], [-2,-2,-1], [r,r,-1], [r,-r,-1], [-r,r,-1], [-r,-r,-1]]
@@ -1358,6 +1358,11 @@ def track_fk_sim_world():
                                               [0, 0, 0],
                                               [0, 0, 0, 1],
                                               useFixedBase=1)
+    if task_flag == "1":
+        track_fk_obst_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle.urdf"),
+                                                   pw_T_obst_opti_pos,
+                                                   pw_T_obst_opti_ori,
+                                                   useFixedBase=1)
     return p_track_fk_env, track_fk_rob_id, track_fk_plane_id
 
 def track_fk_world_rob_mv(p_sim, sim_rob_id, position):
@@ -1470,6 +1475,9 @@ if __name__ == '__main__':
     z_h = 0.06
     PBPF_time_cosuming_list = []
     
+    pw_T_obst_opti_pos = [0.7188993998723022, 0.2767650526046564, 0.1258681365201122]
+    pw_T_obst_opti_ori = [ 7.07173367e-01, -6.19453133e-03, 4.42925544e-04, 7.07012914e-01]
+
     # multi-objects/robot list
     pw_T_rob_sim_pose_list_alg = []
     pw_T_obj_obse_obj_list_alg = []

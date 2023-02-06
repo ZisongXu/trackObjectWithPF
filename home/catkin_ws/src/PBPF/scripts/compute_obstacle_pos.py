@@ -1,22 +1,62 @@
 #!/usr/bin/python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Mar 10 10:57:49 2021
+
+@author: 12106
+"""
+from gazebo_msgs.msg import ModelStates
+#ROS
+from concurrent.futures.process import _threads_wakeups
+import itertools
+import os.path
+from pickle import TRUE
+from re import T
+from ssl import ALERT_DESCRIPTION_ILLEGAL_PARAMETER
+from tkinter.tix import Tree
 import rospy
+import threading
+import rospkg
+from std_msgs.msg import String
+from std_msgs.msg import Float32
+from std_msgs.msg import Int8
+from std_msgs.msg import ColorRGBA, Header
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, TransformStamped, Vector3
-from PBPF.msg import object_pose, particle_pose, particle_list, estimated_obj_pose
-from gazebo_msgs.msg import ModelStates
-
+from PBPF.msg import estimated_obj_pose, object_pose, particle_list, particle_pose
 import tf
 import tf.transformations as transformations
-
-import copy
-import random
-import math
-import numpy as np
-
+from visualization_msgs.msg import Marker
+#pybullet
 from pyquaternion import Quaternion
-import yaml
-import os
+import pybullet as p
 import time
+import pybullet_data
+from pybullet_utils import bullet_client as bc
+import numpy as np
+import math
+import random
+import copy
+import os
+import signal
+import sys
+import matplotlib.pyplot as plt
+import pandas as pd
+import multiprocessing
+import yaml
+#from sksurgerycore.algorithms.averagequaternions import average_quaternions
+from quaternion_averaging import weightedAverageQuaternions
+#class in other files
+from Franka_robot import Franka_robot
+from Ros_Listener import Ros_Listener
+from Particle import Particle
+from InitialSimulationModel import InitialSimulationModel
+from Realworld import Realworld
+from Visualisation_World import Visualisation_World
+from Create_Scene import Create_Scene
+from Object_Pose import Object_Pose
+from Robot_Pose import Robot_Pose
+from Center_T_Point_for_Ray import Center_T_Point_for_Ray
 #Class of franka robot listen to info from ROS
 class Ros_Listener():
     def __init__(self):
@@ -298,20 +338,51 @@ if __name__ == '__main__':
     robot_pose = ros_listener.robot_pose
     # obstacle_pose = ros_listener.obstacle_pose
     time.sleep(0.5)
+
+    p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
+    p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
+    p_visualisation.setGravity(0, 0, -9.81)
+    p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=90, cameraPitch=-20, cameraTargetPosition=[0.3,0.1,0.2])      
+    # p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.3,0.1,0.2])    
+    plane_id = p_visualisation.loadURDF("plane.urdf")
+
+    obstacle_pose = ros_listener.listen_2_object_pose("obstacle")
+    robot_pose = ros_listener.listen_2_object_pose("panda_robot")
+    print("obstacle_pose:")
+    print(obstacle_pose)
+    print("robot_pose:")
+    print(robot_pose)
+    opti_T_rob_pose = robot_pose
+    opti_T_rob_pos = copy.deepcopy(robot_pose[0])
+    opti_T_rob_ori = copy.deepcopy(robot_pose[1]) # x,y,z,w
+    opti_T_rob_sim_3_3 = transformations.quaternion_matrix(opti_T_rob_ori)
+    opti_T_rob_sim_4_4 = ros_listener.rotation_4_4_to_transformation_4_4(opti_T_rob_sim_3_3, opti_T_rob_pos)
+
+    opti_T_obst_pose = obstacle_pose
+    opti_T_obst_pos = copy.deepcopy(obstacle_pose[0])
+    opti_T_obst_ori = copy.deepcopy(obstacle_pose[1]) # x,y,z,w
+    opti_T_obst_sim_3_3 = transformations.quaternion_matrix(opti_T_obst_ori)
+    opti_T_obst_sim_4_4 = ros_listener.rotation_4_4_to_transformation_4_4(opti_T_obst_sim_3_3, opti_T_obst_pos)
+
+    pw_T_rob_sim_pos = [0.0, 0.0, 0.026]
+    pw_T_rob_sim_pos = [0.0, 0.0, 0.02]
+    pw_T_rob_sim_ori = [0, 0, 0, 1]
+    pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
+    pw_T_rob_sim_4_4 = ros_listener.rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
+
+    rob_T_opti_sim_4_4 = np.linalg.inv(opti_T_rob_sim_4_4)
+    rob_T_obst_opti_4_4 = np.dot(rob_T_opti_sim_4_4, opti_T_obst_sim_4_4)
+    pw_T_obst_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obst_opti_4_4)
+
+    pw_T_obst_opti_pos = [pw_T_obst_opti_4_4[0][3],pw_T_obst_opti_4_4[1][3],pw_T_obst_opti_4_4[2][3]]
+    pw_T_obst_opti_ori = transformations.quaternion_from_matrix(pw_T_obst_opti_4_4)
+
+    print(pw_T_obst_opti_pos)
+    print(pw_T_obst_opti_ori)
+    track_fk_rob_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle.urdf"),
+                                              pw_T_obst_opti_pos,
+                                              pw_T_obst_opti_ori,
+                                              useFixedBase=1)
+        
     while True:
-        obstacle_pose = ros_listener.listen_2_object_pose("obstacle")
-        robot_pose = ros_listener.listen_2_object_pose("panda_robot")
-
-        opti_T_rob_pose = robot_pose
-        opti_T_rob_pos = copy.deepcopy(robot_pose[0])
-        opti_T_rob_ori = copy.deepcopy(robot_pose[1]) # x,y,z,w
-
-        pw_T_rob_sim_pos = [0.0, 0.0, 0.026]
-        pw_T_rob_sim_pos = [0.0, 0.0, 0.02]
-        pw_T_rob_sim_ori = [0, 0, 0, 1]
-
-        pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
-        pw_T_rob_sim_4_4 = ros_listener.rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
-        joint_states = self.ros_listener.current_joint_values
-        rob_pose = Robot_Pose("pandaRobot", 0, pw_T_rob_sim_pos, pw_T_rob_sim_ori, joint_states, pw_T_rob_sim_4_4, rob_index)
-        self.pw_T_rob_sim_pose_list.append(rob_pose)
+        p_visualisation.stepSimulation()

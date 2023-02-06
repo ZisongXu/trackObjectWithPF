@@ -4,7 +4,7 @@
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
 declare -a objectNames=("soup")
 declare -a sceneNames=("scene3")
-declare -a particleNumbers=(30)
+declare -a particleNumbers=(15)
 declare -a runAlgFlags=("PBPF")
 
 for runAlgFlag in "${runAlgFlags[@]}"
@@ -25,12 +25,12 @@ do
 				python3 update_yaml_file_automated.py "${objectName}" "${particleNumber}" "${sceneName}" "${runAlgFlag}"
 				
 				# for rosbag in {1..10}
-				for ((rosbag=5;rosbag<=5;rosbag++)); 
+				for ((rosbag=6;rosbag<=6;rosbag++)); 
 				do
 					duration=$(python3 get_info_from_rosbag.py "${objectName}" "${particleNumber}" "${sceneName}" "${rosbag}")
 
 					# for repeat in {1..10}
-					for ((repeat=10;repeat<=10;repeat++));
+					for ((repeat=5;repeat<=5;repeat++));
 					do
 						echo "I will sleep for $duration seconds"
 						rosbag play "rosbag/new_rosbag/${objectName}_${sceneName}/${objectName}_${sceneName}_70_${rosbag}.bag" --clock  > /dev/null 2>&1 & 

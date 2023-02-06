@@ -57,6 +57,7 @@ class Visualisation_World():
         with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
             self.parameter_info = yaml.safe_load(file)
         self.gazebo_flag = self.parameter_info['gazebo_flag']
+        self.task_flag = self.parameter_info['task_flag']
         self.pw_T_rob_sim_pose_list = []
         self.pw_T_target_obj_obse_pose_lsit = []
         self.pw_T_target_obj_opti_pose_lsit = []
@@ -79,6 +80,13 @@ class Visualisation_World():
         p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=90, cameraPitch=-20, cameraTargetPosition=[0.3,0.1,0.2])      
         # p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.3,0.1,0.2])    
         plane_id = p_visualisation.loadURDF("plane.urdf")
+        if self.task_flag == "1":
+            pw_T_obst_opti_pos = [0.7188993998723022, 0.2767650526046564, 0.1258681365201122]
+            pw_T_obst_opti_ori = [ 7.07173367e-01, -6.19453133e-03, 4.42925544e-04, 7.07012914e-01]
+            obstacle_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle.urdf"),
+                                                   pw_T_obst_opti_pos,
+                                                   pw_T_obst_opti_ori,
+                                                   useFixedBase=1)
         
         # load objects in the pybullet world
 #        for obj_index in range(self.object_num):

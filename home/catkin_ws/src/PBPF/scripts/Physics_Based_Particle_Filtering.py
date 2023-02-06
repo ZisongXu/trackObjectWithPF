@@ -173,7 +173,7 @@ class PBPFMove():
             else:
                 weight = 0.9
             self.particle_cloud[index][obj_index].w = weight
-            
+
         elif version == "multiray" and self.do_obs_update == False:
             # need to change
             pw_T_parC_pos = copy.deepcopy([x, y, z])
@@ -1464,7 +1464,7 @@ if __name__ == '__main__':
     boss_sigma_obs_pos = 0.038226405
     boss_sigma_obs_pos = 0.004
     boss_sigma_obs_pos = 0.005 * 4
-    mass_mean = 0.380
+    mass_mean = 0.380 # 0.380
     mass_sigma = 0.5
     friction_mean = 0.1
     friction_sigma = 0.3

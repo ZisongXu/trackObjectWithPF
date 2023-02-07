@@ -1482,6 +1482,7 @@ if __name__ == '__main__':
     pw_T_rob_sim_pose_list_alg = []
     pw_T_obj_obse_obj_list_alg = []
     pw_T_obj_obse_oto_list_alg = []
+    # need to change
     dis_std_list = [d_thresh_obse]
     ang_std_list = [a_thresh_obse]
     # build an object of class "Ros_Listener"

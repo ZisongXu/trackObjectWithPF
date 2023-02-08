@@ -1463,7 +1463,7 @@ if __name__ == '__main__':
     boss_sigma_obs_ang = 0.0216773873 * 4
     boss_sigma_obs_pos = 0.038226405
     boss_sigma_obs_pos = 0.004
-    boss_sigma_obs_pos = 0.005 * 4
+    boss_sigma_obs_pos = 0.005 * 4 #need to increase
     mass_mean = 0.380 # 0.380
     mass_sigma = 0.5
     friction_mean = 0.1

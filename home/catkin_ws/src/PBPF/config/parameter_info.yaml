@@ -10,7 +10,7 @@ oto_name_list:
 otob_name_list:
 - cracker_obstacle
 - fish_can
-particle_num: 10
+particle_num: 2
 ray_point_num: 8
 robot_num: 1
 run_alg_flag: PBPF

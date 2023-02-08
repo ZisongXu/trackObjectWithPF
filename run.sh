@@ -8,7 +8,6 @@ rm -rf workdir/*
 singularity run \
     --contain \
     $(if lspci | grep -qi nvidia; then echo ' --nv'; else echo ''; fi) \
-    -B $SSH_AUTH_SOCK \
     --bind=/etc/hosts \
     --bind=/etc/localtime \
     --workdir=workdir \

@@ -24,13 +24,13 @@ do
 				
 				python3 update_yaml_file_automated.py "${objectName}" "${particleNumber}" "${sceneName}" "${runAlgFlag}"
 				
-				# for rosbag in {1..10}
-				for ((rosbag=6;rosbag<=6;rosbag++)); 
+				for rosbag in {1..10}
+				# for ((rosbag=6;rosbag<=6;rosbag++)); 
 				do
 					duration=$(python3 get_info_from_rosbag.py "${objectName}" "${particleNumber}" "${sceneName}" "${rosbag}")
 
-					# for repeat in {1..10}
-					for ((repeat=5;repeat<=5;repeat++));
+					for repeat in {1..10}
+					# for ((repeat=5;repeat<=5;repeat++));
 					do
 						echo "I will sleep for $duration seconds"
 						rosbag play "rosbag/new_rosbag/${objectName}_${sceneName}/${objectName}_${sceneName}_70_${rosbag}.bag" --clock  > /dev/null 2>&1 & 

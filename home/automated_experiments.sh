@@ -4,7 +4,7 @@
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
 declare -a objectNames=("cracker")
 declare -a sceneNames=("scene2")
-declare -a particleNumbers=(5 10)
+declare -a particleNumbers=(15 20 25 30)
 declare -a runAlgFlags=("PBPF")
 
 for runAlgFlag in "${runAlgFlags[@]}"

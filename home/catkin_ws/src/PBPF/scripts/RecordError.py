@@ -200,24 +200,25 @@ if __name__ == '__main__':
     first_get_info_from_tf_flag = 0
     first_get_info_from_tf_flag_gt = 0
     gazebo_flag = parameter_info['gazebo_flag']
+    task_flag = parameter_info['task_flag']
     # pos
     boss_obse_err_pos_df_list = []
     boss_PBPF_err_pos_df_list = []
     boss_CVPF_err_pos_df_list = []
     boss_err_pos_df_list = []
-    boss_obse_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-    boss_PBPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-    boss_CVPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-    boss_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
+    boss_obse_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num'],index=[])
+    boss_PBPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num'],index=[])
+    boss_CVPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num'],index=[])
+    boss_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num'],index=[])
     # ang
     boss_obse_err_ang_df_list = []
     boss_PBPF_err_ang_df_list = []
     boss_CVPF_err_ang_df_list = []
     boss_err_ang_df_list = []
-    boss_obse_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-    boss_PBPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-    boss_CVPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-    boss_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
+    boss_obse_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num'],index=[])
+    boss_PBPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num'],index=[])
+    boss_CVPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num'],index=[])
+    boss_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num'],index=[])
 
     pw_T_rob_sim_pos = [0.0, 0.0, 0.026]
     pw_T_rob_sim_pos = [0.0, 0.0, 0.02]
@@ -230,12 +231,12 @@ if __name__ == '__main__':
     while True:
         for obj_index in range(object_num):
             if first_get_info_from_tf_flag == 0:
-                boss_obse_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-                boss_obse_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-                boss_PBPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-                boss_PBPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-                boss_CVPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-                boss_CVPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
+                boss_obse_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num'],index=[])
+                boss_obse_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num'],index=[])
+                boss_PBPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num'],index=[])
+                boss_PBPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num'],index=[])
+                boss_CVPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num'],index=[])
+                boss_CVPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num'],index=[])
                 
                 boss_obse_err_pos_df_list.append(boss_obse_err_pos_df)
                 boss_obse_err_ang_df_list.append(boss_obse_err_ang_df)
@@ -361,13 +362,13 @@ if __name__ == '__main__':
                     err_opti_PBPF_pos = compute_pos_err_bt_2_points(pw_T_obj_opti_pos, pw_T_obj_PBPF_pos)
                     err_opti_PBPF_ang = compute_ang_err_bt_2_points(pw_T_obj_opti_ori, pw_T_obj_PBPF_ori)
                     err_opti_PBPF_ang = angle_correction(err_opti_PBPF_ang)
-                    
+                    obj_scene = object_name_list[obj_index]+'_scene'+task_flag
                     t_before_record = time.time()
-                    boss_obse_err_pos_df_list[obj_index].loc[flag_record_obse] = [flag_record_obse, t_before_record - t_begin, err_opti_obse_pos, 'obse']
-                    boss_obse_err_ang_df_list[obj_index].loc[flag_record_obse] = [flag_record_obse, t_before_record - t_begin, err_opti_obse_ang, 'obse']
+                    boss_obse_err_pos_df_list[obj_index].loc[flag_record_obse] = [flag_record_obse, t_before_record - t_begin, err_opti_obse_pos, 'obse', obj_scene, particle_num]
+                    boss_obse_err_ang_df_list[obj_index].loc[flag_record_obse] = [flag_record_obse, t_before_record - t_begin, err_opti_obse_ang, 'obse', obj_scene, particle_num]
                     flag_record_obse = flag_record_obse + 1
-                    boss_PBPF_err_pos_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_pos, 'PBPF']
-                    boss_PBPF_err_ang_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_ang, 'PBPF']
+                    boss_PBPF_err_pos_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_pos, 'PBPF', obj_scene, particle_num]
+                    boss_PBPF_err_ang_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_ang, 'PBPF', obj_scene, particle_num]
                     flag_record_PBPF = flag_record_PBPF + 1
                     
                 else:
@@ -376,8 +377,8 @@ if __name__ == '__main__':
                     err_opti_CVPF_ang = angle_correction(err_opti_CVPF_ang)
 
                     t_before_record = time.time()
-                    boss_CVPF_err_pos_df_list[obj_index].loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_pos, 'CVPF']
-                    boss_CVPF_err_ang_df_list[obj_index].loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_ang, 'CVPF']
+                    boss_CVPF_err_pos_df_list[obj_index].loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_pos, 'CVPF', obj_scene, particle_num]
+                    boss_CVPF_err_ang_df_list[obj_index].loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_ang, 'CVPF', obj_scene, particle_num]
                     flag_record_CVPF = flag_record_CVPF + 1
                 
                 

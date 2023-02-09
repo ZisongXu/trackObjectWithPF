@@ -14,6 +14,6 @@ particle_num: 5
 ray_point_num: 8
 robot_num: 1
 run_alg_flag: PBPF
-task_flag: '1'
+task_flag: '2'
 update_style_flag: time
 version: old

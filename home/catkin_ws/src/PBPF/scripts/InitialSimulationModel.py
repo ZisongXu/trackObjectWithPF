@@ -68,10 +68,11 @@ class InitialSimulationModel():
         self.pybullet_particle_env_collection_CV = []
         self.particle_no_visual_id_collection_CV = []
         
-        self.boss_sigma_obs_x = 0.032860982 * 2.0
-        self.boss_sigma_obs_y = 0.012899399 * 1.5
-        self.boss_sigma_obs_z = 0.005 # 0.01
-        self.boss_sigma_obs_ang_init = 0.0216773873 * 2.0
+        self.boss_sigma_obs_pos_init = 0.08 # 8cm
+        self.boss_sigma_obs_x = self.boss_sigma_obs_pos_init / math.sqrt(2)
+        self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
+        self.boss_sigma_obs_z = 0
+        self.boss_sigma_obs_ang_init = 0.0216773873 * 20
         
         with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
             self.parameter_info = yaml.safe_load(file)

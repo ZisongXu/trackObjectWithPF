@@ -851,7 +851,8 @@ class CVPFMove():
             pw_T_parO_4_4 = self.rotation_4_4_to_transformation_4_4(pw_T_parO_3_3,pw_T_parO_pos)
             pw_T_parN = np.dot(pw_T_parO_4_4, parO_T_parN)
             pw_T_parN_pos = [pw_T_parN[0][3], pw_T_parN[1][3], pw_T_parN[2][3]]
-            # pw_T_parN_ori = transformations.quaternion_from_matrix(pw_T_parN)
+            pw_T_parN_ori = transformations.quaternion_from_matrix(pw_T_parN)
+            pw_T_parN_ori = quaternion_correction(pw_T_parN_ori)
             # pw_T_parN_ang = pybullet_env.getEulerFromQuaternion(pw_T_parN_ori)
             
             # add noise on particle filter
@@ -860,7 +861,7 @@ class CVPFMove():
             normal_z = self.add_noise_2_par(pw_T_parN_pos[2])
             
             # quat = copy.deepcopy(pw_T_obj_obse_objects_list[obj_index].ori) # use ori from dope
-            quat = copy.deepcopy(pw_T_parO_ori) # x,y,z,w / use ori from CV
+            quat = copy.deepcopy(pw_T_parN_ori) # x,y,z,w / use ori from CV
             quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3]) # w,x,y,z
             random_dir = random.uniform(0, 2*math.pi)
             z_axis = random.uniform(-1,1)
@@ -1379,6 +1380,7 @@ def track_fk_world_rob_mv(p_sim, sim_rob_id, position):
     
 # ctrl-c write down the error file
 def signal_handler(sig, frame):
+    print("DOPE Jump Rate:", count_DOPE_jumping_time / all_frame)
     sys.exit()
 
 if __name__ == '__main__':
@@ -1445,34 +1447,37 @@ if __name__ == '__main__':
     elif run_alg_flag == "CVPF":
         boss_pf_update_interval_in_real = 0.02
     pf_update_rate = rospy.Rate(1.0/boss_pf_update_interval_in_real)
-    # error in xyz axis obse before recalibrating
-    boss_sigma_obs_x = 0.03973017808163751 / 2.0
-    boss_sigma_obs_y = 0.01167211468503462 / 2.0
-    boss_sigma_obs_z = 0.02820930183351492 / 2.0
-    # new obse error
-    boss_sigma_obs_x = 0.032860982 * 2.0
-    boss_sigma_obs_y = 0.012899399 * 1.5
-    boss_sigma_obs_z = 0.01
-    boss_sigma_obs_ang_init = 0.0216773873 * 2.0
+    # # error in xyz axis obse before recalibrating
+    # boss_sigma_obs_x = 0.03973017808163751 / 2.0
+    # boss_sigma_obs_y = 0.01167211468503462 / 2.0
+    # boss_sigma_obs_z = 0.02820930183351492 / 2.0
+    # # new obse error
+    # boss_sigma_obs_x = 0.032860982 * 2.0
+    # boss_sigma_obs_y = 0.012899399 * 1.5
+    # boss_sigma_obs_z = 0.01
+    # boss_sigma_obs_ang_init = 0.0216773873 * 2.0
+
     # Motion model Noise
     pos_noise = 0.001 * 5.0
     ang_noise = 0.05 * 1.0
-    # standard deviation of computing the weight
-    boss_sigma_obs_ang = 0.216773873
-    boss_sigma_obs_ang = 0.0216773873
-    boss_sigma_obs_ang = 0.0216773873 * 4
-    boss_sigma_obs_pos = 0.038226405
-    boss_sigma_obs_pos = 0.004
-    boss_sigma_obs_pos = 0.005 * 4 #need to increase
+
+    # Standard deviation of computing the weight
+    # boss_sigma_obs_ang = 0.216773873
+    # boss_sigma_obs_ang = 0.0216773873
+    # boss_sigma_obs_ang = 0.0216773873 * 4
+    boss_sigma_obs_ang = 0.0216773873 * 20
+    # boss_sigma_obs_pos = 0.038226405
+    # boss_sigma_obs_pos = 0.004
+    boss_sigma_obs_pos = 0.08 # 0.02 need to increase
+
     mass_mean = 0.380 # 0.380
     mass_sigma = 0.5
     friction_mean = 0.1
     friction_sigma = 0.3
     restitution_mean = 0.9
     restitution_sigma = 0.2
-    x_w = 0.159
-    y_l = 0.21243700408935547
-    z_h = 0.06
+    count_DOPE_jumping_time = 0
+    all_frame = 0
     PBPF_time_cosuming_list = []
     
     pw_T_obst_opti_pos = [0.7188993998723022, 0.2767650526046564, 0.1258681365201122]
@@ -1633,8 +1638,10 @@ if __name__ == '__main__':
             ang_obseCur_estiOld = compute_ang_err_bt_2_points(pw_T_obj_obse_ori_new, pw_T_esti_obj_ori_old)
 
             # if dis_obseCur_estiOld > dis_std_list[obj_index]*3 or ang_obseCur_estiOld > ang_std_list[obj_index]*3:
-            if dis_obseCur_estiOld > 0.15 or ang_obseCur_estiOld > math.pi * 2 / 3.0:
+            all_frame = all_frame + 1
+            if dis_obseCur_estiOld > 0.30: #  or ang_obseCur_estiOld > math.pi * 2 / 3.0:
                 # print("DOPE becomes crazy")
+                count_DOPE_jumping_time = count_DOPE_jumping_time + 1
                 obse_is_fresh = False
                 obse_is_jumping = True
 

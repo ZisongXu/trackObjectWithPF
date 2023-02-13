@@ -3,8 +3,8 @@
 # declare -a objectNames=("cracker" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
 declare -a objectNames=("cracker")
-declare -a sceneNames=("scene3")
-declare -a particleNumbers=(1 5 10 15 20 25 30)
+declare -a sceneNames=("scene1" "scene2" "scene3")
+declare -a particleNumbers=(1 5 10 15 20 70)
 # declare -a runAlgFlags=("PBPF" "CVPF")
 declare -a repeatTimes=(10)
 declare -a Ang_and_Pos=("pos")
@@ -30,7 +30,7 @@ done
 for filename in "${filenames[@]}"
 do
 
-	python3 plotsns.py "${filename}" &
+	python3 plotsns_base_on_parNum.py "${filename}" &
 	DATA_PRO_PID=$!
 
 done

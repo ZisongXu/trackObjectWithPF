@@ -52,15 +52,15 @@ if flag_plot == "ang":
     plt.ylim(0, y_ylim)
     plt.title(title_ang, fontsize=16)
     svg_fig_ang = figure_ang.get_figure()
-    svg_fig_ang.savefig(file_name_ang+".svg",format="svg")
+    svg_fig_ang.savefig(flag_plot+".svg",format="svg")
 
 if flag_plot == "pos" or flag_plot == "max_range" or flag_plot == "all" or flag_plot == "last_value" or flag_plot == "max_value" or flag_plot == "all_pos":
     if task_flag == "1":
-        x_range_max = 32
+        x_range_max = 72
         x_range_unit = 5
         y_range_max = 0.27
         y_range_unit = 0.025
-        x_xlim = 32
+        x_xlim = 72
         y_ylim = 0.30
 
     print("Ready to plot the figure of pos")
@@ -78,6 +78,6 @@ if flag_plot == "pos" or flag_plot == "max_range" or flag_plot == "all" or flag_
     plt.ylim(0, y_ylim)
     plt.title(title_pos, fontsize=16)
     svg_fig_pos = figure_pos.get_figure()
-    svg_fig_pos.savefig(file_name_pos+".svg",format="svg")
+    svg_fig_pos.savefig(flag_plot+".svg",format="svg")
 
 print("finished")

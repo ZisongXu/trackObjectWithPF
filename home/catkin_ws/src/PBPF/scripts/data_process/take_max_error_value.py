@@ -87,7 +87,7 @@ if flag_pos == True:
                                      datasetcopy.loc[0,'alg'],
                                      datasetcopy.loc[0,'obj_scene'],
                                      datasetcopy.loc[0,'particle_num']]
-                newdataset.to_csv('max_range.csv',index=0,header=0,mode='a')
+                newdataset.to_csv('max_value.csv',index=0,header=0,mode='a')
         print("PFPE pos error mean:",np.mean(pos_error_all_list))
         print("PFPE pos error  std:",np.std(pos_error_all_list))
         

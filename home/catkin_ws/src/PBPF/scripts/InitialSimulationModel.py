@@ -62,13 +62,14 @@ class InitialSimulationModel():
         self.esti_objs_cloud = []
         self.pybullet_particle_env_collection = []
         self.fake_robot_id_collection = []
+        self.other_object_id_collection = []
         self.particle_no_visual_id_collection = []
         
         self.particle_cloud_CV = []
         self.pybullet_particle_env_collection_CV = []
         self.particle_no_visual_id_collection_CV = []
         
-        self.boss_sigma_obs_pos_init = 0.08 # 8cm
+        self.boss_sigma_obs_pos_init = 0.16 # 16cm 
         self.boss_sigma_obs_x = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_z = 0
@@ -144,6 +145,7 @@ class InitialSimulationModel():
                                                                other_obj_pos,
                                                                other_obj_ori,
                                                                useFixedBase=1)
+                self.other_object_id_collection.append(sim_base_id)
                 
             for rob_index in range(self.robot_num):
                 real_robot_start_pos = self.pw_T_rob_sim_pose_list_alg[rob_index].pos
@@ -154,8 +156,11 @@ class InitialSimulationModel():
                                                                  real_robot_start_ori,
                                                                  useFixedBase=1)
                 self.set_sim_robot_JointPosition(pybullet_simulation_env, fake_robot_id, joint_of_robot)
-            self.fake_robot_id_collection.append(fake_robot_id)
+                self.fake_robot_id_collection.append(fake_robot_id)
+            # need to change
             collision_detection_obj_id.append(fake_robot_id)
+            if self.other_obj_num > 0:
+                collision_detection_obj_id.append(sim_base_id)
             
             object_list = []
 
@@ -173,7 +178,8 @@ class InitialSimulationModel():
                 collision_detection_obj_id.append(particle_no_visual_id)
                 while True:
                     flag = 0
-                    for check_num in range(obj_index+1):
+                    length_collision_detection_obj_id = len(collision_detection_obj_id)
+                    for check_num in range(length_collision_detection_obj_id-1):
                         pybullet_simulation_env.stepSimulation()
                         contacts = pybullet_simulation_env.getContactPoints(bodyA=collision_detection_obj_id[check_num], bodyB=collision_detection_obj_id[-1])
                         for contact in contacts:
@@ -217,6 +223,7 @@ class InitialSimulationModel():
                                                                other_obj_pos,
                                                                other_obj_ori,
                                                                useFixedBase=1)
+                self.other_object_id_collection.append(sim_base_id)
             
             for rob_index in range(self.robot_num):
                 real_robot_start_pos = self.pw_T_rob_sim_pose_list_alg[rob_index].pos
@@ -227,9 +234,13 @@ class InitialSimulationModel():
                                                                  real_robot_start_ori,
                                                                  useFixedBase=1)
                 self.set_sim_robot_JointPosition(pybullet_simulation_env, fake_robot_id, joint_of_robot)
-            self.fake_robot_id_collection.append(fake_robot_id)
+                self.fake_robot_id_collection.append(fake_robot_id)
+
+            # need to change
             collision_detection_obj_id.append(fake_robot_id)
-            
+            if self.other_obj_num > 0:
+                collision_detection_obj_id.append(sim_base_id)
+
             object_list = []
 
             for obj_index in range(self.object_num):
@@ -245,8 +256,10 @@ class InitialSimulationModel():
                                                                          particle_ori)
                 collision_detection_obj_id.append(particle_no_visual_id)
                 while True:
+                    print("Trying to initialize in a random pose.")
                     flag = 0
-                    for check_num in range(obj_index+1):
+                    length_collision_detection_obj_id = len(collision_detection_obj_id)
+                    for check_num in range(length_collision_detection_obj_id-1):
                         pybullet_simulation_env.stepSimulation()
                         contacts = pybullet_simulation_env.getContactPoints(bodyA=collision_detection_obj_id[check_num], bodyB=collision_detection_obj_id[-1])
                         for contact in contacts:

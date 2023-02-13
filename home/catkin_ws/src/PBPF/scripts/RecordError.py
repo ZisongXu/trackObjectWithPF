@@ -160,11 +160,11 @@ def signal_handler(sig, frame):
             file_name_obse_ang = update_style_flag+'_obse_err_ang.csv'
             file_name_PBPF_ang = update_style_flag+'_PBPF_err_ang.csv'
 
-            boss_obse_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_change_sigam_obse/'+str(file_name)+file_name_obse_pos,index=0,header=0,mode='a')
-            boss_obse_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_change_sigam_obse/'+str(file_name)+file_name_obse_ang,index=0,header=0,mode='a')
+            boss_obse_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_02_10_change/'+str(file_name)+file_name_obse_pos,index=0,header=0,mode='a')
+            boss_obse_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_02_10_change/'+str(file_name)+file_name_obse_ang,index=0,header=0,mode='a')
             print("write obser file")
-            boss_PBPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_change_sigam_obse/'+str(file_name)+file_name_PBPF_pos,index=0,header=0,mode='a')
-            boss_PBPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_change_sigam_obse/'+str(file_name)+file_name_PBPF_ang,index=0,header=0,mode='a')
+            boss_PBPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_02_10_change/'+str(file_name)+file_name_PBPF_pos,index=0,header=0,mode='a')
+            boss_PBPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_02_10_change/'+str(file_name)+file_name_PBPF_ang,index=0,header=0,mode='a')
             print("write PBPF file")
             
     if run_alg_flag == "CVPF":
@@ -190,6 +190,7 @@ if __name__ == '__main__':
     
     object_num = parameter_info['object_num']
     robot_num = 1
+    check_dope_work_flag_init = 0
     other_obj_num = 0
     particle_num = parameter_info['particle_num']
     object_name_list = parameter_info['object_name_list']
@@ -266,14 +267,21 @@ if __name__ == '__main__':
             obse_is_fresh = True
             try:
                 latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo)
-                if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
+                if check_dope_work_flag_init == 0:
+                    check_dope_work_flag_init = 1
+                    old_obse_time = latest_obse_time.to_sec()
+                # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
+                #     (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                #     obse_is_fresh = True
+                    # print("obse is FRESH")
+                if (latest_obse_time.to_sec() > old_obse_time):
                     (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
                     obse_is_fresh = True
-                    # print("obse is FRESH")
                 else:
                     # obse has not been updating for a while
                     obse_is_fresh = False
-                    print("obse is NOT fresh")
+                    # print("obse is NOT fresh")
+                old_obse_time = latest_obse_time.to_sec()
                 # break
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 print("can not find tf")

@@ -71,6 +71,8 @@ class PBPFMove():
         self.particle_no_visual_id_collection = copy.deepcopy(initial_parameter.particle_no_visual_id_collection)
         self.pybullet_env_id_collection = copy.deepcopy(initial_parameter.pybullet_particle_env_collection)
         self.pybullet_sim_fake_robot_id_collection = copy.deepcopy(initial_parameter.fake_robot_id_collection)
+        self.pybullet_sim_other_object_id_collection = copy.deepcopy(initial_parameter.other_object_id_collection)
+        self.other_obj_num = other_obj_num
         self.joint_num = 7
         self.object_estimate_pose_x = []
         self.object_estimate_pose_y = []
@@ -268,6 +270,9 @@ class PBPFMove():
         ### ori: x,y,z,w
         # get velocity of each particle
         collision_detection_obj_id.append(fake_robot_id[index])
+        for oto_index in range(self.other_obj_num):
+            collision_detection_obj_id.append(self.pybullet_sim_other_object_id_collection[oto_index])
+
         for obj_index in range(self.obj_num):
             pw_T_par_sim_id = self.particle_cloud[index][obj_index].no_visual_par_id
             linearVelocity, angularVelocity = pybullet_env.getBaseVelocity(pw_T_par_sim_id)
@@ -278,30 +283,41 @@ class PBPFMove():
                                                          [normal_x, normal_y, normal_z],
                                                          P_quat)
             collision_detection_obj_id.append(pw_T_par_sim_id)
+
+            
             # check collision
-            while True:
-                flag = 0
-                for check_num in range(obj_index+1):
-                    pybullet_env.stepSimulation()
-                    contacts = pybullet_env.getContactPoints(bodyA=collision_detection_obj_id[check_num], 
-                                                             bodyB=collision_detection_obj_id[-1])
-                    # pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
-                    # collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
-                    # length = len(collide_ids)
-                    for contact in contacts:
-                        contact_dis = contact[8]
-                        if contact_dis < -0.001:
-                            #print("detected contact during initialization. BodyA: %d, BodyB: %d, LinkOfA: %d, LinkOfB: %d", contact[1], contact[2], contact[3], contact[4])
-                            normal_x, normal_y, normal_z, P_quat = self.add_noise_pose(sim_par_cur_pos, sim_par_cur_ori)
-                            pybullet_env.resetBasePositionAndOrientation(pw_T_par_sim_id,
-                                                                         [normal_x, normal_y, normal_z],
-                                                                         P_quat)
-                            flag = 1
+            if motion_noise == True:
+                nTries = 0
+                while nTries < 20:
+                    nTries=nTries+1
+                    # print("checking")
+                    flag = 0
+                    length_collision_detection_obj_id = len(collision_detection_obj_id)
+                    for check_num in range(length_collision_detection_obj_id-1):
+                        pybullet_env.stepSimulation()
+                        contacts = pybullet_env.getContactPoints(bodyA=collision_detection_obj_id[check_num], # robot, other object...
+                                                                 bodyB=collision_detection_obj_id[-1]) # main(target) object
+                        # pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
+                        # collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
+                        # length = len(collide_ids)
+                        for contact in contacts:
+                            contact_dis = contact[8]
+                            if contact_dis < -0.001:
+                                #print("detected contact during initialization. BodyA: %d, BodyB: %d, LinkOfA: %d, LinkOfB: %d", contact[1], contact[2], contact[3], contact[4])
+                                normal_x, normal_y, normal_z, P_quat = self.add_noise_pose(sim_par_cur_pos, sim_par_cur_ori)
+                                pybullet_env.resetBasePositionAndOrientation(pw_T_par_sim_id,
+                                                                             [normal_x, normal_y, normal_z],
+                                                                             P_quat)
+                                flag = 1
+                                break
+                        if flag == 1:
                             break
-                    if flag == 1:
+                    if flag == 0:
                         break
-                if flag == 0:
-                    break
+                if nTries >= 10: # This means we could not find a non-colliding particle position.
+                    print("WARNING: Could not find a non-colliding particle position after motion noise. Moving particle object to noise-less pose. Particle index, object index ", index, obj_index)
+                    pybullet_env.resetBasePositionAndOrientation(pw_T_par_sim_id, sim_par_cur_pos, sim_par_cur_ori)
+
             self.update_partcile_cloud_pose_PB(index, obj_index, normal_x, normal_y, normal_z, P_quat, linearVelocity, angularVelocity)
         # pipe.send()
  
@@ -367,10 +383,15 @@ class PBPFMove():
                                            w=obse_obj_ori_corr[3]) # Quaternion(): w,x,y,z
                 par_quat = Quaternion(x=par_ori[0], y=par_ori[1], z=par_ori[2], w=par_ori[3])
                 err_bt_par_obse = par_quat * obse_obj_quat.inverse
-                cos_theta_over_2 = err_bt_par_obse.w
-                sin_theta_over_2 = math.sqrt(err_bt_par_obse.x ** 2 + err_bt_par_obse.y ** 2 + err_bt_par_obse.z ** 2)
+                err_bt_par_obse_corr = quaternion_correction([err_bt_par_obse.x,err_bt_par_obse.y,err_bt_par_obse.z,err_bt_par_obse.w])
+                err_bt_par_obse_corr_quat = Quaternion(x=err_bt_par_obse_corr[0], 
+                                           y=err_bt_par_obse_corr[1], 
+                                           z=err_bt_par_obse_corr[2], 
+                                           w=err_bt_par_obse_corr[3])
+                cos_theta_over_2 = err_bt_par_obse_corr_quat.w
+                sin_theta_over_2 = math.sqrt(err_bt_par_obse_corr_quat.x ** 2 + err_bt_par_obse_corr_quat.y ** 2 + err_bt_par_obse_corr_quat.z ** 2)
                 theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
-                theta = theta_over_2 * 2
+                theta = theta_over_2 * 2.0
                 weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
                 weight = weight_xyz * weight_ang
                 
@@ -654,6 +675,7 @@ class CVPFMove():
         self.particle_no_visual_id_collection_CV = copy.deepcopy(initial_parameter.particle_no_visual_id_collection_CV)
         self.pybullet_env_id_collection_CV = copy.deepcopy(initial_parameter.pybullet_particle_env_collection_CV)
         self.pybullet_sim_fake_robot_id_collection = copy.deepcopy(initial_parameter.fake_robot_id_collection)
+        self.pybullet_sim_other_object_id_collection = copy.deepcopy(initial_parameter.other_object_id_collection)
         self.object_estimate_pose_x = []
         self.object_estimate_pose_y = []
         self.object_real_____pose_x = []
@@ -1240,11 +1262,17 @@ def quaternion_correction(quaternion): # x,y,z,w
     cos_theta_over_2 = new_quat.w
     sin_theta_over_2 = math.sqrt(new_quat.x ** 2 + new_quat.y ** 2 + new_quat.z ** 2)
     theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
-    theta = theta_over_2 * 2
-    if theta >= math.pi or theta <= -math.pi:
-        new_quaternion = [-quaternion[0], -quaternion[1], -quaternion[2], -quaternion[3]]
-        return new_quaternion
-    return quaternion # x,y,z,w
+    theta = theta_over_2 * 2.0
+    while theta >= math.pi:
+        theta = theta - 2.0*math.pi
+    while theta <= -math.pi:
+        theta = theta + 2.0*math.pi
+    new_quaternion = [math.sin(theta/2.0)*(new_quat.x/sin_theta_over_2), math.sin(theta/2.0)*(new_quat.y/sin_theta_over_2), math.sin(theta/2.0)*(new_quat.z/sin_theta_over_2), math.cos(theta/2.0)]
+    #if theta >= math.pi or theta <= -math.pi:
+    #    new_quaternion = [-quaternion[0], -quaternion[1], -quaternion[2], -quaternion[3]]
+    #    return new_quaternion
+    #return quaternion # x,y,z,w
+    return new_quaternion
 
 def publish_par_pose_info(particle_cloud_pub):
     par_pose_list = list(range(particle_num))
@@ -1459,16 +1487,25 @@ if __name__ == '__main__':
 
     # Motion model Noise
     pos_noise = 0.001 * 5.0
-    ang_noise = 0.05 * 1.0
+    # ang_noise = 0.05 * 1.0
+    ang_noise = 0.05 * 3.0
+    pos_noise = 0.005
+    ang_noise = 0.05 
+    motion_noise = True
+
+    # pos_noise = 0.0
+    # ang_noise = 0.0
+    # motion_noise = True
 
     # Standard deviation of computing the weight
     # boss_sigma_obs_ang = 0.216773873
     # boss_sigma_obs_ang = 0.0216773873
     # boss_sigma_obs_ang = 0.0216773873 * 4
-    boss_sigma_obs_ang = 0.0216773873 * 20
+    # boss_sigma_obs_ang = 0.0216773873 * 20
+    boss_sigma_obs_ang = 0.0216773873 * 60
     # boss_sigma_obs_pos = 0.038226405
     # boss_sigma_obs_pos = 0.004
-    boss_sigma_obs_pos = 0.08 # 0.02 need to increase
+    boss_sigma_obs_pos = 0.25 # 0.02 need to increase
 
     mass_mean = 0.380 # 0.380
     mass_sigma = 0.5
@@ -1738,7 +1775,7 @@ if __name__ == '__main__':
             while True:
                 # PBPF algorithm
                 if run_alg_flag == "PBPF":
-                    if PBPF_alg.isAnyParticleInContact():
+                    if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
                         simRobot_touch_par_flag = 1
                         t_begin_PBPF = time.time()
                         flag_update_num_PB = flag_update_num_PB + 1
@@ -1747,7 +1784,7 @@ if __name__ == '__main__':
                         estimated_object_set, dis_std_list, ang_std_list = PBPF_alg.update_particle_filter_PB(ros_listener.current_joint_values, # joints of robot arm
                                                                                   pw_T_obj_obse_objects_pose_list, # [obse_obj1_pose, obse_obj2_pose]
                                                                                   do_obs_update=obse_is_fresh) # flag for judging obse work
-
+                        rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
                         t_finish_PBPF = time.time()
                         PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
                         simRobot_touch_par_flag = 0

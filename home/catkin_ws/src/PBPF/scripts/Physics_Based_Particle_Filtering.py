@@ -79,7 +79,8 @@ class PBPFMove():
         self.object_real_____pose_x = []
         self.object_real_____pose_y = []
         self.do_obs_update = True
-        self.ray_id_list = []
+        self.rays_id_list = []
+        self.camera_parPoint_list = []
         self.ray_list_empty = True
         
     def get_real_robot_joint(self, pybullet_env_id, real_robot_id):
@@ -115,6 +116,10 @@ class PBPFMove():
         global flag_record_obse
         global flag_record_PBPF
         global flag_record
+        
+        self.camera_parPoint_list = []
+        self.rays_id_list = []
+        
         self.do_obs_update = do_obs_update
         pybullet_sim_env = self.pybullet_env_id_collection
         fake_robot_id = self.pybullet_sim_fake_robot_id_collection
@@ -136,7 +141,10 @@ class PBPFMove():
         # publish pose of particles
         publish_par_pose_info(self.particle_cloud)
         publish_esti_pose_info(object_estimate_pose)
-
+        
+        if show_ray == True:
+            p_sim.removeAllUserDebugItems()
+        
         return object_estimate_pose, dis_std_list, ang_std_list, self.particle_cloud
     
     # judge if any particles are contact
@@ -166,22 +174,28 @@ class PBPFMove():
         self.particle_cloud[index][obj_index].ori = copy.deepcopy(ori)
         self.particle_cloud[index][obj_index].linearVelocity = linearVelocity
         self.particle_cloud[index][obj_index].angularVelocity = angularVelocity
-        
+#        self.particle_cloud[index][obj_index].rayTraceList = [1,2,3]
         if version == "ray" and self.do_obs_update == False:
+            camera_parPoint = []
             pw_T_par_sim_pos = copy.deepcopy([x, y, z])
             # pybullet_sim_env[index]
             rayTest_info = p_sim.rayTest(pw_T_cam_tf_pos, pw_T_par_sim_pos)
-            
+            camera_parPoint.append(pw_T_cam_tf_pos)
+            camera_parPoint.append(pw_T_par_sim_pos)
+            self.camera_parPoint_list.append(camera_parPoint)
             hit_obj_id = rayTest_info[0][0]
             print(hit_obj_id)
             if hit_obj_id == -1:
                 weight = 0.1
+#                weight = 0.9
             else:
                 weight = 0.9
+#                weight = 0.1
             self.particle_cloud[index][obj_index].w = weight
         
         elif version == "multiray" and self.do_obs_update == False:
             # need to change
+            camera_parPoint = []
             pw_T_parC_pos = copy.deepcopy([x, y, z])
             pw_T_parC_ori = copy.deepcopy(ori) # x, y, z, w
             pw_T_parC_ori = quaternion_correction(pw_T_parC_ori)
@@ -196,6 +210,41 @@ class PBPFMove():
                 camera_pos_list.append(pw_T_cam_tf_pos)
             # pybullet_sim_env[index]
             rayTestBatch_info = p_sim.rayTestBatch(camera_pos_list, point_pos_list)
+            camera_parPoint.append(camera_pos_list)
+            camera_parPoint.append(point_pos_list)
+            self.camera_parPoint_list.append(camera_parPoint)
+            
+            if show_ray == True:
+                ray_id_list = []
+                for list_index in range(list_length):
+                    ray_id = p_sim.addUserDebugLine(camera_pos_list[list_index], point_pos_list[list_index], [0,1,0], 2)
+                ray_id = p_sim.addUserDebugLine(point_pos_list[0], point_pos_list[1], [0,1,0], 5)
+                ray_id_list.append(ray_id)
+                ray_id = p_sim.addUserDebugLine(point_pos_list[0], point_pos_list[2], [0,1,0], 5)
+                ray_id_list.append(ray_id)
+                ray_id = p_sim.addUserDebugLine(point_pos_list[0], point_pos_list[4], [0,1,0], 5)
+                ray_id_list.append(ray_id)
+                ray_id = p_sim.addUserDebugLine(point_pos_list[1], point_pos_list[3], [0,1,0], 5)
+                ray_id_list.append(ray_id)
+                ray_id = p_sim.addUserDebugLine(point_pos_list[1], point_pos_list[5], [0,1,0], 5)
+                ray_id_list.append(ray_id)
+                ray_id = p_sim.addUserDebugLine(point_pos_list[2], point_pos_list[3], [0,1,0], 5)
+                ray_id_list.append(ray_id)
+                ray_id = p_sim.addUserDebugLine(point_pos_list[2], point_pos_list[6], [0,1,0], 5)
+                ray_id_list.append(ray_id)
+                ray_id = p_sim.addUserDebugLine(point_pos_list[3], point_pos_list[7], [0,1,0], 5)
+                ray_id_list.append(ray_id)
+                ray_id = p_sim.addUserDebugLine(point_pos_list[4], point_pos_list[5], [0,1,0], 5)
+                ray_id_list.append(ray_id)
+                ray_id = p_sim.addUserDebugLine(point_pos_list[4], point_pos_list[6], [0,1,0], 5)
+                ray_id_list.append(ray_id)
+                ray_id = p_sim.addUserDebugLine(point_pos_list[5], point_pos_list[7], [0,1,0], 5)
+                ray_id_list.append(ray_id)
+                ray_id = p_sim.addUserDebugLine(point_pos_list[6], point_pos_list[7], [0,1,0], 5)
+                ray_id_list.append(ray_id)
+                self.rays_id_list.append(ray_id_list)
+#            publish_ray_trace_info(camera_pos_list, point_pos_list)
+            
             point_hit_num = 0
             for point_index in range(list_length):
                 hit_obj_id = rayTestBatch_info[point_index][0]
@@ -400,12 +449,16 @@ class PBPFMove():
                 weight = weight_xyz * weight_ang
                 
                 if version == "ray":
+                    camera_parPoint = []
                     pw_T_par_sim_pos = [particle_x, particle_y, particle_z]
                     # pybullet_sim_env[index]
                     rayTest_info = p_sim.rayTest(pw_T_cam_tf_pos, pw_T_par_sim_pos)
+                    camera_parPoint.append(pw_T_cam_tf_pos)
+                    camera_parPoint.append(pw_T_par_sim_pos)
+                    self.camera_parPoint_list.append(camera_parPoint)
                     # ray_id = p_sim.addUserDebugLine(pw_T_cam_tf_pos, pw_T_par_sim_pos)
-                    # self.ray_id_list[index].append(ray_id)
-
+                    # self.rays_id_list[index].append(ray_id)
+                            
                     hit_obj_id = rayTest_info[0][0]
                     if hit_obj_id == -1:
                         weight = weight
@@ -413,6 +466,7 @@ class PBPFMove():
                         weight = weight / 2.0
                 elif version == "multiray":
                     # need to change
+                    camera_parPoint = []
                     pw_T_parC_pos = copy.deepcopy([particle_x, particle_y, particle_z])
                     pw_T_parC_ori = copy.deepcopy(par_ori) # x, y, z, w
                     pw_T_parC_3_3 = transformations.quaternion_matrix(pw_T_parC_ori)
@@ -426,6 +480,41 @@ class PBPFMove():
                         camera_pos_list.append(pw_T_cam_tf_pos)
                     # pybullet_sim_env[index]
                     rayTestBatch_info = p_sim.rayTestBatch(camera_pos_list, point_pos_list)
+                    camera_parPoint.append(camera_pos_list)
+                    camera_parPoint.append(point_pos_list)
+                    self.camera_parPoint_list.append(camera_parPoint)
+                    
+                    if show_ray == True:
+                        ray_id_list = []
+                        for list_index in range(list_length):
+                            ray_id = p_sim.addUserDebugLine(camera_pos_list[list_index], point_pos_list[list_index], [0,1,0], 2)
+                            ray_id_list.append(ray_id)
+                        ray_id = p_sim.addUserDebugLine(point_pos_list[0], point_pos_list[1], [0,1,0], 5)
+                        ray_id_list.append(ray_id)
+                        ray_id = p_sim.addUserDebugLine(point_pos_list[0], point_pos_list[2], [0,1,0], 5)
+                        ray_id_list.append(ray_id)
+                        ray_id = p_sim.addUserDebugLine(point_pos_list[0], point_pos_list[4], [0,1,0], 5)
+                        ray_id_list.append(ray_id)
+                        ray_id = p_sim.addUserDebugLine(point_pos_list[1], point_pos_list[3], [0,1,0], 5)
+                        ray_id_list.append(ray_id)
+                        ray_id = p_sim.addUserDebugLine(point_pos_list[1], point_pos_list[5], [0,1,0], 5)
+                        ray_id_list.append(ray_id)
+                        ray_id = p_sim.addUserDebugLine(point_pos_list[2], point_pos_list[3], [0,1,0], 5)
+                        ray_id_list.append(ray_id)
+                        ray_id = p_sim.addUserDebugLine(point_pos_list[2], point_pos_list[6], [0,1,0], 5)
+                        ray_id_list.append(ray_id)
+                        ray_id = p_sim.addUserDebugLine(point_pos_list[3], point_pos_list[7], [0,1,0], 5)
+                        ray_id_list.append(ray_id)
+                        ray_id = p_sim.addUserDebugLine(point_pos_list[4], point_pos_list[5], [0,1,0], 5)
+                        ray_id_list.append(ray_id)
+                        ray_id = p_sim.addUserDebugLine(point_pos_list[4], point_pos_list[6], [0,1,0], 5)
+                        ray_id_list.append(ray_id)
+                        ray_id = p_sim.addUserDebugLine(point_pos_list[5], point_pos_list[7], [0,1,0], 5)
+                        ray_id_list.append(ray_id)
+                        ray_id = p_sim.addUserDebugLine(point_pos_list[6], point_pos_list[7], [0,1,0], 5)
+                        ray_id_list.append(ray_id)
+                        self.rays_id_list.append(ray_id_list)
+                    
                     point_hit_num = 0
                     for point_index in range(list_length):
                         hit_obj_id = rayTestBatch_info[point_index][0]
@@ -714,7 +803,7 @@ class CVPFMove():
         self.object_estimate_pose_y = []
         self.object_real_____pose_x = []
         self.object_real_____pose_y = []
-        self.ray_id_list = []
+        self.rays_id_list = []
         self.ray_list_empty = True
 
     def compute_pos_err_bt_2_points(self,pos1,pos2):
@@ -861,7 +950,7 @@ class CVPFMove():
                     # pybullet_sim_env[index]
                     rayTest_info = p_sim.rayTest(pw_T_cam_tf_pos, pw_T_par_sim_pos)
                     # ray_id = p_sim.addUserDebugLine(pw_T_cam_tf_pos, pw_T_par_sim_pos)
-                    # self.ray_id_list[index].append(ray_id)
+                    # self.rays_id_list[index].append(ray_id)
                     hit_obj_id = rayTest_info[0][0]
                     if hit_obj_id == -1:
                         weight = weight
@@ -1361,6 +1450,25 @@ def quaternion_correction(quaternion): # x,y,z,w
     #return quaternion # x,y,z,w
     return new_quaternion
 
+#def publish_ray_trace_info(particle_cloud_pub):
+#    par_pose_list = list(range(particle_num))
+#    for par_index in range(particle_num):
+#        par_pose = particle_pose()
+#        obj_pose_list = []
+#        for obj_index in range(object_num):
+#            obj_pose = object_pose()
+#            obj_info = particle_cloud_pub[par_index][obj_index]
+#            obj_pose.name = obj_info.par_name
+#            obj_pose.pose.position.x = obj_info.pos[0]
+#            obj_pose.pose.position.y = obj_info.pos[1]
+#            obj_pose.pose.position.z = obj_info.pos[2]
+#            obj_pose_list.append(obj_pose)
+#        par_pose.objects = obj_pose_list
+#        par_pose_list[par_index] = par_pose
+#        
+#    par_list.particles = par_pose_list
+#    pub_ray_trace.publish(par_list)
+
 def publish_par_pose_info(particle_cloud_pub):
     par_pose_list = list(range(particle_num))
     for par_index in range(particle_num):
@@ -1431,14 +1539,14 @@ def process_esti_pose_from_rostopic(estimated_object_set):
 
 def generate_point_for_ray(pw_T_c_pos, pw_T_parC_4_4, obj_index):
     vector_list = [[1,1,1], [1,1,-1], [1,-1,1], [1,-1,-1],
-                   [-1,1,1], [-1,1,-1], [-1,-1,1], [-1,-1,-1],
-                   [1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1],
-                   [1,0.5,0.5], [1,0.5,-0.5], [1,-0.5,0.5], [1,-0.5,-0.5],
-                   [-1,0.5,0.5], [-1,0.5,-0.5], [-1,-0.5,0.5], [-1,-0.5,-0.5],
-                   [0.5,1,0.5], [0.5,1,-0.5], [-0.5,1,0.5], [-0.5,1,-0.5],
-                   [0.5,-1,0.5], [0.5,-1,-0.5], [-0.5,-1,0.5], [-0.5,-1,-0.5],
-                   [0.5,0.5,1], [0.5,-0.5,1], [-0.5,0.5,1], [-0.5,-0.5,1],
-                   [0.5,0.5,-1], [0.5,-0.5,-1], [-0.5,0.5,-1], [-0.5,-0.5,-1]]
+                   [-1,1,1], [-1,1,-1], [-1,-1,1], [-1,-1,-1]]
+#                   [1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1],
+#                   [1,0.5,0.5], [1,0.5,-0.5], [1,-0.5,0.5], [1,-0.5,-0.5],
+#                   [-1,0.5,0.5], [-1,0.5,-0.5], [-1,-0.5,0.5], [-1,-0.5,-0.5],
+#                   [0.5,1,0.5], [0.5,1,-0.5], [-0.5,1,0.5], [-0.5,1,-0.5],
+#                   [0.5,-1,0.5], [0.5,-1,-0.5], [-0.5,-1,0.5], [-0.5,-1,-0.5],
+#                   [0.5,0.5,1], [0.5,-0.5,1], [-0.5,0.5,1], [-0.5,-0.5,1],
+#                   [0.5,0.5,-1], [0.5,-0.5,-1], [-0.5,0.5,-1], [-0.5,-0.5,-1]]
     r = math.sqrt(2)
     if object_name_list[obj_index] == "soup":
         vector_list = [[0,0,1], [0,0,-1],
@@ -1467,9 +1575,13 @@ def generate_point_for_ray(pw_T_c_pos, pw_T_parC_4_4, obj_index):
 
 
 def track_fk_sim_world():
-    p_track_fk_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
+    if show_ray == True:
+        p_track_fk_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT,GUI_SERVER
+    else:
+        p_track_fk_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
     p_track_fk_env.setAdditionalSearchPath(pybullet_data.getDataPath())
     track_fk_plane_id = p_track_fk_env.loadURDF("plane.urdf")
+    p_track_fk_env.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=90, cameraPitch=-20, cameraTargetPosition=[0.3,0.1,0.2]) 
     track_fk_rob_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
                                               [0, 0, 0],
                                               [0, 0, 0, 1],
@@ -1502,6 +1614,8 @@ if __name__ == '__main__':
     rospy.init_node('PF_for_obse') # ros node
     signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
     # publish
+    pub_ray_trace = rospy.Publisher('/ray_trace_list', particle_list, queue_size = 10)
+    ray_trace_list = particle_list()
     pub_par_pose = rospy.Publisher('/par_list', particle_list, queue_size = 10)
     par_list = particle_list()
     pub_esti_pose = rospy.Publisher('/esti_obj_list', estimated_obj_pose, queue_size = 10)
@@ -1580,7 +1694,7 @@ if __name__ == '__main__':
     pos_noise = 0.005
     ang_noise = 0.05 
     motion_noise = True
-
+    show_ray = True
     # pos_noise = 0.0
     # ang_noise = 0.0
     # motion_noise = True
@@ -1650,7 +1764,6 @@ if __name__ == '__main__':
 
     if version == "ray" or version == "multiray":
         while True:
-            print("I am here")
             try:
                 (trans_camera, rot_camera) = listener.lookupTransform('/panda_link0', '/RealSense', rospy.Time(0))
                 break

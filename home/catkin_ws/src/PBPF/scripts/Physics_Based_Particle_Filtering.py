@@ -173,12 +173,13 @@ class PBPFMove():
             rayTest_info = p_sim.rayTest(pw_T_cam_tf_pos, pw_T_par_sim_pos)
             
             hit_obj_id = rayTest_info[0][0]
+            print(hit_obj_id)
             if hit_obj_id == -1:
                 weight = 0.1
             else:
                 weight = 0.9
             self.particle_cloud[index][obj_index].w = weight
-
+        
         elif version == "multiray" and self.do_obs_update == False:
             # need to change
             pw_T_parC_pos = copy.deepcopy([x, y, z])
@@ -1448,11 +1449,11 @@ def generate_point_for_ray(pw_T_c_pos, pw_T_parC_4_4, obj_index):
                        [2,2,-1], [2,-2,-1], [-2,2,-1], [-2,-2,-1], [r,r,-1], [r,-r,-1], [-r,r,-1], [-r,-r,-1]]
     point_list = []
     point_pos_list = []
-    for index in range(38):
-        x_new = pw_T_c_pos[0] + vector_list[index][0] * x_w/2
-        y_new = pw_T_c_pos[1] + vector_list[index][1] * y_l/2
-        z_new = pw_T_c_pos[2] + vector_list[index][2] * z_h/2
-        parC_T_p_pos = [x_new, y_new, z_new]
+    for index in range(len(vector_list)):
+        parC_T_p_x_new = vector_list[index][0] * x_w/2
+        parC_T_p_y_new = vector_list[index][1] * y_l/2
+        parC_T_p_z_new = vector_list[index][2] * z_h/2
+        parC_T_p_pos = [parC_T_p_x_new, parC_T_p_y_new, parC_T_p_z_new]
         parC_T_p_ori = [0, 0, 0, 1] # x, y, z, w
         parC_T_p_3_3 = transformations.quaternion_matrix(parC_T_p_ori)
         parC_T_p_4_4 = rotation_4_4_to_transformation_4_4(parC_T_p_3_3, parC_T_p_pos)

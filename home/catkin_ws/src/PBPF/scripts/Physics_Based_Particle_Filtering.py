@@ -1040,9 +1040,12 @@ class CVPFMove():
         self.particle_cloud_CV = copy.deepcopy(newParticles)
         
     def resample_particles_CV_update(self, pw_T_obj_obse_objects_pose_list):
+        local_pick_particle_rate = pick_particle_rate
+        if self.do_obs_update == False:
+            local_pick_particle_rate = 0.0
         pw_T_obj_obse_objs_pose_list = copy.deepcopy(pw_T_obj_obse_objects_pose_list)
         n_particle = len(self.particle_cloud)
-        par_num_on_obse = int(math.ceil(n_particle * pick_particle_rate))
+        par_num_on_obse = int(math.ceil(n_particle * local_pick_particle_rate))
         par_num_for_resample = int(n_particle) - int(par_num_on_obse)
 
         newParticles_list = [[]*self.obj_num for _ in range(n_particle)]

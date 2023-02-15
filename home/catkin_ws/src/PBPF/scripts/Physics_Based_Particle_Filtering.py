@@ -184,7 +184,11 @@ class PBPFMove():
             camera_parPoint.append(pw_T_par_sim_pos)
             self.camera_parPoint_list.append(camera_parPoint)
             hit_obj_id = rayTest_info[0][0]
-            print(hit_obj_id)
+            
+            if show_ray == True:
+                ray_id = p_sim.addUserDebugLine(pw_T_cam_tf_pos, pw_T_par_sim_pos, [0,1,0], 2)
+            
+            # print(hit_obj_id)
             if hit_obj_id == -1:
                 weight = 0.1
 #                weight = 0.9
@@ -252,10 +256,10 @@ class PBPFMove():
                     point_hit_num = point_hit_num - 1
                 else:
                     point_hit_num = point_hit_num + 1
-            if point_hit_num > 0:
-                weight = 0.9
+            if point_hit_num > -13:
+                weight = 0.75
             else:
-                weight = 0.1
+                weight = 0.2
             self.particle_cloud[index][obj_index].w = weight
             
             
@@ -453,6 +457,8 @@ class PBPFMove():
                     pw_T_par_sim_pos = [particle_x, particle_y, particle_z]
                     # pybullet_sim_env[index]
                     rayTest_info = p_sim.rayTest(pw_T_cam_tf_pos, pw_T_par_sim_pos)
+                    if show_ray == True:
+                        ray_id = p_sim.addUserDebugLine(pw_T_cam_tf_pos, pw_T_par_sim_pos, [0,1,0], 2)
                     camera_parPoint.append(pw_T_cam_tf_pos)
                     camera_parPoint.append(pw_T_par_sim_pos)
                     self.camera_parPoint_list.append(camera_parPoint)
@@ -522,7 +528,7 @@ class PBPFMove():
                             point_hit_num = point_hit_num - 1
                         else:
                             point_hit_num = point_hit_num + 1
-                    if point_hit_num > 0:
+                    if point_hit_num > 13:
                         weight = weight / 2.0
                     else:
                         weight = weight
@@ -664,7 +670,7 @@ class PBPFMove():
                     particle_array_list.append(position_index)
                 else:
                     particle_array_list.append(index)
-
+            index = -1
             for index,i in enumerate(particle_array_list): # particle angle
                 particle = Particle(self.particle_cloud[i][obj_index].par_name,
                                     self.particle_cloud[index][obj_index].visual_par_id,
@@ -676,7 +682,12 @@ class PBPFMove():
                                     self.particle_cloud[i][obj_index].linearVelocity,
                                     self.particle_cloud[i][obj_index].angularVelocity)
                 newParticles_list[index].append(particle)
+#            print(index)
+#            print(obj_index)
+#            print(par_num_on_obse)
+#            print(self.particle_cloud[index][obj_index].visual_par_id)
             for index_leftover in range(par_num_on_obse):
+#                print(index)
                 index = index + 1
                 particle = Particle(self.particle_cloud[index_leftover][obj_index].par_name,
                                     self.particle_cloud[index][obj_index].visual_par_id,
@@ -1539,14 +1550,14 @@ def process_esti_pose_from_rostopic(estimated_object_set):
 
 def generate_point_for_ray(pw_T_c_pos, pw_T_parC_4_4, obj_index):
     vector_list = [[1,1,1], [1,1,-1], [1,-1,1], [1,-1,-1],
-                   [-1,1,1], [-1,1,-1], [-1,-1,1], [-1,-1,-1]]
-#                   [1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1],
-#                   [1,0.5,0.5], [1,0.5,-0.5], [1,-0.5,0.5], [1,-0.5,-0.5],
-#                   [-1,0.5,0.5], [-1,0.5,-0.5], [-1,-0.5,0.5], [-1,-0.5,-0.5],
-#                   [0.5,1,0.5], [0.5,1,-0.5], [-0.5,1,0.5], [-0.5,1,-0.5],
-#                   [0.5,-1,0.5], [0.5,-1,-0.5], [-0.5,-1,0.5], [-0.5,-1,-0.5],
-#                   [0.5,0.5,1], [0.5,-0.5,1], [-0.5,0.5,1], [-0.5,-0.5,1],
-#                   [0.5,0.5,-1], [0.5,-0.5,-1], [-0.5,0.5,-1], [-0.5,-0.5,-1]]
+                   [-1,1,1], [-1,1,-1], [-1,-1,1], [-1,-1,-1],
+                   [1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1],
+                   [1,0.5,0.5], [1,0.5,-0.5], [1,-0.5,0.5], [1,-0.5,-0.5],
+                   [-1,0.5,0.5], [-1,0.5,-0.5], [-1,-0.5,0.5], [-1,-0.5,-0.5],
+                   [0.5,1,0.5], [0.5,1,-0.5], [-0.5,1,0.5], [-0.5,1,-0.5],
+                   [0.5,-1,0.5], [0.5,-1,-0.5], [-0.5,-1,0.5], [-0.5,-1,-0.5],
+                   [0.5,0.5,1], [0.5,-0.5,1], [-0.5,0.5,1], [-0.5,-0.5,1],
+                   [0.5,0.5,-1], [0.5,-0.5,-1], [-0.5,0.5,-1], [-0.5,-0.5,-1]]
     r = math.sqrt(2)
     if object_name_list[obj_index] == "soup":
         vector_list = [[0,0,1], [0,0,-1],
@@ -1694,7 +1705,7 @@ if __name__ == '__main__':
     pos_noise = 0.005
     ang_noise = 0.05 
     motion_noise = True
-    show_ray = True
+    show_ray = False
     # pos_noise = 0.0
     # ang_noise = 0.0
     # motion_noise = True

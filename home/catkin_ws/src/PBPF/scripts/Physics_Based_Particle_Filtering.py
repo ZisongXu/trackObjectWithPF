@@ -256,7 +256,10 @@ class PBPFMove():
                     point_hit_num = point_hit_num - 1
                 else:
                     point_hit_num = point_hit_num + 1
-            if point_hit_num > -13:
+            hit_point_num = int(math.ceil(list_length/3)) # 13
+            if object_name_list[obj_index] == "soup":
+                hit_point_num = 21
+            if point_hit_num > (hit_point_num*(-1)):
                 weight = 0.75
             else:
                 weight = 0.2
@@ -528,7 +531,10 @@ class PBPFMove():
                             point_hit_num = point_hit_num - 1
                         else:
                             point_hit_num = point_hit_num + 1
-                    if point_hit_num > 13:
+                    hit_point_num = int(math.ceil(list_length/3)) # 13
+                    if object_name_list[obj_index] == "soup":
+                        hit_point_num = -21
+                    if point_hit_num > hit_point_num:
                         weight = weight / 2.0
                     else:
                         weight = weight

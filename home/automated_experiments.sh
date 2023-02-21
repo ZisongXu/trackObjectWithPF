@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# declare -a objectNames=("cracker" "soup")
-# declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a objectNames=("soup")
-declare -a sceneNames=("scene1" "scene2" "scene3" )
+declare -a objectNames=("cracker" "soup")
+declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
+# declare -a objectNames=("cracker")
+# declare -a sceneNames=("scene2")
 declare -a particleNumbers=(70)
 declare -a runAlgFlags=("PBPF")
 
@@ -25,7 +25,7 @@ do
 				python3 update_yaml_file_automated.py "${objectName}" "${particleNumber}" "${sceneName}" "${runAlgFlag}"
 				
 				for rosbag in {1..10}
-				# for ((rosbag=8;rosbag<=8;rosbag++)); 
+				# for ((rosbag=2;rosbag<=2;rosbag++)); 
 				do
 					duration=$(python3 get_info_from_rosbag.py "${objectName}" "${particleNumber}" "${sceneName}" "${rosbag}")
 
@@ -33,13 +33,13 @@ do
 					# for ((repeat=8;repeat<=8;repeat++));
 					do
 						echo "I will sleep for $duration seconds"
-						rosbag play "rosbag/new_rosbag/${objectName}_${sceneName}/${objectName}_${sceneName}_70_${rosbag}.bag" --clock  > /dev/null 2>&1 & 
+						rosbag play "rosbag/latest_rosbag/${objectName}_${sceneName}/${objectName}_${sceneName}_70_${rosbag}.bag" --clock  > /dev/null 2>&1 & 
 						ROSBAGPID=$!
 
 						rosrun PBPF Physics_Based_Particle_Filtering.py &
 						PBPF_PID=$!
 
-						sleep 10
+						sleep 14
 						
 						fileName="${particleNumber}_${objectName}_${sceneName}_rosbag${rosbag}_repeat${repeat}_"
 						rosrun PBPF RecordError.py "${fileName}" &

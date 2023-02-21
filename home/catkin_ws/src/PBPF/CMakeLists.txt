@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
   geometry_msgs
+  sensor_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -55,6 +56,10 @@ add_message_files(
   particle_pose.msg
   particle_list.msg
   estimated_obj_pose.msg
+  Detection3D.msg
+  Detection3DArray.msg
+  ObjectHypothesisWithPose.msg
+  BoundingBox3D.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -76,6 +81,7 @@ generate_messages(
   DEPENDENCIES
   std_msgs  # Or other packages containing msgs
   geometry_msgs
+  sensor_msgs
 )
 
 ################################################
@@ -112,7 +118,7 @@ catkin_package(
 #  LIBRARIES PBPF
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
-  CATKIN_DEPENDS message_runtime geometry_msgs std_msgs
+  CATKIN_DEPENDS message_runtime geometry_msgs std_msgs sensor_msgs
 )
 
 ###########

@@ -3,7 +3,7 @@ object_name_list:
 - soup
 - fish_can
 object_num: 1
-other_obj_num: 0
+other_obj_num: 1
 oto_name_list:
 - base_of_cracker
 - fish_can
@@ -15,6 +15,6 @@ pick_particle_rate: 0.05
 ray_point_num: 8
 robot_num: 1
 run_alg_flag: PBPF
-task_flag: '1'
+task_flag: '3'
 update_style_flag: time
-version: multiray # multiray/old
+version: old

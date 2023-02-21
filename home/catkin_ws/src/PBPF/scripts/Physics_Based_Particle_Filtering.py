@@ -822,6 +822,7 @@ class CVPFMove():
         self.object_real_____pose_y = []
         self.rays_id_list = []
         self.ray_list_empty = True
+        self.do_obs_update = True
 
     def compute_pos_err_bt_2_points(self,pos1,pos2):
         x_d = pos1[0]-pos2[0]
@@ -835,6 +836,7 @@ class CVPFMove():
         global flag_record_CVPF
         global flag_record
         # motion model
+        self.do_obs_update = do_obs_update
         self.motion_update_CV(pw_T_obj_obse_objects_pose_list)
         # observation model
         if do_obs_update:
@@ -1059,7 +1061,7 @@ class CVPFMove():
                     weight = 0.1
                 else:
                     weight = 0.9
-    #            self.particle_cloud[index][obj_index].w = weight
+                self.particle_cloud[index][obj_index].w = weight
             elif version == "multiray" and self.do_obs_update == False:
                 # need to change
                 pw_T_parC_pos = copy.deepcopy([normal_x, normal_y, normal_z])
@@ -1088,7 +1090,7 @@ class CVPFMove():
                 else:
                     weight = 0.1
                         
-            self.particle_cloud_CV[index][obj_index].w = weight
+                self.particle_cloud_CV[index][obj_index].w = weight
             
 
 
@@ -1151,7 +1153,7 @@ class CVPFMove():
         if self.do_obs_update == False:
             local_pick_particle_rate = 0.0
         pw_T_obj_obse_objs_pose_list = copy.deepcopy(pw_T_obj_obse_objects_pose_list)
-        n_particle = len(self.particle_cloud)
+        n_particle = len(self.particle_cloud_CV)
         par_num_on_obse = int(math.ceil(n_particle * local_pick_particle_rate))
         par_num_for_resample = int(n_particle) - int(par_num_on_obse)
 
@@ -1167,7 +1169,7 @@ class CVPFMove():
             base_w_list.append(base_w)
             particle_array_list = []
             # compute sum of weight
-            for particle in self.particle_cloud:
+            for particle in self.particle_cloud_CV:
                 particles_w.append(particle[obj_index].w)
                 base_w = base_w + particle[obj_index].w
                 base_w_list.append(base_w)
@@ -1177,37 +1179,37 @@ class CVPFMove():
             for index in range(par_num_for_resample):
                 if w_sum > 0.00000001:
                     position = (r + index * w_sum / particle_num) % w_sum
-                    position_index = self.compute_position(position, base_w_list)
+                    position_index = self.compute_position_CV(position, base_w_list)
                     particle_array_list.append(position_index)
                 else:
                     particle_array_list.append(index)
 
             for index,i in enumerate(particle_array_list): # particle angle
-                particle = Particle(self.particle_cloud[i][obj_index].par_name,
-                                    self.particle_cloud[index][obj_index].visual_par_id,
-                                    self.particle_cloud[index][obj_index].no_visual_par_id,
-                                    self.particle_cloud[i][obj_index].pos,
-                                    self.particle_cloud[i][obj_index].ori,
+                particle = Particle(self.particle_cloud_CV[i][obj_index].par_name,
+                                    self.particle_cloud_CV[index][obj_index].visual_par_id,
+                                    self.particle_cloud_CV[index][obj_index].no_visual_par_id,
+                                    self.particle_cloud_CV[i][obj_index].pos,
+                                    self.particle_cloud_CV[i][obj_index].ori,
                                     1.0/particle_num, 
                                     index,
-                                    self.particle_cloud[i][obj_index].linearVelocity,
-                                    self.particle_cloud[i][obj_index].angularVelocity)
+                                    self.particle_cloud_CV[i][obj_index].linearVelocity,
+                                    self.particle_cloud_CV[i][obj_index].angularVelocity)
                 newParticles_list[index].append(particle)
             for index_leftover in range(par_num_on_obse):
                 index = index + 1
-                particle = Particle(self.particle_cloud[index_leftover][obj_index].par_name,
-                                    self.particle_cloud[index][obj_index].visual_par_id,
-                                    self.particle_cloud[index][obj_index].no_visual_par_id,
+                particle = Particle(self.particle_cloud_CV[index_leftover][obj_index].par_name,
+                                    self.particle_cloud_CV[index][obj_index].visual_par_id,
+                                    self.particle_cloud_CV[index][obj_index].no_visual_par_id,
                                     obse_obj_pos,
                                     obse_obj_ori,
                                     1.0/particle_num, 
                                     index,
-                                    self.particle_cloud[index_leftover][obj_index].linearVelocity,
-                                    self.particle_cloud[index_leftover][obj_index].angularVelocity)
+                                    self.particle_cloud_CV[index_leftover][obj_index].linearVelocity,
+                                    self.particle_cloud_CV[index_leftover][obj_index].angularVelocity)
                 newParticles_list[index].append(particle)
 
 #                newParticles.append(particle)
-        self.particle_cloud = copy.deepcopy(newParticles_list)
+        self.particle_cloud_CV = copy.deepcopy(newParticles_list)
         
     def compute_position_CV(self, position, base_w_list):
         for index in range(1, len(base_w_list)):
@@ -1673,7 +1675,7 @@ if __name__ == '__main__':
     version = parameter_info['version'] # old/ray/multiray
     ray_point_num = parameter_info['ray_point_num']
     if run_alg_flag == 'CVPF':
-        particle_num = 140
+        particle_num = 200
     print("This is "+update_style_flag+" update in scene"+task_flag)    
     # some parameters
     d_thresh = 0.005
@@ -1779,19 +1781,19 @@ if __name__ == '__main__':
     estimated_object_set_old = copy.deepcopy(estimated_object_set)
     estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
 
-    if version == "ray" or version == "multiray":
-        while True:
-            try:
-                (trans_camera, rot_camera) = listener.lookupTransform('/panda_link0', '/RealSense', rospy.Time(0))
-                break
-            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                continue
-        rob_T_cam_tf_pos = list(trans_camera)
-        rob_T_cam_tf_ori = list(rot_camera)
-        rob_T_cam_tf_3_3 = transformations.quaternion_matrix(rob_T_cam_tf_ori)
-        rob_T_cam_tf_4_4 = rotation_4_4_to_transformation_4_4(rob_T_cam_tf_3_3, rob_T_cam_tf_pos)
-        pw_T_cam_tf = np.dot(pw_T_rob_sim_4_4, rob_T_cam_tf_4_4)
-        pw_T_cam_tf_pos = [pw_T_cam_tf[0][3], pw_T_cam_tf[1][3], pw_T_cam_tf[2][3]]
+    # if version == "ray" or version == "multiray":
+    while True:
+        try:
+            (trans_camera, rot_camera) = listener.lookupTransform('/panda_link0', '/RealSense', rospy.Time(0))
+            break
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            continue
+    rob_T_cam_tf_pos = list(trans_camera)
+    rob_T_cam_tf_ori = list(rot_camera)
+    rob_T_cam_tf_3_3 = transformations.quaternion_matrix(rob_T_cam_tf_ori)
+    rob_T_cam_tf_4_4 = rotation_4_4_to_transformation_4_4(rob_T_cam_tf_3_3, rob_T_cam_tf_pos)
+    pw_T_cam_tf = np.dot(pw_T_rob_sim_4_4, rob_T_cam_tf_4_4)
+    pw_T_cam_tf_pos = [pw_T_cam_tf[0][3], pw_T_cam_tf[1][3], pw_T_cam_tf[2][3]]
         
 
     # run the simulation
@@ -1806,10 +1808,12 @@ if __name__ == '__main__':
     rob_T_obj_obse_pos_old = list(trans_ob)
     rob_T_obj_obse_ori_old = list(rot_ob)
 
+
     print("Welcome to Our Approach !")
     PBPF_alg = PBPFMove(object_num) # PF_alg
     CVPF_alg = CVPFMove(object_num) 
-
+    # while True:
+    #     print(ros_listener.detection_flag)
     while not rospy.is_shutdown():
         #panda robot moves in the visualization window
         temp_pw_T_obj_obse_objs_list = []
@@ -1834,6 +1838,11 @@ if __name__ == '__main__':
             # get obse data
             obse_is_fresh = True
             obse_is_jumping = False
+
+            if ros_listener.detection_flag == False:
+                version = "multiray" # multiray/ray
+            else:
+                version = "old"
             try:
                 latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/'+object_name+use_gazebo)
                 # print("rospy.get_time():")
@@ -1868,15 +1877,6 @@ if __name__ == '__main__':
             rob_T_obj_obse_ori = list(rot_ob)
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
-
-#            if gazebo_flag == True:
-#                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
-#                                     [0., 1., 0.,    0.],
-#                                     [0., 0., 1., -0.06],
-#                                     [0., 0., 0.,    1.]]
-#                robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
-#                rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
-            
             
             pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
             pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]

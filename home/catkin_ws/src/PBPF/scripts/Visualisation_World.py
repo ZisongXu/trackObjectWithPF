@@ -322,8 +322,8 @@ if __name__ == '__main__':
     init_obse_flag = 0
     init_par_flag = 0
     init_esti_flag = 0
-    display_par_flag = False
-    display_esti_flag = True
+    display_par_flag = True
+    display_esti_flag = False
     display_gt_flag = True
     display_obse_flag = True
     object_name_list = parameter_info['object_name_list']

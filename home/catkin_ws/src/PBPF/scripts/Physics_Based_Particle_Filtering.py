@@ -256,7 +256,7 @@ class PBPFMove():
                     line_hit_num = line_hit_num + 1
 
             visible_score = 1.0 * (list_length - line_hit_num) / list_length 
-            if visible_score <= visible_threshold_dope_not_fresh: # 0.95
+            if visible_score <= visible_threshold_dope_not_fresh and visible_threshold_dope_not_fresh_small <= visible_score: # 0.95
                 weight = not_fresh_smaller_than_threshold_weight # 0.75/0.6
             else:
                 weight = not_fresh_larger_than_threshold_weight # 0.25/0.5
@@ -1850,6 +1850,7 @@ if __name__ == '__main__':
                 y_l = 0.21243700408935547
                 z_h = 0.06
                 visible_threshold_dope_not_fresh = 0.95
+                visible_threshold_dope_not_fresh_small = 0
                 visible_threshold_dope_is_fresh = 0.5
                 not_fresh_smaller_than_threshold_weight = 0.75
                 not_fresh_larger_than_threshold_weight = 0.25
@@ -1857,10 +1858,11 @@ if __name__ == '__main__':
                 x_w = 0.032829689025878906
                 y_l = 0.032829689025878906
                 z_h = 0.099
-                visible_threshold_dope_not_fresh = 0.95
+                visible_threshold_dope_not_fresh = 0.80
+                visible_threshold_dope_not_fresh_small = 0.5
                 visible_threshold_dope_is_fresh = 0.9
                 not_fresh_smaller_than_threshold_weight = 0.6
-                not_fresh_larger_than_threshold_weight = 0.5
+                not_fresh_larger_than_threshold_weight = 0.45
             
             use_gazebo = ""
             if gazebo_flag == True:

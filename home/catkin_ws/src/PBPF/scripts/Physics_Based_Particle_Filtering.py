@@ -256,7 +256,10 @@ class PBPFMove():
                     line_hit_num = line_hit_num + 1
 
             visible_score = 1.0 * (list_length - line_hit_num) / list_length
-            weight = 1 - visible_score
+            if visible_score < 0.95:
+                weight = 0.75
+            else:
+                weight = 0.25
             self.particle_cloud[index][obj_index].w = weight
             
     # motion model
@@ -535,7 +538,8 @@ class PBPFMove():
                             line_hit_num = line_hit_num + 1
 
                     visible_score = 1.0 * (list_length - line_hit_num) / list_length
-                    weight = weight * visible_score
+                    if visible_score < 0.5:
+                        weight = weight / 3.0
 
                 particle[obj_index].w = weight
             # old resample function
@@ -1860,7 +1864,7 @@ if __name__ == '__main__':
             dope_detection_flag = True
 
             if ros_listener.detection_flag == False:
-                version = "old" # multiray/ray
+                version = "multiray" # multiray/ray
                 dope_detection_flag == False
             else:
                 version = "old"

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# declare -a objectNames=("cracker" "soup")
-# declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
+declare -a objectNames=("cracker" "soup")
+declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
 declare -a particleNumbers=(70)
-declare -a objectNames=("cracker")
-declare -a sceneNames=("scene1" "scene2" "scene3")
-declare -a runAlgFlags=("obse" "PBPF")
+# declare -a objectNames=("cracker")
+# declare -a sceneNames=("scene3")
+declare -a runAlgFlags=("CVPF")
 declare -a Ang_and_Pos=("ang" "pos")
 declare -a update_style_flag=("time") # "time" "pose"
 
@@ -53,15 +53,16 @@ do
 						fi
 					fi
 					for rosbag in {1..10}
-					# for ((rosbag=6;rosbag<=6;rosbag++)); 
+					# for ((rosbag=1;rosbag<=2;rosbag++)); 
 					do
 						for repeat in {1..10}
+						# for ((repeat=1;repeat<=2;repeat++));
 						do
 						
 							python3 data_processing.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" &
 							DATA_PRO_PID=$!
 
-							sleep 8
+							sleep 4
 
 						done
 					done

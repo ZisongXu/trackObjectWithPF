@@ -36,36 +36,38 @@ title_pos = "Positional errors (m) vs Time (s)"
 
 if ang_and_pos == "ang":
     if sceneName == "scene1":
-        x_range_max = 30
+        x_range_max = 28
         x_range_unit = 2
-        y_range_max = math.pi
-        y_range_unit = 0.4
-        x_xlim = 32
-        y_ylim = 3.2
+        y_range_max = 2.5
+        y_range_unit = 0.2
+        x_xlim = 28
+        y_ylim = 2.5
     if sceneName == "scene2":
-        x_range_max = 30
+        x_range_max = 28
         x_range_unit = 2
-        y_range_max = math.pi
-        y_range_unit = 0.4
-        x_xlim = 32
-        y_ylim = 3.2
+        y_range_max = 2.5
+        y_range_unit = 0.2
+        x_xlim = 28
+        y_ylim = 2.5
     if sceneName == "scene3":
-        x_range_max = 30
+        x_range_max = 28
         x_range_unit = 2
-        y_range_max = math.pi
-        y_range_unit = 0.4
-        x_xlim = 32
-        y_ylim = 3.2
+        y_range_max = 2.5
+        y_range_unit = 0.2
+        x_xlim = 28
+        y_ylim = 2.5
     if sceneName == "scene4":
-        x_range_max = 30
+        x_range_max = 28
         x_range_unit = 2
-        y_range_max = 0.4
-        y_range_unit = 0.05
-        x_xlim = 32
-        y_ylim = 0.4
+        # y_range_max = 0.4
+        y_range_max = 2.5
+        y_range_unit = 0.2
+        x_xlim = 28
+        # y_ylim = 0.4
+        y_ylim = 2.5
     print("Ready to plot the figure of ang")
     dataset_ang = pd.read_csv(file_name+'.csv', header=None)
-    dataset_ang.columns=["index","time","Rotational Error (rad)","alg","obj_scene","particle_num"]
+    dataset_ang.columns=["index","time","Rotational Error (rad)","alg","obj_scene","particle_num","ray_type"]
     figure_ang = sns.lineplot(x="time", y="Rotational Error (rad)", data=dataset_ang, hue = 'alg', errorbar=('ci', 95), legend=False, linewidth = 0.5)
     figure_ang.set(xlabel = None, ylabel = None)
     # figure_ang.set_xlabel(None)
@@ -82,37 +84,37 @@ if ang_and_pos == "ang":
 
 if ang_and_pos == "pos":
     if sceneName == "scene1":
-        x_range_max = 30
+        x_range_max = 28
         x_range_unit = 2
-        y_range_max = 0.4
-        y_range_unit = 0.05
-        x_xlim = 32
+        y_range_max = 0.5
+        y_range_unit = 0.04
+        x_xlim = 28
         y_ylim = 0.5
     if sceneName == "scene2":
-        x_range_max = 30
+        x_range_max = 28
         x_range_unit = 2
-        y_range_max = 0.4
-        y_range_unit = 0.05
-        x_xlim = 32
+        y_range_max = 0.5
+        y_range_unit = 0.04
+        x_xlim = 28
         y_ylim = 0.5
     if sceneName == "scene3":
-        x_range_max = 30
+        x_range_max = 28
         x_range_unit = 2
-        y_range_max = 0.4
-        y_range_unit = 0.05
-        x_xlim = 32
+        y_range_max = 0.5
+        y_range_unit = 0.04
+        x_xlim = 28
         y_ylim = 0.5
     if sceneName == "scene4":
-        x_range_max = 30
+        x_range_max = 28
         x_range_unit = 2
-        y_range_max = 0.05
-        y_range_unit = 0.005
-        x_xlim = 32
-        y_ylim = 0.05
+        y_range_max = 0.5
+        y_range_unit = 0.04
+        x_xlim = 28
+        y_ylim = 0.5
     print("Ready to plot the figure of pos")
     ymax = 0.12
     dataset_pos = pd.read_csv(file_name+'.csv', header=None)
-    dataset_pos.columns=["index","time","Positional Error (m)","alg","obj_scene","particle_num"]
+    dataset_pos.columns=["index","time","Positional Error (m)","alg","obj_scene","particle_num","ray_type"]
     figure_pos = sns.lineplot(x="time", y="Positional Error (m)", data=dataset_pos, hue = 'alg', errorbar=('ci', 95), legend=False, linewidth = 0.5)
     figure_pos.set(xlabel = None, ylabel = None)
     x = range(0, x_range_max, x_range_unit)

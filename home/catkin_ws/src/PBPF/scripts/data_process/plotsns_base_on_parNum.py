@@ -28,19 +28,19 @@ file_name_pos = test+update_style_flag+"_scene"+task_flag+"_pos"
 title_ang = "Rotational errors (rad) vs Time (s)"
 title_pos = "Positional errors (m) vs Time (s)"
 
-if flag_plot == "ang":
+if flag_plot == "ang" or flag_plot == "max_range_ang" or flag_plot == "all_ang" or flag_plot == "last_value_ang" or flag_plot == "max_value_ang" or flag_plot == "all_ang":
     if task_flag == "1":
-        x_range_max = 32
+        x_range_max = 72
         x_range_unit = 5
         y_range_max = 2.0
         y_range_unit = 0.2
-        x_xlim = 32
+        x_xlim = 72
         y_ylim = 2.0
 
     print("Ready to plot the figure of ang")
     dataset_ang = pd.read_csv(flag_plot+'.csv')
-    dataset_ang.columns=["index","time","Rotational Error (rad)","alg","obj_scene","particle_num"]
-    figure_ang = sns.lineplot(x="particle_num", y="Rotational Error (rad)", data=dataset_ang, hue = 'obj_scene', errorbar=('ci', 95), legend=True, linewidth = 0.5)
+    dataset_ang.columns=["index","time","Rotational Error (rad)","alg","obj_scene","particle_num","ray_type"]
+    figure_ang = sns.lineplot(x="particle_num", y="Rotational Error (rad)", data=dataset_ang, hue = 'obj_scene', errorbar=('ci', 95), legend=True, linewidth = 0.5, err_style = "bars")
     figure_ang.set(xlabel = None, ylabel = None)
     # figure_ang.set_xlabel(None)
     x = range(0, x_range_max, x_range_unit)
@@ -54,7 +54,7 @@ if flag_plot == "ang":
     svg_fig_ang = figure_ang.get_figure()
     svg_fig_ang.savefig(flag_plot+".svg",format="svg")
 
-if flag_plot == "pos" or flag_plot == "max_range" or flag_plot == "all" or flag_plot == "last_value" or flag_plot == "max_value" or flag_plot == "all_pos":
+if flag_plot == "pos" or flag_plot == "max_range_pos" or flag_plot == "all_pos" or flag_plot == "last_value_pos" or flag_plot == "max_value_pos" or flag_plot == "all_pos":
     if task_flag == "1":
         x_range_max = 72
         x_range_unit = 5
@@ -66,7 +66,7 @@ if flag_plot == "pos" or flag_plot == "max_range" or flag_plot == "all" or flag_
     print("Ready to plot the figure of pos")
     ymax = 0.12
     dataset_pos = pd.read_csv(flag_plot+'.csv')
-    dataset_pos.columns=["index","time","Positional Error (m)","alg","obj_scene","particle_num"]
+    dataset_pos.columns=["index","time","Positional Error (m)","alg","obj_scene","particle_num","ray_type"]
     figure_pos = sns.lineplot(x="particle_num", y="Positional Error (m)", data=dataset_pos, hue = 'obj_scene', errorbar=('ci', 95), legend=True, linewidth = 0.5, err_style = "bars")
     figure_pos.set(xlabel = None, ylabel = None)
     x = range(0, x_range_max, x_range_unit)

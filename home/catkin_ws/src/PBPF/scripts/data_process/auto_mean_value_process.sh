@@ -1,14 +1,16 @@
 #!/bin/bash
 
-# declare -a objectNames=("cracker" "soup")
-# declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a objectNames=("cracker")
-declare -a sceneNames=("scene1" "scene2" "scene3")
-declare -a particleNumbers=(1 5 10 15 20 70)
+declare -a objectNames=("cracker" "soup")
+declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
+# declare -a objectNames=("soup")
+# declare -a sceneNames=("scene1" "scene2" "scene3")
+declare -a particleNumbers=(1 30 70)
 # declare -a runAlgFlags=("PBPF" "CVPF")
 declare -a repeatTimes=(10)
-declare -a Ang_and_Pos=("pos")
-declare -a filenames=("all_pos")
+declare -a Ang_and_Pos=("ang")
+# declare -a Ang_and_Pos=("pos" "ang")
+declare -a filenames=("all_ang")
+# declare -a filenames=("all_pos" "all_ang")
 
 for particleNumber in "${particleNumbers[@]}"
 do

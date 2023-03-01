@@ -255,11 +255,11 @@ class PBPFMove():
                 if hit_obj_id != -1:
                     line_hit_num = line_hit_num + 1
 
-            visible_score = 1.0 * (list_length - line_hit_num) / list_length
-            if visible_score < 0.95:
-                weight = 0.75
+            visible_score = 1.0 * (list_length - line_hit_num) / list_length 
+            if visible_score <= visible_threshold_dope_not_fresh: # 0.95
+                weight = not_fresh_smaller_than_threshold_weight # 0.75/0.6
             else:
-                weight = 0.25
+                weight = not_fresh_larger_than_threshold_weight # 0.25/0.5
             self.particle_cloud[index][obj_index].w = weight
             
     # motion model
@@ -538,7 +538,7 @@ class PBPFMove():
                             line_hit_num = line_hit_num + 1
 
                     visible_score = 1.0 * (list_length - line_hit_num) / list_length
-                    if visible_score < 0.5:
+                    if visible_score < visible_threshold_dope_is_fresh: # 0.5/0.9
                         weight = weight / 3.0
 
                 particle[obj_index].w = weight
@@ -1844,16 +1844,23 @@ if __name__ == '__main__':
         for obj_index in range(object_num):
             # need to change
             object_name = object_name_list[obj_index]
-            
+
             if object_name == "cracker":
                 x_w = 0.159
                 y_l = 0.21243700408935547
                 z_h = 0.06
+                visible_threshold_dope_not_fresh = 0.95
+                visible_threshold_dope_is_fresh = 0.5
+                not_fresh_smaller_than_threshold_weight = 0.75
+                not_fresh_larger_than_threshold_weight = 0.25
             elif object_name == "soup":
                 x_w = 0.032829689025878906
                 y_l = 0.032829689025878906
                 z_h = 0.099
-            
+                visible_threshold_dope_not_fresh = 0.95
+                visible_threshold_dope_is_fresh = 0.9
+                not_fresh_smaller_than_threshold_weight = 0.6
+                not_fresh_larger_than_threshold_weight = 0.5
             
             use_gazebo = ""
             if gazebo_flag == True:
@@ -1863,11 +1870,11 @@ if __name__ == '__main__':
             obse_is_jumping = False
             dope_detection_flag = True
 
-            if ros_listener.detection_flag == False:
-                version = "multiray" # multiray/ray
-                dope_detection_flag == False
-            else:
-                version = "old"
+#            if ros_listener.detection_flag == False:
+#                version = "multiray" # multiray/ray
+#                dope_detection_flag == False
+#            else:
+#                version = "old"
             try:
                 latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/'+object_name+use_gazebo)
                 # print("rospy.get_time():")

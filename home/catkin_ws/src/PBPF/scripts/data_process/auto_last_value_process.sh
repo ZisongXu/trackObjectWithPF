@@ -2,13 +2,13 @@
 
 # declare -a objectNames=("cracker" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a objectNames=("cracker")
+declare -a objectNames=("soup")
 declare -a sceneNames=("scene1" "scene2" "scene3")
-declare -a particleNumbers=(1 5 10 15 20 70)
+declare -a particleNumbers=(1 10 30 70)
 # declare -a runAlgFlags=("PBPF" "CVPF")
 declare -a repeatTimes=(10)
-declare -a Ang_and_Pos=("pos")
-declare -a filenames=("last_value")
+declare -a Ang_and_Pos=("pos" "ang")
+declare -a filenames=("last_value_ang" "last_value_pos")
 
 for particleNumber in "${particleNumbers[@]}"
 do

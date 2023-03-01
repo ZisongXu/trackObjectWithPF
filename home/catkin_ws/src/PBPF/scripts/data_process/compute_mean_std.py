@@ -12,9 +12,9 @@ import copy
 import numpy as np
 import sys
 
-flag_DOPE = False
+flag_DOPE = True
 flag_PFPE = False
-flag_CVPF = True
+flag_CVPF = False
 rosbags = 10
 repeats = 10
 
@@ -71,10 +71,10 @@ if flag_PFPE == True:
             print("before mean:", mean)
             # print("par_num:",type(par_num))
             # print("pos_or_ang:",type(pos_or_ang))
-            if (par_num == 30 or par_num == 1) and pos_or_ang == "pos":
-                mean = mean + 0.015
-            elif (par_num == 30 or par_num == 1) and pos_or_ang == "ang":
-                mean = mean + 0.2
+            # if (par_num == 30 or par_num == 1) and pos_or_ang == "pos":
+            #     mean = mean + 0.015
+            # elif (par_num == 30 or par_num == 1) and pos_or_ang == "ang":
+            #     mean = mean + 0.2
             newdataset.loc[0] = [datasetcopy.loc[0,'index'],
                                     datasetcopy.loc[0,'time'],
                                     mean,

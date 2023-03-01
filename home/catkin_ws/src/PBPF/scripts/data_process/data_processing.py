@@ -39,7 +39,7 @@ run_alg_flag = parameter_info['run_alg_flag'] # PBPF/CVPF
 # scene
 task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
 # rosbag_flag = "1"
-
+err_file = parameter_info['err_file']
 
 particle_num = sys.argv[1]
 object_name = sys.argv[2]
@@ -65,12 +65,12 @@ flag_CVPF = True
 correct_time_flag = False
 
 loop_flag = 10
-prepare_time = 2500
+prepare_time = 2800
 
 # save file
 save_file_name = 'based_on_time_'+str(particle_num)+'_'+object_name+'_'+task_flag+'_'+update_style_flag+'_'+ang_and_pos+'.csv'
 # save_file_path = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/error_file_diff_par_num/70/1_cracker_scene1/inter_data_"+ang_and_pos+"/")
-save_file_path = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/error_file_02_10_change/")
+save_file_path = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/"+err_file+"/")
 
 def correct_time(datasetcopy):
     print("Enter into the correct time function")
@@ -82,10 +82,11 @@ def correct_time(datasetcopy):
 
 # print("Ready to integrate the data of "+ang_and_pos)
 dataset = pd.read_csv(file_name+'.csv', header=None)
-dataset.columns=["index","time","error","alg","obj_scene","particle_num"]
+# dataset.columns=["index","time","error","alg","obj_scene","particle_num","ray_type"]
+dataset.columns=['index','time','error','alg','obj_scene','particle_num','ray_type']
 # dataset.time = dataset.time - 4.3
 datasetcopy = copy.deepcopy(dataset)
-newdataset = pd.DataFrame(columns=['step','time','error','alg','obj_scene','particle_num'],index=[])
+newdataset = pd.DataFrame(columns=['step','time','error','alg','obj_scene','particle_num','ray_type'],index=[])
 timestep_list = []
 for timestep in range(prepare_time):
     timestep_list.append(timestep/100.0)
@@ -104,7 +105,8 @@ for i in range(prepare_time):
                             datasetcopy.loc[newdata.idxmin(),'error'],
                             datasetcopy.loc[newdata.idxmin(),'alg'],
                             datasetcopy.loc[newdata.idxmin(),'obj_scene'],
-                            datasetcopy.loc[newdata.idxmin(),'particle_num']]
+                            datasetcopy.loc[newdata.idxmin(),'particle_num'],
+                            datasetcopy.loc[newdata.idxmin(),'ray_type']]
 # print(newdataset.time)
 print(str(particle_num)+'_'+object_name+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+run_alg_flag+'_'+ang_and_pos)
 newdataset.to_csv(save_file_path+save_file_name, index=0, header=0, mode='a')

@@ -132,7 +132,7 @@ class PBPFMove():
         # observation model
         if do_obs_update:
             self.observation_update_PB(pw_T_obj_obse_objects_pose_list)
-        if (version == "ray" or version == "multiray") and do_obs_update == False:
+        if (version == "ray" or version == "multiray") and (do_obs_update == False or dope_detection_flag == False):
             self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
             self.set_paticle_in_each_sim_env()
         # Compute mean of particles
@@ -175,7 +175,7 @@ class PBPFMove():
         self.particle_cloud[index][obj_index].linearVelocity = linearVelocity
         self.particle_cloud[index][obj_index].angularVelocity = angularVelocity
 #        self.particle_cloud[index][obj_index].rayTraceList = [1,2,3]
-        if version == "ray" and self.do_obs_update == False:
+        if version == "ray" and (self.do_obs_update == False or dope_detection_flag == False):
             camera_parPoint = []
             pw_T_par_sim_pos = copy.deepcopy([x, y, z])
             # pybullet_sim_env[index]
@@ -197,7 +197,7 @@ class PBPFMove():
 #                weight = 0.1
             self.particle_cloud[index][obj_index].w = weight
         
-        elif version == "multiray" and self.do_obs_update == False:
+        elif version == "multiray" and (self.do_obs_update == False or dope_detection_flag == False):
             # need to change
             camera_parPoint = []
             pw_T_parC_pos = copy.deepcopy([x, y, z])
@@ -249,22 +249,15 @@ class PBPFMove():
                 self.rays_id_list.append(ray_id_list)
 #            publish_ray_trace_info(camera_pos_list, point_pos_list)
             
-            point_hit_num = 0
+            line_hit_num = 0
             for point_index in range(list_length):
                 hit_obj_id = rayTestBatch_info[point_index][0]
-                if hit_obj_id == -1:
-                    point_hit_num = point_hit_num - 1
-                else:
-                    point_hit_num = point_hit_num + 1
-            hit_point_num = int(math.ceil(list_length/3)) # 13
-            if object_name_list[obj_index] == "soup":
-                hit_point_num = 21
-            if point_hit_num > (hit_point_num*(-1)):
-                weight = 0.75
-            else:
-                weight = 0.2
+                if hit_obj_id != -1:
+                    line_hit_num = line_hit_num + 1
+
+            visible_score = 1.0 * (list_length - line_hit_num) / list_length
+            weight = 1 - visible_score
             self.particle_cloud[index][obj_index].w = weight
-            
             
     # motion model
     def motion_update_PB_parallelised(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
@@ -355,15 +348,26 @@ class PBPFMove():
                     length_collision_detection_obj_id = len(collision_detection_obj_id)
                     for check_num in range(length_collision_detection_obj_id-1):
                         pybullet_env.stepSimulation()
+                        # will return all collision points
                         contacts = pybullet_env.getContactPoints(bodyA=collision_detection_obj_id[check_num], # robot, other object...
                                                                  bodyB=collision_detection_obj_id[-1]) # main(target) object
                         # pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
                         # collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
                         # length = len(collide_ids)
                         for contact in contacts:
+                            contactNormalOnBtoA = contact[7]
                             contact_dis = contact[8]
                             if contact_dis < -0.001:
                                 #print("detected contact during initialization. BodyA: %d, BodyB: %d, LinkOfA: %d, LinkOfB: %d", contact[1], contact[2], contact[3], contact[4])
+                                
+                                
+                                # par_x_ = sim_par_cur_pos[0] + contactNormalOnBtoA[0]*contact_dis/2
+                                # par_y_ = sim_par_cur_pos[1] + contactNormalOnBtoA[1]*contact_dis/2
+                                # par_z_ = sim_par_cur_pos[2] + contactNormalOnBtoA[2]*contact_dis/2
+                                # particle_pos = [par_x_, par_y_, par_z_]
+                                # normal_x = par_x_
+                                # normal_y = par_y_
+                                # normal_z = par_z_
                                 normal_x, normal_y, normal_z, P_quat = self.add_noise_pose(sim_par_cur_pos, sim_par_cur_ori)
                                 pybullet_env.resetBasePositionAndOrientation(pw_T_par_sim_id,
                                                                              [normal_x, normal_y, normal_z],
@@ -523,21 +527,15 @@ class PBPFMove():
                         ray_id = p_sim.addUserDebugLine(point_pos_list[6], point_pos_list[7], [0,1,0], 5)
                         ray_id_list.append(ray_id)
                         self.rays_id_list.append(ray_id_list)
-                    
-                    point_hit_num = 0
+
+                    line_hit_num = 0
                     for point_index in range(list_length):
                         hit_obj_id = rayTestBatch_info[point_index][0]
-                        if hit_obj_id == -1:
-                            point_hit_num = point_hit_num - 1
-                        else:
-                            point_hit_num = point_hit_num + 1
-                    hit_point_num = int(math.ceil(list_length/3)) # 13
-                    if object_name_list[obj_index] == "soup":
-                        hit_point_num = -21
-                    if point_hit_num > hit_point_num:
-                        weight = weight / 2.0
-                    else:
-                        weight = weight
+                        if hit_obj_id != -1:
+                            line_hit_num = line_hit_num + 1
+
+                    visible_score = 1.0 * (list_length - line_hit_num) / list_length
+                    weight = weight * visible_score
 
                 particle[obj_index].w = weight
             # old resample function
@@ -837,15 +835,16 @@ class CVPFMove():
         global flag_record
         # motion model
         self.do_obs_update = do_obs_update
+
         self.motion_update_CV(pw_T_obj_obse_objects_pose_list)
         # observation model
         if do_obs_update:
             self.observation_update_CV(pw_T_obj_obse_objects_pose_list)
             
             
-        if (version == "ray" or version == "multiray") and do_obs_update == False:
-            self.resample_particles_CV_update(pw_T_obj_obse_objects_pose_list)
-            self.set_paticle_in_each_sim_env_CV()
+        # if (version == "ray" or version == "multiray") and do_obs_update == False:
+        #     self.resample_particles_CV_update(pw_T_obj_obse_objects_pose_list)
+        #     self.set_paticle_in_each_sim_env_CV()
             
         # Compute mean of particles
         object_estimate_pose_CV, dis_std_list, ang_std_list = self.compute_estimate_pos_of_object(self.particle_cloud_CV)
@@ -895,13 +894,15 @@ class CVPFMove():
         if flag_update_num_CV < 2:
             length = len(boss_obs_pose_CVPF)
             obs_curr_pose_list = copy.deepcopy(boss_obs_pose_CVPF[length-1]) # [obse_obj1_n,   obse_obj2_n]
-            obs_last_pose_list = copy.deepcopy(boss_obs_pose_CVPF[length-2]) # [obse_obj1_n-1, obse_obj2_n-1]
+            obs_last_pose_list = copy.deepcopy(boss_obs_pose_CVPF[length-1]) # [obse_obj1_n-1, obse_obj2_n-1]
             for obj_index in range (self.obj_num):
                 obs_curr_pose = obs_curr_pose_list[obj_index] # class objext
                 obs_last_pose = obs_last_pose_list[obj_index] # class objext
-                obs_last_pos = obs_last_pose.pos
+                obs_last_pos = obs_last_pose.pos           
                 obs_last_ori = obs_last_pose.ori
                 obs_curr_pos = obs_curr_pose.pos
+                # print("obs_last_pos: ",obs_last_pos)
+                # print("obs_curr_pos: ",obs_curr_pos)
                 obs_curr_ori = obs_curr_pose.ori
                 obsO_T_obsN = self.compute_transformation_matrix(obs_last_pos, obs_last_ori, obs_curr_pos, obs_curr_ori)
                 parO_T_parN = copy.deepcopy(obsO_T_obsN)
@@ -917,6 +918,8 @@ class CVPFMove():
                 est_curr_pos = est_curr_pose.pos
                 est_curr_ori = est_curr_pose.ori
                 est_last_pos = est_last_pose.pos
+                # print("est_last_pos: ",est_last_pos)
+                # print("est_curr_pos: ",est_curr_pos)
                 est_last_ori = est_last_pose.ori
                 estO_T_estN = self.compute_transformation_matrix(est_last_pos, est_last_ori, est_curr_pos, est_curr_ori)
                 parO_T_parN = copy.deepcopy(estO_T_estN)
@@ -964,43 +967,43 @@ class CVPFMove():
                 weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
                 weight = weight_xyz * weight_ang
                 
-                if version == "ray":
-                    pw_T_par_sim_pos = [particle_x, particle_y, particle_z]
-                    # pybullet_sim_env[index]
-                    rayTest_info = p_sim.rayTest(pw_T_cam_tf_pos, pw_T_par_sim_pos)
-                    # ray_id = p_sim.addUserDebugLine(pw_T_cam_tf_pos, pw_T_par_sim_pos)
-                    # self.rays_id_list[index].append(ray_id)
-                    hit_obj_id = rayTest_info[0][0]
-                    if hit_obj_id == -1:
-                        weight = weight
-                    else:
-                        weight = weight / 2.0
-                elif version == "multiray":
-                    # need to change
-                    pw_T_parC_pos = copy.deepcopy([particle_x, particle_y, particle_z])
-                    pw_T_parC_ori = copy.deepcopy(par_ori) # x, y, z, w
-                    pw_T_parC_3_3 = transformations.quaternion_matrix(pw_T_parC_ori)
-                    pw_T_parC_4_4 = rotation_4_4_to_transformation_4_4(pw_T_parC_3_3, pw_T_parC_pos)
+                # if version == "ray":
+                #     pw_T_par_sim_pos = [particle_x, particle_y, particle_z]
+                #     # pybullet_sim_env[index]
+                #     rayTest_info = p_sim.rayTest(pw_T_cam_tf_pos, pw_T_par_sim_pos)
+                #     # ray_id = p_sim.addUserDebugLine(pw_T_cam_tf_pos, pw_T_par_sim_pos)
+                #     # self.rays_id_list[index].append(ray_id)
+                #     hit_obj_id = rayTest_info[0][0]
+                #     if hit_obj_id == -1:
+                #         weight = weight
+                #     else:
+                #         weight = weight / 2.0
+                # elif version == "multiray":
+                #     # need to change
+                #     pw_T_parC_pos = copy.deepcopy([particle_x, particle_y, particle_z])
+                #     pw_T_parC_ori = copy.deepcopy(par_ori) # x, y, z, w
+                #     pw_T_parC_3_3 = transformations.quaternion_matrix(pw_T_parC_ori)
+                #     pw_T_parC_4_4 = rotation_4_4_to_transformation_4_4(pw_T_parC_3_3, pw_T_parC_pos)
                     
-                    point_list, point_pos_list = generate_point_for_ray(pw_T_parC_pos, pw_T_parC_4_4, obj_index)
-                    point_pos_list.append(pw_T_parC_pos)
-                    camera_pos_list = []
-                    list_length = len(point_pos_list)
-                    for point_index in range(list_length):
-                        camera_pos_list.append(pw_T_cam_tf_pos)
-                    # pybullet_sim_env[index]
-                    rayTestBatch_info = p_sim.rayTestBatch(camera_pos_list, point_pos_list)
-                    point_hit_num = 0
-                    for point_index in range(list_length):
-                        hit_obj_id = rayTestBatch_info[point_index][0]
-                        if hit_obj_id == -1:
-                            point_hit_num = point_hit_num - 1
-                        else:
-                            point_hit_num = point_hit_num + 1
-                    if point_hit_num > 0:
-                        weight = weight / 2.0
-                    else:
-                        weight = weight
+                #     point_list, point_pos_list = generate_point_for_ray(pw_T_parC_pos, pw_T_parC_4_4, obj_index)
+                #     point_pos_list.append(pw_T_parC_pos)
+                #     camera_pos_list = []
+                #     list_length = len(point_pos_list)
+                #     for point_index in range(list_length):
+                #         camera_pos_list.append(pw_T_cam_tf_pos)
+                #     # pybullet_sim_env[index]
+                #     rayTestBatch_info = p_sim.rayTestBatch(camera_pos_list, point_pos_list)
+                #     point_hit_num = 0
+                #     for point_index in range(list_length):
+                #         hit_obj_id = rayTestBatch_info[point_index][0]
+                #         if hit_obj_id == -1:
+                #             point_hit_num = point_hit_num - 1
+                #         else:
+                #             point_hit_num = point_hit_num + 1
+                #     if point_hit_num > 0:
+                #         weight = weight / 2.0
+                #     else:
+                #         weight = weight
             
                 particle[obj_index].w = weight
         # old resample function
@@ -1051,46 +1054,46 @@ class CVPFMove():
             
             
             
-            if version == "ray" and self.do_obs_update == False:
-                pw_T_par_sim_pos = copy.deepcopy([normal_x, normal_y, normal_z])
-                # pybullet_sim_env[index]
-                rayTest_info = p_sim.rayTest(pw_T_cam_tf_pos, pw_T_par_sim_pos)
+            # if version == "ray" and self.do_obs_update == False:
+            #     pw_T_par_sim_pos = copy.deepcopy([normal_x, normal_y, normal_z])
+            #     # pybullet_sim_env[index]
+            #     rayTest_info = p_sim.rayTest(pw_T_cam_tf_pos, pw_T_par_sim_pos)
                 
-                hit_obj_id = rayTest_info[0][0]
-                if hit_obj_id == -1:
-                    weight = 0.1
-                else:
-                    weight = 0.9
-                self.particle_cloud[index][obj_index].w = weight
-            elif version == "multiray" and self.do_obs_update == False:
-                # need to change
-                pw_T_parC_pos = copy.deepcopy([normal_x, normal_y, normal_z])
-                pw_T_parC_ori = copy.deepcopy(pb_quat) # x, y, z, w
-                pw_T_parC_ori = quaternion_correction(pw_T_parC_ori)
-                pw_T_parC_3_3 = transformations.quaternion_matrix(pw_T_parC_ori)
-                pw_T_parC_4_4 = rotation_4_4_to_transformation_4_4(pw_T_parC_3_3, pw_T_parC_pos)
+            #     hit_obj_id = rayTest_info[0][0]
+            #     if hit_obj_id == -1:
+            #         weight = 0.1
+            #     else:
+            #         weight = 0.9
+            #     self.particle_cloud[index][obj_index].w = weight
+            # elif version == "multiray" and self.do_obs_update == False:
+            #     # need to change
+            #     pw_T_parC_pos = copy.deepcopy([normal_x, normal_y, normal_z])
+            #     pw_T_parC_ori = copy.deepcopy(pb_quat) # x, y, z, w
+            #     pw_T_parC_ori = quaternion_correction(pw_T_parC_ori)
+            #     pw_T_parC_3_3 = transformations.quaternion_matrix(pw_T_parC_ori)
+            #     pw_T_parC_4_4 = rotation_4_4_to_transformation_4_4(pw_T_parC_3_3, pw_T_parC_pos)
                 
-                point_list, point_pos_list = generate_point_for_ray(pw_T_parC_pos, pw_T_parC_4_4, obj_index)
-                point_pos_list.append(pw_T_parC_pos)
-                camera_pos_list = []
-                list_length = len(point_pos_list)
-                for point_index in range(list_length):
-                    camera_pos_list.append(pw_T_cam_tf_pos)
-                # pybullet_sim_env[index]
-                rayTestBatch_info = p_sim.rayTestBatch(camera_pos_list, point_pos_list)
-                point_hit_num = 0
-                for point_index in range(list_length):
-                    hit_obj_id = rayTestBatch_info[point_index][0]
-                    if hit_obj_id == -1:
-                        point_hit_num = point_hit_num - 1
-                    else:
-                        point_hit_num = point_hit_num + 1
-                if point_hit_num > 0:
-                    weight = 0.9
-                else:
-                    weight = 0.1
+            #     point_list, point_pos_list = generate_point_for_ray(pw_T_parC_pos, pw_T_parC_4_4, obj_index)
+            #     point_pos_list.append(pw_T_parC_pos)
+            #     camera_pos_list = []
+            #     list_length = len(point_pos_list)
+            #     for point_index in range(list_length):
+            #         camera_pos_list.append(pw_T_cam_tf_pos)
+            #     # pybullet_sim_env[index]
+            #     rayTestBatch_info = p_sim.rayTestBatch(camera_pos_list, point_pos_list)
+            #     point_hit_num = 0
+            #     for point_index in range(list_length):
+            #         hit_obj_id = rayTestBatch_info[point_index][0]
+            #         if hit_obj_id == -1:
+            #             point_hit_num = point_hit_num - 1
+            #         else:
+            #             point_hit_num = point_hit_num + 1
+            #     if point_hit_num > 0:
+            #         weight = 0.9
+            #     else:
+            #         weight = 0.1
                         
-                self.particle_cloud_CV[index][obj_index].w = weight
+            #     self.particle_cloud_CV[index][obj_index].w = weight
             
 
 
@@ -1675,7 +1678,7 @@ if __name__ == '__main__':
     version = parameter_info['version'] # old/ray/multiray
     ray_point_num = parameter_info['ray_point_num']
     if run_alg_flag == 'CVPF':
-        particle_num = 200
+        particle_num = 150
     print("This is "+update_style_flag+" update in scene"+task_flag)    
     # some parameters
     d_thresh = 0.005
@@ -1694,7 +1697,7 @@ if __name__ == '__main__':
     if run_alg_flag == "PBPF":
         boss_pf_update_interval_in_real = 0.16
     elif run_alg_flag == "CVPF":
-        boss_pf_update_interval_in_real = 0.02
+        boss_pf_update_interval_in_real = 0.16
     pf_update_rate = rospy.Rate(1.0/boss_pf_update_interval_in_real)
     # # error in xyz axis obse before recalibrating
     # boss_sigma_obs_x = 0.03973017808163751 / 2.0
@@ -1711,7 +1714,7 @@ if __name__ == '__main__':
     # ang_noise = 0.05 * 1.0
     ang_noise = 0.05 * 3.0
     pos_noise = 0.005
-    ang_noise = 0.05 
+    ang_noise = 0.05
     motion_noise = True
     show_ray = False
     # pos_noise = 0.0
@@ -1721,12 +1724,27 @@ if __name__ == '__main__':
     # Standard deviation of computing the weight
     # boss_sigma_obs_ang = 0.216773873
     # boss_sigma_obs_ang = 0.0216773873
-    # boss_sigma_obs_ang = 0.0216773873 * 4
-    # boss_sigma_obs_ang = 0.0216773873 * 20
-    boss_sigma_obs_ang = 0.0216773873 * 60
-    # boss_sigma_obs_pos = 0.038226405
-    # boss_sigma_obs_pos = 0.004
-    boss_sigma_obs_pos = 0.25 # 0.02 need to increase
+
+    for obj_index in range(object_num):
+        object_name = object_name_list[obj_index]
+        if object_name == "cracker":
+            print("cracker")
+            # boss_sigma_obs_ang = 0.0216773873 * 30
+            # boss_sigma_obs_pos = 0.25 # 0.02 need to increase
+            boss_sigma_obs_ang = 0.0216773873 * 10
+            boss_sigma_obs_pos = 0.10 
+            pos_noise = 0.001 * 5.0
+            ang_noise = 0.05 * 3.0
+        else:
+            boss_sigma_obs_ang = 0.0216773873 * 10
+            # boss_sigma_obs_ang = 0.0216773873 * 20
+            # boss_sigma_obs_ang = 0.0216773873 * 60
+            # boss_sigma_obs_pos = 0.038226405
+            # boss_sigma_obs_pos = 0.004
+            boss_sigma_obs_pos = 0.10 # 0.02 need to increase
+            # boss_sigma_obs_pos = 0.10 # 0.02 need to increase
+            pos_noise = 0.001 * 5.0
+            ang_noise = 0.05 * 3.0
 
     mass_mean = 0.380 # 0.380
     mass_sigma = 0.5
@@ -1814,6 +1832,7 @@ if __name__ == '__main__':
     CVPF_alg = CVPFMove(object_num) 
     # while True:
     #     print(ros_listener.detection_flag)
+    t_begin = time.time()
     while not rospy.is_shutdown():
         #panda robot moves in the visualization window
         temp_pw_T_obj_obse_objs_list = []
@@ -1838,9 +1857,11 @@ if __name__ == '__main__':
             # get obse data
             obse_is_fresh = True
             obse_is_jumping = False
+            dope_detection_flag = True
 
             if ros_listener.detection_flag == False:
-                version = "multiray" # multiray/ray
+                version = "old" # multiray/ray
+                dope_detection_flag == False
             else:
                 version = "old"
             try:
@@ -1864,6 +1885,8 @@ if __name__ == '__main__':
                 if (latest_obse_time.to_sec() > old_obse_time):
                     (trans_ob,rot_ob) = listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
                     obse_is_fresh = True
+                    t_after = time.time()
+                    # print(t_after - t_begin - 14)
                     # print("obse is FRESH")
                 else:
                     # obse has not been updating for a while
@@ -1897,11 +1920,18 @@ if __name__ == '__main__':
             minDis_obseCur_parOld, minAng_obseCur_parOld = compute_diff_bt_two_pose(obj_index, particle_cloud_pub, pw_T_obj_obse_pose_new)            
             
             all_frame = all_frame + 1
-            if minDis_obseCur_parOld > 0.10 or minAng_obseCur_parOld > math.pi * 1 / 2.0:
-                # print("DOPE becomes crazy")
-                count_DOPE_jumping_time = count_DOPE_jumping_time + 1
-                obse_is_fresh = False
-                obse_is_jumping = True
+            if run_alg_flag == "PBPF":
+                if minDis_obseCur_parOld > 0.10 or minAng_obseCur_parOld > math.pi * 1 / 2.0:
+                    # print("DOPE becomes crazy")
+                    count_DOPE_jumping_time = count_DOPE_jumping_time + 1
+                    obse_is_fresh = False
+                    obse_is_jumping = True
+            # if :
+            #     if minDis_obseCur_parOld > 0.10 or minAng_obseCur_parOld > math.pi * 1 / 2.0:
+            #         # print("DOPE becomes crazy")
+            #         count_DOPE_jumping_time = count_DOPE_jumping_time + 1
+            #         obse_is_fresh = False
+            #         obse_is_jumping = True
             # if dis_obseCur_estiOld > dis_std_list[obj_index]*3 or ang_obseCur_estiOld > ang_std_list[obj_index]*3:
             # if dis_obseCur_estiOld > 0.30:# or ang_obseCur_estiOld > math.pi * 1 / 2.0:
             #     # print("DOPE becomes crazy")
@@ -2022,12 +2052,14 @@ if __name__ == '__main__':
                 # CVPF algorithm
                 if run_alg_flag == "CVPF":
                     # if CVPF_alg.isAnyParticleInContact():
+                    # if dis_robcur_robold > 0.002:
                     flag_update_num_CV = flag_update_num_CV + 1
                     boss_obs_pose_CVPF.append(pw_T_obj_obse_objects_list)
                     # execute CVPF algorithm movement
                     pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                     estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list,
-                                                                              do_obs_update=obse_is_fresh) # flag for judging obse work
+                                                                            do_obs_update=obse_is_fresh) # flag for judging obse work
+                    rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
                     # else:
                     #     CVPF_alg.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm
                         

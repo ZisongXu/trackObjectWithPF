@@ -77,8 +77,8 @@ class Visualisation_World():
         self.p_visualisation = p_visualisation
         p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
         p_visualisation.setGravity(0, 0, -9.81)
-        p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=90, cameraPitch=-20, cameraTargetPosition=[0.3,0.1,0.2])      
-        # p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.3,0.1,0.2])    
+        # p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=90, cameraPitch=-20, cameraTargetPosition=[0.1,0.1,0.1])      
+        p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.3,0.1,0.1])    
         plane_id = p_visualisation.loadURDF("plane.urdf")
         if self.task_flag == "1":
             pw_T_obst_opti_pos = [0.7188993998723022, 0.2767650526046564, 0.1258681365201122]

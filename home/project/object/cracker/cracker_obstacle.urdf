@@ -1,18 +1,19 @@
 <?xml version="1.0"?>
  <robot name="myfirst">
-   <material name="green">
-     <color rgba="0 0 0 1"/>
+   <material name="darkOrange">
+     <color rgba="1 0.5647 0 1"/>
    </material>
    <link name="right_leg">
      <visual>
        <geometry>
-         <box size="0.1968 0.2505 0.0725"/>
+         <!-- "0.1968 0.2505 0.0725" -->
+         <box size="0.1965 0.299 0.0711"/>
        </geometry>
-       <material name="green"/>
+       <material name="darkOrange"/>
      </visual>
      <collision>
        <geometry>
-         <box size="0.1968 0.2505 0.0725"/>
+         <box size="0.1965 0.299 0.0711"/>
        </geometry>
      </collision>
      <inertial>

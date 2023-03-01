@@ -60,7 +60,8 @@ update_style_flag = parameter_info['update_style_flag'] # time/pose
 run_alg_flag = parameter_info['run_alg_flag'] # PBPF/CVPF
 task_flag = parameter_info['task_flag'] # 1/2/3/4 parameter_info['task_flag']
 file_name = sys.argv[1]
-
+err_file = parameter_info['err_file']
+DOPE_fresh_flag = False
 # file_time = 11 # 1~10
 # when optitrack does not work
 write_opti_pose_flag = "False"
@@ -160,11 +161,11 @@ def signal_handler(sig, frame):
             file_name_obse_ang = update_style_flag+'_obse_err_ang.csv'
             file_name_PBPF_ang = update_style_flag+'_PBPF_err_ang.csv'
 
-            boss_obse_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_02_19_add_dopeDetection/'+str(file_name)+file_name_obse_pos,index=0,header=0,mode='a')
-            boss_obse_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_02_19_add_dopeDetection/'+str(file_name)+file_name_obse_ang,index=0,header=0,mode='a')
+            boss_obse_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+file_name_obse_pos,index=0,header=0,mode='a')
+            boss_obse_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+file_name_obse_ang,index=0,header=0,mode='a')
             print("write obser file")
-            boss_PBPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_02_19_add_dopeDetection/'+str(file_name)+file_name_PBPF_pos,index=0,header=0,mode='a')
-            boss_PBPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_02_19_add_dopeDetection/'+str(file_name)+file_name_PBPF_ang,index=0,header=0,mode='a')
+            boss_PBPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+file_name_PBPF_pos,index=0,header=0,mode='a')
+            boss_PBPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+file_name_PBPF_ang,index=0,header=0,mode='a')
             print("write PBPF file")
             
     if run_alg_flag == "CVPF":
@@ -175,8 +176,8 @@ def signal_handler(sig, frame):
             file_name_CVPF_pos = update_style_flag+'_CVPF_err_pos.csv'
             file_name_CVPF_ang = update_style_flag+'_CVPF_err_ang.csv'
             
-            boss_CVPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_new_rosbag1/'+str(file_name)+file_name_CVPF_pos,index=0,header=0,mode='a')
-            boss_CVPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/error_file_new_rosbag1/'+str(file_name)+file_name_CVPF_ang,index=0,header=0,mode='a')
+            boss_CVPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+file_name_CVPF_pos,index=0,header=0,mode='a')
+            boss_CVPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+file_name_CVPF_ang,index=0,header=0,mode='a')
             print("write CVPF file")
     print("file_name:", file_name)
 
@@ -230,6 +231,8 @@ if __name__ == '__main__':
     
     signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
     esti_obj_list_not_pub = 2
+    t_begin = 0
+    t_before_record = 0
     while True:
         for obj_index in range(object_num):
             if first_get_info_from_tf_flag == 0:
@@ -275,12 +278,15 @@ if __name__ == '__main__':
                 #     (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
                 #     obse_is_fresh = True
                     # print("obse is FRESH")
+                
                 if (latest_obse_time.to_sec() > old_obse_time):
                     (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
                     obse_is_fresh = True
+                    # print(t_before_record - t_begin - 14)
                 else:
                     # obse has not been updating for a while
                     obse_is_fresh = False
+                    
                     # print("obse is NOT fresh")
                 old_obse_time = latest_obse_time.to_sec()
                 # break
@@ -373,6 +379,7 @@ if __name__ == '__main__':
                     err_opti_PBPF_ang = angle_correction(err_opti_PBPF_ang)
                     obj_scene = object_name_list[obj_index]+'_scene'+task_flag
                     t_before_record = time.time()
+                    # if obse_is_fresh == True:
                     boss_obse_err_pos_df_list[obj_index].loc[flag_record_obse] = [flag_record_obse, t_before_record - t_begin, err_opti_obse_pos, 'obse', obj_scene, particle_num, version]
                     boss_obse_err_ang_df_list[obj_index].loc[flag_record_obse] = [flag_record_obse, t_before_record - t_begin, err_opti_obse_ang, 'obse', obj_scene, particle_num, version]
                     flag_record_obse = flag_record_obse + 1
@@ -386,6 +393,7 @@ if __name__ == '__main__':
                     err_opti_CVPF_ang = angle_correction(err_opti_CVPF_ang)
                     obj_scene = object_name_list[obj_index]+'_scene'+task_flag
                     t_before_record = time.time()
+                    # if obse_is_fresh == True:
                     boss_CVPF_err_pos_df_list[obj_index].loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_pos, 'CVPF', obj_scene, particle_num, version]
                     boss_CVPF_err_ang_df_list[obj_index].loc[flag_record_CVPF] = [flag_record_CVPF, t_before_record - t_begin, err_opti_CVPF_ang, 'CVPF', obj_scene, particle_num, version]
                     flag_record_CVPF = flag_record_CVPF + 1

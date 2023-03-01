@@ -3,13 +3,16 @@
    <material name="purple">
      <color rgba="0.57647059 0.43921569 0.85882353 1"/>
    </material>
+   <material name="yellow">
+     <color rgba="1.0 1.0 0.0 1"/>
+   </material>
    <link name="base_link">
      <visual>
        <geometry>
          <cylinder length="0.1000" radius="0.033829689025878906"/>
          
        </geometry>
-       <material name="purple"/>
+       <material name="yellow"/>
        <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
      </visual>
      <inertial>

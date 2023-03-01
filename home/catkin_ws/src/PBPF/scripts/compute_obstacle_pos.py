@@ -82,7 +82,10 @@ class Ros_Listener():
         rospy.Subscriber('/mocap/rigid_bodies/baseofcheezit/pose', PoseStamped, self.base_of_cheezit_callback, queue_size=1)
         self.base_pose = PoseStamped()
 
-        rospy.Subscriber('/mocap/rigid_bodies/zisongObstacle/pose', PoseStamped, self.obstacle_callback, queue_size=1)
+        # rospy.Subscriber('/mocap/rigid_bodies/zisongObstacle/pose', PoseStamped, self.obstacle_callback, queue_size=1)
+        # self.obstacle_pose = PoseStamped()
+
+        rospy.Subscriber('/mocap/rigid_bodies/bigObstacle/pose', PoseStamped, self.obstacle_callback, queue_size=1)
         self.obstacle_pose = PoseStamped()
 
         rospy.Subscriber('/Opti_pose', PoseStamped, self.fake_optipose_callback, queue_size=10)

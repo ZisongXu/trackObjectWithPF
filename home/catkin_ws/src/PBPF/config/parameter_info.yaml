@@ -1,6 +1,7 @@
+err_file: diff_Par_test
 gazebo_flag: false
 object_name_list:
-- cracker
+- soup
 - fish_can
 object_num: 1
 other_obj_num: 1
@@ -10,11 +11,11 @@ oto_name_list:
 otob_name_list:
 - cracker_obstacle
 - fish_can
-particle_num: 70
+particle_num: 60
 pick_particle_rate: 0.05
 ray_point_num: 8
 robot_num: 1
 run_alg_flag: PBPF
-task_flag: '4'
+task_flag: '1'
 update_style_flag: time
 version: old

@@ -1,11 +1,13 @@
 #!/bin/bash
 
+# declare -a objectNames=("cracker" "soup")
+# declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
 declare -a objectNames=("cracker" "soup")
-declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-# declare -a objectNames=("cracker")
-# declare -a sceneNames=("scene2")
-declare -a particleNumbers=(70)
+declare -a sceneNames=("scene1")
+declare -a particleNumbers=(50 60)
 declare -a runAlgFlags=("PBPF")
+declare -a diffRadSigma=(0.32505 0.2167)
+declare -a repeats=(8)
 
 for runAlgFlag in "${runAlgFlags[@]}"
 do
@@ -21,16 +23,28 @@ do
 						continue
 					fi
 				fi
+
+				if [[ "$objectName" == "cracker" ]]; then
+					if [[ "$sceneName" == "scene1" ]]; then
+						if [[ "$particleNumber" == 50 ]]; then
+							continue
+						fi
+					fi
+				fi
 				
+			
+
 				python3 update_yaml_file_automated.py "${objectName}" "${particleNumber}" "${sceneName}" "${runAlgFlag}"
 				
 				for rosbag in {1..10}
-				# for ((rosbag=2;rosbag<=2;rosbag++)); 
+				# for rosbag in {1..5}
+				# for ((rosbag=4;rosbag<=10;rosbag++)); 
 				do
 					duration=$(python3 get_info_from_rosbag.py "${objectName}" "${particleNumber}" "${sceneName}" "${rosbag}")
 
 					for repeat in {1..10}
-					# for ((repeat=8;repeat<=8;repeat++));
+					# for repeat in "${repeats[@]}"
+					# for ((repeat=1;repeat<=10;repeat++));
 					do
 						echo "I will sleep for $duration seconds"
 						rosbag play "rosbag/latest_rosbag/${objectName}_${sceneName}/${objectName}_${sceneName}_70_${rosbag}.bag" --clock  > /dev/null 2>&1 & 
@@ -47,11 +61,11 @@ do
 						
 						sleep $duration
 						kill -SIGINT $REPID
-						sleep 5
+						sleep 2
 						pkill -9 RecordE*
 						kill -SIGINT $PBPF_PID
 						pkill -9 Physics_Based_*
-						sleep 5
+						sleep 2
 					done
 				done
 

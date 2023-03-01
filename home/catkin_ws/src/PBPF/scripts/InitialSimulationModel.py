@@ -176,16 +176,29 @@ class InitialSimulationModel():
                                                                          particle_pos,
                                                                          particle_ori)
                 collision_detection_obj_id.append(particle_no_visual_id)
+                conter = 0
                 while True:
                     flag = 0
+                    conter = conter + 1
                     length_collision_detection_obj_id = len(collision_detection_obj_id)
                     for check_num in range(length_collision_detection_obj_id-1):
                         pybullet_simulation_env.stepSimulation()
                         contacts = pybullet_simulation_env.getContactPoints(bodyA=collision_detection_obj_id[check_num], bodyB=collision_detection_obj_id[-1])
                         for contact in contacts:
+                            contactNormalOnBtoA = contact[7]
                             contact_dis = contact[8]
+                            # print(contact_dis)
+                            # print(contactNormalOnBtoA)
+                            # input("stop")
                             if contact_dis < -0.001:
-                                particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
+                                par_x_ = particle_pos[0] + contactNormalOnBtoA[0]*contact_dis/2
+                                par_y_ = particle_pos[1] + contactNormalOnBtoA[1]*contact_dis/2
+                                par_z_ = particle_pos[2] + contactNormalOnBtoA[2]*contact_dis/2
+                                particle_pos = [par_x_, par_y_, par_z_]
+                                if conter > 20:
+                                    print("init more than 20 times")
+                                    conter = 0
+                                    particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
                                 pybullet_simulation_env.resetBasePositionAndOrientation(particle_no_visual_id, particle_pos, particle_ori)
                                 flag = 1
                                 break
@@ -193,7 +206,7 @@ class InitialSimulationModel():
                             break
                     if flag == 0:
                         break
-
+                    
                 objPose = Particle(obj_obse_name, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, par_index, 0, 0)
                 object_list.append(objPose)
                 PBPF_par_no_visual_id[par_index].append(particle_no_visual_id)
@@ -255,17 +268,27 @@ class InitialSimulationModel():
                                                                          particle_pos,
                                                                          particle_ori)
                 collision_detection_obj_id.append(particle_no_visual_id)
+                conter = 0
                 while True:
-                    print("Trying to initialize in a random pose.")
                     flag = 0
+                    conter = conter + 1
                     length_collision_detection_obj_id = len(collision_detection_obj_id)
                     for check_num in range(length_collision_detection_obj_id-1):
                         pybullet_simulation_env.stepSimulation()
                         contacts = pybullet_simulation_env.getContactPoints(bodyA=collision_detection_obj_id[check_num], bodyB=collision_detection_obj_id[-1])
                         for contact in contacts:
+                            contactNormalOnBtoA = contact[7]
                             contact_dis = contact[8]
                             if contact_dis < -0.001:
-                                particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
+                                par_x_ = particle_pos[0] + contactNormalOnBtoA[0]*contact_dis/2
+                                par_y_ = particle_pos[1] + contactNormalOnBtoA[1]*contact_dis/2
+                                par_z_ = particle_pos[2] + contactNormalOnBtoA[2]*contact_dis/2
+                                particle_pos = [par_x_, par_y_, par_z_]
+                                if conter > 20:
+                                    print("init more than 20 times")
+                                    conter = 0
+                                    particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
+                                # particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
                                 pybullet_simulation_env.resetBasePositionAndOrientation(particle_no_visual_id, particle_pos, particle_ori)
                                 flag = 1
                                 break

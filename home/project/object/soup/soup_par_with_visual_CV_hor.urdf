@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+ <robot name="myfirst">
+   <material name="dark_green">
+     <color rgba="0.18039 0.5451 0.341176 1"/>
+   </material>
+   <link name="right_leg">
+     <visual>
+       <geometry>
+         <cylinder length="0.1000" radius="0.033829689025878906"/>
+       </geometry>
+       <material name="dark_green"/>
+       <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
+     </visual>
+     <inertial>
+       <mass value="0"/>
+       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+     </inertial>
+   </link>
+ </robot>

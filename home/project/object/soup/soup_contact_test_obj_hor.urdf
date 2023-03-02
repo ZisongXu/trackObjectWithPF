@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+ <robot name="myfirst">
+   <material name="red">
+     <color rgba="1 0.498 0.3137 1"/>
+   </material>
+   <material name="black">
+     <color rgba="0.0 0.0 0.0 1"/>
+   </material>
+   <material name="light_green">
+     <color rgba="0 1 0.498 1"/>
+   </material>
+   <link name="obj_in_sim">
+     <visual>
+       <geometry>
+         <cylinder length="0.0800" radius="0.013829689025878906"/>
+       </geometry>
+       <material name="black"/>
+       <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
+     </visual>
+     <collision>
+       <geometry>
+         <cylinder length="0.1000" radius="0.033829689025878906"/>
+       </geometry>
+       <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
+     </collision>
+     <inertial>
+       <mass value="1"/>
+       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+     </inertial>
+   </link>
+ </robot>

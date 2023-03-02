@@ -211,7 +211,7 @@ class Panda:
         last_link_pos = org_link_pos
         print("org_link_pos:",org_link_pos)
         
-        for i in range(75):	
+        for i in range(10):	
             step_flag = step_flag + 1
             current_pose = self.moveit_group.get_current_pose()
             #position
@@ -326,12 +326,14 @@ class Panda:
         
         scale = 1.0
         wpose = self.moveit_group.get_current_pose().pose
-        #be careful inertance
-        for i in range(5):
-            wpose.position.y = wpose.position.y + scale * 0.01
+        print("wpose")
+        print(wpose)
+        # be careful inertance
+        for i in range(1):
+            wpose.position.y = wpose.position.y + scale * (-0.01)
             waypoints.append(copy.deepcopy(wpose))
                 
-        (plan,fraction) = self.moveit_group.compute_cartesian_path(waypoints,0.01,0.0)
+        (plan,fraction) = self.moveit_group.compute_cartesian_path(waypoints, 0.01, 0.0)
         self.moveit_group.execute(plan, wait=True)
         joint = self.moveit_group.get_current_joint_values()
         joint_state_info = JointState()
@@ -414,9 +416,9 @@ if __name__ == '__main__':
     #panda.move_minus_y_straight_line_ccp
     #panda.fully_close_gripper()
     #cylinder
-    # panda.fully_open_gripper()
+#    panda.fully_open_gripper()
     panda.fully_close_gripper()
-    
+#    sys.exit()
     # for index in range(5):
     #     wpose = panda.moveit_group.get_current_pose().pose
     #     waypoints = []
@@ -425,34 +427,43 @@ if __name__ == '__main__':
     #     # #wpose.position.y += 0.15
     #     waypoints.append(copy.deepcopy(wpose))    
     #     panda.move_through_waypoints(waypoints)
-    cheezit_flag = False
-    souo_flag = True
+    cheezit_flag = True
+    soup_flag = False
     if cheezit_flag == True:
         time = 5
-    if souo_flag == True:
-        time = 5
+    if soup_flag == True:
+        time = 4
         
         
+#    for index in range(time):
+#        wpose = panda.moveit_group.get_current_pose().pose
+#        waypoints = []
+#        wpose.position.y -= 0.1
+#        # wpose.position.z += 0.08
+#        # wpose.position.y -= 0.15
+#        waypoints.append(copy.deepcopy(wpose))    
+#        panda.move_through_waypoints(waypoints)
+#    targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.469608373509513, 0.9228163020693847]
+#    panda.move_to_target_joints(targetPositionsJoints_test)
+#    panda.fully_close_gripper()
+#    sys.exit()
     for index in range(time):
-        wpose = panda.moveit_group.get_current_pose().pose
-        waypoints = []
-        wpose.position.y -= 0.1
-        # wpose.position.z += 0.08
-        # wpose.position.y -= 0.15
-        waypoints.append(copy.deepcopy(wpose))    
-        panda.move_through_waypoints(waypoints)
-    targetPositionsJoints_test = [-0.41429875365684077, 0.7531559819003992, -0.09432195875240348, -2.172390429781196, 1.080601253367148, 1.469608373509513, 0.9228163020693847]
-    panda.move_to_target_joints(targetPositionsJoints_test)
-    sys.exit()
-    for index in range(time):
-        print("run time:", index + 1)
         wpose = panda.moveit_group.get_current_pose().pose
         waypoints = []
         wpose.position.y += 0.1
-        # wpose.position.z += 0.08
+        wpose.position.z -= 0.06
         # wpose.position.y += 0.15
         waypoints.append(copy.deepcopy(wpose))    
         panda.move_through_waypoints(waypoints)
+
+#    panda.move_y_straight_line_ccp()
+#    panda.move_straight_line_jac()
+    
+    
+
+    
+    
+    
     # for index in range(2):
     #     wpose = panda.moveit_group.get_current_pose().pose
     #     waypoints = []

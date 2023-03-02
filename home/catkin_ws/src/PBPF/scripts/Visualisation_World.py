@@ -81,12 +81,18 @@ class Visualisation_World():
         p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.3,0.1,0.1])    
         plane_id = p_visualisation.loadURDF("plane.urdf")
         if self.task_flag == "1":
-            pw_T_obst_opti_pos = [0.7188993998723022, 0.2767650526046564, 0.1258681365201122]
-            pw_T_obst_opti_ori = [ 7.07173367e-01, -6.19453133e-03, 4.42925544e-04, 7.07012914e-01]
-            obstacle_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle.urdf"),
-                                                   pw_T_obst_opti_pos,
-                                                   pw_T_obst_opti_ori,
-                                                   useFixedBase=1)
+            pw_T_obst_opti_pos_small = [0.852134144216095, 0.14043691336334274, 0.10014295215002848]
+            pw_T_obst_opti_ori_small = [0.00356749, -0.00269526, 0.28837681, 0.95750657]
+            pw_T_obst_opti_pos_big = [0.7575524745560446, 0.3267505178967816, 0.14765408574692843]
+            pw_T_obst_opti_ori_big = [0.70782892, 0.06771696, 0.0714355, 0.69949239]
+            track_fk_obst_big_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_big.urdf"),
+                                                            pw_T_obst_opti_pos_big,
+                                                            pw_T_obst_opti_ori_big,
+                                                            useFixedBase=1)
+            track_fk_obst_small_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_small.urdf"),
+                                                            pw_T_obst_opti_pos_small,
+                                                            pw_T_obst_opti_ori_small,
+                                                            useFixedBase=1)
         
         # load objects in the pybullet world
 #        for obj_index in range(self.object_num):

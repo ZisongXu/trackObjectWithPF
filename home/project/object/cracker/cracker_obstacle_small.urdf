@@ -7,7 +7,8 @@
      <visual>
        <geometry>
          <!-- "0.1968 0.2505 0.0725" -->
-         <box size="0.1965 0.299 0.0711"/>
+         <!-- "0.1965 0.299 0.0711" -->
+         <box size="0.0725 0.2505 0.1968"/>
        </geometry>
        <material name="darkOrange"/>
      </visual>

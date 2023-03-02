@@ -1859,7 +1859,7 @@ if __name__ == '__main__':
                 y_l = 0.032829689025878906
                 z_h = 0.099
                 visible_threshold_dope_not_fresh = 0.80
-                visible_threshold_dope_not_fresh_small = 0.5
+                visible_threshold_dope_not_fresh_small = 0
                 visible_threshold_dope_is_fresh = 0.9
                 not_fresh_smaller_than_threshold_weight = 0.6
                 not_fresh_larger_than_threshold_weight = 0.45

@@ -82,6 +82,7 @@ class PBPFMove():
         self.rays_id_list = []
         self.camera_parPoint_list = []
         self.ray_list_empty = True
+        self.num = 0
         
     def get_real_robot_joint(self, pybullet_env_id, real_robot_id):
         real_robot_joint_list = []
@@ -170,6 +171,19 @@ class PBPFMove():
     
     # update particle cloud particle angle
     def update_partcile_cloud_pose_PB(self, index, obj_index, x, y, z, ori, linearVelocity, angularVelocity):
+        # x = x - 0.001
+        # y = y + 0.001
+        # if dope_detection_flag == False:
+        #     if self.num > 0.07:
+        #         self.num = 0.07
+        #     else:
+        #         self.num = self.num + 0.001
+        #     ang = p_sim.getEulerFromQuaternion(ori)
+        #     ang = list(ang)
+        #     ang[2] = ang[2] + self.num
+        #     ori = p_sim.getQuaternionFromEuler(ang)
+        # else:
+        #     self.num = 0
         self.particle_cloud[index][obj_index].pos = [x, y, z]
         self.particle_cloud[index][obj_index].ori = copy.deepcopy(ori)
         self.particle_cloud[index][obj_index].linearVelocity = linearVelocity
@@ -1863,11 +1877,11 @@ if __name__ == '__main__':
                 x_w = 0.032829689025878906
                 y_l = 0.032829689025878906
                 z_h = 0.099
-                visible_threshold_dope_not_fresh = 0.80
+                visible_threshold_dope_not_fresh = 0.95
                 visible_threshold_dope_not_fresh_small = 0
                 visible_threshold_dope_is_fresh = 0.9
                 not_fresh_smaller_than_threshold_weight = 0.6
-                not_fresh_larger_than_threshold_weight = 0.45
+                not_fresh_larger_than_threshold_weight = 0.55
             
             use_gazebo = ""
             if gazebo_flag == True:
@@ -1876,12 +1890,11 @@ if __name__ == '__main__':
             obse_is_fresh = True
             obse_is_jumping = False
             dope_detection_flag = True
-
-#            if ros_listener.detection_flag == False:
-#                version = "multiray" # multiray/ray
-#                dope_detection_flag == False
-#            else:
-#                version = "old"
+            if ros_listener.detection_flag == False:
+                # version = "old" # multiray/ray
+                dope_detection_flag = False
+            # else:
+                # version = "old"
             try:
                 latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/'+object_name+use_gazebo)
                 # print("rospy.get_time():")

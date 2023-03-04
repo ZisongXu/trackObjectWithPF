@@ -2,8 +2,8 @@
 
 # declare -a objectNames=("cracker" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a objectNames=("cracker")
-declare -a sceneNames=("scene1")
+declare -a objectNames=("soup")
+declare -a sceneNames=("scene2")
 declare -a particleNumbers=(70)
 declare -a runAlgFlags=("PBPF")
 declare -a diffRadSigma=(0.32505 0.2167)
@@ -29,7 +29,7 @@ do
 				
 				# for rosbag in {1..10}
 				# for rosbag in {1..2}
-				for ((rosbag=2;rosbag<=2;rosbag++)); 
+				for ((rosbag=1;rosbag<=1;rosbag++)); 
 				do
 					duration=$(python3 get_info_from_rosbag.py "${objectName}" "${particleNumber}" "${sceneName}" "${rosbag}")
 

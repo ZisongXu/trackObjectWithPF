@@ -4,7 +4,7 @@ from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, TransformStamped, Vector3
 from PBPF.msg import object_pose, particle_pose, particle_list, estimated_obj_pose
 from gazebo_msgs.msg import ModelStates
-# from vision_msgs.msg import Detection3DArray
+from vision_msgs.msg import Detection3DArray
 
 import tf
 import tf.transformations as transformations
@@ -42,9 +42,12 @@ class Ros_Listener():
         rospy.Subscriber('/mocap/rigid_bodies/baseofcheezit/pose', PoseStamped, self.base_of_cheezit_callback, queue_size=1)
         self.base_pose = PoseStamped()
 
-        rospy.Subscriber('/mocap/rigid_bodies/zisongObstacle/pose', PoseStamped, self.obstacle_callback, queue_size=1)
-        self.obstacle = PoseStamped()
-
+        rospy.Subscriber('/mocap/rigid_bodies/smallObstacle/pose', PoseStamped, self.smallObstacle_callback, queue_size=1)
+        self.smallObstacle = PoseStamped()
+        
+        rospy.Subscriber('/mocap/rigid_bodies/bigObstacle/pose', PoseStamped, self.bigObstacle_callback, queue_size=1)
+        self.bigObstacle = PoseStamped()
+        
         rospy.Subscriber('/Opti_pose', PoseStamped, self.fake_optipose_callback, queue_size=10)
         self.fake_opti_pose = PoseStamped()
         
@@ -54,8 +57,8 @@ class Ros_Listener():
         rospy.Subscriber('/par_list', particle_list, self.particles_states_callback, queue_size=10)
         self.particles_states_list = particle_list()
 
-        # rospy.Subscriber('/dope/detected_objects', Detection3DArray, self.detected_objects, queue_size=10)
-        # self.detection_flag = Detection3DArray()
+        rospy.Subscriber('/dope/detected_objects', Detection3DArray, self.detected_objects, queue_size=10)
+        self.detection_flag = Detection3DArray()
         
         self.pos_added_noise = []
         self.ori_added_noise = []
@@ -63,13 +66,13 @@ class Ros_Listener():
         self.rob_T_obj_obse_4_4 = []
         
         rospy.spin
-#    def detected_objects(self, detection_state):
-#        detection_info = detection_state.detections
-#        length_detection = len(detection_info)
-#        if length_detection == 0:
-#            self.detection_flag = False
-#        else:
-#            self.detection_flag =  True
+    def detected_objects(self, detection_state):
+        detection_info = detection_state.detections
+        length_detection = len(detection_info)
+        if length_detection == 0:
+            self.detection_flag = False
+        else:
+            self.detection_flag =  True
 
 
     def model_states_callback(self, model_states):
@@ -146,8 +149,10 @@ class Ros_Listener():
             return self.object_soup_pose
         elif object_flag == "base":
             return self.base_pose
-        elif object_flag == "obstacle":
-            return self.obstacle_pose
+        elif object_flag == "smallobstacle":
+            return self.smallObstacle_pose
+        elif object_flag == "bigbstacle":
+            return self.bigObstacle_pose
     
     def listen_2_pars_states(self):
         return self.particles_states_list
@@ -223,20 +228,35 @@ class Ros_Listener():
         self.base_pose = [self.base_pos, self.base_ori]
         # print("self.base_pose:", self.base_pose)
 
-    def obstacle_callback(self, data):
+    def smallObstacle_callback(self, data):
         # pos
         x_pos = data.pose.position.x
         y_pos = data.pose.position.y
         z_pos = data.pose.position.z
-        self.obstacle_pos = [x_pos, y_pos, z_pos]
+        self.smallObstacle_pos = [x_pos, y_pos, z_pos]
         # ori
         x_ori = data.pose.orientation.x
         y_ori = data.pose.orientation.y
         z_ori = data.pose.orientation.z
         w_ori = data.pose.orientation.w
-        self.obstacle_ori = [x_ori, y_ori, z_ori, w_ori]
-        self.obstacle_pose = [self.obstacle_pos, self.obstacle_ori]
-        # print("self.obstacle_pose:", self.obstacle_pose)
+        self.smallObstacle_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.smallObstacle_pose = [self.smallObstacle_pos, self.smallObstacle_ori]
+        # print("self.smallObstacle_pose:", self.smallObstacle_pose)
+
+    def bigObstacle_callback(self, data):
+        # pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.bigObstacle_pos = [x_pos, y_pos, z_pos]
+        # ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.bigObstacle_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.bigObstacle_pose = [self.bigObstacle_pos, self.bigObstacle_ori]
+        # print("self.bigObstacle_pose:", self.bigObstacle_pose)
         
     def fake_optipose_callback(self, data):
         # pos

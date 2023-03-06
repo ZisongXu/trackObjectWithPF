@@ -82,6 +82,7 @@ class PBPFMove():
         self.rays_id_list = []
         self.camera_parPoint_list = []
         self.ray_list_empty = True
+        self.num = 0
         
     def get_real_robot_joint(self, pybullet_env_id, real_robot_id):
         real_robot_joint_list = []
@@ -170,6 +171,19 @@ class PBPFMove():
     
     # update particle cloud particle angle
     def update_partcile_cloud_pose_PB(self, index, obj_index, x, y, z, ori, linearVelocity, angularVelocity):
+        # x = x - 0.001
+        # y = y + 0.001
+        # if dope_detection_flag == False:
+        #     if self.num > 0.07:
+        #         self.num = 0.07
+        #     else:
+        #         self.num = self.num + 0.001
+        #     ang = p_sim.getEulerFromQuaternion(ori)
+        #     ang = list(ang)
+        #     ang[2] = ang[2] + self.num
+        #     ori = p_sim.getQuaternionFromEuler(ang)
+        # else:
+        #     self.num = 0
         self.particle_cloud[index][obj_index].pos = [x, y, z]
         self.particle_cloud[index][obj_index].ori = copy.deepcopy(ori)
         self.particle_cloud[index][obj_index].linearVelocity = linearVelocity
@@ -1613,9 +1627,13 @@ def track_fk_sim_world():
                                               [0, 0, 0, 1],
                                               useFixedBase=1)
     if task_flag == "1":
-        track_fk_obst_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle.urdf"),
-                                                   pw_T_obst_opti_pos,
-                                                   pw_T_obst_opti_ori,
+        track_fk_obst_big_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_big.urdf"),
+                                                   pw_T_obst_opti_pos_big,
+                                                   pw_T_obst_opti_ori_big,
+                                                   useFixedBase=1)
+        track_fk_obst_small_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_small.urdf"),
+                                                   pw_T_obst_opti_pos_small,
+                                                   pw_T_obst_opti_ori_small,
                                                    useFixedBase=1)
     return p_track_fk_env, track_fk_rob_id, track_fk_plane_id
 
@@ -1761,9 +1779,10 @@ if __name__ == '__main__':
     
     PBPF_time_cosuming_list = []
     
-    pw_T_obst_opti_pos = [0.7188993998723022, 0.2767650526046564, 0.1258681365201122]
-    pw_T_obst_opti_ori = [ 7.07173367e-01, -6.19453133e-03, 4.42925544e-04, 7.07012914e-01]
-
+    pw_T_obst_opti_pos_small = [0.852134144216095, 0.14043691336334274, 0.10014295215002848]
+    pw_T_obst_opti_ori_small = [0.00356749, -0.00269526, 0.28837681, 0.95750657]
+    pw_T_obst_opti_pos_big = [0.7575524745560446, 0.3267505178967816, 0.14765408574692843]
+    pw_T_obst_opti_ori_big = [0.70782892, 0.06771696, 0.0714355, 0.69949239]
     # multi-objects/robot list
     pw_T_rob_sim_pose_list_alg = []
     pw_T_obj_obse_obj_list_alg = []
@@ -1858,11 +1877,11 @@ if __name__ == '__main__':
                 x_w = 0.032829689025878906
                 y_l = 0.032829689025878906
                 z_h = 0.099
-                visible_threshold_dope_not_fresh = 0.80
+                visible_threshold_dope_not_fresh = 0.95
                 visible_threshold_dope_not_fresh_small = 0
                 visible_threshold_dope_is_fresh = 0.9
                 not_fresh_smaller_than_threshold_weight = 0.6
-                not_fresh_larger_than_threshold_weight = 0.45
+                not_fresh_larger_than_threshold_weight = 0.55
             
             use_gazebo = ""
             if gazebo_flag == True:
@@ -1871,12 +1890,11 @@ if __name__ == '__main__':
             obse_is_fresh = True
             obse_is_jumping = False
             dope_detection_flag = True
-
-#            if ros_listener.detection_flag == False:
-#                version = "multiray" # multiray/ray
-#                dope_detection_flag == False
-#            else:
-#                version = "old"
+            if ros_listener.detection_flag == False:
+                # version = "old" # multiray/ray
+                dope_detection_flag = False
+            # else:
+                # version = "old"
             try:
                 latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/'+object_name+use_gazebo)
                 # print("rospy.get_time():")

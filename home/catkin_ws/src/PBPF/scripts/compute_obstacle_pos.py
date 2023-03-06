@@ -82,11 +82,11 @@ class Ros_Listener():
         rospy.Subscriber('/mocap/rigid_bodies/baseofcheezit/pose', PoseStamped, self.base_of_cheezit_callback, queue_size=1)
         self.base_pose = PoseStamped()
 
-        # rospy.Subscriber('/mocap/rigid_bodies/zisongObstacle/pose', PoseStamped, self.obstacle_callback, queue_size=1)
-        # self.obstacle_pose = PoseStamped()
-
-        rospy.Subscriber('/mocap/rigid_bodies/bigObstacle/pose', PoseStamped, self.obstacle_callback, queue_size=1)
-        self.obstacle_pose = PoseStamped()
+        rospy.Subscriber('/mocap/rigid_bodies/smallObstacle/pose', PoseStamped, self.smallObstacle_callback, queue_size=1)
+        self.smallObstacle = PoseStamped()
+        
+        rospy.Subscriber('/mocap/rigid_bodies/bigObstacle/pose', PoseStamped, self.bigObstacle_callback, queue_size=1)
+        self.bigObstacle = PoseStamped()
 
         rospy.Subscriber('/Opti_pose', PoseStamped, self.fake_optipose_callback, queue_size=10)
         self.fake_opti_pose = PoseStamped()
@@ -178,8 +178,10 @@ class Ros_Listener():
             return self.object_soup_pose
         elif object_flag == "base":
             return self.base_pose
-        elif object_flag == "obstacle":
-            return self.obstacle_pose
+        elif object_flag == "smallobstacle":
+            return self.smallObstacle_pose
+        elif object_flag == "bigobstacle":
+            return self.bigObstacle_pose
         elif object_flag == "panda_robot":
             return self.robot_pose
     
@@ -252,20 +254,36 @@ class Ros_Listener():
         self.base_pose = [self.base_pos, self.base_ori]
         # print("self.base_pose:", self.base_pose)
 
-    def obstacle_callback(self, data):
+    def smallObstacle_callback(self, data):
         # pos
         x_pos = data.pose.position.x
         y_pos = data.pose.position.y
         z_pos = data.pose.position.z
-        self.obstacle_pos = [x_pos, y_pos, z_pos]
+        self.smallObstacle_pos = [x_pos, y_pos, z_pos]
         # ori
         x_ori = data.pose.orientation.x
         y_ori = data.pose.orientation.y
         z_ori = data.pose.orientation.z
         w_ori = data.pose.orientation.w
-        self.obstacle_ori = [x_ori, y_ori, z_ori, w_ori]
-        self.obstacle_pose = [self.obstacle_pos, self.obstacle_ori]
-        # print("self.obstacle_pose:", self.obstacle_pose)
+        self.smallObstacle_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.smallObstacle_pose = [self.smallObstacle_pos, self.smallObstacle_ori]
+        # print("smallObstacle_pose:",self.smallObstacle_pose)
+        # print("self.smallObstacle_pose:", self.smallObstacle_pose)
+
+    def bigObstacle_callback(self, data):
+        # pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.bigObstacle_pos = [x_pos, y_pos, z_pos]
+        # ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.bigObstacle_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.bigObstacle_pose = [self.bigObstacle_pos, self.bigObstacle_ori]
+        # print("self.bigObstacle_pose:", self.bigObstacle_pose)
         
     def fake_optipose_callback(self, data):
         # pos
@@ -349,7 +367,8 @@ if __name__ == '__main__':
     # p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.3,0.1,0.2])    
     plane_id = p_visualisation.loadURDF("plane.urdf")
 
-    obstacle_pose = ros_listener.listen_2_object_pose("obstacle")
+    obstacle_pose = ros_listener.listen_2_object_pose("smallobstacle")
+    # obstacle_pose = ros_listener.listen_2_object_pose("smallobstacle")
     robot_pose = ros_listener.listen_2_object_pose("panda_robot")
     print("obstacle_pose:")
     print(obstacle_pose)
@@ -382,7 +401,7 @@ if __name__ == '__main__':
 
     print(pw_T_obst_opti_pos)
     print(pw_T_obst_opti_ori)
-    track_fk_rob_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle.urdf"),
+    track_fk_rob_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_small.urdf"),
                                               pw_T_obst_opti_pos,
                                               pw_T_obst_opti_ori,
                                               useFixedBase=1)

@@ -23,6 +23,7 @@ We propose a method to track the pose of an object over time, by using the image
 	Please enter into the main folder and run ```./build.sh``` in Ubuntu20 terminal to build the container.
 
 2. **Download Rosbags**
+	
 	Download [the rosbags](https://drive.google.com/drive/folders/13EbCuu231izDbmrcIeyjeQlJSPJL1qWW?usp=sharing) and save them to the ```rosbag``` folder, i.e., ```~/rosbag/```.
 , and then run ```./run.sh``` to run the container.
 

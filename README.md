@@ -28,8 +28,9 @@ We propose a method to track the pose of an object over time, by using the image
 
 
 # Running Code
-In the and then run ```./run.sh``` to run the container.
-In the terminal, enter into the main file and run ```./run.sh```, you will enter into the singularity container.
+1. **Start Container**
+
+	In the terminal, enter into the main file and run ```./run.sh```, and you can see ```[TrackObjectWithPF] Singularity> ~ $```
 
 In the container:
 

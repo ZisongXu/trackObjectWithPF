@@ -9,7 +9,7 @@ This is the official implementation of our paper "Real-Time Physics-Based Object
 
 Click to watch
 
-[![Watch the video](https://img.youtube.com/vi/srZZM_CKum4/hqdefault.jpg)](https://youtu.be/srZZM_CKum4)
+[![Watch the video](https://i.ytimg.com/vi/EMBFYzkno64/maxresdefault.jpg)](https://www.youtube.com/watch?v=EMBFYzkno64)
 
 
 # Brief Description:

@@ -32,6 +32,10 @@ We propose a method to track the pose of an object over time, by using the image
 
 	In the terminal, enter into the main file and run ```./run.sh```, and then you can see ```[TrackObjectWithPF] Singularity> ~ $```
 
+2. **Start ROS Master**
+	
+	```$ roscore```
+	
 In the container:
 
 ```[TrackObjectWithPF] Singularity> ~/project/code $ python3 Physics_Based_Particle_Filtering.py```

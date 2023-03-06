@@ -136,7 +136,7 @@ print("CVPF "+obj_name+" "+scene+" "+pos_or_ang+" error  std:",np.std(error_all_
 #                                     datasetcopy.loc[0,'particle_num'],
 #                                     datasetcopy.loc[0,'ray_type']]
             
-#             # newdataset.to_csv('all_'+pos_or_ang+'.csv',index=0,header=0,mode='a')
+#             newdataset.to_csv('all_'+pos_or_ang+'.csv',index=0,header=0,mode='a')
 #     print("CVPF "+obj_name+" "+scene+" "+pos_or_ang+" error mean:",np.mean(error_all_list))
 #     print("CVPF "+obj_name+" "+scene+" "+pos_or_ang+" error  std:",np.std(error_all_list))
 

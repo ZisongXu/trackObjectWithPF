@@ -69,6 +69,10 @@ We propose a method to track the pose of an object over time, by using the image
 
 	```$ rosrun PBPF Visualisation_World.py```
 	
+8. **Record Error** (For recording error only)
+
+	```$ rosrun PBPF RecordError.py```
+	
 In the container:
 
 ```[TrackObjectWithPF] Singularity> ~/project/code $ python3 Physics_Based_Particle_Filtering.py```

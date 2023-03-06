@@ -44,19 +44,30 @@ We propose a method to track the pose of an object over time, by using the image
 
 	- ```err_file```: Name of the folder where the error.csv file is saved
 	- ```gazebo_flag```: Use gazebo or not (True/False)
-	- ```object_name_list```: List of target object names (["cracker", "soup", ...])
-	- ```object_num```: 
-	- ```other_obj_num```: 
-	- ```oto_name_list```:
-	- ```otob_name_list```:
-	- ```particle_num```: 
-	- ```pick_particle_rate```: 
-	- ```ray_point_num```: 
-	- ```robot_num```: 
-	- ```run_alg_flag```: 
-	- ```task_flag```:
-	- ```update_style_flag```: 
-	- ```version```: 
+	- ```object_name_list```: List of target objects names (["cracker", "soup", ...])
+	- ```object_num```: Number of target objects tracked
+	- ```other_obj_num```: Number of other objects
+	- ```oto_name_list```: List of other objects names
+	- ```otob_name_list```: List of other obstacles names
+	- ```particle_num```: Number of particles
+	- ```pick_particle_rate```: Percentage of particles selected as DOPE poses
+	- ```robot_num```: Number of robot
+	- ```run_alg_flag```: Name of algorithm (PBPF/CVPF)
+	- ```task_flag```: Name of task ('1'/'2'/'3'/'4')
+	- ```update_style_flag```: Name of the method used (time/pose)
+	- ```version```: whether to use ray tracing (old/multiray)
+	
+5. **Start Running** (For running demos only)
+
+	```$ ./automated_experiments.sh```
+	
+6. **Start Running**
+
+	```$ rosrun PBPF Physics_Based_Particle_Filtering.py```
+	
+7. **Visualization Window** (For visualizing only)
+
+	```$ rosrun PBPF Visualisation_World.py```
 	
 In the container:
 

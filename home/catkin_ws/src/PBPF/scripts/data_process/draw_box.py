@@ -210,18 +210,6 @@ class Ros_listener():
         if DOPE_flag == True:
             x_par = 0
             y_par = 0
-            if task_flag == "1" and object_cheezit_flag == True:
-                x_par = 0
-                y_par = 7
-            elif task_flag == "1" and object_soup_flag == True:
-                x_par = 0
-                y_par = 15
-            elif task_flag == "2":
-                x_par = 0
-                y_par = 15
-            elif task_flag == "3":
-                x_par = 0
-                y_par = 15
             color = (100, 149, 237) # dark blue
             color = (255, 255, 0) # yellow
             # color = (138, 43, 226) # purple
@@ -309,21 +297,6 @@ class Ros_listener():
         if PFPE_flag == True:
             x_par = 0
             y_par = 0
-            if task_flag == "1":
-                x_par = 0
-                y_par = -15
-            elif task_flag == "2":
-                x_par = 10
-                y_par = -20
-            elif task_flag == "3" and object_soup_flag == True:
-                x_par = 10
-                y_par = 0
-            elif task_flag == "3" and object_cheezit_flag == True:
-                x_par = 10
-                y_par = -20
-            elif task_flag == "4":
-                x_par = 0
-                y_par = 0
             color = (0, 255, 0) # green
             pw_T_obj_PFPE_pos = PFPE_listener.PFPE_pos
             pw_T_obj_PFPE_ori = PFPE_listener.PFPE_ori
@@ -392,15 +365,6 @@ class Ros_listener():
         if Opti_flag == True:
             x_par = 0
             y_par = 0
-            # if task_flag == "1b":
-            #     x_par = 60
-            #     y_par = 50
-            # elif task_flag == "1a":
-            #     x_par = 55
-            #     y_par = 75
-            # elif task_flag == "2":
-            #     x_par = 55
-            #     y_par = 75
             color = (0, 255, 255) # light blue
             pw_T_obj_Opti_pos = OPTI_listener.Opti_pos
             pw_T_obj_Opti_ori = OPTI_listener.Opti_ori

@@ -171,19 +171,6 @@ class PBPFMove():
     
     # update particle cloud particle angle
     def update_partcile_cloud_pose_PB(self, index, obj_index, x, y, z, ori, linearVelocity, angularVelocity):
-        # x = x - 0.001
-        # y = y + 0.001
-        # if dope_detection_flag == False:
-        #     if self.num > 0.07:
-        #         self.num = 0.07
-        #     else:
-        #         self.num = self.num + 0.001
-        #     ang = p_sim.getEulerFromQuaternion(ori)
-        #     ang = list(ang)
-        #     ang[2] = ang[2] + self.num
-        #     ori = p_sim.getQuaternionFromEuler(ang)
-        # else:
-        #     self.num = 0
         self.particle_cloud[index][obj_index].pos = [x, y, z]
         self.particle_cloud[index][obj_index].ori = copy.deepcopy(ori)
         self.particle_cloud[index][obj_index].linearVelocity = linearVelocity

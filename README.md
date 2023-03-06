@@ -42,9 +42,9 @@ We propose a method to track the pose of an object over time, by using the image
 	
 4. **Edit Config Information** (if desired) in ```~/catkin_ws/src/PBPF/config/parameter_info.yaml```
 
-	- ```err_file```: 
-	- ```gazebo_flag```: 
-	- ```object_name_list```:
+	- ```err_file```: Name of the folder where the error.csv file is saved
+	- ```gazebo_flag```: Use gazebo or not (True/False)
+	- ```object_name_list```: List of target object names (["cracker", "soup", ...])
 	- ```object_num```: 
 	- ```other_obj_num```: 
 	- ```oto_name_list```:

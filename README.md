@@ -30,7 +30,7 @@ We propose a method to track the pose of an object over time, by using the image
 # Running Code
 1. **Start Container**
 
-	In the terminal, enter into the main file and run ```./run.sh```, and you can see ```[TrackObjectWithPF] Singularity> ~ $```
+	In the terminal, enter into the main file and run ```./run.sh```, and then you can see ```[TrackObjectWithPF] Singularity> ~ $```
 
 In the container:
 

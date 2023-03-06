@@ -40,6 +40,8 @@ We propose a method to track the pose of an object over time, by using the image
 
 	```$ rosparam set use_sim_time true```
 	
+4. ****
+	
 In the container:
 
 ```[TrackObjectWithPF] Singularity> ~/project/code $ python3 Physics_Based_Particle_Filtering.py```

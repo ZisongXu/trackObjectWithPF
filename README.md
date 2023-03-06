@@ -42,27 +42,21 @@ We propose a method to track the pose of an object over time, by using the image
 	
 4. **Edit Config Information** (if desired) in ```~/catkin_ws/src/PBPF/config/parameter_info.yaml```
 
-	err_file: rayTracing
-	gazebo_flag: false
-	object_name_list:
-	- soup
-	- fish_can
-	object_num: 1
-	other_obj_num: 1
-	oto_name_list:
-	- base_of_cracker
-	- fish_can
-	otob_name_list:
-	- cracker_obstacle
-	- fish_can
-	particle_num: 70
-	pick_particle_rate: 0.05
-	ray_point_num: 8
-	robot_num: 1
-	run_alg_flag: PBPF
-	task_flag: '2'
-	update_style_flag: time
-	version: multiray
+	- err_file: 
+	- gazebo_flag: 
+	- object_name_list:
+	- object_num: 
+	- other_obj_num: 
+	- oto_name_list:
+	- otob_name_list:
+	- particle_num: 
+	- pick_particle_rate: 
+	- ray_point_num: 
+	- robot_num: 
+	- run_alg_flag: 
+	- task_flag:
+	- update_style_flag: 
+	- version: 
 	
 In the container:
 

@@ -42,21 +42,21 @@ We propose a method to track the pose of an object over time, by using the image
 	
 4. **Edit Config Information** (if desired) in ```~/catkin_ws/src/PBPF/config/parameter_info.yaml```
 
-	- err_file: 
-	- gazebo_flag: 
-	- object_name_list:
-	- object_num: 
-	- other_obj_num: 
-	- oto_name_list:
-	- otob_name_list:
-	- particle_num: 
-	- pick_particle_rate: 
-	- ray_point_num: 
-	- robot_num: 
-	- run_alg_flag: 
-	- task_flag:
-	- update_style_flag: 
-	- version: 
+	- ```err_file```: 
+	- ```gazebo_flag```: 
+	- ```object_name_list```:
+	- ```object_num```: 
+	- ```other_obj_num```: 
+	- ```oto_name_list```:
+	- ```otob_name_list```:
+	- ```particle_num```: 
+	- ```pick_particle_rate```: 
+	- ```ray_point_num```: 
+	- ```robot_num```: 
+	- ```run_alg_flag```: 
+	- ```task_flag```:
+	- ```update_style_flag```: 
+	- ```version```: 
 	
 In the container:
 

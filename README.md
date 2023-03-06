@@ -40,7 +40,7 @@ We propose a method to track the pose of an object over time, by using the image
 
 	```$ rosparam set use_sim_time true```
 	
-4. ****
+4. **Edit Config Information** (if desired) in ```~/catkin_ws/src/PBPF/config/parameter_info.yaml``` or ```~/automated_experiments.sh```
 	
 In the container:
 

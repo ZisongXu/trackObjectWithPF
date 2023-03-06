@@ -18,7 +18,7 @@ We propose a method to track the pose of an object over time, by using the image
 
 
 # Quick Setup:
-1. Build Container
+## 1. Build Container
 
 	This project uses singularity container to support all the code: Please enter into the main folder and run ```./build.sh``` in Ubuntu20 terminal to build the container.
 

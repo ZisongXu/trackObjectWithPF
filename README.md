@@ -57,9 +57,9 @@ We propose a method to track the pose of an object over time, by using the image
 	- ```update_style_flag```: Name of the method used (time/pose)
 	- ```version```: whether to use ray tracing (old/multiray)
 	
-5. **Start Running** (For running demos only)
+5. **Start Running** (For running demos only) ()
 
-	```$ ./automated_experiments.sh```
+	```$ ./automated_experiments.sh``` (Remember to change the directory of some files)
 	
 6. **Start Running**
 

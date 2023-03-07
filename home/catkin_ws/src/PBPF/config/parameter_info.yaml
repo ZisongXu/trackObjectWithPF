@@ -13,7 +13,6 @@ otob_name_list:
 - fish_can
 particle_num: 70
 pick_particle_rate: 0.05
-ray_point_num: 8
 robot_num: 1
 run_alg_flag: PBPF
 task_flag: '2'

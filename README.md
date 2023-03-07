@@ -18,10 +18,64 @@ We propose a method to track the pose of an object over time, by using the image
 
 
 # Quick Setup:
-This project uses singularity container to support all the code: Please run ```./build.sh``` in Ubuntu20 terminal to build the container, and then run ```./run.sh``` to run the container.
+1. **Build Container** (This project uses singularity container to support all the code)
 
-# Run Code
-In the container:
+	Please enter into the main folder and run ```./build.sh``` in Ubuntu20 terminal to build the container.
 
-```[TrackObjectWithPF] Singularity> ~/project/code $ python3 Physics_Based_Particle_Filtering.py```
+2. **Download Rosbags** (For running demos only)
+	
+	Download [the rosbags](https://drive.google.com/drive/folders/13EbCuu231izDbmrcIeyjeQlJSPJL1qWW?usp=sharing) and save them to the ```rosbag``` folder, i.e., ```~/rosbag/```.
+
+
+# Running Code
+1. **Start Container**
+
+	In the terminal, enter into the main file and run ```./run.sh```, and then you can see ```[TrackObjectWithPF] Singularity> ~ $```
+
+2. **Start ROS Master**
+	
+	```$ roscore```
+	
+3. **Using Simulation Time** (For running demos only)
+
+	```$ rosparam set use_sim_time true```
+	
+4. **Edit Config Information** (if desired) in ```~/catkin_ws/src/PBPF/config/parameter_info.yaml```
+
+	- ```err_file```: Name of the folder where the error.csv file is saved
+	- ```gazebo_flag```: Use gazebo or not (True/False)
+	- ```object_name_list```: List of target objects names (["cracker", "soup", ...])
+	- ```object_num```: Number of target objects tracked
+	- ```other_obj_num```: Number of other objects
+	- ```oto_name_list```: List of other objects names
+	- ```otob_name_list```: List of other obstacles names
+	- ```particle_num```: Number of particles
+	- ```pick_particle_rate```: Percentage of particles selected as DOPE poses
+	- ```robot_num```: Number of robot
+	- ```run_alg_flag```: Name of algorithm (PBPF/CVPF)
+	- ```task_flag```: Name of task ('1'/'2'/'3'/'4')
+	- ```update_style_flag```: Name of the method used (time/pose)
+	- ```version```: whether to use ray tracing (old/multiray)
+	
+5. **Start Running** (For running demos only)
+
+	```$ ./automated_experiments.sh``` (Remember to change the directory of some files)
+	
+6. **Start Running**
+
+	```$ rosrun PBPF Physics_Based_Particle_Filtering.py```
+	
+7. **Visualization Window** (For visualizing only)
+
+	```$ rosrun PBPF Visualisation_World.py```
+	
+8. **Record Error** (For recording error only)
+
+	```$ rosrun PBPF RecordError.py _```
+	
+
+
+# Rosbag Link
+[Rosbags for each scene of different objects](https://drive.google.com/drive/folders/13EbCuu231izDbmrcIeyjeQlJSPJL1qWW?usp=sharing)
+
 

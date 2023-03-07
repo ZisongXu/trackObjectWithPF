@@ -71,7 +71,7 @@ We propose a method to track the pose of an object over time, by using the image
 	
 8. **Record Error** (For recording error only)
 
-	```$ rosrun PBPF RecordError.py```
+	```$ rosrun PBPF RecordError.py _```
 	
 
 

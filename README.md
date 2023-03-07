@@ -1,4 +1,4 @@
-# Physics_Based_Particle_Filtering 
+# Physics Based Particle Filtering 
 
 This is the official implementation of our paper "Real-Time Physics-Based Object Pose Tracking during Non-Prehensile Manipulation" submitted to IEEE/RSJ International Conference on Intelligent Robots and System (IROS) 2023.
 

@@ -16,7 +16,7 @@ Click to watch
     height="315" 
     src="https://www.youtube.com/embed/EMBFYzkno64" 
     title="YouTube video player" 
-    frameborder="0" 
+    frameborder="4" 
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
     allowfullscreen
 >

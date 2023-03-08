@@ -7,7 +7,7 @@ This is the official implementation of our paper "Real-Time Physics-Based Object
 
 # Supplementary Video:
 
-Click to watch
+Click to watch the video.
 
 [![Watch the video](https://i.ytimg.com/vi/EMBFYzkno64/maxresdefault.jpg)](https://www.youtube.com/watch?v=EMBFYzkno64)
 

@@ -4,7 +4,7 @@ from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, TransformStamped, Vector3
 from PBPF.msg import object_pose, particle_pose, particle_list, estimated_obj_pose
 from gazebo_msgs.msg import ModelStates
-from vision_msgs.msg import Detection3DArray
+# from vision_msgs.msg import Detection3DArray
 
 import tf
 import tf.transformations as transformations
@@ -57,8 +57,8 @@ class Ros_Listener():
         rospy.Subscriber('/par_list', particle_list, self.particles_states_callback, queue_size=10)
         self.particles_states_list = particle_list()
 
-        rospy.Subscriber('/dope/detected_objects', Detection3DArray, self.detected_objects, queue_size=10)
-        self.detection_flag = Detection3DArray()
+        # rospy.Subscriber('/dope/detected_objects', Detection3DArray, self.detected_objects, queue_size=10)
+        # self.detection_flag = Detection3DArray()
         
         self.pos_added_noise = []
         self.ori_added_noise = []
@@ -66,13 +66,14 @@ class Ros_Listener():
         self.rob_T_obj_obse_4_4 = []
         
         rospy.spin
-    def detected_objects(self, detection_state):
-        detection_info = detection_state.detections
-        length_detection = len(detection_info)
-        if length_detection == 0:
-            self.detection_flag = False
-        else:
-            self.detection_flag =  True
+        
+    # def detected_objects(self, detection_state):
+    #     detection_info = detection_state.detections
+    #     length_detection = len(detection_info)
+    #     if length_detection == 0:
+    #         self.detection_flag = False
+    #     else:
+    #         self.detection_flag =  True
 
 
     def model_states_callback(self, model_states):

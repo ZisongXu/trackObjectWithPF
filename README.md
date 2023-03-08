@@ -1,4 +1,4 @@
-# Physics_Based_Particle_Filtering 
+# Physics Based Particle Filtering 
 
 This is the official implementation of our paper "Real-Time Physics-Based Object Pose Tracking during Non-Prehensile Manipulation" submitted to IEEE/RSJ International Conference on Intelligent Robots and System (IROS) 2023.
 
@@ -7,9 +7,12 @@ This is the official implementation of our paper "Real-Time Physics-Based Object
 
 # Supplementary Video:
 
-Click to watch
+Click to watch the video.
 
 [![Watch the video](https://i.ytimg.com/vi/EMBFYzkno64/maxresdefault.jpg)](https://www.youtube.com/watch?v=EMBFYzkno64)
+
+
+
 
 
 # Brief Description:
@@ -75,7 +78,8 @@ We propose a method to track the pose of an object over time, by using the image
 	
 
 
-# Rosbag Link
-[Rosbags for each scene of different objects](https://drive.google.com/drive/folders/13EbCuu231izDbmrcIeyjeQlJSPJL1qWW?usp=sharing)
+# Data
+
+All experimental data and figures of the results are placed in the ```~/data/```. All scenes of rosbags can be downloaded through the link blow: [Rosbags for each scene of different objects](https://drive.google.com/drive/folders/13EbCuu231izDbmrcIeyjeQlJSPJL1qWW?usp=sharing)
 
 

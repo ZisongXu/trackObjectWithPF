@@ -1685,7 +1685,6 @@ if __name__ == '__main__':
             particle_num = parameter_info['particle_num']
     object_name_list = parameter_info['object_name_list']
     version = parameter_info['version'] # old/ray/multiray
-    ray_point_num = parameter_info['ray_point_num']
     if run_alg_flag == 'CVPF':
         particle_num = 150
     print("This is "+update_style_flag+" update in scene"+task_flag)    
@@ -1877,9 +1876,9 @@ if __name__ == '__main__':
             obse_is_fresh = True
             obse_is_jumping = False
             dope_detection_flag = True
-            if ros_listener.detection_flag == False:
+            # if ros_listener.detection_flag == False:
                 # version = "old" # multiray/ray
-                dope_detection_flag = False
+                # dope_detection_flag = False
             # else:
                 # version = "old"
             try:

@@ -1732,11 +1732,10 @@ if __name__ == '__main__':
     # Standard deviation of computing the weight
     # boss_sigma_obs_ang = 0.216773873
     # boss_sigma_obs_ang = 0.0216773873
-
+    
     for obj_index in range(object_num):
         object_name = object_name_list[obj_index]
         if object_name == "cracker":
-            print("cracker")
             # boss_sigma_obs_ang = 0.0216773873 * 30
             # boss_sigma_obs_pos = 0.25 # 0.02 need to increase
             boss_sigma_obs_ang = 0.0216773873 * 10
@@ -1784,9 +1783,7 @@ if __name__ == '__main__':
     
     pw_T_rob_sim_pose_list_alg = create_scene.initialize_robot()
     pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
-    
     pw_T_obj_obse_obj_list_alg, trans_ob, rot_ob = create_scene.initialize_object()
-
     for obj_index in range(other_obj_num):
         pw_T_obj_obse_oto_list_alg = create_scene.initialize_base_of_cheezit()
 
@@ -1795,6 +1792,7 @@ if __name__ == '__main__':
                                                pw_T_obj_obse_obj_list_alg,
                                                pw_T_obj_obse_oto_list_alg,
                                                update_style_flag, change_sim_time)
+    print("I am here1")
     # get estimated object
     if run_alg_flag == "PBPF":
         estimated_object_set, particle_cloud_pub = initial_parameter.initial_and_set_simulation_env()
@@ -1809,12 +1807,16 @@ if __name__ == '__main__':
     estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
 
     # if version == "ray" or version == "multiray":
+    realsense_tf = '/RealSense'
     while True:
+        if gazebo_flag == True:
+            realsense_tf = '/realsense_camera'
         try:
-            (trans_camera, rot_camera) = listener.lookupTransform('/panda_link0', '/RealSense', rospy.Time(0))
+            (trans_camera, rot_camera) = listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
             break
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
+    print("I am here2")
     rob_T_cam_tf_pos = list(trans_camera)
     rob_T_cam_tf_ori = list(rot_camera)
     rob_T_cam_tf_3_3 = transformations.quaternion_matrix(rob_T_cam_tf_ori)

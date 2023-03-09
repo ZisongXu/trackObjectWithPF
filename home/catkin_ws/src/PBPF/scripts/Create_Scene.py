@@ -69,7 +69,7 @@ class Create_Scene():
 #            for obj_index in range(self.target_obj_num):
 #                _, model_pose_added_noise = self.ros_listener.listen_2_object_pose(self.object_name_list[obj_index])
 #                panda_pose = self.ros_listener.listen_2_robot_pose()
-#                
+#                print(model_pose_added_noise)
 #                gazebo_T_obj_pos_obse = model_pose_added_noise[0]
 #                gazebo_T_obj_ori_obse = model_pose_added_noise[1]
 #                gazebo_T_rob_pos = panda_pose[0]
@@ -106,7 +106,9 @@ class Create_Scene():
             use_gazebo = ""
             if self.gazebo_flag == True:
                 use_gazebo = '_noise'
+                # use_gazebo = ""
             while True:
+                print(self.object_name_list[obj_index]+use_gazebo)
                 try:
                     (trans_ob,rot_ob) = self.listener.lookupTransform('/panda_link0', '/'+self.object_name_list[obj_index]+use_gazebo, rospy.Time(0))
                     break

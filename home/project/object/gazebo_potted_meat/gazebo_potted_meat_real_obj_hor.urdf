@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+ <robot name="myfirst">
+   <material name="red">
+     <color rgba="1 0.498 0.3137 1"/>
+   </material>
+   <material name="green">
+     <color rgba="0 1 0.498 1"/>
+   </material>
+   <link name="right_leg">
+     <visual>
+       <geometry>
+         <box size="0.0823294 0.0941151 0.0496827"/>
+       </geometry>
+       <origin xyz="-0.02484135 -0.02484135 0.0411647" rpy="0 1.5707963 1.5707963"/>
+       <material name="red"/>
+     </visual>
+     <collision>
+       <geometry>
+         <box size="0.0823294 0.0941151 0.0496827"/>
+       </geometry>
+       <origin xyz="-0.02484135 -0.02484135 0.0411647" rpy="0 1.5707963 1.5707963"/>
+     </collision>
+     <inertial>
+       <mass value="1"/>
+       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+     </inertial>
+   </link>
+ </robot>

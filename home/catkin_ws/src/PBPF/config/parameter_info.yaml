@@ -2,7 +2,7 @@ err_file: rayTracing
 gazebo_flag: True
 object_name_list:
 - cracker
-- fish_can
+- potted_meat
 object_num: 2
 other_obj_num: 1
 oto_name_list:

@@ -322,16 +322,16 @@ if __name__ == '__main__':
         parameter_info = yaml.safe_load(file)
     object_num = parameter_info['object_num']
     robot_num = 1
-
+    
     particle_num = parameter_info['particle_num']
     init_gt_obj_flag = 0
     init_obse_flag = 0
     init_par_flag = 0
     init_esti_flag = 0
-    display_par_flag = True
+    display_par_flag = False
     display_esti_flag = False
     display_gt_flag = True
-    display_obse_flag = True
+    display_obse_flag = False
     object_name_list = parameter_info['object_name_list']
     task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
     if task_flag == "4":
@@ -341,7 +341,9 @@ if __name__ == '__main__':
 
 
     visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
+    
     trans_ob, rot_ob, trans_gt, rot_gt = visual_world.initialize_visual_world_pybullet_env(task_flag)
+    print("I am here")
     # input("stop")
     listener_tf = visual_world.listener
     p_visual = visual_world.p_visualisation
@@ -354,6 +356,7 @@ if __name__ == '__main__':
     esti_obj_id = [0] * object_num
     # input("stop")
     while True:
+        
         # synchronize robot arm changes
         joint_states = visual_world.ros_listener.current_joint_values
         for rob_index in range(robot_num):

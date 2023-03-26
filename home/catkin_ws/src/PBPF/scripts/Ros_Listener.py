@@ -23,6 +23,13 @@ class Ros_Listener():
         with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
             self.parameter_info = yaml.safe_load(file)
         self.gazebo_flag = self.parameter_info['gazebo_flag']
+        self.object_name_list = self.parameter_info['object_name_list']
+        self.object_num = self.parameter_info['object_num']
+        
+        self.pos_added_noise = []
+        self.ori_added_noise = []
+        self.model_pose_added_noise = []
+        self.rob_T_obj_obse_4_4_list = []
         
         rospy.Subscriber('/joint_states', JointState, self.joint_values_callback, queue_size=1)
         self.joint_subscriber = JointState()
@@ -59,12 +66,7 @@ class Ros_Listener():
 
         # rospy.Subscriber('/dope/detected_objects', Detection3DArray, self.detected_objects, queue_size=10)
         # self.detection_flag = Detection3DArray()
-        
-        self.pos_added_noise = []
-        self.ori_added_noise = []
-        self.model_pose_added_noise = []
-        self.rob_T_obj_obse_4_4 = []
-        
+
         rospy.spin
         
     # def detected_objects(self, detection_state):
@@ -87,20 +89,14 @@ class Ros_Listener():
                               [0., 0., 1., 0.],
                               [0., 0., 0., 1.]]
         gzb_T_rob_obse_4_4 = np.array(gzb_T_rob_obse_4_4)  
+        gzb_T_fish_obse_4_4 = [[1., 0., 0., 0.],
+                               [0., 1., 0., 0.],
+                               [0., 0., 1., 0.],
+                               [0., 0., 0., 1.]]
+        gzb_T_fish_obse_4_4 = np.array(gzb_T_rob_obse_4_4)
         name_lenght = len(model_states.name)
+        gzb_T_obj_obse_4_4_list = []
         for name_index in range(name_lenght):
-            if model_states.name[name_index] == "cracker":
-                model_name = model_states.name[name_index]
-                model_pos = model_states.pose[name_index].position
-                model_ori = model_states.pose[name_index].orientation
-                self.model_pos = [model_pos.x, model_pos.y, model_pos.z]
-                self.model_ori = [model_ori.x, model_ori.y, model_ori.z, model_ori.w]
-                self.model_pose = [self.model_pos, self.model_ori]
-                
-                gzb_T_obj_obse_3_3 = transformations.quaternion_matrix(self.model_ori)
-                gzb_T_obj_obse_4_4 = self.rotation_4_4_to_transformation_4_4(gzb_T_obj_obse_3_3, self.model_pos)
-#                gzb_T_obj_opti_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_opti_4_4)
-            
             if model_states.name[name_index] == "panda":
 #                self.pos_added_noise, self.ori_added_noise = self.add_noise_pose(self.model_pos, self.model_ori)
 #                self.model_pose_added_noise = [self.pos_added_noise, self.ori_added_noise]
@@ -118,28 +114,32 @@ class Ros_Listener():
                                            [0., 0., 1.,  0.06],
                                            [0., 0., 0.,    1.]]
                 robpos_T_pandalink0_4_4 = np.array(robpos_T_pandalink0_4_4)                
-                gazebo_T_pandalink0_opti_4_4 = np.dot(gzb_T_rob_obse_4_4, robpos_T_pandalink0_4_4)        
+                gazebo_T_pandalink0_opti_4_4 = np.dot(gzb_T_rob_obse_4_4, robpos_T_pandalink0_4_4)
+                pandalink0_T_gzb_obse_4_4 = np.linalg.inv(gazebo_T_pandalink0_opti_4_4)   
                 
-            if model_states.name[name_index] == "fish_can":
-                model_name = model_states.name[name_index]
-                model_pos = model_states.pose[name_index].position
-                model_ori = model_states.pose[name_index].orientation
-                self.model_pos = [model_pos.x, model_pos.y, model_pos.z]
-                self.model_ori = [model_ori.x, model_ori.y, model_ori.z, model_ori.w]
-                self.model_pose = [self.model_pos, self.model_ori]
+            for obj_num in range(self.object_num):    
+                if model_states.name[name_index] == self.object_name_list[obj_num]:
+                    model_name = model_states.name[name_index]
+                    model_pos = model_states.pose[name_index].position
+                    model_ori = model_states.pose[name_index].orientation
+                    self.model_pos = [model_pos.x, model_pos.y, model_pos.z]
+                    self.model_ori = [model_ori.x, model_ori.y, model_ori.z, model_ori.w]
+                    self.model_pose = [self.model_pos, self.model_ori]
+                    
+                    gzb_T_obj_obse_3_3 = transformations.quaternion_matrix(self.model_ori)
+                    gzb_T_obj_obse_4_4 = self.rotation_4_4_to_transformation_4_4(gzb_T_obj_obse_3_3, self.model_pos)
+                    gzb_T_obj_obse_4_4_list.append(gzb_T_obj_obse_4_4)
+    #                gzb_T_obj_opti_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_opti_4_4)
                 
-                gzb_T_fish_obse_3_3 = transformations.quaternion_matrix(self.model_ori)
-                gzb_T_fish_obse_4_4 = self.rotation_4_4_to_transformation_4_4(gzb_T_fish_obse_3_3, self.model_pos)
                 
 #        pandalink0_T_gzb_obse_4_4 = np.linalg.inv(gzb_T_rob_obse_4_4)
-        pandalink0_T_gzb_obse_4_4 = np.linalg.inv(gazebo_T_pandalink0_opti_4_4)
-        pandalink0_T_obj_obse_4_4 = np.dot(pandalink0_T_gzb_obse_4_4, gzb_T_obj_obse_4_4)
-        pandalink0_T_fish_obse_4_4 = np.dot(pandalink0_T_gzb_obse_4_4, gzb_T_fish_obse_4_4)
-        self.rob_T_obj_obse_4_4 = pandalink0_T_obj_obse_4_4
-#        self.rob_T_obj_obse_4_4 = pandalink0_T_fish_obse_4_4
+        for obj_num in range(self.object_num):
+            pandalink0_T_obj_obse_4_4 = np.dot(pandalink0_T_gzb_obse_4_4, gzb_T_obj_obse_4_4_list[obj_num])
+            # print(pandalink0_T_obj_obse_4_4)
+            self.rob_T_obj_obse_4_4_list.append(pandalink0_T_obj_obse_4_4)
 
     def listen_2_test_matrix(self):
-        return self.rob_T_obj_obse_4_4
+        return self.rob_T_obj_obse_4_4_list
 
     def listen_2_object_pose(self, object_flag):
         if object_flag == "cracker":

@@ -107,13 +107,18 @@ class Create_Scene():
             if self.gazebo_flag == True:
                 use_gazebo = '_noise'
                 # use_gazebo = ""
+            while_time = 0
             while True:
-                print(self.object_name_list[obj_index]+use_gazebo)
+                while_time = while_time + 1
+                # if while_time > 1000:
+                #     print("WARNING while time is larger than 20")
+                # print(self.object_name_list[obj_index]+use_gazebo)
                 try:
                     (trans_ob,rot_ob) = self.listener.lookupTransform('/panda_link0', '/'+self.object_name_list[obj_index]+use_gazebo, rospy.Time(0))
                     break
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                     continue
+                
             rob_T_obj_obse_pos = list(trans_ob)
             rob_T_obj_obse_ori = list(rot_ob)
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)

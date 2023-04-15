@@ -67,7 +67,9 @@ class Visualisation_World():
         
     def initialize_visual_world_pybullet_env(self, task_flag):
         pw_T_rob_sim_pose_list = self.create_scene.initialize_robot()
+        
         pw_T_target_obj_obse_pose_lsit, trans_ob, rot_ob = self.create_scene.initialize_object()
+        print("I am here")
         pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list, trans_gt, rot_gt = self.create_scene.initialize_ground_truth_objects()
         
         if self.visualisation_all == True:
@@ -331,9 +333,10 @@ if __name__ == '__main__':
     display_par_flag = False
     display_esti_flag = False
     display_gt_flag = True
-    display_obse_flag = False
+    display_obse_flag = True
     object_name_list = parameter_info['object_name_list']
     task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
+    dope_flag = parameter_info['dope_flag']
     if task_flag == "4":
         other_obj_num = 1 # parameter_info['other_obj_num']
     else:
@@ -364,6 +367,7 @@ if __name__ == '__main__':
             pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_param[rob_index].trans_matrix
             visual_world.set_real_robot_JointPosition(p_visual, rob_id, joint_states)
         if display_gt_flag == True:
+            print("display_gt_flag")
             for obj_index in range(object_num):
                 # display ground truth (grtu)
                 if visual_world.gazebo_flag == True:
@@ -383,36 +387,40 @@ if __name__ == '__main__':
     #                opti_T_obj_opti_ori = copy.deepcopy(gazebo_T_obj_ori)
     #                opti_T_obj_obse_pos = copy.deepcopy(gazebo_T_obj_pos_added_noise)
     #                opti_T_obj_obse_ori = copy.deepcopy(gazebo_T_obj_ori_added_noise)
+                    gt_name = ""
+                    if dope_flag == True:
+                        gt_name = "_gt"
                     obse_is_fresh = True
                     try:
-                        latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index])
+                        latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index]+gt_name)
                         if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                            (trans_gt,rot_gt) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
+                            (trans_gt,rot_gt) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+gt_name, rospy.Time(0))
                             obse_is_fresh = True
                             # print("obse is FRESH")
                         else:
                             # obse has not been updating for a while
                             obse_is_fresh = False
-                            print("obse is NOT fresh")
+                            # print("obse is NOT fresh")
                         # break
                     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                        print("can not find tf")
+                        # print("can not find tf")
+                        continue
                     rob_T_obj_opti_pos = list(trans_gt)
                     rob_T_obj_opti_ori = list(rot_gt)
                     rob_T_obj_opti_3_3 = transformations.quaternion_matrix(rob_T_obj_opti_ori)
                     rob_T_obj_opti_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_opti_3_3, rob_T_obj_opti_pos)
-    #                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
-    #                                     [0., 1., 0.,    0.],
-    #                                     [0., 0., 1., -0.06],
-    #                                     [0., 0., 0.,    1.]]
-    #                robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
-    #                rob_T_obj_opti_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_opti_4_4)
+                    # robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
+                    #                         [0., 1., 0.,    0.],
+                    #                         [0., 0., 1., -0.06],
+                    #                         [0., 0., 0.,    1.]]
+                    # robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
+                    # rob_T_obj_opti_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_opti_4_4)
                     pandalink0_T_obj_obse_4_4_test = visual_world.ros_listener.listen_2_test_matrix()
-    #                test_rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, test_rob_T_obj_obse_4_4)
-    #                print(object_name_list[obj_index]+": matrix from /gazebo/model_states:")
-    #                print(pandalink0_T_obj_obse_4_4_test)
-    #                print(object_name_list[obj_index]+": matrix from tf:")
-    #                print(rob_T_obj_opti_4_4)
+                    # test_rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, test_rob_T_obj_obse_4_4)
+                    # print(object_name_list[obj_index]+": matrix from /gazebo/model_states:")
+                    # print(pandalink0_T_obj_obse_4_4_test)
+                    # print(object_name_list[obj_index]+": matrix from tf:")
+                    # print(rob_T_obj_opti_4_4)
                 else:
                     opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
                     opti_T_rob_opti_ori = visual_world.ros_listener.listen_2_robot_pose()[1]
@@ -425,11 +433,12 @@ if __name__ == '__main__':
                     if obj_index == object_num - 1:
                         init_gt_obj_flag = 1
                     visual_world.init_display_ground_truth_object(pw_T_target_obj_opti_pose_lsit_param[obj_index])
-                
+                    
                 pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
                 pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
                 pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
- 
+                print("pw_T_obj_opti_pos:")
+                print(pw_T_obj_opti_pos)
                 # display gt object update pose
                 pw_T_target_obj_opti_pose_lsit_param[obj_index].pos = pw_T_obj_opti_pos
                 pw_T_target_obj_opti_pose_lsit_param[obj_index].ori = pw_T_obj_opti_ori
@@ -442,6 +451,7 @@ if __name__ == '__main__':
                 # else:
 
         if display_obse_flag == True:
+            print("display_obse_flag")
             for obj_index in range(object_num):
                 if init_obse_flag == 0:
                     if obj_index == object_num - 1:
@@ -451,17 +461,24 @@ if __name__ == '__main__':
                 use_gazebo = ""
                 if visual_world.gazebo_flag == True:
                     use_gazebo = '_noise'
+                    if dope_flag == True:
+                        use_gazebo  = ""
                 obse_is_fresh = True
                 try:
-                    latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo)
-                    if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                        (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
-                        obse_is_fresh = True
+                    # latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo)
+                    # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
+                    (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                    # (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                    # (trans_ob_cTo, rot_ob_cTo) = listener_tf.lookupTransform('/camera_gt', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                    # (trans_ob_pTc, rot_ob_pTc) = listener_tf.lookupTransform('/panda_link0', '/camera_gt', rospy.Time(0))
+                    # (trans_ob_cTo, rot_ob_cTo) = listener_tf.lookupTransform('/camera_gt', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                    
+                    obse_is_fresh = True
                         # print("obse is FRESH")
-                    else:
+                    # else:
                         # obse has not been updating for a while
-                        obse_is_fresh = False
-                        print("obse is NOT fresh")
+                        # obse_is_fresh = False
+                        # print("obse is NOT fresh")
                     # break
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                     print("can not find tf")
@@ -469,13 +486,36 @@ if __name__ == '__main__':
                 rob_T_obj_obse_ori = list(rot_ob)
                 rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
                 rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
-
+                print("rob_T_obj_obse_pos")
+                print(rob_T_obj_obse_pos)
                 pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
                 pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
                 pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
+                
+                # cam_T_obj_obse_pos = list(trans_ob_cTo)
+                # cam_T_obj_obse_ori = list(rot_ob_cTo)
+                # cam_T_obj_obse_3_3 = transformations.quaternion_matrix(cam_T_obj_obse_ori)
+                # cam_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(cam_T_obj_obse_3_3, cam_T_obj_obse_pos)
+                # pan_T_cam_obse_pos = list(trans_ob_pTc)
+                # pan_T_cam_obse_ori = list(rot_ob_pTc)
+                # pan_T_cam_obse_3_3 = transformations.quaternion_matrix(pan_T_cam_obse_ori)
+                # pan_T_cam_obse_4_4 = rotation_4_4_to_transformation_4_4(pan_T_cam_obse_3_3, pan_T_cam_obse_pos)
+                
+                # ga_T_cam_pos = [1.227862, 0.39, 0.225166]
+                # ga_T_cam_ori = [0.7197831034103083, 1.2023881355993746e-07, 0.6941990233679357, -1.246701067867603e-07] # x,y,z,w
+                # ga_T_cam_3_3 = transformations.quaternion_matrix(ga_T_cam_ori)
+                # ga_T_cam_4_4 = rotation_4_4_to_transformation_4_4(ga_T_cam_3_3, ga_T_cam_pos)
+
+                # pan_T_obj_obse = np.dot(pan_T_cam_obse_4_4, cam_T_obj_obse_4_4)
+                # pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, pan_T_obj_obse)
+                # pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
+                # pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
+                
                 # print(pw_T_obj_obse_pos)
                 # print(pw_T_obj_obse_ori)
                 # update pose
+                print("pw_T_obj_obse_pos")
+                print(pw_T_obj_obse_pos)
                 pw_T_target_obj_obse_pose_lsit_param[obj_index].pos = pw_T_obj_obse_pos
                 pw_T_target_obj_obse_pose_lsit_param[obj_index].ori = pw_T_obj_obse_ori
                 visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_obse_pose_lsit_param[obj_index])

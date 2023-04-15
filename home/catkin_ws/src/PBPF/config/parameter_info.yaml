@@ -1,5 +1,6 @@
 err_file: rayTracing
 gazebo_flag: True
+dope_flag: True
 object_name_list:
 - cracker
 - potted_meat

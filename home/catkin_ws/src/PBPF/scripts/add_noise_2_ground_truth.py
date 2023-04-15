@@ -191,20 +191,22 @@ if __name__ == '__main__':
         
     while True:
         for obj_index in range(object_num):
+            gt_name = "_gt"
             if first_run_flag == 0:
                 if obj_index == object_num - 1:
                     first_run_flag = 1
+                    
                 while True:
                     try:
-                        (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
+                        (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+gt_name, rospy.Time(0))
                         break
                     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                         continue
             obse_is_fresh = True
             try:
-                latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index])
+                latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index]+gt_name)
                 if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                    (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
+                    (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+gt_name, rospy.Time(0))
                     obse_is_fresh = True
                     # print("obse is FRESH")
                 else:

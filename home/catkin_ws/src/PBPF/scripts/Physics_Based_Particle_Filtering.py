@@ -1792,7 +1792,7 @@ if __name__ == '__main__':
                                                pw_T_obj_obse_obj_list_alg,
                                                pw_T_obj_obse_oto_list_alg,
                                                update_style_flag, change_sim_time)
-    print("I am here1")
+    print("I am here")
     # get estimated object
     if run_alg_flag == "PBPF":
         estimated_object_set, particle_cloud_pub = initial_parameter.initial_and_set_simulation_env()

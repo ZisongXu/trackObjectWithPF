@@ -112,7 +112,7 @@ class Create_Scene():
             while_time = 0
             while True:
                 while_time = while_time + 1
-                print("here")
+                
                 # if while_time > 1000:
                 #     print("WARNING while time is larger than 20")
                 # print(self.object_name_list[obj_index]+use_gazebo)
@@ -121,7 +121,7 @@ class Create_Scene():
                     break
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                     continue
-               
+            
             rob_T_obj_obse_pos = list(trans_ob)
             rob_T_obj_obse_ori = list(rot_ob)
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
@@ -142,6 +142,8 @@ class Create_Scene():
             self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)
             self.trans_ob_list.append(trans_ob)
             self.rot_ob_list.append(rot_ob) # need to update
+            # print("here") 
+        
         return self.pw_T_target_obj_obse_pose_lsit, trans_ob, rot_ob
             
     def initialize_robot(self):

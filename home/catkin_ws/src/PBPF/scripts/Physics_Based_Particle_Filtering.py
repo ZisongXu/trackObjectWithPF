@@ -1782,8 +1782,10 @@ if __name__ == '__main__':
     time.sleep(0.5)
     
     pw_T_rob_sim_pose_list_alg = create_scene.initialize_robot()
+    
     pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
     pw_T_obj_obse_obj_list_alg, trans_ob, rot_ob = create_scene.initialize_object()
+    print("I am here")
     for obj_index in range(other_obj_num):
         pw_T_obj_obse_oto_list_alg = create_scene.initialize_base_of_cheezit()
 

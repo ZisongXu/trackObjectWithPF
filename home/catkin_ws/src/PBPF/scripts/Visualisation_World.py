@@ -69,7 +69,7 @@ class Visualisation_World():
         pw_T_rob_sim_pose_list = self.create_scene.initialize_robot()
         
         pw_T_target_obj_obse_pose_lsit, trans_ob, rot_ob = self.create_scene.initialize_object()
-        print("I am here")
+        # print("I am here")
         pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list, trans_gt, rot_gt = self.create_scene.initialize_ground_truth_objects()
         
         if self.visualisation_all == True:
@@ -241,7 +241,7 @@ class Visualisation_World():
         gt_object_pose.obj_id = ground_truth_object_id
 
     def init_display_observation_object(self, obse_object_pose):
-        print("i am here")
+        # print("i am here")
         obse_obj_name = obse_object_pose.obj_name
         obse_obj_pos = copy.deepcopy(obse_object_pose.pos)
         obse_obj_ori = copy.deepcopy(obse_object_pose.ori)
@@ -330,7 +330,7 @@ if __name__ == '__main__':
     init_obse_flag = 0
     init_par_flag = 0
     init_esti_flag = 0
-    display_par_flag = False
+    display_par_flag = True
     display_esti_flag = False
     display_gt_flag = True
     display_obse_flag = True
@@ -346,7 +346,7 @@ if __name__ == '__main__':
     visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
     
     trans_ob, rot_ob, trans_gt, rot_gt = visual_world.initialize_visual_world_pybullet_env(task_flag)
-    print("I am here")
+    # print("I am here")
     # input("stop")
     listener_tf = visual_world.listener
     p_visual = visual_world.p_visualisation
@@ -367,7 +367,7 @@ if __name__ == '__main__':
             pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_param[rob_index].trans_matrix
             visual_world.set_real_robot_JointPosition(p_visual, rob_id, joint_states)
         if display_gt_flag == True:
-            print("display_gt_flag")
+            # print("display_gt_flag")
             for obj_index in range(object_num):
                 # display ground truth (grtu)
                 if visual_world.gazebo_flag == True:
@@ -437,8 +437,8 @@ if __name__ == '__main__':
                 pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
                 pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
                 pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
-                print("pw_T_obj_opti_pos:")
-                print(pw_T_obj_opti_pos)
+                # print("pw_T_obj_opti_pos:")
+                # print(pw_T_obj_opti_pos)
                 # display gt object update pose
                 pw_T_target_obj_opti_pose_lsit_param[obj_index].pos = pw_T_obj_opti_pos
                 pw_T_target_obj_opti_pose_lsit_param[obj_index].ori = pw_T_obj_opti_ori
@@ -451,7 +451,7 @@ if __name__ == '__main__':
                 # else:
 
         if display_obse_flag == True:
-            print("display_obse_flag")
+            # print("display_obse_flag")
             for obj_index in range(object_num):
                 if init_obse_flag == 0:
                     if obj_index == object_num - 1:
@@ -486,8 +486,8 @@ if __name__ == '__main__':
                 rob_T_obj_obse_ori = list(rot_ob)
                 rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
                 rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
-                print("rob_T_obj_obse_pos")
-                print(rob_T_obj_obse_pos)
+                # print("rob_T_obj_obse_pos")
+                # print(rob_T_obj_obse_pos)
                 pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
                 pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
                 pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
@@ -514,8 +514,8 @@ if __name__ == '__main__':
                 # print(pw_T_obj_obse_pos)
                 # print(pw_T_obj_obse_ori)
                 # update pose
-                print("pw_T_obj_obse_pos")
-                print(pw_T_obj_obse_pos)
+                # print("pw_T_obj_obse_pos")
+                # print(pw_T_obj_obse_pos)
                 pw_T_target_obj_obse_pose_lsit_param[obj_index].pos = pw_T_obj_obse_pos
                 pw_T_target_obj_obse_pose_lsit_param[obj_index].ori = pw_T_obj_obse_ori
                 visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_obse_pose_lsit_param[obj_index])

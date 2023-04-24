@@ -1785,7 +1785,8 @@ if __name__ == '__main__':
     
     pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
     pw_T_obj_obse_obj_list_alg, trans_ob, rot_ob = create_scene.initialize_object()
-    print("I am here")
+    print(trans_ob, rot_ob)
+    print("After initializing scene")
     for obj_index in range(other_obj_num):
         pw_T_obj_obse_oto_list_alg = create_scene.initialize_base_of_cheezit()
 
@@ -1794,23 +1795,28 @@ if __name__ == '__main__':
                                                pw_T_obj_obse_obj_list_alg,
                                                pw_T_obj_obse_oto_list_alg,
                                                update_style_flag, change_sim_time)
-    print("I am here")
+    
     # get estimated object
     if run_alg_flag == "PBPF":
         estimated_object_set, particle_cloud_pub = initial_parameter.initial_and_set_simulation_env()
     if run_alg_flag == "CVPF":
         estimated_object_set, particle_cloud_pub = initial_parameter.initial_and_set_simulation_env_CV()
         boss_est_pose_CVPF.append(estimated_object_set) # [esti_obj1, esti_obj2]
-    
+    print("After initializing particles")
     # publish particles/estimated object
     publish_par_pose_info(particle_cloud_pub)
     publish_esti_pose_info(estimated_object_set)
     estimated_object_set_old = copy.deepcopy(estimated_object_set)
     estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
-
+    print("Before locating the pose of the camera")
     # if version == "ray" or version == "multiray":
-    realsense_tf = '/RealSense'
+    realsense_tf = '/RealSense' # (use Optitrack)
+    realsense_tf = '/ar_tracking_camera_frame' # (do not use Optitrack)
+    while_loop_time = 0
     while True:
+        while_loop_time =  while_loop_time + 1
+        # if while_loop_time > 50:
+            # print("WARNING: ")
         if gazebo_flag == True:
             realsense_tf = '/realsense_camera'
         try:

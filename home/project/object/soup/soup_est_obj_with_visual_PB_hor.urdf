@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
  <robot name="cube">
-   <material name="golden">
-     <color rgba="1 0.843 0 1"/>
+   <material name="coral">
+     <color rgba="1 0.498 0.3137 1"/>
    </material>
    <link name="base_link">
      <visual>
        <geometry>
          <cylinder length="0.1000" radius="0.033829689025878906"/>
        </geometry>
-       <material name="golden"/>
+       <material name="coral"/>
        <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
      </visual>
      <inertial>

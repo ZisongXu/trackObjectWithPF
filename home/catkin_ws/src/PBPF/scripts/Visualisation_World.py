@@ -58,6 +58,7 @@ class Visualisation_World():
             self.parameter_info = yaml.safe_load(file)
         self.gazebo_flag = self.parameter_info['gazebo_flag']
         self.task_flag = self.parameter_info['task_flag']
+        self.optitrack_flag = self.parameter_info['optitrack_flag']
         self.pw_T_rob_sim_pose_list = []
         self.pw_T_target_obj_obse_pose_lsit = []
         self.pw_T_target_obj_opti_pose_lsit = []
@@ -66,12 +67,12 @@ class Visualisation_World():
         self.object_name_list = self.parameter_info['object_name_list']
         
     def initialize_visual_world_pybullet_env(self, task_flag):
-        pw_T_rob_sim_pose_list = self.create_scene.initialize_robot()
+        trans_ob = []
+        rot_ob = []
+        trans_gt = []
+        rot_gt = []
         
-        pw_T_target_obj_obse_pose_lsit, trans_ob, rot_ob = self.create_scene.initialize_object()
-        # print("I am here")
-        pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list, trans_gt, rot_gt = self.create_scene.initialize_ground_truth_objects()
-        
+        # (Basic Setting
         if self.visualisation_all == True:
             p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
         else:
@@ -95,7 +96,47 @@ class Visualisation_World():
                                                             pw_T_obst_opti_pos_small,
                                                             pw_T_obst_opti_ori_small,
                                                             useFixedBase=1)
+        # Finished Setting)
         
+        
+        # load robot in the pybullet world
+        pw_T_rob_sim_pose_list = self.create_scene.initialize_robot()
+        for rob_index in range(self.rob_num):
+            # rob_name = pw_T_rob_sim_pose_list[obj_index].obj_name
+            rob_pos = pw_T_rob_sim_pose_list[rob_index].pos
+            rob_ori = pw_T_rob_sim_pose_list[rob_index].ori
+            real_robot_id = p_visualisation.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
+                                                     rob_pos,
+                                                     rob_ori,
+                                                     useFixedBase=1)
+            joint_pos = self.ros_listener.current_joint_values
+            self.set_real_robot_JointPosition(p_visualisation, real_robot_id, joint_pos)
+            pw_T_rob_sim_pose_list[rob_index].obj_id = real_robot_id
+            pw_T_rob_sim_pose_list[rob_index].joints = joint_pos
+        self.pw_T_rob_sim_pose_list = pw_T_rob_sim_pose_list
+        
+        # observation: target obejct pose list
+        pw_T_target_obj_obse_pose_lsit, trans_ob, rot_ob = self.create_scene.initialize_object()
+        self.pw_T_target_obj_obse_pose_lsit = pw_T_target_obj_obse_pose_lsit
+        # print("I am here")
+        
+        # load other objects in the pybullet world
+        if self.optitrack_flag == True:
+            pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list, trans_gt, rot_gt = self.create_scene.initialize_ground_truth_objects()
+            self.pw_T_target_obj_opti_pose_lsit = pw_T_target_obj_opti_pose_lsit
+            for obj_index in range(self.other_obj_num):
+                other_obj_name = pw_T_other_obj_opti_pose_list[obj_index].obj_name
+                other_obj_pos = pw_T_other_obj_opti_pose_list[obj_index].pos
+                other_obj_ori = pw_T_other_obj_opti_pose_list[obj_index].ori
+                use_gazebo = ""
+                if self.gazebo_flag == True:
+                    use_gazebo = "gazebo_"
+                optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+use_gazebo+other_obj_name+"/base_of_cracker.urdf"),
+                                                            other_obj_pos,
+                                                            other_obj_ori)
+                pw_T_other_obj_opti_pose_list[obj_index].obj_id = optitrack_base_id
+            self.pw_T_other_obj_opti_pose_list = pw_T_other_obj_opti_pose_list
+
         # load objects in the pybullet world
 #        for obj_index in range(self.object_num):
 #            obse_obj_name = pw_T_target_obj_obse_pose_lsit[obj_index].obj_name
@@ -118,41 +159,10 @@ class Visualisation_World():
 #                                                      opti_obj_pos,
 #                                                      opti_obj_ori)
 #            pw_T_target_obj_opti_pose_lsit[obj_index].obj_id = opti_object_id
-        
-        # load other objects in the pybullet world
-        for obj_index in range(self.other_obj_num):
-            other_obj_name = pw_T_other_obj_opti_pose_list[obj_index].obj_name
-            other_obj_pos = pw_T_other_obj_opti_pose_list[obj_index].pos
-            other_obj_ori = pw_T_other_obj_opti_pose_list[obj_index].ori
-            use_gazebo = ""
-            if self.gazebo_flag == True:
-                use_gazebo = "gazebo_"
-            optitrack_base_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+use_gazebo+other_obj_name+"/base_of_cracker.urdf"),
-                                                         other_obj_pos,
-                                                         other_obj_ori)
-            pw_T_other_obj_opti_pose_list[obj_index].obj_id = optitrack_base_id
-        
-        # load robot in the pybullet world
-        for rob_index in range(self.rob_num):
-            # rob_name = pw_T_rob_sim_pose_list[obj_index].obj_name
-            rob_pos = pw_T_rob_sim_pose_list[rob_index].pos
-            rob_ori = pw_T_rob_sim_pose_list[rob_index].ori
-            real_robot_id = p_visualisation.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
-                                                     rob_pos,
-                                                     rob_ori,
-                                                     useFixedBase=1)
-            joint_pos = self.ros_listener.current_joint_values
-            self.set_real_robot_JointPosition(p_visualisation, real_robot_id, joint_pos)
-            pw_T_rob_sim_pose_list[rob_index].obj_id = real_robot_id
-            pw_T_rob_sim_pose_list[rob_index].joints = joint_pos
+
         for i in range(240):
             p_visualisation.stepSimulation()
             
-        self.pw_T_rob_sim_pose_list = pw_T_rob_sim_pose_list
-        self.pw_T_target_obj_obse_pose_lsit = pw_T_target_obj_obse_pose_lsit
-        self.pw_T_target_obj_opti_pose_lsit = pw_T_target_obj_opti_pose_lsit
-        self.pw_T_other_obj_opti_pose_list = pw_T_other_obj_opti_pose_list
-        
         return trans_ob, rot_ob, trans_gt, rot_gt
     
     def set_real_robot_JointPosition(self, pybullet_simulation_env, robot_id, position):
@@ -326,13 +336,19 @@ if __name__ == '__main__':
     robot_num = 1
     
     particle_num = parameter_info['particle_num']
+    optitrack_flag = parameter_info['optitrack_flag']
+    
     init_gt_obj_flag = 0
     init_obse_flag = 0
     init_par_flag = 0
     init_esti_flag = 0
     display_par_flag = True
-    display_esti_flag = False
+    display_esti_flag = True
+    
     display_gt_flag = True
+    if optitrack_flag == False:
+        display_gt_flag = False
+        
     display_obse_flag = True
     object_name_list = parameter_info['object_name_list']
     task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
@@ -422,13 +438,19 @@ if __name__ == '__main__':
                     # print(object_name_list[obj_index]+": matrix from tf:")
                     # print(rob_T_obj_opti_4_4)
                 else:
+                    
+                    # if optitrack_flag == True:
                     opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
                     opti_T_rob_opti_ori = visual_world.ros_listener.listen_2_robot_pose()[1]
                     opti_T_obj_opti_pos = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[0]
                     opti_T_obj_opti_ori = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[1]
                     # get ground truth data 
                     rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
+                    # else:
+                    #     optitrack_flag = optitrack_flag
+                        
                 # init gt object
+                # if optitrack_flag == True:
                 if init_gt_obj_flag == 0:
                     if obj_index == object_num - 1:
                         init_gt_obj_flag = 1

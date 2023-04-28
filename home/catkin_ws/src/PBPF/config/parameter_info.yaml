@@ -4,7 +4,7 @@ gazebo_flag: false
 object_name_list:
 - cracker
 - soup
-object_num: 1
+object_num: 2
 other_obj_num: 1
 oto_name_list:
 - base_of_cracker
@@ -18,5 +18,5 @@ robot_num: 1
 run_alg_flag: PBPF
 task_flag: '3'
 update_style_flag: time
-version: old
+version: multiray
 optitrack_flag: False

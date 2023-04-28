@@ -131,9 +131,9 @@ class PBPFMove():
         t2 = time.time()
         self.times.append(t2-t1)
         # observation model
-        if do_obs_update:
+        if do_obs_update or sum(global_objects_visual_by_DOPE_list)<object_num:
             self.observation_update_PB(pw_T_obj_obse_objects_pose_list)
-        if (version == "ray" or version == "multiray") and (do_obs_update == False or dope_detection_flag == False):
+        if (version=="ray" or version=="multiray") and (do_obs_update==False or dope_detection_flag==False or sum(global_objects_visual_by_DOPE_list)==object_num):
             self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
             self.set_paticle_in_each_sim_env()
         # Compute mean of particles
@@ -176,7 +176,7 @@ class PBPFMove():
         self.particle_cloud[index][obj_index].linearVelocity = linearVelocity
         self.particle_cloud[index][obj_index].angularVelocity = angularVelocity
 #        self.particle_cloud[index][obj_index].rayTraceList = [1,2,3]
-        if version == "ray" and (self.do_obs_update == False or dope_detection_flag == False):
+        if version == "ray" and (self.do_obs_update==False or dope_detection_flag==False or sum(global_objects_visual_by_DOPE_list)==object_num):
             camera_parPoint = []
             pw_T_par_sim_pos = copy.deepcopy([x, y, z])
             # pybullet_sim_env[index]
@@ -198,7 +198,7 @@ class PBPFMove():
 #                weight = 0.1
             self.particle_cloud[index][obj_index].w = weight
         
-        elif version == "multiray" and (self.do_obs_update == False or dope_detection_flag == False):
+        elif version == "multiray" and (self.do_obs_update == False or dope_detection_flag == False or sum(global_objects_visual_by_DOPE_list)==object_num):
             # need to change
             camera_parPoint = []
             pw_T_parC_pos = copy.deepcopy([x, y, z])
@@ -418,10 +418,18 @@ class PBPFMove():
     
     # observation model
     def observation_update_PB(self, pw_T_obj_obse_objects_pose_list):
+        objs_weight_list = []
         for obj_index in range(self.obj_num):
+
+            local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
+            if local_obj_visual_by_DOPE_val == 1:
+                weight =  1.0 / particle_num
+                for index, particle in enumerate(self.particle_cloud):
+                    particle[obj_index].w = weight
+                continue
+            
             obse_obj_pos = pw_T_obj_obse_objects_pose_list[obj_index].pos
             obse_obj_ori = pw_T_obj_obse_objects_pose_list[obj_index].ori # pybullet x,y,z,w
-            
             # make sure theta between -pi and pi
             obse_obj_ori_corr = quaternion_correction(obse_obj_ori)
 #            obse_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3]) # w,x,y,z
@@ -431,7 +439,6 @@ class PBPFMove():
 #            theta = theta_over_2 * 2
 #            if theta >= math.pi or theta <= -math.pi:
 #                nois_obj_ori = [-nois_obj_x_ori, -nois_obj_y_ori, -nois_obj_z_ori, -nois_obj_w_ori]
-                
             for index, particle in enumerate(self.particle_cloud): # particle angle
                 particle_x = particle[obj_index].pos[0]
                 particle_y = particle[obj_index].pos[1]
@@ -543,6 +550,7 @@ class PBPFMove():
                         weight = weight / 3.0
 
                 particle[obj_index].w = weight
+                
             # old resample function
             # Flag = self.normalize_particles()
             # self.resample_particles()
@@ -652,35 +660,37 @@ class PBPFMove():
         n_particle = len(self.particle_cloud)
         par_num_on_obse = int(math.ceil(n_particle * local_pick_particle_rate))
         par_num_for_resample = int(n_particle) - int(par_num_on_obse)
-
+        
         newParticles_list = [[]*self.obj_num for _ in range(n_particle)]
+        
+        particles_w = []
+        base_w = 0
+        base_w_list = []
+        base_w_list.append(base_w)
+        particle_array_list = []
+        for particle in self.particle_cloud:
+            each_par_weight = 1
+            for obj_index in range(self.obj_num):
+                each_par_weight = each_par_weight * particle[obj_index].w
+            particles_w.append(each_par_weight) # to compute the sum
+            base_w = base_w + each_par_weight
+            base_w_list.append(base_w) # [0, 0.02, 0.025, 0.029, 0.031, ..., sum]
+        w_sum = sum(particles_w)
+        r = random.uniform(0, w_sum)
+        
+        for index in range(par_num_for_resample):
+            if w_sum > 0.00000001:
+                position = (r + index * w_sum / particle_num) % w_sum
+                position_index = self.compute_position(position, base_w_list)
+                particle_array_list.append(position_index)
+            else:
+                particle_array_list.append(index) # [45, 45, 1, 4, 6, 6, ..., 43]
+        index = -1
+        
         for obj_index in range(self.obj_num):
             obse_obj_pos = pw_T_obj_obse_objs_pose_list[obj_index].pos
             obse_obj_ori = pw_T_obj_obse_objs_pose_list[obj_index].ori # pybullet x,y,z,w
-
-            particles_w = []
-            # newParticles = []
-            base_w = 0
-            base_w_list = []
-            base_w_list.append(base_w)
-            particle_array_list = []
-            # compute sum of weight
-            for particle in self.particle_cloud:
-                particles_w.append(particle[obj_index].w)
-                base_w = base_w + particle[obj_index].w
-                base_w_list.append(base_w)
-            w_sum = sum(particles_w)
-            r = random.uniform(0, w_sum)
-
-            for index in range(par_num_for_resample):
-                if w_sum > 0.00000001:
-                    position = (r + index * w_sum / particle_num) % w_sum
-                    position_index = self.compute_position(position, base_w_list)
-                    particle_array_list.append(position_index)
-                else:
-                    particle_array_list.append(index)
-            index = -1
-            for index,i in enumerate(particle_array_list): # particle angle
+            for index, i in enumerate(particle_array_list): # particle angle
                 particle = Particle(self.particle_cloud[i][obj_index].par_name,
                                     self.particle_cloud[index][obj_index].visual_par_id,
                                     self.particle_cloud[index][obj_index].no_visual_par_id,
@@ -691,12 +701,8 @@ class PBPFMove():
                                     self.particle_cloud[i][obj_index].linearVelocity,
                                     self.particle_cloud[i][obj_index].angularVelocity)
                 newParticles_list[index].append(particle)
-#            print(index)
-#            print(obj_index)
-#            print(par_num_on_obse)
-#            print(self.particle_cloud[index][obj_index].visual_par_id)
+            
             for index_leftover in range(par_num_on_obse):
-#                print(index)
                 index = index + 1
                 particle = Particle(self.particle_cloud[index_leftover][obj_index].par_name,
                                     self.particle_cloud[index][obj_index].visual_par_id,
@@ -708,9 +714,59 @@ class PBPFMove():
                                     self.particle_cloud[index_leftover][obj_index].linearVelocity,
                                     self.particle_cloud[index_leftover][obj_index].angularVelocity)
                 newParticles_list[index].append(particle)
+                
+        self.particle_cloud = copy.deepcopy(newParticles_list)   
+        # newParticles_list = [[]*self.obj_num for _ in range(n_particle)]
+        # for obj_index in range(self.obj_num):
+        #     obse_obj_pos = pw_T_obj_obse_objs_pose_list[obj_index].pos
+        #     obse_obj_ori = pw_T_obj_obse_objs_pose_list[obj_index].ori # pybullet x,y,z,w
+
+        #     particles_w = []
+        #     # newParticles = []
+        #     base_w = 0
+        #     base_w_list = []
+        #     base_w_list.append(base_w)
+        #     particle_array_list = []
+        #     # compute sum of weight
+        #     for particle in self.particle_cloud:
+        #         particles_w.append(particle[obj_index].w)
+        #         base_w = base_w + particle[obj_index].w
+        #         base_w_list.append(base_w)
+        #     w_sum = sum(particles_w)
+        #     r = random.uniform(0, w_sum)
+
+        #     for index,i in enumerate(particle_array_list): # particle angle
+        #         particle = Particle(self.particle_cloud[i][obj_index].par_name,
+        #                             self.particle_cloud[index][obj_index].visual_par_id,
+        #                             self.particle_cloud[index][obj_index].no_visual_par_id,
+        #                             self.particle_cloud[i][obj_index].pos,
+        #                             self.particle_cloud[i][obj_index].ori,
+        #                             1.0/particle_num, 
+        #                             index,
+        #                             self.particle_cloud[i][obj_index].linearVelocity,
+        #                             self.particle_cloud[i][obj_index].angularVelocity)
+        #         newParticles_list[index].append(particle)
+        #     print(index)
+        #     print(obj_index)
+        #     print(par_num_on_obse)
+        #     print(self.particle_cloud[index][obj_index].visual_par_id)
+
+        #     for index_leftover in range(par_num_on_obse):
+        #         print(index)
+        #         index = index + 1
+        #         particle = Particle(self.particle_cloud[index_leftover][obj_index].par_name,
+        #                             self.particle_cloud[index][obj_index].visual_par_id,
+        #                             self.particle_cloud[index][obj_index].no_visual_par_id,
+        #                             obse_obj_pos,
+        #                             obse_obj_ori,
+        #                             1.0/particle_num, 
+        #                             index,
+        #                             self.particle_cloud[index_leftover][obj_index].linearVelocity,
+        #                             self.particle_cloud[index_leftover][obj_index].angularVelocity)
+        #         newParticles_list[index].append(particle)
 
 #                newParticles.append(particle)
-        self.particle_cloud = copy.deepcopy(newParticles_list)
+        
 
     def compute_position(self, position, base_w_list):
         for index in range(1, len(base_w_list)):
@@ -1666,10 +1722,14 @@ if __name__ == '__main__':
     update_style_flag = parameter_info['update_style_flag'] # time/pose
     # observation model
     pick_particle_rate = parameter_info['pick_particle_rate']
+    
+    optitrack_flag = parameter_info['optitrack_flag']
+    
     # the flag is used to determine whether the robot touches the particle in the simulation
     simRobot_touch_par_flag = 0
     object_num = parameter_info['object_num']
     robot_num = 1
+    
     check_dope_work_flag_init = 0
     if task_flag == "4": 
         other_obj_num = 1 # parameter_info['other_obj_num']
@@ -1682,11 +1742,14 @@ if __name__ == '__main__':
         if run_alg_flag == "PBPF":
             particle_num = parameter_info['particle_num']
         elif run_alg_flag == "CVPF":
-            particle_num = parameter_info['particle_num']
-    object_name_list = parameter_info['object_name_list']
-    version = parameter_info['version'] # old/ray/multiray
+            # particle_num = parameter_info['particle_num']
+            particle_num = 150
     if run_alg_flag == 'CVPF':
         particle_num = 150
+        
+    object_name_list = parameter_info['object_name_list']
+    version = parameter_info['version'] # old/ray/multiray
+    
     print("This is "+update_style_flag+" update in scene"+task_flag)    
     # some parameters
     d_thresh = 0.005
@@ -1782,7 +1845,7 @@ if __name__ == '__main__':
     time.sleep(0.5)
     
     pw_T_rob_sim_pose_list_alg = create_scene.initialize_robot()
-    
+    print("After initializing robot")
     pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
     pw_T_obj_obse_obj_list_alg, trans_ob, rot_ob = create_scene.initialize_object()
     print(trans_ob, rot_ob)
@@ -1810,8 +1873,10 @@ if __name__ == '__main__':
     estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
     print("Before locating the pose of the camera")
     # if version == "ray" or version == "multiray":
-    realsense_tf = '/RealSense' # (use Optitrack)
-    realsense_tf = '/ar_tracking_camera_frame' # (do not use Optitrack)
+    if optitrack_flag == True:
+        realsense_tf = '/RealSense' # (use Optitrack)
+    else:
+        realsense_tf = '/ar_tracking_camera_frame' # (do not use Optitrack)
     while_loop_time = 0
     while True:
         while_loop_time =  while_loop_time + 1
@@ -1853,6 +1918,11 @@ if __name__ == '__main__':
     #     print(ros_listener.detection_flag)
     t_begin = time.time()
     while not rospy.is_shutdown():
+        global_objects_visual_by_DOPE_list = []
+        global_objects_outlier_by_DOPE_list = []
+        for obj_indx in range(object_num):
+            global_objects_visual_by_DOPE_list.append(0)
+            global_objects_outlier_by_DOPE_list.append(0)
         #panda robot moves in the visualization window
         temp_pw_T_obj_obse_objs_list = []
         track_fk_world_rob_mv(p_sim, sim_rob_id, ros_listener.current_joint_values)
@@ -1889,6 +1959,7 @@ if __name__ == '__main__':
             # if ros_listener.detection_flag == False:
                 # version = "old" # multiray/ray
                 # dope_detection_flag = False
+                # global_objects_visual_by_DOPE_list[obj_index] = 1
             # else:
                 # version = "old"
             try:
@@ -1918,6 +1989,7 @@ if __name__ == '__main__':
                 else:
                     # obse has not been updating for a while
                     obse_is_fresh = False
+                    global_objects_visual_by_DOPE_list[obj_index] = 1
                     # print("obse is NOT fresh")
                 old_obse_time = latest_obse_time.to_sec()
                 # break
@@ -1953,6 +2025,7 @@ if __name__ == '__main__':
                     count_DOPE_jumping_time = count_DOPE_jumping_time + 1
                     obse_is_fresh = False
                     obse_is_jumping = True
+                    global_objects_outlier_by_DOPE_list[obj_index] = 1
             # if :
             #     if minDis_obseCur_parOld > 0.10 or minAng_obseCur_parOld > math.pi * 1 / 2.0:
             #         # print("DOPE becomes crazy")

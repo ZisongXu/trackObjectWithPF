@@ -110,9 +110,9 @@ class Create_Scene():
                 if self.dope_flag == True:
                     use_gazebo  = ""
             while_time = 0
+            print(self.object_name_list[obj_index]+use_gazebo)
             while True:
                 while_time = while_time + 1
-                
                 # if while_time > 1000:
                 #     print("WARNING while time is larger than 20")
                 # print(self.object_name_list[obj_index]+use_gazebo)

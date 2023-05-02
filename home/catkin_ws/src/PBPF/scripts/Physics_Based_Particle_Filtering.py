@@ -1591,18 +1591,18 @@ def publish_esti_pose_info(estimated_object_set):
         esti_pose_list.append(esti_pose)
     esti_list.objects = esti_pose_list 
     pub_esti_pose.publish(esti_list)
-
+    for obj_index in range(object_num):
     # need to change
-    pub = rospy.Publisher('PBPF_pose', PoseStamped, queue_size = 1)
-    pose_PBPF = PoseStamped()
-    pose_PBPF.pose.position.x = esti_obj_info.pos[0]
-    pose_PBPF.pose.position.y = esti_obj_info.pos[1]
-    pose_PBPF.pose.position.z = esti_obj_info.pos[2]
-    pose_PBPF.pose.orientation.x = esti_obj_info.ori[0]
-    pose_PBPF.pose.orientation.y = esti_obj_info.ori[1]
-    pose_PBPF.pose.orientation.z = esti_obj_info.ori[2]
-    pose_PBPF.pose.orientation.w = esti_obj_info.ori[3]
-    pub.publish(pose_PBPF)
+        pub = rospy.Publisher('PBPF_pose_'+object_name_list[obj_index], PoseStamped, queue_size = 1)
+        pose_PBPF = PoseStamped()
+        pose_PBPF.pose.position.x = estimated_object_set[obj_index].pos[0]
+        pose_PBPF.pose.position.y = estimated_object_set[obj_index].pos[1]
+        pose_PBPF.pose.position.z = estimated_object_set[obj_index].pos[2]
+        pose_PBPF.pose.orientation.x = estimated_object_set[obj_index].ori[0]
+        pose_PBPF.pose.orientation.y = estimated_object_set[obj_index].ori[1]
+        pose_PBPF.pose.orientation.z = estimated_object_set[obj_index].ori[2]
+        pose_PBPF.pose.orientation.w = estimated_object_set[obj_index].ori[3]
+        pub.publish(pose_PBPF)
 
 # need to change
 def process_esti_pose_from_rostopic(estimated_object_set):
@@ -2041,7 +2041,7 @@ if __name__ == '__main__':
 
             # only for drawing BOX/ need to change
             if publish_DOPE_pose_flag == True:
-                pub_DOPE = rospy.Publisher('DOPE_pose', PoseStamped, queue_size = 1)
+                pub_DOPE = rospy.Publisher('DOPE_pose_'+object_name_list[obj_index], PoseStamped, queue_size = 1)
                 pose_DOPE = PoseStamped()
                 pose_DOPE.pose.position.x = pw_T_obj_obse_pos[0]
                 pose_DOPE.pose.position.y = pw_T_obj_obse_pos[1]

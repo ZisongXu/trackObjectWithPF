@@ -349,7 +349,7 @@ if __name__ == '__main__':
     if optitrack_flag == False:
         display_gt_flag = False
         
-    display_obse_flag = True
+    display_obse_flag = False
     object_name_list = parameter_info['object_name_list']
     task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
     dope_flag = parameter_info['dope_flag']
@@ -544,7 +544,7 @@ if __name__ == '__main__':
                 pw_T_target_obj_obse_pose_lsit_param[obj_index].pos = pw_T_obj_obse_pos
                 pw_T_target_obj_obse_pose_lsit_param[obj_index].ori = pw_T_obj_obse_ori
                 visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_obse_pose_lsit_param[obj_index])
-                print(pw_T_obj_obse_pos)
+                # print(pw_T_obj_obse_pos)
         # display other objects
         for obj_index in range(other_obj_num):
             opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]

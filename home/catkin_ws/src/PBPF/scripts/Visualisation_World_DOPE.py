@@ -327,7 +327,7 @@ if __name__ == '__main__':
 #    par_obj_id = [[]*2 for _ in range(50)]
 #    print(par_obj_id)
 #    input("stop")
-    rospy.init_node('visualization_world') # ros node
+    rospy.init_node('visualization_world_DOPE') # ros node
     signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
     time.sleep(0.5)
     with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
@@ -343,7 +343,7 @@ if __name__ == '__main__':
     init_par_flag = 0
     init_esti_flag = 0
     display_par_flag = False
-    display_esti_flag = True
+    display_esti_flag = False
     
     display_gt_flag = True
     if optitrack_flag == False:
@@ -544,7 +544,7 @@ if __name__ == '__main__':
                 pw_T_target_obj_obse_pose_lsit_param[obj_index].pos = pw_T_obj_obse_pos
                 pw_T_target_obj_obse_pose_lsit_param[obj_index].ori = pw_T_obj_obse_ori
                 visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_obse_pose_lsit_param[obj_index])
-                print(pw_T_obj_obse_pos)
+                # print(pw_T_obj_obse_pos)
         # display other objects
         for obj_index in range(other_obj_num):
             opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]

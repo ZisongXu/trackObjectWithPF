@@ -327,7 +327,7 @@ if __name__ == '__main__':
 #    par_obj_id = [[]*2 for _ in range(50)]
 #    print(par_obj_id)
 #    input("stop")
-    rospy.init_node('visualization_world') # ros node
+    rospy.init_node('visualization_world_PBPF') # ros node
     signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
     time.sleep(0.5)
     with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
@@ -349,7 +349,7 @@ if __name__ == '__main__':
     if optitrack_flag == False:
         display_gt_flag = False
         
-    display_obse_flag = True
+    display_obse_flag = False
     object_name_list = parameter_info['object_name_list']
     task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
     dope_flag = parameter_info['dope_flag']

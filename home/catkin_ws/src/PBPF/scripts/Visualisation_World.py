@@ -116,7 +116,7 @@ class Visualisation_World():
         self.pw_T_rob_sim_pose_list = pw_T_rob_sim_pose_list
         
         # observation: target obejct pose list
-        pw_T_target_obj_obse_pose_lsit, trans_ob, rot_ob = self.create_scene.initialize_object()
+        pw_T_target_obj_obse_pose_lsit, trans_ob_list, rot_ob_list = self.create_scene.initialize_object()
         self.pw_T_target_obj_obse_pose_lsit = pw_T_target_obj_obse_pose_lsit
         # print("I am here")
         
@@ -163,7 +163,7 @@ class Visualisation_World():
         for i in range(240):
             p_visualisation.stepSimulation()
             
-        return trans_ob, rot_ob, trans_gt, rot_gt
+        return trans_ob_list, rot_ob_list, trans_gt, rot_gt
     
     def set_real_robot_JointPosition(self, pybullet_simulation_env, robot_id, position):
         num_joints = 9
@@ -361,7 +361,7 @@ if __name__ == '__main__':
 
     visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
     
-    trans_ob, rot_ob, trans_gt, rot_gt = visual_world.initialize_visual_world_pybullet_env(task_flag)
+    trans_ob_list, rot_ob_list, trans_gt, rot_gt = visual_world.initialize_visual_world_pybullet_env(task_flag)
     # print("I am here")
     # input("stop")
     listener_tf = visual_world.listener
@@ -495,6 +495,9 @@ if __name__ == '__main__':
                     # (trans_ob_pTc, rot_ob_pTc) = listener_tf.lookupTransform('/panda_link0', '/camera_gt', rospy.Time(0))
                     # (trans_ob_cTo, rot_ob_cTo) = listener_tf.lookupTransform('/camera_gt', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
                     
+                    trans_ob_list[obj_index] = trans_ob
+                    rot_ob_list[obj_index] = rot_ob
+                    
                     obse_is_fresh = True
                         # print("obse is FRESH")
                     # else:
@@ -504,8 +507,8 @@ if __name__ == '__main__':
                     # break
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                     print("can not find tf")
-                rob_T_obj_obse_pos = list(trans_ob)
-                rob_T_obj_obse_ori = list(rot_ob)
+                rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
+                rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
                 rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
                 rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
                 # print("rob_T_obj_obse_pos")
@@ -541,7 +544,7 @@ if __name__ == '__main__':
                 pw_T_target_obj_obse_pose_lsit_param[obj_index].pos = pw_T_obj_obse_pos
                 pw_T_target_obj_obse_pose_lsit_param[obj_index].ori = pw_T_obj_obse_ori
                 visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_obse_pose_lsit_param[obj_index])
-
+                print(pw_T_obj_obse_pos)
         # display other objects
         for obj_index in range(other_obj_num):
             opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]

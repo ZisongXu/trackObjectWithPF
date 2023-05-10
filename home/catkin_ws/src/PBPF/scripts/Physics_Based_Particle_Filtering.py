@@ -1592,8 +1592,6 @@ def publish_esti_pose_info(estimated_object_set):
     esti_list.objects = esti_pose_list 
     pub_esti_pose.publish(esti_list)
     for obj_index in range(object_num):
-    # need to change
-        pub = rospy.Publisher('PBPF_pose_'+object_name_list[obj_index], PoseStamped, queue_size = 1)
         pose_PBPF = PoseStamped()
         pose_PBPF.pose.position.x = estimated_object_set[obj_index].pos[0]
         pose_PBPF.pose.position.y = estimated_object_set[obj_index].pos[1]
@@ -1602,7 +1600,7 @@ def publish_esti_pose_info(estimated_object_set):
         pose_PBPF.pose.orientation.y = estimated_object_set[obj_index].ori[1]
         pose_PBPF.pose.orientation.z = estimated_object_set[obj_index].ori[2]
         pose_PBPF.pose.orientation.w = estimated_object_set[obj_index].ori[3]
-        pub.publish(pose_PBPF)
+        pub_PBPF_list[obj_index].publish(pose_PBPF)
 
 # need to change
 def process_esti_pose_from_rostopic(estimated_object_set):
@@ -1707,6 +1705,8 @@ if __name__ == '__main__':
     par_list = particle_list()
     pub_esti_pose = rospy.Publisher('/esti_obj_list', estimated_obj_pose, queue_size = 10)
     esti_list = estimated_obj_pose()
+    
+    
     # only for drawing box
     publish_DOPE_pose_flag = True
 
@@ -1749,6 +1749,14 @@ if __name__ == '__main__':
         
     object_name_list = parameter_info['object_name_list']
     version = parameter_info['version'] # old/ray/multiray
+    
+    pub_DOPE_list = []
+    pub_PBPF_list = []
+    for obj_index in range(object_num):
+        pub_DOPE = rospy.Publisher('DOPE_pose_'+object_name_list[obj_index], PoseStamped, queue_size = 1)
+        pub_PBPF = rospy.Publisher('PBPF_pose_'+object_name_list[obj_index], PoseStamped, queue_size = 1)
+        pub_DOPE_list.append(pub_DOPE)
+        pub_PBPF_list.append(pub_PBPF)
     
     print("This is "+update_style_flag+" update in scene"+task_flag)    
     # some parameters
@@ -1847,8 +1855,8 @@ if __name__ == '__main__':
     pw_T_rob_sim_pose_list_alg = create_scene.initialize_robot()
     print("After initializing robot")
     pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
-    pw_T_obj_obse_obj_list_alg, trans_ob, rot_ob = create_scene.initialize_object()
-    print(trans_ob, rot_ob)
+    pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object()
+    print(trans_ob_list, rot_ob_list)
     print("After initializing scene")
     for obj_index in range(other_obj_num):
         pw_T_obj_obse_oto_list_alg = create_scene.initialize_base_of_cheezit()
@@ -1907,8 +1915,8 @@ if __name__ == '__main__':
     track_fk_world_rob_mv(p_sim, sim_rob_id, ros_listener.current_joint_values)
 
     rob_link_9_pose_old = p_sim.getLinkState(sim_rob_id, 9) # position = rob_link_9_pose_old[0], quaternion = rob_link_9_pose_old[1]
-    rob_T_obj_obse_pos_old = list(trans_ob)
-    rob_T_obj_obse_ori_old = list(rot_ob)
+    # rob_T_obj_obse_pos_old = list(trans_ob)
+    # rob_T_obj_obse_ori_old = list(rot_ob)
 
 
     print("Welcome to Our Approach !")
@@ -1984,6 +1992,8 @@ if __name__ == '__main__':
                     (trans_ob,rot_ob) = listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
                     obse_is_fresh = True
                     t_after = time.time()
+                    trans_ob_list[obj_index] = trans_ob
+                    rot_ob_list[obj_index] = rot_ob
                     # print(t_after - t_begin - 14)
                     # print("obse is FRESH")
                 else:
@@ -1995,8 +2005,8 @@ if __name__ == '__main__':
                 # break
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 print("can not find tf")
-            rob_T_obj_obse_pos = list(trans_ob)
-            rob_T_obj_obse_ori = list(rot_ob)
+            rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
+            rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
             
@@ -2004,6 +2014,8 @@ if __name__ == '__main__':
             pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
 
+            
+            
             # need to change when we run alg in multi-object tracking scene
             # in the futrue we need to use "for obj_index in range(object_num):"
             pw_T_obj_obse_pos_new = copy.deepcopy(pw_T_obj_obse_pos)
@@ -2041,7 +2053,7 @@ if __name__ == '__main__':
 
             # only for drawing BOX/ need to change
             if publish_DOPE_pose_flag == True:
-                pub_DOPE = rospy.Publisher('DOPE_pose_'+object_name_list[obj_index], PoseStamped, queue_size = 1)
+                
                 pose_DOPE = PoseStamped()
                 pose_DOPE.pose.position.x = pw_T_obj_obse_pos[0]
                 pose_DOPE.pose.position.y = pw_T_obj_obse_pos[1]
@@ -2050,8 +2062,12 @@ if __name__ == '__main__':
                 pose_DOPE.pose.orientation.y = pw_T_obj_obse_ori[1]
                 pose_DOPE.pose.orientation.z = pw_T_obj_obse_ori[2]
                 pose_DOPE.pose.orientation.w = pw_T_obj_obse_ori[3]
-                pub_DOPE.publish(pose_DOPE)
+                pub_DOPE_list[obj_index].publish(pose_DOPE)
 
+                
+                # print('DOPE_pose_'+object_name_list[obj_index])
+                # print(pw_T_obj_obse_pos[0], pw_T_obj_obse_pos[1], pw_T_obj_obse_pos[2])
+                
             pw_T_obj_obse_name = object_name
             pw_T_obj_obse_id = 0
             obse_object = Object_Pose(pw_T_obj_obse_name, pw_T_obj_obse_id, pw_T_obj_obse_pos, pw_T_obj_obse_ori, index=obj_index)
@@ -2066,18 +2082,18 @@ if __name__ == '__main__':
         dis_robcur_robold = compute_pos_err_bt_2_points(rob_link_9_pose_cur[0], rob_link_9_pose_old[0])
         
         # only for drawing box
-        obse_obj_pos_draw = copy.deepcopy(pw_T_obj_obse_objects_list[0].pos)
-        obse_obj_ori_draw = copy.deepcopy(pw_T_obj_obse_objects_list[0].ori) # pybullet x,y,z,w
-        pose_DOPE = PoseStamped()
-        pose_DOPE.pose.position.x = obse_obj_pos_draw[0]
-        pose_DOPE.pose.position.y = obse_obj_pos_draw[1]
-        pose_DOPE.pose.position.z = obse_obj_pos_draw[2]
-        pose_DOPE.pose.orientation.x = obse_obj_ori_draw[0]
-        pose_DOPE.pose.orientation.y = obse_obj_ori_draw[1]
-        pose_DOPE.pose.orientation.z = obse_obj_ori_draw[2]
-        pose_DOPE.pose.orientation.w = obse_obj_ori_draw[3]
-        # print(pose_DOPE)
-        pub_DOPE.publish(pose_DOPE)
+        # obse_obj_pos_draw = copy.deepcopy(pw_T_obj_obse_objects_list[0].pos)
+        # obse_obj_ori_draw = copy.deepcopy(pw_T_obj_obse_objects_list[0].ori) # pybullet x,y,z,w
+        # pose_DOPE = PoseStamped()
+        # pose_DOPE.pose.position.x = obse_obj_pos_draw[0]
+        # pose_DOPE.pose.position.y = obse_obj_pos_draw[1]
+        # pose_DOPE.pose.position.z = obse_obj_pos_draw[2]
+        # pose_DOPE.pose.orientation.x = obse_obj_ori_draw[0]
+        # pose_DOPE.pose.orientation.y = obse_obj_ori_draw[1]
+        # pose_DOPE.pose.orientation.z = obse_obj_ori_draw[2]
+        # pose_DOPE.pose.orientation.w = obse_obj_ori_draw[3]
+        # # print(pose_DOPE)
+        # pub_DOPE.publish(pose_DOPE)
 
         # update according to the pose
         if update_style_flag == "pose":

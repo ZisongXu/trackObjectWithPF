@@ -52,6 +52,8 @@ class Create_Scene():
         self.pw_T_target_obj_obse_pose_lsit = []
         self.trans_ob_list = []
         self.rot_ob_list = []
+        self.trans_gt_list = []
+        self.rot_gt_list = []
         self.pw_T_rob_sim_pose_list = []
         self.pw_T_other_obj_opti_pose_list = []
         self.ros_listener = Ros_Listener()
@@ -144,7 +146,7 @@ class Create_Scene():
             self.rot_ob_list.append(rot_ob) # need to update
             # print("here") 
         
-        return self.pw_T_target_obj_obse_pose_lsit, trans_ob, rot_ob
+        return self.pw_T_target_obj_obse_pose_lsit, self.trans_ob_list, self.rot_ob_list
             
     def initialize_robot(self):
         time.sleep(0.5)
@@ -219,7 +221,9 @@ class Create_Scene():
     #             pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti)
     #             opti_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_obj_opti_pos, pw_T_obj_opti_ori, obj_index)
     #             self.pw_T_target_obj_opti_pose_lsit.append(opti_obj)
-            
+                self.trans_gt_list.append(trans_gt)
+                self.rot_gt_list.append(rot_gt)
+                
             for obj_index in range(self.other_obj_num):
                 self.pw_T_other_obj_opti_pose_list = []
                 

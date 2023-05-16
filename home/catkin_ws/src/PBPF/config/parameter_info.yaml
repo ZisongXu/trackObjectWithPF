@@ -16,7 +16,10 @@ particle_num: 35
 pick_particle_rate: 0.05
 robot_num: 1
 run_alg_flag: PBPF
-task_flag: '3'
+task_flag: '1'
 update_style_flag: time
 version: multiray
 optitrack_flag: False
+obstacles_pos: [[0.8315, 0.215, 0.14765408574692843]]
+obstacles_ori: [[1.0, 0.0, 0.0, 1.0]]
+

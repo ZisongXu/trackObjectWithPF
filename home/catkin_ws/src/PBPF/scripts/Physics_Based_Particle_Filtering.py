@@ -1672,10 +1672,10 @@ def track_fk_sim_world():
                                                    pw_T_obst_opti_pos_big,
                                                    pw_T_obst_opti_ori_big,
                                                    useFixedBase=1)
-        track_fk_obst_small_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_small.urdf"),
-                                                   pw_T_obst_opti_pos_small,
-                                                   pw_T_obst_opti_ori_small,
-                                                   useFixedBase=1)
+        # track_fk_obst_small_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_small.urdf"),
+        #                                            pw_T_obst_opti_pos_small,
+        #                                            pw_T_obst_opti_ori_small,
+        #                                            useFixedBase=1)
     return p_track_fk_env, track_fk_rob_id, track_fk_plane_id
 
 def track_fk_world_rob_mv(p_sim, sim_rob_id, position):
@@ -1749,7 +1749,10 @@ if __name__ == '__main__':
         
     object_name_list = parameter_info['object_name_list']
     version = parameter_info['version'] # old/ray/multiray
-    
+    obstacles_pos = parameter_info['obstacles_pos'] # old/ray/multiray
+    obstacles_ori = parameter_info['obstacles_ori'] # old/ray/multiray
+    # print(obstacles_pos)
+    # print(type(obstacles_pos))
     pub_DOPE_list = []
     pub_PBPF_list = []
     for obj_index in range(object_num):
@@ -1839,6 +1842,11 @@ if __name__ == '__main__':
     pw_T_obst_opti_ori_small = [0.00356749, -0.00269526, 0.28837681, 0.95750657]
     pw_T_obst_opti_pos_big = [0.7575524745560446, 0.3267505178967816, 0.14765408574692843]
     pw_T_obst_opti_ori_big = [0.70782892, 0.06771696, 0.0714355, 0.69949239]
+    
+    pw_T_obst_opti_pos_big = obstacles_pos[0]
+    pw_T_obst_opti_ori_big = obstacles_ori[0]
+    
+    
     # multi-objects/robot list
     pw_T_rob_sim_pose_list_alg = []
     pw_T_obj_obse_obj_list_alg = []

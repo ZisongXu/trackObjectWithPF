@@ -66,6 +66,10 @@ class Visualisation_World():
         
         self.object_name_list = self.parameter_info['object_name_list']
         
+        self.obstacles_pos = self.parameter_info['obstacles_pos'] # old/ray/multiray
+        self.obstacles_ori = self.parameter_info['obstacles_ori'] # old/ray/multiray
+        
+        
     def initialize_visual_world_pybullet_env(self, task_flag):
         trans_ob = []
         rot_ob = []
@@ -84,18 +88,18 @@ class Visualisation_World():
         p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.3,0.1,0.1])    
         plane_id = p_visualisation.loadURDF("plane.urdf")
         if self.task_flag == "1":
-            pw_T_obst_opti_pos_small = [0.852134144216095, 0.14043691336334274, 0.10014295215002848]
-            pw_T_obst_opti_ori_small = [0.00356749, -0.00269526, 0.28837681, 0.95750657]
-            pw_T_obst_opti_pos_big = [0.7575524745560446, 0.3267505178967816, 0.14765408574692843]
-            pw_T_obst_opti_ori_big = [0.70782892, 0.06771696, 0.0714355, 0.69949239]
+            # pw_T_obst_opti_pos_small = [0.852134144216095, 0.14043691336334274, 0.10014295215002848]
+            # pw_T_obst_opti_ori_small = [0.00356749, -0.00269526, 0.28837681, 0.95750657]
+            pw_T_obst_opti_pos_big = self.obstacles_pos[0]
+            pw_T_obst_opti_ori_big = self.obstacles_ori[0]
             track_fk_obst_big_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_big.urdf"),
                                                             pw_T_obst_opti_pos_big,
                                                             pw_T_obst_opti_ori_big,
                                                             useFixedBase=1)
-            track_fk_obst_small_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_small.urdf"),
-                                                            pw_T_obst_opti_pos_small,
-                                                            pw_T_obst_opti_ori_small,
-                                                            useFixedBase=1)
+            # track_fk_obst_small_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_small.urdf"),
+            #                                                 pw_T_obst_opti_pos_small,
+            #                                                 pw_T_obst_opti_ori_small,
+            #                                                 useFixedBase=1)
         # Finished Setting)
         
         
@@ -349,7 +353,7 @@ if __name__ == '__main__':
     if optitrack_flag == False:
         display_gt_flag = False
         
-    display_obse_flag = False
+    display_obse_flag = True
     object_name_list = parameter_info['object_name_list']
     task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
     dope_flag = parameter_info['dope_flag']

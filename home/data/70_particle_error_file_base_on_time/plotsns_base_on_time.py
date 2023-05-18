@@ -36,11 +36,11 @@ title_pos = "Positional errors (m) vs Time (s)"
 
 if ang_and_pos == "ang":
     if sceneName == "scene1":
-        x_range_max = 30
+        x_range_max = 28
         x_range_unit = 2
         y_range_max = math.pi
         y_range_unit = 0.4
-        x_xlim = 32
+        x_xlim = 28
         y_ylim = 3.2
     if sceneName == "scene2":
         x_range_max = 30
@@ -82,11 +82,11 @@ if ang_and_pos == "ang":
 
 if ang_and_pos == "pos":
     if sceneName == "scene1":
-        x_range_max = 30
+        x_range_max = 28
         x_range_unit = 2
-        y_range_max = 0.4
-        y_range_unit = 0.05
-        x_xlim = 32
+        y_range_max = 0.5
+        y_range_unit = 0.04
+        x_xlim = 28
         y_ylim = 0.5
     if sceneName == "scene2":
         x_range_max = 30

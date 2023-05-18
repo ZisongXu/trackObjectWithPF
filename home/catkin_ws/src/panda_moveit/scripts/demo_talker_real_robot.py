@@ -447,7 +447,7 @@ if __name__ == '__main__':
     panda.move_to_target_joints(targetPositionsJoints_test)
     panda.fully_close_gripper()
     sys.exit()
-    for index in range(4):
+    for index in range(5):
         wpose = panda.moveit_group.get_current_pose().pose
         waypoints = []
         wpose.position.y += 0.1

@@ -2040,7 +2040,7 @@ if __name__ == '__main__':
             
             all_frame = all_frame + 1
             if run_alg_flag == "PBPF":
-                if minDis_obseCur_parOld > 0.10 or minAng_obseCur_parOld > math.pi * 1 / 2.0:
+                if minDis_obseCur_parOld > 0.05 or minAng_obseCur_parOld > math.pi * 1 / 4.0:
                     # print("DOPE becomes crazy")
                     count_DOPE_jumping_time = count_DOPE_jumping_time + 1
                     obse_is_fresh = False

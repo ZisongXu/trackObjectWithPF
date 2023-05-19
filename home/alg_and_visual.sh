@@ -9,7 +9,11 @@
 # declare -a diffRadSigma=(0.32505 0.2167)
 # declare -a repeats=(8)
 
-chmod +x catkin_ws/src/PBPF/scripts/Physics_Based_Particle_Filtering.py
+chmod +x catkin_ws/src/PBPF/scripts/Physics_Based_Particle_Filtering.py &
+
+chmod +x catkin_ws/src/PBPF/scripts/Visualisation_World_DOPE.py &
+
+chmod +x catkin_ws/src/PBPF/scripts/Visualisation_World_PBPF.py &
 
 rosrun PBPF Physics_Based_Particle_Filtering.py &
 

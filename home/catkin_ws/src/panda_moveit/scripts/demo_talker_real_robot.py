@@ -443,10 +443,10 @@ if __name__ == '__main__':
 #        # wpose.position.y -= 0.15
 #        waypoints.append(copy.deepcopy(wpose))    
 #        panda.move_through_waypoints(waypoints)
-    targetPositionsJoints_test = [-0.41639349778717333, 0.8254077830686731, -0.07092072120488697, -2.1336947324364215, 1.0840709206509551, 1.4970466512368048, 0.9383130510987506]
-    panda.move_to_target_joints(targetPositionsJoints_test)
-    panda.fully_close_gripper()
-    sys.exit()
+    # targetPositionsJoints_test = [-0.41639349778717333, 0.8254077830686731, -0.07092072120488697, -2.1336947324364215, 1.0840709206509551, 1.4970466512368048, 0.9383130510987506]
+    # panda.move_to_target_joints(targetPositionsJoints_test)
+    # panda.fully_close_gripper()
+    # sys.exit()
     for index in range(5):
         wpose = panda.moveit_group.get_current_pose().pose
         waypoints = []

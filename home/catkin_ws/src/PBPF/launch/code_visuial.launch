@@ -1,0 +1,7 @@
+<launch>
+
+  <node name="PF_for_obse" pkg="PBPF" type="Physics_Based_Particle_Filtering.py" output="screen"/>
+  <node name="visualization_world_DOPE" pkg="PBPF" type="Visualisation_World_DOPE.py" output="screen"/>
+  <node name="visualization_world_PBPF" pkg="PBPF" type="Visualisation_World_PBPF.py" output="screen"/>
+  
+</launch>

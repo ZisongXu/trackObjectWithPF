@@ -101,7 +101,6 @@ class Create_Scene():
 #                
 #            return self.pw_T_target_obj_obse_pose_lsit
                 
-                
         for obj_index in range(self.target_obj_num):
             pw_T_rob_sim_4_4 = self.pw_T_rob_sim_pose_list[0].trans_matrix
             

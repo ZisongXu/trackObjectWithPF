@@ -53,6 +53,7 @@ apt install -y --force-yes \
     ros-noetic-urdf-geometry-parser \
     ros-noetic-urdf-geometry-parser \
     ros-noetic-rosparam-shortcuts \
+    ros-noetic-joy \
     ros-noetic-moveit-resources-panda-moveit-config
 
 

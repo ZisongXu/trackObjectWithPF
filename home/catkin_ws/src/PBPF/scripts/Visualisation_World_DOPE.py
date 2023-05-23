@@ -325,305 +325,317 @@ def compute_transformation_matrix(a_pos, a_ori, b_pos, b_ori):
 # ctrl-c write down the error file
 def signal_handler(sig, frame):
     sys.exit()
-    
-if __name__ == '__main__':
-#    par_obj_id = [[]*2 for _ in range(50)]
-#    print(par_obj_id)
-#    input("stop")
-    rospy.init_node('visualization_world_DOPE') # ros node
-    signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
-    time.sleep(0.5)
-    with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
-        parameter_info = yaml.safe_load(file)
-    object_num = parameter_info['object_num']
-    robot_num = 1
-    
-    particle_num = parameter_info['particle_num']
-    optitrack_flag = parameter_info['optitrack_flag']
-    
-    init_gt_obj_flag = 0
-    init_obse_flag = 0
-    init_par_flag = 0
-    init_esti_flag = 0
-    display_par_flag = False
-    display_esti_flag = False
-    
-    display_gt_flag = True
-    if optitrack_flag == False:
-        display_gt_flag = False
-        
-    display_obse_flag = True
-    object_name_list = parameter_info['object_name_list']
-    task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
-    dope_flag = parameter_info['dope_flag']
-    if task_flag == "4":
-        other_obj_num = 1 # parameter_info['other_obj_num']
-    else:
-        other_obj_num = 0 # parameter_info['other_obj_num']
 
 
-    visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
-    
-    trans_ob_list, rot_ob_list, trans_gt, rot_gt = visual_world.initialize_visual_world_pybullet_env(task_flag)
-    # print("I am here")
-    # input("stop")
-    listener_tf = visual_world.listener
-    p_visual = visual_world.p_visualisation
-    pw_T_rob_sim_pose_list_param = visual_world.pw_T_rob_sim_pose_list
-    pw_T_target_obj_obse_pose_lsit_param = visual_world.pw_T_target_obj_obse_pose_lsit
-    pw_T_target_obj_opti_pose_lsit_param = visual_world.pw_T_target_obj_opti_pose_lsit
-    pw_T_other_obj_opti_pose_list_param = visual_world.pw_T_other_obj_opti_pose_list
-    
-    par_obj_id = [[]*object_num for _ in range(particle_num)]
-    esti_obj_id = [0] * object_num
-    # input("stop")
-    while True:
+reset_flag = True
+
+while reset_flag == True:
+    reset_flag = False
+
+    if __name__ == '__main__':
+    #    par_obj_id = [[]*2 for _ in range(50)]
+    #    print(par_obj_id)
+    #    input("stop")
+        rospy.init_node('visualization_world_DOPE') # ros node
+        signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
+        time.sleep(0.5)
+        with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
+            parameter_info = yaml.safe_load(file)
+        object_num = parameter_info['object_num']
+        robot_num = 1
         
-        # synchronize robot arm changes
-        joint_states = visual_world.ros_listener.current_joint_values
-        for rob_index in range(robot_num):
-            rob_id = pw_T_rob_sim_pose_list_param[rob_index].obj_id
-            pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_param[rob_index].trans_matrix
-            visual_world.set_real_robot_JointPosition(p_visual, rob_id, joint_states)
-        if display_gt_flag == True:
-            # print("display_gt_flag")
-            for obj_index in range(object_num):
-                # display ground truth (grtu)
-                if visual_world.gazebo_flag == True:
-                    # print("Hello")
-    #                model_pose, model_pose_added_noise = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])
-    #                
-    #                gazebo_T_obj_pos = model_pose[0]
-    #                gazebo_T_obj_ori = model_pose[1]
-    #                gazebo_T_obj_pos_added_noise = model_pose_added_noise[0]
-    #                gazebo_T_obj_ori_added_noise = model_pose_added_noise[1]
-    #                gazebo_T_rob_pos = panda_pose[0]
-    #                gazebo_T_rob_ori = panda_pose[1]
-    #                
-    #                opti_T_rob_opti_pos = copy.deepcopy(gazebo_T_rob_pos)
-    #                opti_T_rob_opti_ori = copy.deepcopy(gazebo_T_rob_ori)
-    #                opti_T_obj_opti_pos = copy.deepcopy(gazebo_T_obj_pos)
-    #                opti_T_obj_opti_ori = copy.deepcopy(gazebo_T_obj_ori)
-    #                opti_T_obj_obse_pos = copy.deepcopy(gazebo_T_obj_pos_added_noise)
-    #                opti_T_obj_obse_ori = copy.deepcopy(gazebo_T_obj_ori_added_noise)
-                    gt_name = ""
-                    if dope_flag == True:
-                        gt_name = "_gt"
+        particle_num = parameter_info['particle_num']
+        optitrack_flag = parameter_info['optitrack_flag']
+        
+        init_gt_obj_flag = 0
+        init_obse_flag = 0
+        init_par_flag = 0
+        init_esti_flag = 0
+        display_par_flag = False
+        display_esti_flag = False
+        
+        display_gt_flag = True
+        if optitrack_flag == False:
+            display_gt_flag = False
+            
+        display_obse_flag = True
+        object_name_list = parameter_info['object_name_list']
+        task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
+        dope_flag = parameter_info['dope_flag']
+        if task_flag == "4":
+            other_obj_num = 1 # parameter_info['other_obj_num']
+        else:
+            other_obj_num = 0 # parameter_info['other_obj_num']
+
+
+        visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
+        
+        trans_ob_list, rot_ob_list, trans_gt, rot_gt = visual_world.initialize_visual_world_pybullet_env(task_flag)
+        # print("I am here")
+        # input("stop")
+        listener_tf = visual_world.listener
+        p_visual = visual_world.p_visualisation
+        pw_T_rob_sim_pose_list_param = visual_world.pw_T_rob_sim_pose_list
+        pw_T_target_obj_obse_pose_lsit_param = visual_world.pw_T_target_obj_obse_pose_lsit
+        pw_T_target_obj_opti_pose_lsit_param = visual_world.pw_T_target_obj_opti_pose_lsit
+        pw_T_other_obj_opti_pose_list_param = visual_world.pw_T_other_obj_opti_pose_list
+        
+        par_obj_id = [[]*object_num for _ in range(particle_num)]
+        esti_obj_id = [0] * object_num
+        # input("stop")
+        while not rospy.is_shutdown():
+            
+            if reset_flag == False:
+                continue_to_run = True
+            elif reset_flag == True:
+                break
+            
+            # synchronize robot arm changes
+            joint_states = visual_world.ros_listener.current_joint_values
+            for rob_index in range(robot_num):
+                rob_id = pw_T_rob_sim_pose_list_param[rob_index].obj_id
+                pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_param[rob_index].trans_matrix
+                visual_world.set_real_robot_JointPosition(p_visual, rob_id, joint_states)
+            if display_gt_flag == True:
+                # print("display_gt_flag")
+                for obj_index in range(object_num):
+                    # display ground truth (grtu)
+                    if visual_world.gazebo_flag == True:
+                        # print("Hello")
+        #                model_pose, model_pose_added_noise = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])
+        #                
+        #                gazebo_T_obj_pos = model_pose[0]
+        #                gazebo_T_obj_ori = model_pose[1]
+        #                gazebo_T_obj_pos_added_noise = model_pose_added_noise[0]
+        #                gazebo_T_obj_ori_added_noise = model_pose_added_noise[1]
+        #                gazebo_T_rob_pos = panda_pose[0]
+        #                gazebo_T_rob_ori = panda_pose[1]
+        #                
+        #                opti_T_rob_opti_pos = copy.deepcopy(gazebo_T_rob_pos)
+        #                opti_T_rob_opti_ori = copy.deepcopy(gazebo_T_rob_ori)
+        #                opti_T_obj_opti_pos = copy.deepcopy(gazebo_T_obj_pos)
+        #                opti_T_obj_opti_ori = copy.deepcopy(gazebo_T_obj_ori)
+        #                opti_T_obj_obse_pos = copy.deepcopy(gazebo_T_obj_pos_added_noise)
+        #                opti_T_obj_obse_ori = copy.deepcopy(gazebo_T_obj_ori_added_noise)
+                        gt_name = ""
+                        if dope_flag == True:
+                            gt_name = "_gt"
+                        obse_is_fresh = True
+                        try:
+                            latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index]+gt_name)
+                            if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
+                                (trans_gt,rot_gt) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+gt_name, rospy.Time(0))
+                                obse_is_fresh = True
+                                # print("obse is FRESH")
+                            else:
+                                # obse has not been updating for a while
+                                obse_is_fresh = False
+                                # print("obse is NOT fresh")
+                            # break
+                        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                            # print("can not find tf")
+                            continue
+                        rob_T_obj_opti_pos = list(trans_gt)
+                        rob_T_obj_opti_ori = list(rot_gt)
+                        rob_T_obj_opti_3_3 = transformations.quaternion_matrix(rob_T_obj_opti_ori)
+                        rob_T_obj_opti_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_opti_3_3, rob_T_obj_opti_pos)
+                        # robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
+                        #                         [0., 1., 0.,    0.],
+                        #                         [0., 0., 1., -0.06],
+                        #                         [0., 0., 0.,    1.]]
+                        # robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
+                        # rob_T_obj_opti_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_opti_4_4)
+                        pandalink0_T_obj_obse_4_4_test = visual_world.ros_listener.listen_2_test_matrix()
+                        # test_rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, test_rob_T_obj_obse_4_4)
+                        # print(object_name_list[obj_index]+": matrix from /gazebo/model_states:")
+                        # print(pandalink0_T_obj_obse_4_4_test)
+                        # print(object_name_list[obj_index]+": matrix from tf:")
+                        # print(rob_T_obj_opti_4_4)
+                    else:
+                        
+                        # if optitrack_flag == True:
+                        opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
+                        opti_T_rob_opti_ori = visual_world.ros_listener.listen_2_robot_pose()[1]
+                        opti_T_obj_opti_pos = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[0]
+                        opti_T_obj_opti_ori = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[1]
+                        # get ground truth data 
+                        rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
+                        # else:
+                        #     optitrack_flag = optitrack_flag
+                            
+                    # init gt object
+                    # if optitrack_flag == True:
+                    if init_gt_obj_flag == 0:
+                        if obj_index == object_num - 1:
+                            init_gt_obj_flag = 1
+                        visual_world.init_display_ground_truth_object(pw_T_target_obj_opti_pose_lsit_param[obj_index])
+                        
+                    pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
+                    pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
+                    pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
+                    # print("pw_T_obj_opti_pos:")
+                    # print(pw_T_obj_opti_pos)
+                    # display gt object update pose
+                    pw_T_target_obj_opti_pose_lsit_param[obj_index].pos = pw_T_obj_opti_pos
+                    pw_T_target_obj_opti_pose_lsit_param[obj_index].ori = pw_T_obj_opti_ori
+                    visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_opti_pose_lsit_param[obj_index])
+                    
+                    # get observation data
+                    # if visual_world.gazebo_flag == True:
+                    #    obse_is_fresh = True
+                    #    rob_T_obj_obse_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_obse_pos, opti_T_obj_obse_ori)
+                    # else:
+
+            if display_obse_flag == True:
+                # print("display_obse_flag")
+                for obj_index in range(object_num):
+                    if init_obse_flag == 0:
+                        if obj_index == object_num - 1:
+                            init_obse_flag = 1
+                        visual_world.init_display_observation_object(pw_T_target_obj_obse_pose_lsit_param[obj_index])
+                    
+                    use_gazebo = ""
+                    if visual_world.gazebo_flag == True:
+                        use_gazebo = '_noise'
+                        if dope_flag == True:
+                            use_gazebo  = ""
                     obse_is_fresh = True
                     try:
-                        latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index]+gt_name)
-                        if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                            (trans_gt,rot_gt) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+gt_name, rospy.Time(0))
-                            obse_is_fresh = True
+                        # latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo)
+                        # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
+                        (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                        # (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                        # (trans_ob_cTo, rot_ob_cTo) = listener_tf.lookupTransform('/camera_gt', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                        # (trans_ob_pTc, rot_ob_pTc) = listener_tf.lookupTransform('/panda_link0', '/camera_gt', rospy.Time(0))
+                        # (trans_ob_cTo, rot_ob_cTo) = listener_tf.lookupTransform('/camera_gt', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                        
+                        trans_ob_list[obj_index] = trans_ob
+                        rot_ob_list[obj_index] = rot_ob
+                        
+                        obse_is_fresh = True
                             # print("obse is FRESH")
-                        else:
+                        # else:
                             # obse has not been updating for a while
-                            obse_is_fresh = False
+                            # obse_is_fresh = False
                             # print("obse is NOT fresh")
                         # break
                     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                        # print("can not find tf")
-                        continue
-                    rob_T_obj_opti_pos = list(trans_gt)
-                    rob_T_obj_opti_ori = list(rot_gt)
-                    rob_T_obj_opti_3_3 = transformations.quaternion_matrix(rob_T_obj_opti_ori)
-                    rob_T_obj_opti_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_opti_3_3, rob_T_obj_opti_pos)
-                    # robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
-                    #                         [0., 1., 0.,    0.],
-                    #                         [0., 0., 1., -0.06],
-                    #                         [0., 0., 0.,    1.]]
-                    # robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
-                    # rob_T_obj_opti_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_opti_4_4)
-                    pandalink0_T_obj_obse_4_4_test = visual_world.ros_listener.listen_2_test_matrix()
-                    # test_rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, test_rob_T_obj_obse_4_4)
-                    # print(object_name_list[obj_index]+": matrix from /gazebo/model_states:")
-                    # print(pandalink0_T_obj_obse_4_4_test)
-                    # print(object_name_list[obj_index]+": matrix from tf:")
-                    # print(rob_T_obj_opti_4_4)
-                else:
+                        print("from dope")
+                        print("can not find tf")
+                    rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
+                    rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
+                    rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
+                    rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
+                    # print("rob_T_obj_obse_pos")
+                    # print(rob_T_obj_obse_pos)
+                    pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
+                    pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
+                    pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
                     
-                    # if optitrack_flag == True:
-                    opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
-                    opti_T_rob_opti_ori = visual_world.ros_listener.listen_2_robot_pose()[1]
-                    opti_T_obj_opti_pos = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[0]
-                    opti_T_obj_opti_ori = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[1]
-                    # get ground truth data 
-                    rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
-                    # else:
-                    #     optitrack_flag = optitrack_flag
-                        
-                # init gt object
-                # if optitrack_flag == True:
-                if init_gt_obj_flag == 0:
-                    if obj_index == object_num - 1:
-                        init_gt_obj_flag = 1
-                    visual_world.init_display_ground_truth_object(pw_T_target_obj_opti_pose_lsit_param[obj_index])
+                    # cam_T_obj_obse_pos = list(trans_ob_cTo)
+                    # cam_T_obj_obse_ori = list(rot_ob_cTo)
+                    # cam_T_obj_obse_3_3 = transformations.quaternion_matrix(cam_T_obj_obse_ori)
+                    # cam_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(cam_T_obj_obse_3_3, cam_T_obj_obse_pos)
+                    # pan_T_cam_obse_pos = list(trans_ob_pTc)
+                    # pan_T_cam_obse_ori = list(rot_ob_pTc)
+                    # pan_T_cam_obse_3_3 = transformations.quaternion_matrix(pan_T_cam_obse_ori)
+                    # pan_T_cam_obse_4_4 = rotation_4_4_to_transformation_4_4(pan_T_cam_obse_3_3, pan_T_cam_obse_pos)
                     
-                pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
-                pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
-                pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
-                # print("pw_T_obj_opti_pos:")
-                # print(pw_T_obj_opti_pos)
-                # display gt object update pose
-                pw_T_target_obj_opti_pose_lsit_param[obj_index].pos = pw_T_obj_opti_pos
-                pw_T_target_obj_opti_pose_lsit_param[obj_index].ori = pw_T_obj_opti_ori
-                visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_opti_pose_lsit_param[obj_index])
-                
-                # get observation data
-                # if visual_world.gazebo_flag == True:
-                #    obse_is_fresh = True
-                #    rob_T_obj_obse_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_obse_pos, opti_T_obj_obse_ori)
-                # else:
+                    # ga_T_cam_pos = [1.227862, 0.39, 0.225166]
+                    # ga_T_cam_ori = [0.7197831034103083, 1.2023881355993746e-07, 0.6941990233679357, -1.246701067867603e-07] # x,y,z,w
+                    # ga_T_cam_3_3 = transformations.quaternion_matrix(ga_T_cam_ori)
+                    # ga_T_cam_4_4 = rotation_4_4_to_transformation_4_4(ga_T_cam_3_3, ga_T_cam_pos)
 
-        if display_obse_flag == True:
-            # print("display_obse_flag")
-            for obj_index in range(object_num):
-                if init_obse_flag == 0:
-                    if obj_index == object_num - 1:
-                        init_obse_flag = 1
-                    visual_world.init_display_observation_object(pw_T_target_obj_obse_pose_lsit_param[obj_index])
-                
-                use_gazebo = ""
-                if visual_world.gazebo_flag == True:
-                    use_gazebo = '_noise'
-                    if dope_flag == True:
-                        use_gazebo  = ""
-                obse_is_fresh = True
-                try:
-                    # latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo)
-                    # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                    (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
-                    # (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
-                    # (trans_ob_cTo, rot_ob_cTo) = listener_tf.lookupTransform('/camera_gt', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
-                    # (trans_ob_pTc, rot_ob_pTc) = listener_tf.lookupTransform('/panda_link0', '/camera_gt', rospy.Time(0))
-                    # (trans_ob_cTo, rot_ob_cTo) = listener_tf.lookupTransform('/camera_gt', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                    # pan_T_obj_obse = np.dot(pan_T_cam_obse_4_4, cam_T_obj_obse_4_4)
+                    # pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, pan_T_obj_obse)
+                    # pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
+                    # pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
                     
-                    trans_ob_list[obj_index] = trans_ob
-                    rot_ob_list[obj_index] = rot_ob
-                    
-                    obse_is_fresh = True
-                        # print("obse is FRESH")
-                    # else:
-                        # obse has not been updating for a while
-                        # obse_is_fresh = False
-                        # print("obse is NOT fresh")
-                    # break
-                except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                    print("can not find tf")
-                rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
-                rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
-                rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
-                rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
-                # print("rob_T_obj_obse_pos")
-                # print(rob_T_obj_obse_pos)
-                pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
-                pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
-                pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
-                
-                # cam_T_obj_obse_pos = list(trans_ob_cTo)
-                # cam_T_obj_obse_ori = list(rot_ob_cTo)
-                # cam_T_obj_obse_3_3 = transformations.quaternion_matrix(cam_T_obj_obse_ori)
-                # cam_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(cam_T_obj_obse_3_3, cam_T_obj_obse_pos)
-                # pan_T_cam_obse_pos = list(trans_ob_pTc)
-                # pan_T_cam_obse_ori = list(rot_ob_pTc)
-                # pan_T_cam_obse_3_3 = transformations.quaternion_matrix(pan_T_cam_obse_ori)
-                # pan_T_cam_obse_4_4 = rotation_4_4_to_transformation_4_4(pan_T_cam_obse_3_3, pan_T_cam_obse_pos)
-                
-                # ga_T_cam_pos = [1.227862, 0.39, 0.225166]
-                # ga_T_cam_ori = [0.7197831034103083, 1.2023881355993746e-07, 0.6941990233679357, -1.246701067867603e-07] # x,y,z,w
-                # ga_T_cam_3_3 = transformations.quaternion_matrix(ga_T_cam_ori)
-                # ga_T_cam_4_4 = rotation_4_4_to_transformation_4_4(ga_T_cam_3_3, ga_T_cam_pos)
-
-                # pan_T_obj_obse = np.dot(pan_T_cam_obse_4_4, cam_T_obj_obse_4_4)
-                # pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, pan_T_obj_obse)
-                # pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
-                # pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
-                
-                # print(pw_T_obj_obse_pos)
-                # print(pw_T_obj_obse_ori)
+                    # print(pw_T_obj_obse_pos)
+                    # print(pw_T_obj_obse_ori)
+                    # update pose
+                    # print("pw_T_obj_obse_pos")
+                    # print(pw_T_obj_obse_pos)
+                    pw_T_target_obj_obse_pose_lsit_param[obj_index].pos = pw_T_obj_obse_pos
+                    pw_T_target_obj_obse_pose_lsit_param[obj_index].ori = pw_T_obj_obse_ori
+                    visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_obse_pose_lsit_param[obj_index])
+                    # print(pw_T_obj_obse_pos)
+            # display other objects
+            for obj_index in range(other_obj_num):
+                opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
+                opti_T_rob_opti_ori = visual_world.ros_listener.listen_2_robot_pose()[1]
+                base_of_cheezit_pos = visual_world.ros_listener.listen_2_object_pose("base")[0]
+                base_of_cheezit_ori = visual_world.ros_listener.listen_2_object_pose("base")[1]
+                robot_T_base = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, base_of_cheezit_pos, base_of_cheezit_ori)
+                pw_T_base = np.dot(pw_T_rob_sim_4_4, robot_T_base)
+                pw_T_base_pos = [pw_T_base[0][3], pw_T_base[1][3], pw_T_base[2][3]]
+                pw_T_base_ori = transformations.quaternion_from_matrix(pw_T_base)
                 # update pose
-                # print("pw_T_obj_obse_pos")
-                # print(pw_T_obj_obse_pos)
-                pw_T_target_obj_obse_pose_lsit_param[obj_index].pos = pw_T_obj_obse_pos
-                pw_T_target_obj_obse_pose_lsit_param[obj_index].ori = pw_T_obj_obse_ori
-                visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_obse_pose_lsit_param[obj_index])
-                # print(pw_T_obj_obse_pos)
-        # display other objects
-        for obj_index in range(other_obj_num):
-            opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
-            opti_T_rob_opti_ori = visual_world.ros_listener.listen_2_robot_pose()[1]
-            base_of_cheezit_pos = visual_world.ros_listener.listen_2_object_pose("base")[0]
-            base_of_cheezit_ori = visual_world.ros_listener.listen_2_object_pose("base")[1]
-            robot_T_base = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, base_of_cheezit_pos, base_of_cheezit_ori)
-            pw_T_base = np.dot(pw_T_rob_sim_4_4, robot_T_base)
-            pw_T_base_pos = [pw_T_base[0][3], pw_T_base[1][3], pw_T_base[2][3]]
-            pw_T_base_ori = transformations.quaternion_from_matrix(pw_T_base)
-            # update pose
-            pw_T_other_obj_opti_pose_list_param[obj_index].pos = pw_T_base_pos
-            pw_T_other_obj_opti_pose_list_param[obj_index].ori = pw_T_base_ori
-            visual_world.display_object_in_visual_model(p_visual, pw_T_other_obj_opti_pose_list_param[obj_index])
-        
-        # display particles
-#        if display_par_flag == True:
-#            particles_states_list = visual_world.ros_listener.listen_2_pars_states()
-#            print("particles_states_list:", particles_states_list)
-#            for obj_index in range(object_num):
-#                if len(particles_states_list.particles) == 0:
-#                    par_list_not_pub = 0
-#                    print("Do not publish particle information to /par_list")
-#                else:
-#                    if init_par_flag == 0:
-#                        if obj_index == object_num - 1:
-#                            init_par_flag = 1
-#                        for par_index in range(particle_num):
-#                            visual_world.init_display_particle(particles_states_list.particles[par_index].objects[obj_index])
-#                            obj_visual_id = particles_states_list.particles[par_index].objects[obj_index].id
-#                            par_obj_id[par_index].append(obj_visual_id)
-#                    else:
-#                        for par_index in range(particle_num):
-#                            particles_states_list.particles[par_index].objects[obj_index].id = par_obj_id[par_index][obj_index]
-#                            visual_world.display_particle_in_visual_model(particles_states_list.particles[par_index].objects[obj_index])
-        if display_par_flag == True:
-            particles_states_list = visual_world.ros_listener.listen_2_pars_states()
-            if len(particles_states_list.particles) == 0:
-                par_list_not_pub = 0
-            else:
-                if init_par_flag == 0:
-                    for obj_index in range(object_num):
-                        if obj_index == object_num - 1:
-                            init_par_flag = 1
-                        for par_index in range(particle_num):
-                            visual_world.init_display_particle(particles_states_list.particles[par_index].objects[obj_index])
-                            obj_visual_id = particles_states_list.particles[par_index].objects[obj_index].id
-                            par_obj_id[par_index].append(obj_visual_id)
+                pw_T_other_obj_opti_pose_list_param[obj_index].pos = pw_T_base_pos
+                pw_T_other_obj_opti_pose_list_param[obj_index].ori = pw_T_base_ori
+                visual_world.display_object_in_visual_model(p_visual, pw_T_other_obj_opti_pose_list_param[obj_index])
+            
+            # display particles
+    #        if display_par_flag == True:
+    #            particles_states_list = visual_world.ros_listener.listen_2_pars_states()
+    #            print("particles_states_list:", particles_states_list)
+    #            for obj_index in range(object_num):
+    #                if len(particles_states_list.particles) == 0:
+    #                    par_list_not_pub = 0
+    #                    print("Do not publish particle information to /par_list")
+    #                else:
+    #                    if init_par_flag == 0:
+    #                        if obj_index == object_num - 1:
+    #                            init_par_flag = 1
+    #                        for par_index in range(particle_num):
+    #                            visual_world.init_display_particle(particles_states_list.particles[par_index].objects[obj_index])
+    #                            obj_visual_id = particles_states_list.particles[par_index].objects[obj_index].id
+    #                            par_obj_id[par_index].append(obj_visual_id)
+    #                    else:
+    #                        for par_index in range(particle_num):
+    #                            particles_states_list.particles[par_index].objects[obj_index].id = par_obj_id[par_index][obj_index]
+    #                            visual_world.display_particle_in_visual_model(particles_states_list.particles[par_index].objects[obj_index])
+            if display_par_flag == True:
+                particles_states_list = visual_world.ros_listener.listen_2_pars_states()
+                if len(particles_states_list.particles) == 0:
+                    par_list_not_pub = 0
                 else:
-                    for obj_index in range(object_num):
-                        for par_index in range(particle_num):
-                            particles_states_list.particles[par_index].objects[obj_index].id = par_obj_id[par_index][obj_index]
-                            visual_world.display_particle_in_visual_model(particles_states_list.particles[par_index].objects[obj_index])
-                     
-        # display estimates object
-        if display_esti_flag == True:
-            for obj_index in range(object_num):
-                esti_obj_states_list = visual_world.ros_listener.listen_2_estis_states()
-
-                if len(esti_obj_states_list.objects) == 0:
-                    esti_obj_list_not_pub = 1
-                else:
-                    if init_esti_flag == 0:
-                        if obj_index == object_num - 1:
-                            init_esti_flag = 1
-                        visual_world.init_display_estimated_object(esti_obj_states_list.objects[obj_index])
-                        esti_obj_id[obj_index] = esti_obj_states_list.objects[obj_index].id
+                    if init_par_flag == 0:
+                        for obj_index in range(object_num):
+                            if obj_index == object_num - 1:
+                                init_par_flag = 1
+                            for par_index in range(particle_num):
+                                visual_world.init_display_particle(particles_states_list.particles[par_index].objects[obj_index])
+                                obj_visual_id = particles_states_list.particles[par_index].objects[obj_index].id
+                                par_obj_id[par_index].append(obj_visual_id)
                     else:
-                        esti_obj_states_list.objects[obj_index].id = esti_obj_id[obj_index]
-                        visual_world.display_estimated_object_in_visual_model(esti_obj_states_list.objects[obj_index])
-                    
-        p_visual.stepSimulation()
-        
+                        for obj_index in range(object_num):
+                            for par_index in range(particle_num):
+                                particles_states_list.particles[par_index].objects[obj_index].id = par_obj_id[par_index][obj_index]
+                                visual_world.display_particle_in_visual_model(particles_states_list.particles[par_index].objects[obj_index])
+                        
+            # display estimates object
+            if display_esti_flag == True:
+                for obj_index in range(object_num):
+                    esti_obj_states_list = visual_world.ros_listener.listen_2_estis_states()
 
-#par_obj_id = [[]*object_num for _ in range(particle_num)]
-#    esti_obj_id = [0] * object_num
+                    if len(esti_obj_states_list.objects) == 0:
+                        esti_obj_list_not_pub = 1
+                    else:
+                        if init_esti_flag == 0:
+                            if obj_index == object_num - 1:
+                                init_esti_flag = 1
+                            visual_world.init_display_estimated_object(esti_obj_states_list.objects[obj_index])
+                            esti_obj_id[obj_index] = esti_obj_states_list.objects[obj_index].id
+                        else:
+                            esti_obj_states_list.objects[obj_index].id = esti_obj_id[obj_index]
+                            visual_world.display_estimated_object_in_visual_model(esti_obj_states_list.objects[obj_index])
+                        
+            p_visual.stepSimulation()
+          
+
+    #par_obj_id = [[]*object_num for _ in range(particle_num)]
+    #    esti_obj_id = [0] * object_num
         
         
         

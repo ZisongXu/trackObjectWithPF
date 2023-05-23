@@ -11,6 +11,8 @@
 
 chmod +x catkin_ws/src/PBPF/scripts/Physics_Based_Particle_Filtering.py &
 
+chmod +x catkin_ws/src/PBPF/scripts/Create_Scene.py &
+
 chmod +x catkin_ws/src/PBPF/scripts/Visualisation_World_DOPE.py &
 
 chmod +x catkin_ws/src/PBPF/scripts/Visualisation_World_PBPF.py &

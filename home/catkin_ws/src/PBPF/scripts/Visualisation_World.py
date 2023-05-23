@@ -378,7 +378,7 @@ if __name__ == '__main__':
     par_obj_id = [[]*object_num for _ in range(particle_num)]
     esti_obj_id = [0] * object_num
     # input("stop")
-    while True:
+    while not rospy.is_shutdown():
         
         # synchronize robot arm changes
         joint_states = visual_world.ros_listener.current_joint_values

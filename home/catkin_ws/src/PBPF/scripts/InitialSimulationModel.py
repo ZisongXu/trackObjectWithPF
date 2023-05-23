@@ -128,9 +128,11 @@ class InitialSimulationModel():
 
     def initial_and_set_simulation_env(self):
         PBPF_par_no_visual_id = [[]*self.object_num for _ in range(self.particle_num)]
+        p_env_list = []
         for par_index in range(self.particle_num):
             collision_detection_obj_id = []
             pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
+            p_env_list.append(pybullet_simulation_env)
             self.pybullet_particle_env_collection.append(pybullet_simulation_env)
             if self.update_style_flag == "time":
                 pybullet_simulation_env.setTimeStep(self.change_sim_time)
@@ -217,13 +219,15 @@ class InitialSimulationModel():
             self.particle_no_visual_id_collection = copy.deepcopy(PBPF_par_no_visual_id)
 
         esti_objs_cloud_temp_parameter = self.compute_estimate_pos_of_object(self.particle_cloud)
-        return esti_objs_cloud_temp_parameter, self.particle_cloud
+        return esti_objs_cloud_temp_parameter, self.particle_cloud, p_env_list
         
     def initial_and_set_simulation_env_CV(self):
         CVPF_par_no_visual_id = [[]*self.object_num for _ in range(self.particle_num)]
+        p_env_list = []
         for par_index in range(self.particle_num):
             collision_detection_obj_id = []
             pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
+            p_env_list.append(pybullet_simulation_env)
             self.pybullet_particle_env_collection_CV.append(pybullet_simulation_env)
             pybullet_simulation_env.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.5, 0.3, 0.2])
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -307,7 +311,7 @@ class InitialSimulationModel():
             self.particle_no_visual_id_collection_CV = copy.deepcopy(CVPF_par_no_visual_id)
         
         esti_objs_cloud_temp_parameter = self.compute_estimate_pos_of_object(self.particle_cloud_CV)
-        return esti_objs_cloud_temp_parameter, self.particle_cloud_CV
+        return esti_objs_cloud_temp_parameter, self.particle_cloud_CV, p_env_list
 
     def set_sim_robot_JointPosition(self, pybullet_simulation_env, robot, position):
         num_joints = 9

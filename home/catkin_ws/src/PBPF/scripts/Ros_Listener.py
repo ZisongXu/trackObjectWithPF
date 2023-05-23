@@ -4,7 +4,7 @@ from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, TransformStamped, Vector3
 from PBPF.msg import object_pose, particle_pose, particle_list, estimated_obj_pose
 from gazebo_msgs.msg import ModelStates
-# from vision_msgs.msg import Detection3DArray
+from vision_msgs.msg import Detection3DArray
 
 import tf
 import tf.transformations as transformations

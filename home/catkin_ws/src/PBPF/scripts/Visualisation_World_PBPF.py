@@ -82,6 +82,8 @@ class Visualisation_World():
             p_visualisation = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT, GUI_SERVER
         self.p_visualisation = p_visualisation
         p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
+        # p_visualisation.configureDebugVisualizer(p.COV_WINDOW_TITLE, "Show PBPF")
+        p_visualisation.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
         p_visualisation.setGravity(0, 0, -9.81)
         # p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=90, cameraPitch=-20, cameraTargetPosition=[0.1,0.1,0.1])      
         p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.3,0.1,0.1])    

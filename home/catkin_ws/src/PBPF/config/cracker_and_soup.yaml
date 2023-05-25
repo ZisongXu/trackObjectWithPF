@@ -13,7 +13,7 @@ otob_name_list:
 - cracker_obstacle
 - fish_can
 particle_num: 30
-pick_particle_rate: 0.05
+pick_particle_rate: 0.00
 robot_num: 1
 run_alg_flag: PBPF
 task_flag: '3'

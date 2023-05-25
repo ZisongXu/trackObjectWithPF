@@ -3,5 +3,10 @@
   <node name="PF_for_obse" pkg="PBPF" type="Physics_Based_Particle_Filtering.py" output="screen"/>
   <node name="visualization_world_DOPE" pkg="PBPF" type="Visualisation_World_DOPE.py" output="screen"/>
   <node name="visualization_world_PBPF" pkg="PBPF" type="Visualisation_World_PBPF.py" output="screen"/>
+  <node name="visualization_world_Par" pkg="PBPF" type="Visualisation_World_Particle.py" output="screen"/>
+
   
+  <node pkg="image_view" name="real_viz" type="image_view">
+    <remap from="image"  to="/dope/rgb_points_my_wireframe" />
+  </node>
 </launch>

@@ -62,6 +62,6 @@ apt install -y --force-yes \
 CUSTOM_ENV=/.singularity.d/env/99-zz_custom_env.sh
 cat >$CUSTOM_ENV <<EOF
 #!/bin/bash
-PS1="[PandaPlanning] Singularity> \w \$ "
+PS1="[trackObjectWithPF] Singularity> \w \$ "
 EOF
 chmod 755 $CUSTOM_ENV

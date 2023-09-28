@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+ <robot name="myfirst">
+   <material name="darkOrange">
+     <color rgba="1 0.5647 0 1"/>
+   </material>
+   <link name="right_leg">
+     <visual>
+       <geometry>
+         <!-- "0.1968 0.2505 0.0725" -->
+         <!-- "0.1965 0.299 0.0711" -->
+         <box size="0.0725 0.2505 0.1968"/>
+       </geometry>
+       <material name="darkOrange"/>
+     </visual>
+     <collision>
+       <geometry>
+         <box size="0.1965 0.299 0.0711"/>
+       </geometry>
+     </collision>
+     <inertial>
+       <mass value="1"/>
+       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+     </inertial>
+   </link>
+ </robot>

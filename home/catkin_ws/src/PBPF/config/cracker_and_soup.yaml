@@ -4,6 +4,7 @@ gazebo_flag: false
 object_name_list:
 - cracker
 - soup
+- jelloR
 object_num: 2
 other_obj_num: 1
 oto_name_list:

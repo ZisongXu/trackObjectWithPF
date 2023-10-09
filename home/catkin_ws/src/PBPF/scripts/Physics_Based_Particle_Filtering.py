@@ -1785,9 +1785,9 @@ while reset_flag == True:
         flag_update_num_PB = 0
         change_sim_time = 1.0/90
         if run_alg_flag == "PBPF":
-            boss_pf_update_interval_in_real = 0.16
+            boss_pf_update_interval_in_real = 0.20 # original value = 0.16
         elif run_alg_flag == "CVPF":
-            boss_pf_update_interval_in_real = 0.16
+            boss_pf_update_interval_in_real = 0.20 # original value = 0.16
         pf_update_rate = rospy.Rate(1.0/boss_pf_update_interval_in_real)
         # # error in xyz axis obse before recalibrating
         # boss_sigma_obs_x = 0.03973017808163751 / 2.0
@@ -1800,11 +1800,8 @@ while reset_flag == True:
         # boss_sigma_obs_ang_init = 0.0216773873 * 2.0
 
         # Motion model Noise
-        pos_noise = 0.001 * 5.0
-        # ang_noise = 0.05 * 1.0
-        ang_noise = 0.05 * 3.0
-        pos_noise = 0.005
-        ang_noise = 0.05
+        pos_noise = 0.01 # original value = 0.005
+        ang_noise = 0.1 # original value = 0.05
         motion_noise = True
         show_ray = False
         # pos_noise = 0.0
@@ -1902,6 +1899,7 @@ while reset_flag == True:
         else:
             realsense_tf = '/ar_tracking_camera_frame' # (do not use Optitrack)
         while_loop_time = 0
+        print(realsense_tf)
         while not rospy.is_shutdown():
             while_loop_time =  while_loop_time + 1
             # if while_loop_time > 50:
@@ -2143,6 +2141,7 @@ while reset_flag == True:
                             t_finish_PBPF = time.time()
                             PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
                             # print("Time consuming:", t_finish_PBPF - t_begin_PBPF)
+                            # print("Max value:", PBPF_time_cosuming_list.max())
                             simRobot_touch_par_flag = 0
                         else:
                             # also update the pose of the robot arm in the simulation when particles are not touched
@@ -2187,6 +2186,8 @@ while reset_flag == True:
                             rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
                             t_finish_PBPF = time.time()
                             PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
+                            print("Time consuming:", t_finish_PBPF - t_begin_PBPF)
+                            print("Max value:", max(PBPF_time_cosuming_list))
                             simRobot_touch_par_flag = 0
                         else:
                             PBPF_alg.motion_update_PB_parallelised(initial_parameter.pybullet_particle_env_collection,

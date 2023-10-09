@@ -69,12 +69,12 @@ class InitialSimulationModel():
         self.pybullet_particle_env_collection_CV = []
         self.particle_no_visual_id_collection_CV = []
         
-        self.boss_sigma_obs_pos_init = 0.16 # 16cm 
-        # self.boss_sigma_obs_pos_init = 0.01 # 16cm 
+        self.boss_sigma_obs_pos_init = 0.05 # original value: 16cm 
+        
         self.boss_sigma_obs_x = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_z = 0
-        self.boss_sigma_obs_ang_init = 0.0216773873 * 20
+        self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 1
         
         with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
@@ -127,6 +127,7 @@ class InitialSimulationModel():
         return self.esti_objs_cloud
 
     def initial_and_set_simulation_env(self):
+        print_name_flag = 0
         PBPF_par_no_visual_id = [[]*self.object_num for _ in range(self.particle_num)]
         p_env_list = []
         for par_index in range(self.particle_num):
@@ -172,6 +173,11 @@ class InitialSimulationModel():
                 obj_obse_pos = self.pw_T_obj_obse_obj_list_alg[obj_index].pos
                 obj_obse_ori = self.pw_T_obj_obse_obj_list_alg[obj_index].ori
                 obj_obse_name = self.pw_T_obj_obse_obj_list_alg[obj_index].obj_name
+                
+                if print_name_flag == obj_index:
+                    print_name_flag = print_name_flag + 1
+                    print("Generate particles for the target object:")
+                    print(obj_obse_name)
                 particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
                 gazebo_contain = ""
                 if self.gazebo_flag == True:

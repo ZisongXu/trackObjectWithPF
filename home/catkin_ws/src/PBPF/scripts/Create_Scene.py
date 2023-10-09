@@ -66,6 +66,8 @@ class Create_Scene():
         self.oto_name_list = self.parameter_info['oto_name_list']
         self.dope_flag = self.parameter_info['dope_flag']
         
+        self.optitrack_prom = True
+        
     def initialize_object(self):
 #        if self.gazebo_flag == True:
 #            time.sleep(0.5)
@@ -111,17 +113,20 @@ class Create_Scene():
                 if self.dope_flag == True:
                     use_gazebo  = ""
             while_time = 0
+            print("self.object_name_list[obj_index]+use_gazebo")
             print(self.object_name_list[obj_index]+use_gazebo)
             while True:
                 while_time = while_time + 1
-                # if while_time > 1000:
-                #     print("WARNING while time is larger than 20")
-                # print(self.object_name_list[obj_index]+use_gazebo)
+                if while_time > 1000:
+                    print("WARNING: Problem happened in create_scene.py; maybe there is a problem on optitrack or ...")
+                
                 try:
-                    (trans_ob,rot_ob) = self.listener.lookupTransform('/panda_link0', '/'+self.object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                    (trans_ob, rot_ob) = self.listener.lookupTransform('/panda_link0', '/'+self.object_name_list[obj_index]+use_gazebo, rospy.Time(0))
                     break
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                     continue
+                
+                
             
             rob_T_obj_obse_pos = list(trans_ob)
             rob_T_obj_obse_ori = list(rot_ob)
@@ -234,8 +239,24 @@ class Create_Scene():
         
         for obj_index in range(self.target_obj_num):
             obj_name = self.object_name_list[obj_index]
-            opti_T_obj_opti_pos = self.ros_listener.listen_2_object_pose(obj_name)[0]
-            opti_T_obj_opti_ori = self.ros_listener.listen_2_object_pose(obj_name)[1]
+            print("optitrack name")
+            print(obj_name)
+            opti_T_obj_opti_pos_x = self.ros_listener.listen_2_object_pose(obj_name).pose.position.x
+            opti_T_obj_opti_pos_y = self.ros_listener.listen_2_object_pose(obj_name).pose.position.y
+            opti_T_obj_opti_pos_z = self.ros_listener.listen_2_object_pose(obj_name).pose.position.z
+            opti_T_obj_opti_pos = [opti_T_obj_opti_pos_x, opti_T_obj_opti_pos_y, opti_T_obj_opti_pos_z]
+            # print("opti_T_obj_opti_pos")
+            # print(opti_T_obj_opti_pos)
+            opti_T_obj_opti_ori_x = self.ros_listener.listen_2_object_pose(obj_name).pose.orientation.x
+            opti_T_obj_opti_ori_y = self.ros_listener.listen_2_object_pose(obj_name).pose.orientation.y
+            opti_T_obj_opti_ori_z = self.ros_listener.listen_2_object_pose(obj_name).pose.orientation.z
+            opti_T_obj_opti_ori_w = self.ros_listener.listen_2_object_pose(obj_name).pose.orientation.w
+            opti_T_obj_opti_ori = [opti_T_obj_opti_ori_x, opti_T_obj_opti_ori_y, opti_T_obj_opti_ori_z, opti_T_obj_opti_ori_w]
+            # print("opti_T_obj_opti_ori")
+            # print(opti_T_obj_opti_ori)
+            # opti_T_obj_opti_pos = self.ros_listener.listen_2_object_pose(obj_name)[0]
+            # opti_T_obj_opti_ori = self.ros_listener.listen_2_object_pose(obj_name)[1]
+            
             rob_T_obj_opti_4_4 = self.compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
             pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
             pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]

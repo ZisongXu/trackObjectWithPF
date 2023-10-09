@@ -463,8 +463,8 @@ if __name__ == '__main__':
     #    *     *
     #  ***   *****
     #  * *   *****
-    targetPositionsJoints_test = [-0.41639349778717333, 0.8254077830686731, -0.07092072120488697, -2.1336947324364215, 1.0840709206509551, 1.4970466512368048, 0.9383130510987506]
-    targetPositionsJoints_test = [0.0,-0.08,0.0,-1.65,0.0,1.58,0.870]
+    # targetPositionsJoints_test = [-0.41639349778717333, 0.8254077830686731, -0.07092072120488697, -2.1336947324364215, 1.0840709206509551, 1.4970466512368048, 0.9383130510987506]
+    # targetPositionsJoints_test = [0.0,-0.08,0.0,-1.65,0.0,1.58,0.870]
     panda.move_to_target_joints(targetPositionsJoints_test)
     panda.fully_close_gripper()
     sys.exit()

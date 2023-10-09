@@ -2162,7 +2162,7 @@ while reset_flag == True:
                             # execute CVPF algorithm movement
                             pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                             estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list, # [obse_obj1_pose, obse_obj2_pose]
-                                                                                    do_obs_update=obse_is_fresh) # flag for judging obse work
+                                                                                                                                      do_obs_update=obse_is_fresh) # flag for judging obse work
                             rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
                         else:
                             CVPF_alg.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm

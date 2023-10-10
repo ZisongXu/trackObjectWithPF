@@ -340,7 +340,7 @@ while reset_flag == True:
     #    par_obj_id = [[]*2 for _ in range(50)]
     #    print(par_obj_id)
     #    input("stop")
-        rospy.init_node('visualization_world_PBPF') # ros node
+        rospy.init_node('visualization_world_Particle') # ros node
         signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
         time.sleep(0.5)
         with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:

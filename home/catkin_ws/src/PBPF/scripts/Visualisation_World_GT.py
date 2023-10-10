@@ -69,7 +69,7 @@ class Visualisation_World():
         self.obstacles_pos = self.parameter_info['obstacles_pos'] # old/ray/multiray
         self.obstacles_ori = self.parameter_info['obstacles_ori'] # old/ray/multiray
         
-        self.test = True 
+        self.test = False 
         
     def initialize_visual_world_pybullet_env(self, task_flag):
         trans_ob = []
@@ -342,7 +342,7 @@ while reset_flag == True:
     #    par_obj_id = [[]*2 for _ in range(50)]
     #    print(par_obj_id)
     #    input("stop")
-        rospy.init_node('visualization_world_DOPE') # ros node
+        rospy.init_node('visualization_world_GT') # ros node
         signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
         time.sleep(0.5)
         with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
@@ -361,10 +361,8 @@ while reset_flag == True:
         display_esti_flag = False
         
         display_gt_flag = True
-        if optitrack_flag == False:
-            display_gt_flag = False
             
-        display_obse_flag = True
+        display_obse_flag = False
         object_name_list = parameter_info['object_name_list']
         task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
         dope_flag = parameter_info['dope_flag']
@@ -403,7 +401,7 @@ while reset_flag == True:
                 pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_param[rob_index].trans_matrix
                 visual_world.set_real_robot_JointPosition(p_visual, rob_id, joint_states)
             
-            test = True 
+            test = False 
             if test == False:
                 if display_gt_flag == True:
                     # print("display_gt_flag")
@@ -466,19 +464,19 @@ while reset_flag == True:
                             opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
                             opti_T_rob_opti_ori = visual_world.ros_listener.listen_2_robot_pose()[1]
                             
-                            opti_T_obj_opti_pos_x = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index]).pose.position.x
-                            opti_T_obj_opti_pos_y = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index]).pose.position.y
-                            opti_T_obj_opti_pos_z = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index]).pose.position.z
-                            opti_T_obj_opti_pos = [opti_T_obj_opti_pos_x, opti_T_obj_opti_pos_y, opti_T_obj_opti_pos_z]
+                            # opti_T_obj_opti_pos_x = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index]).pose.position.x
+                            # opti_T_obj_opti_pos_y = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index]).pose.position.y
+                            # opti_T_obj_opti_pos_z = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index]).pose.position.z
+                            # opti_T_obj_opti_pos = [opti_T_obj_opti_pos_x, opti_T_obj_opti_pos_y, opti_T_obj_opti_pos_z]
                             # print("opti_T_obj_opti_pos")
                             # print(opti_T_obj_opti_pos)
-                            opti_T_obj_opti_ori_x = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index]).pose.orientation.x
-                            opti_T_obj_opti_ori_y = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index]).pose.orientation.y
-                            opti_T_obj_opti_ori_z = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index]).pose.orientation.z
-                            opti_T_obj_opti_ori_w = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index]).pose.orientation.w
-                            opti_T_obj_opti_ori = [opti_T_obj_opti_ori_x, opti_T_obj_opti_ori_y, opti_T_obj_opti_ori_z, opti_T_obj_opti_ori_w]
-                            # opti_T_obj_opti_pos = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[0]
-                            # opti_T_obj_opti_ori = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[1]
+                            # opti_T_obj_opti_ori_x = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index]).pose.orientation.x
+                            # opti_T_obj_opti_ori_y = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index]).pose.orientation.y
+                            # opti_T_obj_opti_ori_z = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index]).pose.orientation.z
+                            # opti_T_obj_opti_ori_w = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index]).pose.orientation.w
+                            # opti_T_obj_opti_ori = [opti_T_obj_opti_ori_x, opti_T_obj_opti_ori_y, opti_T_obj_opti_ori_z, opti_T_obj_opti_ori_w]
+                            opti_T_obj_opti_pos = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[0]
+                            opti_T_obj_opti_ori = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[1]
                             # get ground truth data 
                             rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
                             # else:

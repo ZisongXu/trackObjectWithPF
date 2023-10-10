@@ -239,23 +239,21 @@ class Create_Scene():
         
         for obj_index in range(self.target_obj_num):
             obj_name = self.object_name_list[obj_index]
-            print("optitrack name")
-            print(obj_name)
-            opti_T_obj_opti_pos_x = self.ros_listener.listen_2_object_pose(obj_name).pose.position.x
-            opti_T_obj_opti_pos_y = self.ros_listener.listen_2_object_pose(obj_name).pose.position.y
-            opti_T_obj_opti_pos_z = self.ros_listener.listen_2_object_pose(obj_name).pose.position.z
-            opti_T_obj_opti_pos = [opti_T_obj_opti_pos_x, opti_T_obj_opti_pos_y, opti_T_obj_opti_pos_z]
+            # opti_T_obj_opti_pos_x = self.ros_listener.listen_2_object_pose(obj_name).pose.position.x
+            # opti_T_obj_opti_pos_y = self.ros_listener.listen_2_object_pose(obj_name).pose.position.y
+            # opti_T_obj_opti_pos_z = self.ros_listener.listen_2_object_pose(obj_name).pose.position.z
+            # opti_T_obj_opti_pos = [opti_T_obj_opti_pos_x, opti_T_obj_opti_pos_y, opti_T_obj_opti_pos_z]
             # print("opti_T_obj_opti_pos")
             # print(opti_T_obj_opti_pos)
-            opti_T_obj_opti_ori_x = self.ros_listener.listen_2_object_pose(obj_name).pose.orientation.x
-            opti_T_obj_opti_ori_y = self.ros_listener.listen_2_object_pose(obj_name).pose.orientation.y
-            opti_T_obj_opti_ori_z = self.ros_listener.listen_2_object_pose(obj_name).pose.orientation.z
-            opti_T_obj_opti_ori_w = self.ros_listener.listen_2_object_pose(obj_name).pose.orientation.w
-            opti_T_obj_opti_ori = [opti_T_obj_opti_ori_x, opti_T_obj_opti_ori_y, opti_T_obj_opti_ori_z, opti_T_obj_opti_ori_w]
+            # opti_T_obj_opti_ori_x = self.ros_listener.listen_2_object_pose(obj_name).pose.orientation.x
+            # opti_T_obj_opti_ori_y = self.ros_listener.listen_2_object_pose(obj_name).pose.orientation.y
+            # opti_T_obj_opti_ori_z = self.ros_listener.listen_2_object_pose(obj_name).pose.orientation.z
+            # opti_T_obj_opti_ori_w = self.ros_listener.listen_2_object_pose(obj_name).pose.orientation.w
+            # opti_T_obj_opti_ori = [opti_T_obj_opti_ori_x, opti_T_obj_opti_ori_y, opti_T_obj_opti_ori_z, opti_T_obj_opti_ori_w]
             # print("opti_T_obj_opti_ori")
             # print(opti_T_obj_opti_ori)
-            # opti_T_obj_opti_pos = self.ros_listener.listen_2_object_pose(obj_name)[0]
-            # opti_T_obj_opti_ori = self.ros_listener.listen_2_object_pose(obj_name)[1]
+            opti_T_obj_opti_pos = self.ros_listener.listen_2_object_pose(obj_name)[0]
+            opti_T_obj_opti_ori = self.ros_listener.listen_2_object_pose(obj_name)[1]
             
             rob_T_obj_opti_4_4 = self.compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
             pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)

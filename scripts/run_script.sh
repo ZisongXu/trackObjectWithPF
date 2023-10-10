@@ -11,9 +11,10 @@ if [ ! -d "$HOME/catkin_ws/devel" ]; then
     catkin_make
     pip install pyquaternion
     pip3 install pybullet
-    pip3 install pandas
+    pip3 install pandas==2.0.0
     pip3 install scikit-surgerycore
-    pip3 install seaborn
+    pip3 install seaborn==0.12.2
+    pip3 install matplotlib==3.7.1
 fi
 
 source $HOME/catkin_ws/devel/setup.bash

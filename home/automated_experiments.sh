@@ -2,9 +2,9 @@
 
 # declare -a objectNames=("cracker" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a objectNames=("cracker")
+declare -a objectNames=("cracker" "gelatin" "soup")
 declare -a sceneNames=("scene1")
-declare -a particleNumbers=(70)
+declare -a particleNumbers=(150)
 declare -a runAlgFlags=("PBPF")
 declare -a diffRadSigma=(0.32505 0.2167)
 declare -a repeats=(8)

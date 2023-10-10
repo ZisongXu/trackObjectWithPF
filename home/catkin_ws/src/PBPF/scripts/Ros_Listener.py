@@ -40,12 +40,15 @@ class Ros_Listener():
         rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose', PoseStamped, self.robot_pose_callback, queue_size=1)
         self.robot_pose = PoseStamped()
         
-        rospy.Subscriber('/mocap/rigid_bodies/cheezit/pose', PoseStamped, self.object_pose_callback_cracker, queue_size=1)
+        rospy.Subscriber('/mocap/rigid_bodies/cracker_opti/pose', PoseStamped, self.object_pose_callback_cracker, queue_size=1)
         self.object_cracker_pose = PoseStamped()
         
-        rospy.Subscriber('/mocap/rigid_bodies/zisongsoup/pose', PoseStamped, self.object_pose_callback_soup, queue_size=1)
+        rospy.Subscriber('/mocap/rigid_bodies/soup_opti/pose', PoseStamped, self.object_pose_callback_soup, queue_size=1)
         self.object_soup_pose = PoseStamped()
         
+        rospy.Subscriber('/mocap/rigid_bodies/gelation_opti/pose', PoseStamped, self.object_pose_callback_gelation, queue_size=1)
+        self.object_gelation_pose = PoseStamped()
+
         rospy.Subscriber('/mocap/rigid_bodies/baseofcheezit/pose', PoseStamped, self.base_of_cheezit_callback, queue_size=1)
         self.base_pose = PoseStamped()
 
@@ -142,12 +145,27 @@ class Ros_Listener():
         return self.rob_T_obj_obse_4_4_list
 
     def listen_2_object_pose(self, object_flag):
+        # print("what you input is:", object_flag)
         if object_flag == "cracker":
+            # print("==============")
+            # print("cracker: In the Ros_Listener")
+            # print(self.object_cracker_pose)
+            # print("==============")
             if self.gazebo_flag == True:
                 return self.model_pose, self.model_pose_added_noise
             return self.object_cracker_pose
         elif object_flag == "soup":
+            # print("==============")
+            # print("soup: In the Ros_Listener")
+            # print(self.object_soup_pose)
+            # print("==============")
             return self.object_soup_pose
+        elif object_flag == "gelatin":
+            # print("==============")
+            # print("gelation: In the Ros_Listener")
+            # print(self.object_gelation_pose)
+            # print("==============")
+            return self.object_gelation_pose
         elif object_flag == "base":
             return self.base_pose
         elif object_flag == "smallobstacle":
@@ -185,7 +203,7 @@ class Ros_Listener():
         w_ori = data.pose.orientation.w
         self.robot_ori = [x_ori,y_ori,z_ori,w_ori]
         self.robot_pose = [self.robot_pos, self.robot_ori]
-        
+    
     def object_pose_callback_cracker(self, data):
         #pos
         x_pos = data.pose.position.x
@@ -199,7 +217,21 @@ class Ros_Listener():
         w_ori = data.pose.orientation.w
         self.object_ori = [x_ori, y_ori, z_ori, w_ori]
         self.object_cracker_pose = [self.object_pos, self.object_ori]
-        
+
+    def object_pose_callback_gelation(self, data):
+        #pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.object_pos = [x_pos, y_pos, z_pos]
+        #ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.object_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.object_gelation_pose = [self.object_pos, self.object_ori]
+
     def object_pose_callback_soup(self, data):
         #pos
         x_pos = data.pose.position.x

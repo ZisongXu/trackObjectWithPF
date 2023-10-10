@@ -54,7 +54,8 @@ apt install -y --force-yes \
     ros-noetic-urdf-geometry-parser \
     ros-noetic-rosparam-shortcuts \
     ros-noetic-joy \
-    ros-noetic-moveit-resources-panda-moveit-config
+    ros-noetic-moveit-resources-panda-moveit-config \
+    ros-noetic-vision-msgs
 
 
 # Let's have a custom PS1 to help people realise in which container they are

@@ -357,7 +357,7 @@ while reset_flag == True:
         init_esti_flag = 0
         display_par_flag = True
         display_esti_flag = False
-        print(1)
+        
         display_gt_flag = True
         if optitrack_flag == False:
             display_gt_flag = False

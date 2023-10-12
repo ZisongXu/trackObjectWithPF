@@ -162,11 +162,11 @@ def signal_handler(sig, frame):
             file_name_obse_ang = update_style_flag+'_obse_err_ang.csv'
             file_name_PBPF_ang = update_style_flag+'_PBPFV_err_ang.csv'
 
-            boss_obse_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+obj_name+'_'+str(file_name)+file_name_obse_pos,index=0,header=0,mode='a')
-            boss_obse_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+obj_name+'_'+str(file_name)+file_name_obse_ang,index=0,header=0,mode='a')
+            boss_obse_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_obse_pos,index=0,header=0,mode='a')
+            boss_obse_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_obse_ang,index=0,header=0,mode='a')
             print("write "+obj_name+" obser file")
-            boss_PBPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+obj_name+'_'+str(file_name)+file_name_PBPF_pos,index=0,header=0,mode='a')
-            boss_PBPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+obj_name+'_'+str(file_name)+file_name_PBPF_ang,index=0,header=0,mode='a')
+            boss_PBPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_PBPF_pos,index=0,header=0,mode='a')
+            boss_PBPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_PBPF_ang,index=0,header=0,mode='a')
             print("write "+obj_name+" PBPF file")
 
             
@@ -236,6 +236,18 @@ if __name__ == '__main__':
     esti_obj_list_not_pub = 2
     t_begin = 0
     t_before_record = 0
+
+    trans_ob_list = []
+    rot_ob_list = []
+    trans_gt_list = []
+    rot_gt_list = []
+
+    for _ in range(object_num):
+        trans_ob_list.append("pos_value")
+        rot_ob_list.append("rad_value")
+        trans_gt_list.append("pos_value")
+        rot_gt_list.append("rad_value")
+
     while True:
         for obj_index in range(object_num):
             obj_name = object_name_list[obj_index]
@@ -261,12 +273,16 @@ if __name__ == '__main__':
                 while True:
                     try:
                         (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                        trans_ob_list[obj_index] = trans_ob
+                        rot_ob_list[obj_index] = rot_ob
                         break
                     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                         continue
                 while True:
                     try:
                         (trans_gt,rot_gt) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
+                        trans_gt_list[obj_index] = trans_gt
+                        rot_gt_list[obj_index] = rot_gt
                         break
                     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                         continue
@@ -285,6 +301,11 @@ if __name__ == '__main__':
                 
                 if (latest_obse_time.to_sec() > old_obse_time):
                     (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                    # if object_name_list[obj_index]+use_gazebo == "cracker": # gelatin, cracker, soup
+                    
+                    trans_ob_list[obj_index] = trans_ob
+                    rot_ob_list[obj_index] = rot_ob
+                    
                     obse_is_fresh = True
                     # print(t_before_record - t_begin - 14)
                 else:
@@ -296,8 +317,19 @@ if __name__ == '__main__':
                 # break
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 print("can not find tf")
-            rob_T_obj_obse_pos = list(trans_ob)
-            rob_T_obj_obse_ori = list(rot_ob)
+            
+            rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
+            rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
+            # print("---------------------------------------")
+            # print("obj_name:", obj_name)
+            # print("tf__name:", object_name_list[obj_index]+use_gazebo)
+            # print("rob_T_obj_obse_pos:", rob_T_obj_obse_pos)
+            # print("---------------------------------------")
+            # print("=======================================")
+            # print("obj_name:", obj_name)
+            # print("tf__name:", object_name_list[obj_index]+use_gazebo)
+            # print("rob_T_obj_obse_pos:", rob_T_obj_obse_pos)
+            # print("=======================================")
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3, rob_T_obj_obse_pos)
             
@@ -313,6 +345,8 @@ if __name__ == '__main__':
                     latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index])
                     if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
                         (trans_gt,rot_gt) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index], rospy.Time(0))
+                        trans_gt_list[obj_index] = trans_gt
+                        rot_gt_list[obj_index] = rot_gt
                         obse_is_fresh = True
                         # print("obse is FRESH")
                     else:
@@ -322,10 +356,11 @@ if __name__ == '__main__':
                     # break
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                     print("can not find tf")
-                rob_T_obj_opti_pos = list(trans_gt)
-                rob_T_obj_opti_ori = list(rot_gt)                        
-#                rob_T_obj_opti_pos = copy.deepcopy(rob_T_obj_obse_pos)
-#                rob_T_obj_opti_ori = copy.deepcopy(rob_T_obj_obse_ori)
+                    
+                rob_T_obj_opti_pos = list(trans_gt_list[obj_index])
+                rob_T_obj_opti_ori = list(rot_gt_list[obj_index])                        
+                # rob_T_obj_opti_pos = copy.deepcopy(rob_T_obj_obse_pos)
+                # rob_T_obj_opti_ori = copy.deepcopy(rob_T_obj_obse_ori)
                 rob_T_obj_opti_3_3 = transformations.quaternion_matrix(rob_T_obj_opti_ori)
                 rob_T_obj_opti_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_opti_3_3, rob_T_obj_opti_pos)
                 
@@ -334,28 +369,14 @@ if __name__ == '__main__':
                 pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
             else:
                 obj_name = object_name_list[obj_index]
-
+                
+                # pose of robot in OptiTrack coordinate frame
                 opti_T_rob_opti_pos = ros_listener.listen_2_robot_pose()[0]
                 opti_T_rob_opti_ori = ros_listener.listen_2_robot_pose()[1]
-
-                # opti_T_obj_opti_pos_x = ros_listener.listen_2_object_pose(obj_name).pose.position.x
-                # opti_T_obj_opti_pos_y = ros_listener.listen_2_object_pose(obj_name).pose.position.y
-                # opti_T_obj_opti_pos_z = ros_listener.listen_2_object_pose(obj_name).pose.position.z
-                # opti_T_obj_opti_pos = [opti_T_obj_opti_pos_x, opti_T_obj_opti_pos_y, opti_T_obj_opti_pos_z]
-                # print("***********************")
-                # print("In the RecordError")
-                # print("obj_name:", obj_name)
-                # print(ros_listener.listen_2_object_pose(obj_name))
-                # print("***********************")
+                # pose of objects in OptiTrack coordinate frame
                 opti_T_obj_opti_pos = ros_listener.listen_2_object_pose(obj_name)[0]
-
-                # opti_T_obj_opti_ori_x = ros_listener.listen_2_object_pose(obj_name).pose.orientation.x
-                # opti_T_obj_opti_ori_y = ros_listener.listen_2_object_pose(obj_name).pose.orientation.y
-                # opti_T_obj_opti_ori_z = ros_listener.listen_2_object_pose(obj_name).pose.orientation.z
-                # opti_T_obj_opti_ori_w = ros_listener.listen_2_object_pose(obj_name).pose.orientation.w
-                # opti_T_obj_opti_ori = [opti_T_obj_opti_ori_x, opti_T_obj_opti_ori_y, opti_T_obj_opti_ori_z, opti_T_obj_opti_ori_w]
                 opti_T_obj_opti_ori = ros_listener.listen_2_object_pose(obj_name)[1]
-        
+                # pose of objects in robot coordinate frame
                 rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
                 
                 pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
@@ -390,8 +411,15 @@ if __name__ == '__main__':
 
             if esti_obj_list_not_pub == 0:
                 if run_alg_flag == "PBPF":
+                    
                     # error bt ground truth and observation
                     err_opti_obse_pos = compute_pos_err_bt_2_points(pw_T_obj_opti_pos, pw_T_obj_obse_pos)
+                    # print("=======================================")
+                    # print("obj_name:", object_name_list[obj_index]+use_gazebo)
+                    # print("err_opti_obse_pos:", err_opti_obse_pos)
+                    # print("pw_T_obj_opti_pos:", pw_T_obj_opti_pos)
+                    # print("pw_T_obj_obse_pos:", pw_T_obj_obse_pos)
+                    # print("=======================================")
                     err_opti_obse_ang = compute_ang_err_bt_2_points(pw_T_obj_opti_ori, pw_T_obj_obse_ori)
                     err_opti_obse_ang = angle_correction(err_opti_obse_ang)
                     # error bt ground truth and PBPF

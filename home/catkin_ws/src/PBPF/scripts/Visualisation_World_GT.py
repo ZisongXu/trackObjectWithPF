@@ -406,6 +406,7 @@ while reset_flag == True:
                 if display_gt_flag == True:
                     # print("display_gt_flag")
                     for obj_index in range(object_num):
+                        obj_name = object_name_list[obj_index]
                         # display ground truth (grtu)
                         if visual_world.gazebo_flag == True:
                             # print("Hello")
@@ -495,6 +496,10 @@ while reset_flag == True:
                         # print("pw_T_obj_opti_pos:")
                         # print(pw_T_obj_opti_pos)
                         # display gt object update pose
+                        print("=======================================")
+                        print("obj_name:", obj_name)
+                        print("pw_T_obj_opti_pos:", pw_T_obj_opti_pos)
+                        print("=======================================")
                         pw_T_target_obj_opti_pose_lsit_param[obj_index].pos = pw_T_obj_opti_pos
                         pw_T_target_obj_opti_pose_lsit_param[obj_index].ori = pw_T_obj_opti_ori
                         visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_opti_pose_lsit_param[obj_index])

@@ -510,6 +510,7 @@ while reset_flag == True:
             if display_obse_flag == True:
                 # print("display_obse_flag")
                 for obj_index in range(object_num):
+                    obj_name = object_name_list[obj_index]
                     if init_obse_flag == 0:
                         if obj_index == object_num - 1:
                             init_obse_flag = 1
@@ -552,7 +553,10 @@ while reset_flag == True:
                     pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
                     pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
                     pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
-                    
+                    print("=======================================")
+                    print("obj_name:", object_name_list[obj_index]+use_gazebo)
+                    print("pw_T_obj_obse_pos:", pw_T_obj_obse_pos)
+                    print("=======================================")
                     # cam_T_obj_obse_pos = list(trans_ob_cTo)
                     # cam_T_obj_obse_ori = list(rot_ob_cTo)
                     # cam_T_obj_obse_3_3 = transformations.quaternion_matrix(cam_T_obj_obse_ori)
@@ -577,6 +581,8 @@ while reset_flag == True:
                     # update pose
                     # print("pw_T_obj_obse_pos")
                     # print(pw_T_obj_obse_pos)
+                    # if obj_name == "cracker": # gelatin, cracker, soup
+                    
                     pw_T_target_obj_obse_pose_lsit_param[obj_index].pos = pw_T_obj_obse_pos
                     pw_T_target_obj_obse_pose_lsit_param[obj_index].ori = pw_T_obj_obse_ori
                     visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_obse_pose_lsit_param[obj_index])

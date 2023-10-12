@@ -51,6 +51,7 @@ object_name = sys.argv[2]
 sceneName = sys.argv[3] # "scene1"
 update_style_flag = sys.argv[4] # time/pose
 ang_and_pos = sys.argv[5] # pos/ang
+tem_name = sys.argv[6]
 
 update_style_flag = "time"
 test = "cracker_" # cracker_/fish_can_
@@ -59,7 +60,7 @@ if update_style_flag == "pose":
 elif update_style_flag == "time":
     title_name = "Time"
 # 70_cracker_scene1_time_pos.csv
-file_name = "based_on_time_"+str(particle_num)+'_'+object_name+'_'+sceneName+'_'+update_style_flag+'_'+ang_and_pos
+file_name = tem_name+'_'+"based_on_time_"+str(particle_num)+'_'+object_name+'_'+sceneName+'_'+update_style_flag+'_'+ang_and_pos
 file_name_ang = test+update_style_flag+"_scene"+sceneName+"_ang"
 file_name_pos = test+update_style_flag+"_scene"+sceneName+"_pos"
 title_ang = "Rotational errors (rad) vs Time (s)"
@@ -67,11 +68,11 @@ title_pos = "Positional errors (m) vs Time (s)"
 
 if ang_and_pos == "ang":
     if sceneName == "scene1":
-        x_range_max = 28
-        x_range_unit = 2
+        x_range_max = 129
+        x_range_unit = 6
         y_range_max = 2.5
         y_range_unit = 0.2
-        x_xlim = 28
+        x_xlim = 129
         y_ylim = 2.5
     if sceneName == "scene2":
         x_range_max = 28
@@ -115,8 +116,8 @@ if ang_and_pos == "ang":
 
 if ang_and_pos == "pos":
     if sceneName == "scene1":
-        x_range_max = 129 # 28
-        x_range_unit = 6 # 2
+        x_range_max = 129 # 28, 129
+        x_range_unit = 100 # 2, 6
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.04 # 0.04
         x_xlim = 129 # 28

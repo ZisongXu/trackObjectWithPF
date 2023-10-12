@@ -48,11 +48,11 @@ rosbag_flag = sys.argv[4]
 repeat_time = sys.argv[5]
 run_alg_flag = sys.argv[6] # PBPF
 ang_and_pos = sys.argv[7] # pos/ang
-
+tem_name = sys.argv[8]
 
 # 1_cracker_scene1_rosbag1_repeat8_time_PBPF_err_pos
 file_name = str(particle_num)+'_'+object_name+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+update_style_flag+'_'+run_alg_flag+'_err_'+ang_and_pos
-file_name = object_name+'_test_'+update_style_flag+'_'+run_alg_flag+'_err_'+ang_and_pos
+file_name = tem_name+'_'+object_name+'_'+update_style_flag+'_'+run_alg_flag+'_err_'+ang_and_pos
 # PBPF_pos_file_name = '_'+update_style_flag+'_PBPF_err_pos.csv'
 # PBPF_ang_file_name = '_'+update_style_flag+'_PBPF_err_ang.csv'
 # obse_pos_file_name = '_'+update_style_flag+'_obse_err_pos.csv'
@@ -68,10 +68,10 @@ correct_time_flag = False
 loop_flag = 10
 prepare_time = 2800
 prepare_time = 12900
-
+# prepare_time = 250000
 
 # save file
-save_file_name = 'based_on_time_'+str(particle_num)+'_'+object_name+'_'+task_flag+'_'+update_style_flag+'_'+ang_and_pos+'.csv'
+save_file_name = tem_name+'_'+'based_on_time_'+str(particle_num)+'_'+object_name+'_'+task_flag+'_'+update_style_flag+'_'+ang_and_pos+'.csv'
 # save_file_path = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/error_file_diff_par_num/70/1_cracker_scene1/inter_data_"+ang_and_pos+"/")
 save_file_path = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/"+err_file+"/")
 

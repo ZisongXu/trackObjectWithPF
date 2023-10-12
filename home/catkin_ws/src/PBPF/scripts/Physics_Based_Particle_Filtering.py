@@ -1785,9 +1785,9 @@ while reset_flag == True:
         flag_update_num_PB = 0
         change_sim_time = 1.0/90
         if run_alg_flag == "PBPF":
-            boss_pf_update_interval_in_real = 0.20 # original value = 0.16
+            boss_pf_update_interval_in_real = 1.0 # original value = 0.16
         elif run_alg_flag == "CVPF":
-            boss_pf_update_interval_in_real = 0.20 # original value = 0.16
+            boss_pf_update_interval_in_real = 1.0 # original value = 0.16
         pf_update_rate = rospy.Rate(1.0/boss_pf_update_interval_in_real)
         # # error in xyz axis obse before recalibrating
         # boss_sigma_obs_x = 0.03973017808163751 / 2.0

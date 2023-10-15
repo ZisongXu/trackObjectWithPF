@@ -80,6 +80,7 @@ class InitialSimulationModel():
         with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
             self.parameter_info = yaml.safe_load(file)
         self.gazebo_flag = self.parameter_info['gazebo_flag']
+        self.task_flag = self.parameter_info['task_flag']
         
     def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):
         position = copy.deepcopy(pw_T_obj_obse_pos)
@@ -141,6 +142,18 @@ class InitialSimulationModel():
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0, 0, -9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
+            
+            if self.task_flag == "5":
+                pw_T_she_pos = [0.75889274, -0.24494845, 0.33818097+0.02]
+                pw_T_she_ori = [0, 0, 0, 1]
+                shelves_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/shelves.urdf"),
+                                                              pw_T_she_pos,
+                                                              pw_T_she_ori)
+                collision_detection_obj_id.append(shelves_id)
+            
+            
+            
+            
             
             for obj_index in range(self.other_obj_num):
                 other_obj_name = self.pw_T_obj_obse_oto_list_alg[obj_index].obj_name

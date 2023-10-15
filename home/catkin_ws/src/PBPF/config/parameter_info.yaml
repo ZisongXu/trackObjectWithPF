@@ -17,7 +17,7 @@ particle_num: 150
 pick_particle_rate: 0.00
 robot_num: 1
 run_alg_flag: PBPF
-task_flag: '3'
+task_flag: '5'
 update_style_flag: time
 version: multiray
 optitrack_flag: True

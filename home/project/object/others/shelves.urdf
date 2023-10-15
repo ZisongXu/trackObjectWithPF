@@ -107,6 +107,27 @@
      </inertial>
    </link>
    
+   <link name="top">
+     <visual>
+       <geometry>
+         <box size="0.33 0.7285 0.019"/>
+       </geometry>
+       <origin rpy="0 0 0" xyz="0 0 0"/>
+       <material name="yellow_brown"/>
+     </visual>
+     <collision>
+       <geometry>
+         <box size="0.33 0.7285 0.019"/>
+       </geometry>
+       <origin rpy="0 0 0" xyz="0 0 0"/>
+     </collision>
+     <inertial>
+       <mass value="0.75"/>
+       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+     </inertial>
+   </link>
+   
+   
    <joint name="back_to_left" type="fixed">
      <parent link="back"/>
      <child link="left"/>
@@ -123,6 +144,12 @@
      <parent link="back"/>
      <child link="bottom"/>
      <origin xyz="-0.1555 -0.0 -0.3565"/>
+   </joint>
+   
+   <joint name="back_to_top" type="fixed">
+     <parent link="back"/>
+     <child link="top"/>
+     <origin xyz="-0.1555 -0.0 0.3565"/>
    </joint>
    
    <joint name="back_to_middle" type="fixed">

@@ -11,6 +11,8 @@ import seaborn as sns
 import copy
 import numpy as np
 import sys
+import os
+import yaml
 
 flag_DOPE = False
 flag_PFPE = False
@@ -18,30 +20,50 @@ flag_CVPF = True
 rosbags = 10
 repeats = 10
 
+
+with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
+        parameter_info = yaml.safe_load(file)
+object_name = parameter_info['object_name_list'][0]
+gazebo_flag = parameter_info['gazebo_flag']
+particle_num = parameter_info['particle_num']
+# update mode (pose/time)
+update_style_flag = parameter_info['update_style_flag'] # time/pose
+# which algorithm to run
+run_alg_flag = parameter_info['run_alg_flag'] # PBPF/CVPF
+# scene
+task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
+# rosbag_flag = "1"
+err_file = parameter_info['err_file']
+
+
 particle_num = sys.argv[1]
 obj_name = sys.argv[2]
 scene = sys.argv[3]
 pos_or_ang = sys.argv[4]
 
+save_file_path = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/"+err_file+"/")
 
 # based_on_time_70_cracker_scene1_time_ang
-err_file_name_ = "based_on_time_"+str(particle_num)+'_'+obj_name+'_'+scene+'_time_'+pos_or_ang
+# based_on_time_150_scene3_rosbag6_time_cracker_ang
+err_file_name_ = "based_on_time_"+str(particle_num)+'_'+scene+'_'+'rosbag6'+'_time_'+obj_name+'_'+pos_or_ang
 # obse PBPF CVPF
 # 1_cracker_scene1_rosbag7_repeat5_time_PBPF_err_pos
-err_file_name = str(particle_num)+'_'+obj_name+'_'+scene+'_rosbag'
+# err_file_name = str(particle_num)+'_'+obj_name+'_'+scene+'_rosbag'
+
+
 # pos
 # if flag_DOPE == True:
-print("Ready to generate the data of "+pos_or_ang+" in DOPE")
+# print("Ready to generate the data of "+pos_or_ang+" in DOPE")
 
 # print(err_file_name+str(rosbag+1)+'_repeat'+str(repeat+1)+'_time_obse_err_'+pos_or_ang)
 error_all_list_obse = []
 error_all_list_PBPF = []
 error_all_list_CVPF = []
 
-dataset = pd.read_csv(err_file_name_+'.csv', header=None)
-dataset.columns=["index","time","error","alg","obj_scene","particle_num","ray_type"]
+dataset = pd.read_csv(save_file_path+err_file_name_+'.csv', header=None)
+dataset.columns=["index","time","error","alg","obj_scene","particle_num","ray_type","obj_name"]
 datasetcopy = copy.deepcopy(dataset)
-newdataset = pd.DataFrame(columns=['step','time','error','alg',"obj_scene","particle_num","ray_type"],index=[])
+newdataset = pd.DataFrame(columns=['step','time','error','alg',"obj_scene","particle_num","ray_type","obj_name"],index=[])
 # timedf = dataset['time']
 data_obse = copy.deepcopy(newdataset)
 data_PBPF = copy.deepcopy(newdataset)
@@ -51,7 +73,7 @@ pos_error = dataset['error']
 for index in range(len(pos_error)):
     if datasetcopy.alg[index] == "obse":
         error_all_list_obse.append(datasetcopy.error[index])
-    elif datasetcopy.alg[index] == "PBPF":
+    elif datasetcopy.alg[index] == "PBPF-V":
         error_all_list_PBPF.append(datasetcopy.error[index])
     elif datasetcopy.alg[index] == "CVPF":
         error_all_list_CVPF.append(datasetcopy.error[index])
@@ -69,8 +91,8 @@ mean_CVPF = np.mean(error_all_list_CVPF)
 #                         datasetcopy.loc[0,'ray_type']]
 
 # newdataset.to_csv('all_'+pos_or_ang+'.csv',index=0,header=0,mode='a')
-print("PBPF "+obj_name+" "+scene+" "+pos_or_ang+" error mean:",np.mean(error_all_list_PBPF))
-print("PBPF "+obj_name+" "+scene+" "+pos_or_ang+" error  std:",np.std(error_all_list_PBPF))
+print("PBPFV "+obj_name+" "+scene+" "+pos_or_ang+" error mean:",np.mean(error_all_list_PBPF))
+print("PBPFV "+obj_name+" "+scene+" "+pos_or_ang+" error  std:",np.std(error_all_list_PBPF))
 print("obse "+obj_name+" "+scene+" "+pos_or_ang+" error mean:",np.mean(error_all_list_obse))
 print("obse "+obj_name+" "+scene+" "+pos_or_ang+" error  std:",np.std(error_all_list_obse))
 print("CVPF "+obj_name+" "+scene+" "+pos_or_ang+" error mean:",np.mean(error_all_list_CVPF))

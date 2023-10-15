@@ -3,30 +3,132 @@
    <material name="silver">
      <color rgba="0.75294118 0.75294118 0.75294118 1"/>
    </material>
-   <material name="box_size">
-     <color rgba="0.220 0.1902 0.0732 1"/>
-   </material>
-   <material name="box_size2">
-     <color rgba="0.207 0.2185 0.1681 1"/>
+   <material name="yellow_brown">
+     <color rgba="0.76078431 0.49019608 0.00000000 1"/>
    </material>
    
-   
-   
-   <link name="right_leg">
+   <link name="left">
      <visual>
        <geometry>
-         <box size="0.207 0.2185 0.1681"/>
+         <box size="0.33 0.694 0.0185"/>
        </geometry>
-       <material name="silver"/>
+       <origin rpy="1.57075 0 0" xyz="0 0 0"/>
+       <material name="yellow_brown"/>
      </visual>
      <collision>
        <geometry>
-         <box size="0.207 0.2185 0.1681"/>
+         <box size="0.33 0.694 0.0185"/>
        </geometry>
+       <origin rpy="1.57075 0 0" xyz="0 0 0"/>
      </collision>
      <inertial>
        <mass value="0.75"/>
        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
      </inertial>
    </link>
+   
+   <link name="right">
+     <visual>
+       <geometry>
+         <box size="0.33 0.694 0.0185"/>
+       </geometry>
+       <origin rpy="1.57075 0 0" xyz="0 0 0"/>
+       <material name="yellow_brown"/>
+     </visual>
+     <collision>
+       <geometry>
+         <box size="0.33 0.694 0.0185"/>
+       </geometry>
+       <origin rpy="1.57075 0 0" xyz="0 0 0"/>
+     </collision>
+     <inertial>
+       <mass value="0.75"/>
+       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+     </inertial>
+   </link>
+   
+   <link name="back">
+     <visual>
+       <geometry>
+         <box size="0.6915 0.694 0.019"/>
+       </geometry>
+       <origin rpy="1.57075 0 1.57075" xyz="0 0 0"/>
+       <material name="yellow_brown"/>
+     </visual>
+     <collision>
+       <geometry>
+         <box size="0.6915 0.694 0.019"/>
+       </geometry>
+       <origin rpy="1.57075 0 1.57075" xyz="0 0 0"/>
+     </collision>
+     <inertial>
+       <mass value="0.75"/>
+       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+     </inertial>
+   </link>
+   
+   <link name="bottom">
+     <visual>
+       <geometry>
+         <box size="0.33 0.7285 0.019"/>
+       </geometry>
+       <origin rpy="0 0 0" xyz="0 0 0"/>
+       <material name="yellow_brown"/>
+     </visual>
+     <collision>
+       <geometry>
+         <box size="0.33 0.7285 0.019"/>
+       </geometry>
+       <origin rpy="0 0 0" xyz="0 0 0"/>
+     </collision>
+     <inertial>
+       <mass value="0.75"/>
+       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+     </inertial>
+   </link>
+   
+   <link name="middle">
+     <visual>
+       <geometry>
+         <box size="0.301 0.6915 0.018"/>
+       </geometry>
+       <origin rpy="0 0 0" xyz="0 0 0"/>
+       <material name="silver"/>
+     </visual>
+     <collision>
+       <geometry>
+         <box size="0.301 0.6915 0.018"/>
+       </geometry>
+       <origin rpy="0 0 0" xyz="0 0 0"/>
+     </collision>
+     <inertial>
+       <mass value="0.75"/>
+       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+     </inertial>
+   </link>
+   
+   <joint name="back_to_left" type="fixed">
+     <parent link="back"/>
+     <child link="left"/>
+     <origin xyz="-0.1555 0.355 0"/>
+   </joint>
+   
+   <joint name="back_to_right" type="fixed">
+     <parent link="back"/>
+     <child link="right"/>
+     <origin xyz="-0.1555 -0.355 0"/>
+   </joint>
+   
+   <joint name="back_to_bottom" type="fixed">
+     <parent link="back"/>
+     <child link="bottom"/>
+     <origin xyz="-0.1555 -0.0 -0.3565"/>
+   </joint>
+   
+   <joint name="back_to_middle" type="fixed">
+     <parent link="back"/>
+     <child link="middle"/>
+     <origin xyz="-0.16 -0.0 0.06"/>
+   </joint>
+  
  </robot>

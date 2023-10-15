@@ -11,7 +11,7 @@
        <geometry>
          <box size="0.0851 0.0737 0.0279"/>
        </geometry>
-       <material name="coral"/>
+       <material name="light_green"/>
      </visual>
      <inertial>
        <mass value="0"/>

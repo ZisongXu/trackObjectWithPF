@@ -122,6 +122,8 @@ class PBPFMove():
         self.do_obs_update = do_obs_update
         pybullet_sim_env = self.pybullet_env_id_collection
         fake_robot_id = self.pybullet_sim_fake_robot_id_collection
+        
+        
         self.times = []
         t1 = time.time()
         # motion model
@@ -303,7 +305,14 @@ class PBPFMove():
             flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur, real_robot_joint_pos)
             
     def function_to_parallelise(self, index, pybullet_env, fake_robot_id, real_robot_joint_pos):
+        other_object_id_list_list = self.pybullet_sim_other_object_id_collection
         collision_detection_obj_id = []
+        
+        other_object_id_list_list = self.pybullet_sim_other_object_id_collection
+        for other_obj_index in range(len(other_object_id_list_list)):
+            other_object_id = other_object_id_list_list[other_obj_index][index]
+            collision_detection_obj_id.append(other_object_id)
+        
         # ensure that each update of particles in the simulation inherits the velocity of the previous update 
         for obj_index in range(self.obj_num):
             pw_T_par_sim_id = self.particle_cloud[index][obj_index].no_visual_par_id

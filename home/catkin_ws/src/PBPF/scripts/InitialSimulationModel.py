@@ -69,11 +69,11 @@ class InitialSimulationModel():
         self.pybullet_particle_env_collection_CV = []
         self.particle_no_visual_id_collection_CV = []
         
-        self.boss_sigma_obs_pos_init = 0.05 # original value: 16cm 
+        self.boss_sigma_obs_pos_init = 0.10 # original value: 16cm 
         
         self.boss_sigma_obs_x = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
-        self.boss_sigma_obs_z = 0
+        self.boss_sigma_obs_z = 0.04
         self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 1
         
@@ -131,6 +131,8 @@ class InitialSimulationModel():
         print_name_flag = 0
         PBPF_par_no_visual_id = [[]*self.object_num for _ in range(self.particle_num)]
         p_env_list = []
+        shelves_id_list = []
+        other_obj_id_list = []
         for par_index in range(self.particle_num):
             collision_detection_obj_id = []
             pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
@@ -143,18 +145,16 @@ class InitialSimulationModel():
             pybullet_simulation_env.setGravity(0, 0, -9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
             
+            
             if self.task_flag == "5":
                 pw_T_she_pos = [0.75889274, -0.24494845, 0.33818097+0.02]
                 pw_T_she_ori = [0, 0, 0, 1]
                 shelves_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/shelves.urdf"),
                                                               pw_T_she_pos,
                                                               pw_T_she_ori)
+                shelves_id_list.append(shelves_id)
                 collision_detection_obj_id.append(shelves_id)
-            
-            
-            
-            
-            
+
             for obj_index in range(self.other_obj_num):
                 other_obj_name = self.pw_T_obj_obse_oto_list_alg[obj_index].obj_name
                 other_obj_pos = self.pw_T_obj_obse_oto_list_alg[obj_index].pos
@@ -163,8 +163,10 @@ class InitialSimulationModel():
                                                                other_obj_pos,
                                                                other_obj_ori,
                                                                useFixedBase=1)
-                self.other_object_id_collection.append(sim_base_id)
-                
+                collision_detection_obj_id.append(sim_base_id)
+                other_obj_id_list.append(sim_base_id)    
+            
+            
             for rob_index in range(self.robot_num):
                 real_robot_start_pos = self.pw_T_rob_sim_pose_list_alg[rob_index].pos
                 real_robot_start_ori = self.pw_T_rob_sim_pose_list_alg[rob_index].ori
@@ -177,9 +179,7 @@ class InitialSimulationModel():
                 self.fake_robot_id_collection.append(fake_robot_id)
             # need to change
             collision_detection_obj_id.append(fake_robot_id)
-            if self.other_obj_num > 0:
-                collision_detection_obj_id.append(sim_base_id)
-            
+
             object_list = []
 
             for obj_index in range(self.object_num):
@@ -236,13 +236,21 @@ class InitialSimulationModel():
 
             self.particle_cloud.append(object_list)
             self.particle_no_visual_id_collection = copy.deepcopy(PBPF_par_no_visual_id)
-
+        
+        if len(shelves_id_list) != 0:
+            self.other_object_id_collection.append(shelves_id_list)
+        if len(other_obj_id_list) != 0:
+            self.other_object_id_collection.append(other_obj_id_list)        
+        print(self.other_object_id_collection)
+        
         esti_objs_cloud_temp_parameter = self.compute_estimate_pos_of_object(self.particle_cloud)
         return esti_objs_cloud_temp_parameter, self.particle_cloud, p_env_list
         
     def initial_and_set_simulation_env_CV(self):
         CVPF_par_no_visual_id = [[]*self.object_num for _ in range(self.particle_num)]
         p_env_list = []
+        shelves_id_list = []
+        other_obj_id_list = []
         for par_index in range(self.particle_num):
             collision_detection_obj_id = []
             pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
@@ -253,6 +261,16 @@ class InitialSimulationModel():
             pybullet_simulation_env.setGravity(0, 0, -9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
             
+            
+            if self.task_flag == "5":
+                pw_T_she_pos = [0.75889274, -0.24494845, 0.33818097+0.02]
+                pw_T_she_ori = [0, 0, 0, 1]
+                shelves_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/shelves.urdf"),
+                                                              pw_T_she_pos,
+                                                              pw_T_she_ori)
+                shelves_id_list.append(shelves_id)
+                collision_detection_obj_id.append(shelves_id)
+            
             for obj_index in range(self.other_obj_num):
                 other_obj_name = self.pw_T_obj_obse_oto_list_alg[obj_index].obj_name
                 other_obj_pos = self.pw_T_obj_obse_oto_list_alg[obj_index].pos
@@ -261,7 +279,8 @@ class InitialSimulationModel():
                                                                other_obj_pos,
                                                                other_obj_ori,
                                                                useFixedBase=1)
-                self.other_object_id_collection.append(sim_base_id)
+                collision_detection_obj_id.append(sim_base_id)
+                other_obj_id_list.append(sim_base_id)                
             
             for rob_index in range(self.robot_num):
                 real_robot_start_pos = self.pw_T_rob_sim_pose_list_alg[rob_index].pos
@@ -328,7 +347,10 @@ class InitialSimulationModel():
                 
             self.particle_cloud_CV.append(object_list)
             self.particle_no_visual_id_collection_CV = copy.deepcopy(CVPF_par_no_visual_id)
-        
+        if len(shelves_id_list) != 0:
+            self.other_object_id_collection.append(shelves_id_list)
+        if len(other_obj_id_list) != 0:
+            self.other_object_id_collection.append(other_obj_id_list) 
         esti_objs_cloud_temp_parameter = self.compute_estimate_pos_of_object(self.particle_cloud_CV)
         return esti_objs_cloud_temp_parameter, self.particle_cloud_CV, p_env_list
 

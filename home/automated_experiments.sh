@@ -29,7 +29,7 @@ do
 				
 				# for rosbag in {1..10}
 				# for rosbag in {1..2}
-				for ((rosbag=4;rosbag<=6;rosbag++)); 
+				for ((rosbag=8;rosbag<=8;rosbag++)); 
 				do
 					duration=$(python3 get_info_from_rosbag.py "${objectName}" "${particleNumber}" "${sceneName}" "${rosbag}")
 
@@ -39,7 +39,7 @@ do
 					do
 						echo "I will sleep for $duration seconds"
 						# rosbag play "rosbag/latest_rosbag/${objectName}_${sceneName}/${objectName}_${sceneName}_70_${rosbag}.bag" --clock  > /dev/null 2>&1 & 
-						rosbag play "rosbag/multi_obj_${rosbag}.bag" --clock  > /dev/null 2>&1 & 
+						rosbag play "rosbag/multi_obj_${rosbag}.bag" --clock --rate 0.2  > /dev/null 2>&1 & 
 						# rosbag play "rosbag/multi_obj_5.bag" --clock  > /dev/null 2>&1 & 
 						ROSBAGPID=$!
 

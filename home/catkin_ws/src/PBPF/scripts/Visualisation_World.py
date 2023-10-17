@@ -106,7 +106,8 @@ class Visualisation_World():
             pw_T_she_ori = [0, 0, 0, 1]
             shelves_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/shelves.urdf"),
                                                   pw_T_she_pos,
-                                                  pw_T_she_ori)
+                                                  pw_T_she_ori,
+                                                  useFixedBase=1)
         
         # load robot in the pybullet world
         pw_T_rob_sim_pose_list = self.create_scene.initialize_robot()

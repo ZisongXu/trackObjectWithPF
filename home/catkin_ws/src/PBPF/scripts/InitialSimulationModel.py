@@ -73,7 +73,7 @@ class InitialSimulationModel():
         
         self.boss_sigma_obs_x = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
-        self.boss_sigma_obs_z = 0.04
+        self.boss_sigma_obs_z = 0.02
         self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 1
         
@@ -151,7 +151,8 @@ class InitialSimulationModel():
                 pw_T_she_ori = [0, 0, 0, 1]
                 shelves_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/shelves.urdf"),
                                                               pw_T_she_pos,
-                                                              pw_T_she_ori)
+                                                              pw_T_she_ori,
+                                                              useFixedBase=1)
                 shelves_id_list.append(shelves_id)
                 collision_detection_obj_id.append(shelves_id)
 
@@ -267,7 +268,8 @@ class InitialSimulationModel():
                 pw_T_she_ori = [0, 0, 0, 1]
                 shelves_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/shelves.urdf"),
                                                               pw_T_she_pos,
-                                                              pw_T_she_ori)
+                                                              pw_T_she_ori,
+                                                              useFixedBase=1)
                 shelves_id_list.append(shelves_id)
                 collision_detection_obj_id.append(shelves_id)
             

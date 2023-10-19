@@ -439,13 +439,13 @@ class PBPFMove():
             obse_obj_ori = pw_T_obj_obse_objects_pose_list[obj_index].ori # pybullet x,y,z,w
             # make sure theta between -pi and pi
             obse_obj_ori_corr = quaternion_correction(obse_obj_ori)
-#            obse_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3]) # w,x,y,z
-#            cos_theta_over_2 = obse_obj_quat.w
-#            sin_theta_over_2 = math.sqrt(obse_obj_quat.x ** 2 + obse_obj_quat.y ** 2 + obse_obj_quat.z ** 2)
-#            theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
-#            theta = theta_over_2 * 2
-#            if theta >= math.pi or theta <= -math.pi:
-#                nois_obj_ori = [-nois_obj_x_ori, -nois_obj_y_ori, -nois_obj_z_ori, -nois_obj_w_ori]
+            # obse_obj_quat = Quaternion(x=nois_obj_ori[0],y=nois_obj_ori[1],z=nois_obj_ori[2],w=nois_obj_ori[3]) # w,x,y,z
+            # cos_theta_over_2 = obse_obj_quat.w
+            # sin_theta_over_2 = math.sqrt(obse_obj_quat.x ** 2 + obse_obj_quat.y ** 2 + obse_obj_quat.z ** 2)
+            # theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
+            # theta = theta_over_2 * 2
+            # if theta >= math.pi or theta <= -math.pi:
+            #     nois_obj_ori = [-nois_obj_x_ori, -nois_obj_y_ori, -nois_obj_z_ori, -nois_obj_w_ori]
             for index, particle in enumerate(self.particle_cloud): # particle angle
                 particle_x = particle[obj_index].pos[0]
                 particle_y = particle[obj_index].pos[1]

@@ -40,7 +40,10 @@ from quaternion_averaging import weightedAverageQuaternions
 from Particle import Particle
 from Create_Scene import Create_Scene
 from Ros_Listener import Ros_Listener
+from Center_T_Point_for_Ray import Center_T_Point_for_Ray
 import yaml
+
+
 
 # (Basic Setting
 
@@ -73,6 +76,23 @@ def compute_transformation_matrix(a_pos, a_ori, b_pos, b_ori):
     a_T_b_4_4 = np.dot(a_T_ow_4_4,ow_T_b_4_4)
     return a_T_b_4_4 
 
+# robot arm move
+def set_real_robot_JointPosition(pybullet_env, robot_id, joint_states):
+    num_joints = 9
+    for joint_index in range(num_joints):
+        if joint_index == 7 or joint_index == 8:
+            pybullet_env.setJointMotorControl2(robot_id,
+                                                joint_index+2,
+                                                pybullet_env.POSITION_CONTROL,
+                                                targetPosition=joint_states[joint_index])
+        else:
+            pybullet_env.setJointMotorControl2(robot_id,
+                                                joint_index,
+                                                pybullet_env.POSITION_CONTROL,
+                                                targetPosition=joint_states[joint_index])
+
+
+
 opt_T_she_pos = [0.9005279541015625, 0.36096227169036865, 0.8243836760520935]
 opt_T_she_ori = [0, 0, 0, 1]
 
@@ -90,21 +110,95 @@ print(rob_T_she_4_4)
 
 # pw_T_obst_opti_pos_small = [0.852134144216095, 0.14043691336334274, 0.10014295215002848]
 # pw_T_obst_opti_ori_small = [0.00356749, -0.00269526, 0.28837681, 0.95750657]
-pw_T_obst_opti_pos_big = [0.75889274, -0.24494845, 0.33818097+0.02]
-pw_T_obst_opti_ori_big = [0, 0, 0, 1]
-track_fk_obst_big_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/shelves.urdf"),
-                                                pw_T_obst_opti_pos_big,
-                                                pw_T_obst_opti_ori_big)
+# pw_T_obst_opti_pos_big = [0.75889274, -0.24494845, 0.33818097+0.02]
+# pw_T_obst_opti_ori_big = [0, 0, 0, 1]
+# track_fk_obst_big_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/shelves.urdf"),
+#                                                 pw_T_obst_opti_pos_big,
+#                                                 pw_T_obst_opti_ori_big)
+
+rob_pos = [0, 0, 0.02]
+rob_ori = [0, 0, 0, 1]
+real_robot_id = p_visualisation.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
+                                         rob_pos,
+                                         rob_ori,
+                                         useFixedBase=1)
+
+joint_states = [-0.416393778717333,
+                 0.8254077830686731,
+                -0.07092072120488697,
+                -2.1336947324364215,
+                 1.0840709206509551,
+                 1.4970466512368048,
+                 0.9383130510987506,
+                 0,
+                 0]
+set_real_robot_JointPosition(p_visualisation, real_robot_id, joint_states)
+
+# cracker_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_obse_name+"/"+gazebo_contain+obj_obse_name+"_par_no_visual_hor.urdf"),
+cracker_pos = [0.25, -0.05, 0.085]
+cracker_ori = [0, 1, 0, 1]
+pw_T_cracker_3_3 = transformations.quaternion_matrix(cracker_ori)
+pw_T_cracker_4_4 = rotation_4_4_to_transformation_4_4(pw_T_cracker_3_3, cracker_pos)
+cracker_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_par_no_visual_hor.urdf"),
+                                                         cracker_pos,
+                                                         cracker_ori)
+
+camera_pos = [1, 0.0, 0.3]
+camera_ori = [0, 0, 0, 1]
+camera_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/camera_model.urdf"),
+                                                         camera_pos,
+                                                         camera_ori,
+                                                         useFixedBase=1)
 
 
+camera_T_lens_pos = [0.0, 0.025, 0.0]
+camera_T_lens_ori = [0, 0, 0, 1]
+camera_T_lens_3_3 = transformations.quaternion_matrix(camera_T_lens_ori)
+camera_T_lens_4_4 = rotation_4_4_to_transformation_4_4(camera_T_lens_3_3, camera_T_lens_pos)
+pw_T_camera_3_3 = transformations.quaternion_matrix(camera_ori)
+pw_T_camera_4_4 = rotation_4_4_to_transformation_4_4(pw_T_camera_3_3, camera_pos)
+pw_T_lens_4_4 = np.dot(pw_T_camera_4_4, camera_T_lens_4_4)
+pw_T_lens_pos = [pw_T_lens_4_4[0][3], pw_T_lens_4_4[1][3], pw_T_lens_4_4[2][3]]
+pw_T_lens_ori = transformations.quaternion_from_matrix(pw_T_lens_4_4)
 
-
-
+vector_list = [[1,1,1], [1,1,-1], [1,-1,1], [1,-1,-1],
+               [-1,1,1], [-1,1,-1], [-1,-1,1], [-1,-1,-1],
+               [1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1],
+               [1,0.5,0.5], [1,0.5,-0.5], [1,-0.5,0.5], [1,-0.5,-0.5],
+               [-1,0.5,0.5], [-1,0.5,-0.5], [-1,-0.5,0.5], [-1,-0.5,-0.5],
+               [0.5,1,0.5], [0.5,1,-0.5], [-0.5,1,0.5], [-0.5,1,-0.5],
+               [0.5,-1,0.5], [0.5,-1,-0.5], [-0.5,-1,0.5], [-0.5,-1,-0.5],
+               [0.5,0.5,1], [0.5,-0.5,1], [-0.5,0.5,1], [-0.5,-0.5,1],
+               [0.5,0.5,-1], [0.5,-0.5,-1], [-0.5,0.5,-1], [-0.5,-0.5,-1]]
+vector_length = len(vector_list)
+point_list = []
+point_pos_list = []
+x_w = 0.16 
+y_l = 0.21343700408935547 
+z_h = 0.061
+pw_T_parC_4_4 = pw_T_cracker_4_4
+for index in range(vector_length):
+    parC_T_p_x_new = vector_list[index][0] * x_w/2
+    parC_T_p_y_new = vector_list[index][1] * y_l/2
+    parC_T_p_z_new = vector_list[index][2] * z_h/2
+    parC_T_p_pos = [parC_T_p_x_new, parC_T_p_y_new, parC_T_p_z_new]
+    parC_T_p_ori = [0, 0, 0, 1] # x, y, z, w
+    parC_T_p_3_3 = transformations.quaternion_matrix(parC_T_p_ori)
+    parC_T_p_4_4 = rotation_4_4_to_transformation_4_4(parC_T_p_3_3, parC_T_p_pos)
+    pw_T_p_4_4 = np.dot(pw_T_parC_4_4, parC_T_p_4_4)
+    pw_T_p_pos = [pw_T_p_4_4[0][3], pw_T_p_4_4[1][3], pw_T_p_4_4[2][3]]
+    pw_T_p_ori = transformations.quaternion_from_matrix(pw_T_p_4_4)
+    pw_T_p_pose = Center_T_Point_for_Ray(pw_T_p_pos, pw_T_p_ori, parC_T_p_4_4, index)
+    point_list.append(pw_T_p_pose)
+    point_pos_list.append(pw_T_p_pos)
+for index in range(vector_length):
+    p_visualisation.addUserDebugLine(pw_T_lens_pos, point_pos_list[index], lineColorRGB=[1, 0, 0], lineWidth=1)
 
 while True:
+# for i in range(240):
     a = 1
-    # p_visualisation.stepSimulation()
-    # time.sleep(1./240.)
+    p_visualisation.stepSimulation()
+    time.sleep(1./240.)
     # time.sleep(1)
     
 # for i in range(240):

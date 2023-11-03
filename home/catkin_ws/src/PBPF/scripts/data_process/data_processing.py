@@ -73,6 +73,8 @@ prepare_time = 2800
 prepare_time = 12900
 prepare_time = 26500
 prepare_time = 173000
+prepare_time = 348000
+
 # prepare_time = 134000
 
 
@@ -118,6 +120,7 @@ timedf = datasetcopy['time']
 # print(datasetcopy)
 # datasetcopy.to_csv("test",index=0,header=0,mode='a')
 for i in range(prepare_time):
+    print(file_name+" processing... ", i)
     newdata = (timedf - timestep_list[int(i)]).abs()
     #print(newdata)
     #print(newdata.idxmin())

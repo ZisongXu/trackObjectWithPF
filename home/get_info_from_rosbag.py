@@ -20,5 +20,5 @@ rosbag_num = sys.argv[4]
 info_dict = yaml.load(Bag(os.path.expanduser(f"~/rosbag/multi_obj_{rosbag_num}.bag"))._get_yaml_info(), Loader=yaml.FullLoader)
 # info_dict = yaml.load(Bag(os.path.expanduser(f"~/rosbag/multi_obj_5.bag"))._get_yaml_info(), Loader=yaml.FullLoader)
 
-dura = (info_dict['duration'] + 1) * 5
+dura = (info_dict['duration'] + 1) * 50
 print(dura)

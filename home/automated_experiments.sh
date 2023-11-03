@@ -3,7 +3,7 @@
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
 # declare -a objectNames=("cracker" "gelatin" "soup")
 declare -a objectNames=("cracker")
-declare -a sceneNames=("scene3")
+declare -a sceneNames=("scene5")
 declare -a particleNumbers=(150)
 declare -a runAlgFlags=("PBPF")
 declare -a diffRadSigma=(0.32505 0.2167)
@@ -35,11 +35,11 @@ do
 
 					# for repeat in {1..10}
 					# for repeat in "${repeats[@]}"
-					for ((repeat=0;repeat<=9;repeat++));
+					for ((repeat=0;repeat<=0;repeat++));
 					do
 						echo "I will sleep for $duration seconds"
 						# rosbag play "rosbag/latest_rosbag/${objectName}_${sceneName}/${objectName}_${sceneName}_70_${rosbag}.bag" --clock  > /dev/null 2>&1 & 
-						rosbag play "rosbag/multi_obj_${rosbag}.bag" --clock --rate 0.2  > /dev/null 2>&1 & 
+						rosbag play "rosbag/multi_obj_${rosbag}.bag" --clock --rate 0.02  > /dev/null 2>&1 & 
 						# rosbag play "rosbag/multi_obj_5.bag" --clock  > /dev/null 2>&1 & 
 						ROSBAGPID=$!
 
@@ -55,7 +55,7 @@ do
 						
 						sleep $duration
 						kill -SIGINT $REPID
-						sleep 2
+						sleep 10
 						pkill -9 RecordE*
 						kill -SIGINT $PBPF_PID
 						pkill -9 Physics_Based_*

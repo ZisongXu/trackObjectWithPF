@@ -5,7 +5,7 @@ object_name_list:
 - cracker
 - gelatin
 - soup
-object_num: 3
+object_num: 1
 obstacles_ori:
 - - 1.0
   - 0.0
@@ -23,10 +23,10 @@ oto_name_list:
 otob_name_list:
 - cracker_obstacle
 - fish_can
-particle_num: 150
+particle_num: 70
 pick_particle_rate: 0.0
 robot_num: 1
 run_alg_flag: PBPF
-task_flag: '5'
+task_flag: '3'
 update_style_flag: time
 version: multiray

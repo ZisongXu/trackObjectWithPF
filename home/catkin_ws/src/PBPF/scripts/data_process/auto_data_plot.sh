@@ -3,7 +3,7 @@
 # declare -a objectNames=("cracker" "soup")
 declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a sceneNames=("scene3")
+declare -a sceneNames=("scene5")
 
 declare -a particleNumbers=(150)
 # declare -a objectNames=("cracker")
@@ -23,7 +23,7 @@ do
 			do
 				for ang_and_pos in "${Ang_and_Pos[@]}"
 				do
-					for ((rosbag=4;rosbag<=6;rosbag++)); 
+					for ((rosbag=8;rosbag<=8;rosbag++)); 
 					do
 						# python3 inter_data.py "${ang_and_pos}" &
 						# INTER_DATA_PID=$!

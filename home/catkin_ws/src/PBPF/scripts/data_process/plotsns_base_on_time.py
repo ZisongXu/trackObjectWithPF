@@ -49,7 +49,7 @@ save_file_path = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/"+err_file+"/"
 particle_num = sys.argv[1]
 object_name = sys.argv[2]
 sceneName = sys.argv[3] # "scene1"
-rosbag_flag = sys.argv[4]
+rosbag_flag = sys.argv[4] # 8
 update_style_flag = sys.argv[5] # time/pose
 ang_and_pos = sys.argv[6] # pos/ang
 # tem_name = sys.argv[6]
@@ -71,11 +71,11 @@ title_pos = "Positional errors (m) vs Time (s)"
 
 if ang_and_pos == "ang":
     if sceneName == "scene1":
-        x_range_max = 265
+        x_range_max = 340
         x_range_unit = 25
         y_range_max = 5
         y_range_unit = 0.4
-        x_xlim = 265
+        x_xlim = 340
         y_ylim = 5
     if sceneName == "scene2":
         x_range_max = 28
@@ -91,11 +91,11 @@ if ang_and_pos == "ang":
         # y_range_unit = 0.2
         # x_xlim = 28
         # y_ylim = 2.5
-        x_range_max = 265
+        x_range_max = 340
         x_range_unit = 25
         y_range_max = 5
         y_range_unit = 0.4
-        x_xlim = 265
+        x_xlim = 340
         y_ylim = 5
     if sceneName == "scene4":
         x_range_max = 28
@@ -106,6 +106,19 @@ if ang_and_pos == "ang":
         x_xlim = 28
         # y_ylim = 0.4
         y_ylim = 2.5
+    if sceneName == "scene5":
+        # x_range_max = 28
+        # x_range_unit = 2
+        # y_range_max = 2.5
+        # y_range_unit = 0.2
+        # x_xlim = 28
+        # y_ylim = 2.5
+        x_range_max = 3480
+        x_range_unit = 300
+        y_range_max = 5
+        y_range_unit = 0.4
+        x_xlim = 3480
+        y_ylim = 5
     print("Ready to plot the figure of ang")
     dataset_ang = pd.read_csv(save_file_path+file_name+'.csv', header=None)
     dataset_ang.columns=["index","time","Rotational Error (rad)","alg","obj_scene","particle_num","ray_type","obj_name"]
@@ -121,15 +134,15 @@ if ang_and_pos == "ang":
     plt.ylim(0, y_ylim)
     plt.title(title_ang, fontsize=16)
     svg_fig_ang = figure_ang.get_figure()
-    svg_fig_ang.savefig(save_file_path+file_name+".svg",format="svg")
+    svg_fig_ang.savefig(save_file_path+file_name+".png",format="png")
 
 if ang_and_pos == "pos":
     if sceneName == "scene1":
-        x_range_max = 265 # 28, 129, 265
+        x_range_max = 340 # 28, 129, 265
         x_range_unit = 25 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.04 # 0.04
-        x_xlim = 265 # 28
+        x_xlim = 340 # 28
         y_ylim = 0.5 # 0.5
     if sceneName == "scene2":
         x_range_max = 28
@@ -145,11 +158,11 @@ if ang_and_pos == "pos":
         # y_range_unit = 0.04
         # x_xlim = 28
         # y_ylim = 0.5
-        x_range_max = 265 # 28, 129, 265
+        x_range_max = 340 # 28, 129, 265, 1
         x_range_unit = 25 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.04 # 0.04
-        x_xlim = 265 # 28
+        x_xlim = 340 # 28
         y_ylim = 0.5 # 0.5
     if sceneName == "scene4":
         x_range_max = 28
@@ -158,6 +171,19 @@ if ang_and_pos == "pos":
         y_range_unit = 0.04
         x_xlim = 28
         y_ylim = 0.5
+    if sceneName == "scene5":
+        # x_range_max = 28
+        # x_range_unit = 2
+        # y_range_max = 0.5
+        # y_range_unit = 0.04
+        # x_xlim = 28
+        # y_ylim = 0.5
+        x_range_max = 3480 # 28, 129, 265, 1
+        x_range_unit = 300 # 2, 6, 25, 125
+        y_range_max = 0.5 # 0.5
+        y_range_unit = 0.04 # 0.04
+        x_xlim = 3480 # 28
+        y_ylim = 0.5 # 0.5
     print("Ready to plot the figure of pos")
     ymax = 0.12
     dataset_pos = pd.read_csv(save_file_path+file_name+'.csv', header=None)
@@ -186,6 +212,6 @@ if ang_and_pos == "pos":
     plt.ylim(0, y_ylim)
     plt.title(title_pos, fontsize=16)
     svg_fig_pos = figure_pos.get_figure()
-    svg_fig_pos.savefig(save_file_path+file_name+".svg",format="svg")
+    svg_fig_pos.savefig(save_file_path+file_name+".png",format="png")
 
 print("finished")

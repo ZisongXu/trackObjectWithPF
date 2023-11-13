@@ -91,7 +91,31 @@ def set_real_robot_JointPosition(pybullet_env, robot_id, joint_states):
                                                 pybullet_env.POSITION_CONTROL,
                                                 targetPosition=joint_states[joint_index])
 
+# compute debug line point set
+def cracker_debug_line_point_set(cracker_shape_size, pw_T_parC_4_4, vector_list):
+    point_list = []
+    point_pos_list = []
+    vector_length = len(vector_list)
+    for index in range(vector_length):
+        parC_T_p_x_new = vector_list[index][0] * cracker_shape_size[0]/2
+        parC_T_p_y_new = vector_list[index][1] * cracker_shape_size[1]/2
+        parC_T_p_z_new = vector_list[index][2] * cracker_shape_size[2]/2
+        parC_T_p_pos = [parC_T_p_x_new, parC_T_p_y_new, parC_T_p_z_new]
+        parC_T_p_ori = [0, 0, 0, 1] # x, y, z, w
+        parC_T_p_3_3 = transformations.quaternion_matrix(parC_T_p_ori)
+        parC_T_p_4_4 = rotation_4_4_to_transformation_4_4(parC_T_p_3_3, parC_T_p_pos)
+        pw_T_p_4_4 = np.dot(pw_T_parC_4_4, parC_T_p_4_4)
+        pw_T_p_pos = [pw_T_p_4_4[0][3], pw_T_p_4_4[1][3], pw_T_p_4_4[2][3]]
+        pw_T_p_ori = transformations.quaternion_from_matrix(pw_T_p_4_4)
+        pw_T_p_pose = Center_T_Point_for_Ray(pw_T_p_pos, pw_T_p_ori, parC_T_p_4_4, index)
+        point_list.append(pw_T_p_pose)
+        point_pos_list.append(pw_T_p_pos)
+    return point_pos_list
 
+# add debug line
+def add_debug_line(vector_length, a_start, b_end_list, color):
+    for index in range(vector_length):
+        p_visualisation.addUserDebugLine(a_start, b_end_list[index], lineColorRGB=color, lineWidth=1)
 
 opt_T_she_pos = [0.9005279541015625, 0.36096227169036865, 0.8243836760520935]
 opt_T_she_ori = [0, 0, 0, 1]
@@ -135,13 +159,31 @@ joint_states = [-0.416393778717333,
 set_real_robot_JointPosition(p_visualisation, real_robot_id, joint_states)
 
 # cracker_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_obse_name+"/"+gazebo_contain+obj_obse_name+"_par_no_visual_hor.urdf"),
-cracker_pos = [0.25, -0.05, 0.085]
-cracker_ori = [0, 1, 0, 1]
-pw_T_cracker_3_3 = transformations.quaternion_matrix(cracker_ori)
-pw_T_cracker_4_4 = rotation_4_4_to_transformation_4_4(pw_T_cracker_3_3, cracker_pos)
+cracker1_pos = [0.25, -0.05, 0.085]
+cracker1_ori = [0, 1, 0, 1] # (0.690527050730201, 0.15228119684895902, 0.15227363064756175, 0.6905038527810753)
+pw_T_cracker1_3_3 = transformations.quaternion_matrix(cracker1_ori)
+pw_T_cracker1_4_4 = rotation_4_4_to_transformation_4_4(pw_T_cracker1_3_3, cracker1_pos)
 cracker_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_par_no_visual_hor.urdf"),
-                                                         cracker_pos,
-                                                         cracker_ori)
+                                                         cracker1_pos,
+                                                         cracker1_ori)
+
+cracker2_pos = [0.37724945986529196, 0.20917670309857364, 0.085]
+cracker2_ori = [-0.2130909190791487, -0.6742164207435634, -0.2130985610453765, 0.6742503107052543] # (0.690527050730201, 0.15228119684895902, 0.15227363064756175, 0.6905038527810753)
+pw_T_cracker2_3_3 = transformations.quaternion_matrix(cracker2_ori)
+pw_T_cracker2_4_4 = rotation_4_4_to_transformation_4_4(pw_T_cracker2_3_3, cracker2_pos)
+cracker2_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_par_no_visual_hor.urdf"),
+                                                         cracker2_pos,
+                                                         cracker2_ori)
+
+
+obstacle_pos = [0.7390681677092075, -0.05127685137888386, 0.299/2]
+obstacle_ori = [0.690527050730201, 0.15228119684895902, 0.15227363064756175, 0.6905038527810753]
+pw_T_obstacle_3_3 = transformations.quaternion_matrix(obstacle_ori)
+pw_T_obstacle_4_4 = rotation_4_4_to_transformation_4_4(pw_T_obstacle_3_3, obstacle_pos)
+obstacle_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_big.urdf"),
+                                                          obstacle_pos,
+                                                          obstacle_ori)
+
 
 camera_pos = [1, 0.0, 0.3]
 camera_ori = [0, 0, 0, 1]
@@ -151,10 +193,13 @@ camera_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others
                                                          useFixedBase=1)
 
 
+
 camera_T_lens_pos = [0.0, 0.025, 0.0]
 camera_T_lens_ori = [0, 0, 0, 1]
 camera_T_lens_3_3 = transformations.quaternion_matrix(camera_T_lens_ori)
 camera_T_lens_4_4 = rotation_4_4_to_transformation_4_4(camera_T_lens_3_3, camera_T_lens_pos)
+camera_pos = [1, 0.0, 0.3]
+camera_ori = [0, 0, 0, 1]
 pw_T_camera_3_3 = transformations.quaternion_matrix(camera_ori)
 pw_T_camera_4_4 = rotation_4_4_to_transformation_4_4(pw_T_camera_3_3, camera_pos)
 pw_T_lens_4_4 = np.dot(pw_T_camera_4_4, camera_T_lens_4_4)
@@ -171,34 +216,31 @@ vector_list = [[1,1,1], [1,1,-1], [1,-1,1], [1,-1,-1],
                [0.5,0.5,1], [0.5,-0.5,1], [-0.5,0.5,1], [-0.5,-0.5,1],
                [0.5,0.5,-1], [0.5,-0.5,-1], [-0.5,0.5,-1], [-0.5,-0.5,-1]]
 vector_length = len(vector_list)
-point_list = []
-point_pos_list = []
 x_w = 0.16 
 y_l = 0.21343700408935547 
 z_h = 0.061
-pw_T_parC_4_4 = pw_T_cracker_4_4
-for index in range(vector_length):
-    parC_T_p_x_new = vector_list[index][0] * x_w/2
-    parC_T_p_y_new = vector_list[index][1] * y_l/2
-    parC_T_p_z_new = vector_list[index][2] * z_h/2
-    parC_T_p_pos = [parC_T_p_x_new, parC_T_p_y_new, parC_T_p_z_new]
-    parC_T_p_ori = [0, 0, 0, 1] # x, y, z, w
-    parC_T_p_3_3 = transformations.quaternion_matrix(parC_T_p_ori)
-    parC_T_p_4_4 = rotation_4_4_to_transformation_4_4(parC_T_p_3_3, parC_T_p_pos)
-    pw_T_p_4_4 = np.dot(pw_T_parC_4_4, parC_T_p_4_4)
-    pw_T_p_pos = [pw_T_p_4_4[0][3], pw_T_p_4_4[1][3], pw_T_p_4_4[2][3]]
-    pw_T_p_ori = transformations.quaternion_from_matrix(pw_T_p_4_4)
-    pw_T_p_pose = Center_T_Point_for_Ray(pw_T_p_pos, pw_T_p_ori, parC_T_p_4_4, index)
-    point_list.append(pw_T_p_pose)
-    point_pos_list.append(pw_T_p_pos)
-for index in range(vector_length):
-    p_visualisation.addUserDebugLine(pw_T_lens_pos, point_pos_list[index], lineColorRGB=[1, 0, 0], lineWidth=1)
+cracker_shape_size = [x_w, y_l, z_h]
+
+pw_T_parC1_4_4 = pw_T_cracker1_4_4
+point_pos_list1 = cracker_debug_line_point_set(cracker_shape_size, pw_T_parC1_4_4, vector_list)
+color1 = [1, 0.30196078, 0.25098039]
+add_debug_line(vector_length, pw_T_lens_pos, point_pos_list1, color1)
+
+pw_T_parC2_4_4 = pw_T_cracker2_4_4
+point_pos_list2 = cracker_debug_line_point_set(cracker_shape_size, pw_T_parC2_4_4, vector_list)
+# color2 = [0.56862745, 0.62352941, 0.83921569] # purple
+color2 = [0.02352941, 0.6627451, 0.61568627]
+add_debug_line(vector_length, pw_T_lens_pos, point_pos_list2, color2)
+
 
 while True:
 # for i in range(240):
     a = 1
     p_visualisation.stepSimulation()
     time.sleep(1./240.)
+    obstacle_info = p_visualisation.getBasePositionAndOrientation(cracker2_id)
+    print("obstacle_info:")
+    print(obstacle_info)
     # time.sleep(1)
     
 # for i in range(240):

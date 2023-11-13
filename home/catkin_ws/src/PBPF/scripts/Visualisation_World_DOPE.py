@@ -550,6 +550,7 @@ while reset_flag == True:
                     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                         print("from dope")
                         print("can not find tf")
+                    print(trans_ob, rot_ob)
                     rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
                     rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
                     rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)

@@ -127,22 +127,55 @@ pw_T_parC_4_4 = [[1,0,0,0],
                  [0,0,0,1]]
 
 generate_point_for_ray(pw_T_center_pos, pw_T_parC_4_4)
-input("stop")
 
-#center_T_p2_pos = 
-#center_T_p2_ori = 
-#center_T_p3_pos = 
-#center_T_p3_ori = 
-#center_T_p4_pos = 
-#center_T_p4_ori = 
-#center_T_p5_pos = 
-#center_T_p5_ori = 
-#center_T_p6_pos = 
-#center_T_p6_ori = 
-#center_T_p7_pos = 
-#center_T_p7_ori = 
-#center_T_p8_pos = 
-#center_T_p8_ori = 
+
+def setCameraPicAndGetPic(robot_id : int, width : int = 224, height : int = 224, physicsClientId : int = 0):
+    """
+    给合成摄像头设置图像并返回robot_id对应的图像
+    摄像头的位置为miniBox前头的位置
+    """
+    basePos, baseOrientation = p.getBasePositionAndOrientation(robot_id, physicsClientId=physicsClientId)
+   
+    # 从四元数中获取变换矩阵，从中获知指向(左乘(1,0,0)，因为在原本的坐标系内，摄像机的朝向为(1,0,0))
+    matrix = p.getMatrixFromQuaternion(baseOrientation, physicsClientId=physicsClientId)
+    tx_vec = np.array([matrix[0], matrix[3], matrix[6]])              # 变换后的x轴
+    tz_vec = np.array([matrix[2], matrix[5], matrix[8]])              # 变换后的z轴
+    print("baseOrientation:", baseOrientation)
+    print("matrix:", matrix)
+    print("tx_vec:", tx_vec)
+    print("tz_vec:", tz_vec)
+    basePos = np.array(basePos)
+    # 摄像头的位置
+    # BASE_RADIUS 为 0.5，是机器人底盘的半径。BASE_THICKNESS 为 0.2 是机器人底盘的厚度。
+    # 别问我为啥不写成全局参数，因为我忘了我当时为什么这么写的。
+    BASE_RADIUS = 0.5
+    BASE_THICKNESS = 0.2
+    cameraPos = basePos + BASE_RADIUS * tx_vec + 0.5 * BASE_THICKNESS * tz_vec
+    cameraPos = [-1, 0, 1]
+    targetPos = cameraPos + 1 * tx_vec
+
+    viewMatrix = p.computeViewMatrix(
+        cameraEyePosition=cameraPos,
+        cameraTargetPosition=targetPos,
+        cameraUpVector=tz_vec,
+        physicsClientId=physicsClientId
+    )
+    projectionMatrix = p.computeProjectionMatrixFOV(
+        fov=86.0,               # 摄像头的视线夹角
+        aspect=1.0,
+        nearVal=0.3,            # 摄像头焦距下限
+        farVal=3,               # 摄像头能看上限
+        physicsClientId=physicsClientId
+    )
+
+    width, height, rgbImg, depthImg, segImg = p.getCameraImage(
+        width=width, height=height,
+        viewMatrix=viewMatrix,
+        projectionMatrix=projectionMatrix,
+        physicsClientId=physicsClientId
+    )
+   
+    return width, height, rgbImg, depthImg, segImg
 
 
 print(pw_T_center_4_4)

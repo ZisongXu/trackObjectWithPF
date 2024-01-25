@@ -341,7 +341,7 @@ reset_flag = True
 
 while reset_flag == True:
     reset_flag = False
-
+    
     if __name__ == '__main__':
     #    par_obj_id = [[]*2 for _ in range(50)]
     #    print(par_obj_id)
@@ -367,7 +367,7 @@ while reset_flag == True:
         display_gt_flag = True
         if optitrack_flag == False:
             display_gt_flag = False
-            
+
         display_obse_flag = False
         object_name_list = parameter_info['object_name_list']
         task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
@@ -381,6 +381,9 @@ while reset_flag == True:
         visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
         
         trans_ob_list, rot_ob_list, trans_gt, rot_gt = visual_world.initialize_visual_world_pybullet_env(task_flag)
+        
+        
+        
         # print("I am here")
         # input("stop")
         listener_tf = visual_world.listener
@@ -393,6 +396,7 @@ while reset_flag == True:
         par_obj_id = [[]*object_num for _ in range(particle_num)]
         esti_obj_id = [0] * object_num
         # input("stop")
+        
         while not rospy.is_shutdown():
             
             if reset_flag == False:

@@ -1927,7 +1927,10 @@ while reset_flag == True:
         rob_T_cam_tf_4_4 = rotation_4_4_to_transformation_4_4(rob_T_cam_tf_3_3, rob_T_cam_tf_pos)
         pw_T_cam_tf = np.dot(pw_T_rob_sim_4_4, rob_T_cam_tf_4_4)
         pw_T_cam_tf_pos = [pw_T_cam_tf[0][3], pw_T_cam_tf[1][3], pw_T_cam_tf[2][3]]
-            
+        
+        print("==========")
+        print(pw_T_cam_tf)
+        print("pw_T_cam_tf")
 
         # run the simulation
         Flag = True

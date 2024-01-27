@@ -672,57 +672,6 @@ class PBPFMove():
                 newParticles_list[index].append(particle)
                 
         self.particle_cloud = copy.deepcopy(newParticles_list)   
-        # newParticles_list = [[]*self.obj_num for _ in range(n_particle)]
-        # for obj_index in range(self.obj_num):
-        #     obse_obj_pos = pw_T_obj_obse_objs_pose_list[obj_index].pos
-        #     obse_obj_ori = pw_T_obj_obse_objs_pose_list[obj_index].ori # pybullet x,y,z,w
-
-        #     particles_w = []
-        #     # newParticles = []
-        #     base_w = 0
-        #     base_w_list = []
-        #     base_w_list.append(base_w)
-        #     particle_array_list = []
-        #     # compute sum of weight
-        #     for particle in self.particle_cloud:
-        #         particles_w.append(particle[obj_index].w)
-        #         base_w = base_w + particle[obj_index].w
-        #         base_w_list.append(base_w)
-        #     w_sum = sum(particles_w)
-        #     r = random.uniform(0, w_sum)
-
-        #     for index,i in enumerate(particle_array_list): # particle angle
-        #         particle = Particle(self.particle_cloud[i][obj_index].par_name,
-        #                             self.particle_cloud[index][obj_index].visual_par_id,
-        #                             self.particle_cloud[index][obj_index].no_visual_par_id,
-        #                             self.particle_cloud[i][obj_index].pos,
-        #                             self.particle_cloud[i][obj_index].ori,
-        #                             1.0/particle_num, 
-        #                             index,
-        #                             self.particle_cloud[i][obj_index].linearVelocity,
-        #                             self.particle_cloud[i][obj_index].angularVelocity)
-        #         newParticles_list[index].append(particle)
-        #     print(index)
-        #     print(obj_index)
-        #     print(par_num_on_obse)
-        #     print(self.particle_cloud[index][obj_index].visual_par_id)
-
-        #     for index_leftover in range(par_num_on_obse):
-        #         print(index)
-        #         index = index + 1
-        #         particle = Particle(self.particle_cloud[index_leftover][obj_index].par_name,
-        #                             self.particle_cloud[index][obj_index].visual_par_id,
-        #                             self.particle_cloud[index][obj_index].no_visual_par_id,
-        #                             obse_obj_pos,
-        #                             obse_obj_ori,
-        #                             1.0/particle_num, 
-        #                             index,
-        #                             self.particle_cloud[index_leftover][obj_index].linearVelocity,
-        #                             self.particle_cloud[index_leftover][obj_index].angularVelocity)
-        #         newParticles_list[index].append(particle)
-
-#                newParticles.append(particle)
-        
 
     def compute_position(self, position, base_w_list):
         for index in range(1, len(base_w_list)):

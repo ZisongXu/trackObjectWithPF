@@ -391,16 +391,16 @@ class PBPFMove():
             # rotation weight
             par_ori = quaternion_correction(particle[obj_index].ori)
             obse_obj_quat = Quaternion(x=obse_obj_ori_corr[0], 
-                                        y=obse_obj_ori_corr[1], 
-                                        z=obse_obj_ori_corr[2], 
-                                        w=obse_obj_ori_corr[3]) # Quaternion(): w,x,y,z
+                                       y=obse_obj_ori_corr[1], 
+                                       z=obse_obj_ori_corr[2], 
+                                       w=obse_obj_ori_corr[3]) # Quaternion(): w,x,y,z
             par_quat = Quaternion(x=par_ori[0], y=par_ori[1], z=par_ori[2], w=par_ori[3])
             err_bt_par_obse = par_quat * obse_obj_quat.inverse
-            err_bt_par_obse_corr = quaternion_correction([err_bt_par_obse.x,err_bt_par_obse.y,err_bt_par_obse.z,err_bt_par_obse.w])
+            err_bt_par_obse_corr = quaternion_correction([err_bt_par_obse.x, err_bt_par_obse.y, err_bt_par_obse.z, err_bt_par_obse.w])
             err_bt_par_obse_corr_quat = Quaternion(x=err_bt_par_obse_corr[0], 
-                                        y=err_bt_par_obse_corr[1], 
-                                        z=err_bt_par_obse_corr[2], 
-                                        w=err_bt_par_obse_corr[3])
+                                                   y=err_bt_par_obse_corr[1], 
+                                                   z=err_bt_par_obse_corr[2], 
+                                                   w=err_bt_par_obse_corr[3])
             cos_theta_over_2 = err_bt_par_obse_corr_quat.w
             sin_theta_over_2 = math.sqrt(err_bt_par_obse_corr_quat.x ** 2 + err_bt_par_obse_corr_quat.y ** 2 + err_bt_par_obse_corr_quat.z ** 2)
             theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)

@@ -150,47 +150,6 @@ class PBPFMove():
         
         return object_estimate_pose, dis_std_list, ang_std_list, self.particle_cloud
     
-    # judge if any particles are contact
-    def isAnyParticleInContact(self):
-        for index, particle in enumerate(self.particle_cloud):
-            for obj_index in range(object_num):
-                # get pose from particle
-                pw_T_par_sim_pw_env = self.pybullet_env_id_collection[index]
-                # pw_T_par_sim_id = self.particle_no_visual_id_collection[index][obj_index]
-                pw_T_par_sim_id = particle[obj_index].no_visual_par_id
-                # sim_par_cur_pos, sim_par_cur_ori = self.get_item_pos(self.pybullet_env_id_collection[index], pw_T_par_sim_id)
-                sim_par_cur_pos, sim_par_cur_ori = self.get_item_pos(pw_T_par_sim_pw_env, pw_T_par_sim_id)
-
-                # check contact 
-                pmin, pmax = pw_T_par_sim_pw_env.getAABB(pw_T_par_sim_id)
-                collide_ids = pw_T_par_sim_pw_env.getOverlappingObjects(pmin, pmax)
-                length = len(collide_ids)
-                for t_i in range(length):
-                    # print("body id: ",collide_ids[t_i][1])
-                    if collide_ids[t_i][1] == 8 or collide_ids[t_i][1] == 9 or collide_ids[t_i][1] == 10 or collide_ids[t_i][1] == 11:
-                        return True
-        return False
-    
-    # update particle cloud particle angle
-    def update_partcile_cloud_pose_PB(self, index, obj_index, x, y, z, ori, linearVelocity, angularVelocity):
-        self.particle_cloud[index][obj_index].pos = [x, y, z]
-        self.particle_cloud[index][obj_index].ori = copy.deepcopy(ori)
-        self.particle_cloud[index][obj_index].linearVelocity = linearVelocity
-        self.particle_cloud[index][obj_index].angularVelocity = angularVelocity
-        # self.particle_cloud[index][obj_index].rayTraceList = [1,2,3]
-        model = 'motion'
-        weight = 1
-        if version == "ray" and (self.do_obs_update==False or dope_detection_flag==False or sum(global_objects_visual_by_DOPE_list)==object_num):
-            par_pos = copy.deepcopy([x, y, z])
-            weight = self.single_ray_tracing(model, par_pos, p_sim, weight)
-        elif version == "multiray" and (self.do_obs_update == False or dope_detection_flag == False or sum(global_objects_visual_by_DOPE_list)==object_num):
-            # need to change
-            par_pos = copy.deepcopy([x, y, z])
-            par_ori = copy.deepcopy(ori)
-            weight = self.multi_ray_tracing(model, par_pos, par_ori, p_sim, obj_index, weight)
-    
-        self.particle_cloud[index][obj_index].w = weight
-            
     # motion model
     def motion_update_PB_parallelised(self, pybullet_sim_env, fake_robot_id, real_robot_joint_pos):
         global simRobot_touch_par_flag
@@ -198,7 +157,7 @@ class PBPFMove():
         for index, pybullet_env in enumerate(pybullet_sim_env):
             # execute code in parallel
             if simRobot_touch_par_flag == 1:
-                thread = threading.Thread(target=self.function_to_parallelise, args=(index, pybullet_env, fake_robot_id, real_robot_joint_pos))
+                thread = threading.Thread(target=self.motion_update_PB, args=(index, pybullet_env, fake_robot_id, real_robot_joint_pos))
             else:
                 thread = threading.Thread(target=self.sim_robot_move_direct, args=(index, pybullet_env, fake_robot_id, real_robot_joint_pos))
             thread.start()
@@ -208,41 +167,7 @@ class PBPFMove():
         if simRobot_touch_par_flag == 0:
             return
     
-    # observation model:
-    def observation_update_PB_parallelised(self, particle_cloud, pw_T_obj_obse_objects_pose_list):
-        threads = []
-        for index, particle in enumerate(particle_cloud):
-            thread = threading.Thread(target=self.observation_update_PB, args=(index, particle, pw_T_obj_obse_objects_pose_list))
-            thread.start()
-            threads.append(thread)
-        for thread in threads:
-            thread.join()
-            
-    # synchronizing the motion of the robot in the simulation
-    def sim_robot_move_direct(self, index, pybullet_env, robot_id, position):
-        num_joints = 9
-        for joint_index in range(num_joints):
-            if joint_index == 7 or joint_index == 8:
-                pybullet_env.resetJointState(robot_id[index],
-                                             joint_index+2,
-                                             targetValue=position[joint_index])
-            else:
-                pybullet_env.resetJointState(robot_id[index],
-                                             joint_index,
-                                             targetValue=position[joint_index])
-    
-    def pose_sim_robot_move(self, index, pybullet_env, fake_robot_id, real_robot_joint_pos):
-        flag_set_sim = 1
-        # ensure the robot arm in the simulation moves to the final state on each update
-        while not rospy.is_shutdown():
-            if flag_set_sim == 0:
-                break
-            self.set_real_robot_JointPosition(pybullet_env, fake_robot_id[index], real_robot_joint_pos)
-            pybullet_env.stepSimulation()
-            real_rob_joint_list_cur = self.get_real_robot_joint(pybullet_env, fake_robot_id[index])
-            flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur, real_robot_joint_pos)
-            
-    def function_to_parallelise(self, index, pybullet_env, fake_robot_id, real_robot_joint_pos):
+    def motion_update_PB(self, index, pybullet_env, fake_robot_id, real_robot_joint_pos):
         other_object_id_list_list = self.pybullet_sim_other_object_id_collection
         collision_detection_obj_id = []
         
@@ -286,84 +211,69 @@ class PBPFMove():
                                                          P_quat)
             collision_detection_obj_id.append(pw_T_par_sim_id)
 
-            
             # check collision
-            if motion_noise == True:
-                nTries = 0
-                while nTries < 20:
-                    nTries=nTries+1
-                    # print("checking")
-                    flag = 0
-                    length_collision_detection_obj_id = len(collision_detection_obj_id)
-                    for check_num in range(length_collision_detection_obj_id-1):
-                        pybullet_env.stepSimulation()
-                        # will return all collision points
-                        contacts = pybullet_env.getContactPoints(bodyA=collision_detection_obj_id[check_num], # robot, other object...
-                                                                 bodyB=collision_detection_obj_id[-1]) # main(target) object
-                        # pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
-                        # collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
-                        # length = len(collide_ids)
-                        for contact in contacts:
-                            contactNormalOnBtoA = contact[7]
-                            contact_dis = contact[8]
-                            if contact_dis < -0.001:
-                                #print("detected contact during initialization. BodyA: %d, BodyB: %d, LinkOfA: %d, LinkOfB: %d", contact[1], contact[2], contact[3], contact[4])
-                                
-                                
-                                # par_x_ = sim_par_cur_pos[0] + contactNormalOnBtoA[0]*contact_dis/2
-                                # par_y_ = sim_par_cur_pos[1] + contactNormalOnBtoA[1]*contact_dis/2
-                                # par_z_ = sim_par_cur_pos[2] + contactNormalOnBtoA[2]*contact_dis/2
-                                # particle_pos = [par_x_, par_y_, par_z_]
-                                # normal_x = par_x_
-                                # normal_y = par_y_
-                                # normal_z = par_z_
-                                normal_x, normal_y, normal_z, P_quat = self.add_noise_pose(sim_par_cur_pos, sim_par_cur_ori)
-                                pybullet_env.resetBasePositionAndOrientation(pw_T_par_sim_id,
-                                                                             [normal_x, normal_y, normal_z],
-                                                                             P_quat)
-                                flag = 1
-                                break
-                        if flag == 1:
-                            break
-                    if flag == 0:
-                        break
-                if nTries >= 10: # This means we could not find a non-colliding particle position.
-                    print("WARNING: Could not find a non-colliding particle position after motion noise. Moving particle object to noise-less pose. Particle index, object index ", index, obj_index)
-                    pybullet_env.resetBasePositionAndOrientation(pw_T_par_sim_id, sim_par_cur_pos, sim_par_cur_ori)
-
+            par_pose_3_1 = [normal_x, normal_y, normal_z, P_quat]
+            normal_x, normal_y, normal_z, P_quat = self.collision_check(pybullet_env, 
+                                                                        collision_detection_obj_id, 
+                                                                        sim_par_cur_pos, sim_par_cur_ori, 
+                                                                        pw_T_par_sim_id, index, obj_index, 
+                                                                        par_pose_3_1)
+            
             self.update_partcile_cloud_pose_PB(index, obj_index, normal_x, normal_y, normal_z, P_quat, linearVelocity, angularVelocity)
         # pipe.send()
- 
-    # add noise
-    def add_noise_pose(self, sim_par_cur_pos, sim_par_cur_ori):
-        normal_x = self.add_noise_2_par(sim_par_cur_pos[0])
-        normal_y = self.add_noise_2_par(sim_par_cur_pos[1])
-        normal_z = self.add_noise_2_par(sim_par_cur_pos[2])
-        #add noise on ang of each particle
-        quat = copy.deepcopy(sim_par_cur_ori)#x,y,z,w
-        quat_QuatStyle = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])# w,x,y,z
-        random_dir = random.uniform(0, 2*math.pi)
-        z_axis = random.uniform(-1,1)
-        x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
-        y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
-        angle_noise = self.add_noise_2_ang(0)
-        w_quat = math.cos(angle_noise/2.0)
-        x_quat = math.sin(angle_noise/2.0) * x_axis
-        y_quat = math.sin(angle_noise/2.0) * y_axis
-        z_quat = math.sin(angle_noise/2.0) * z_axis
-        ###nois_quat(w,x,y,z); new_quat(w,x,y,z)
-        nois_quat = Quaternion(x=x_quat, y=y_quat, z=z_quat, w=w_quat)
-        new_quat = nois_quat * quat_QuatStyle
-        ###pb_quat(x,y,z,w)
-        pb_quat = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
-        new_angle = p_sim.getEulerFromQuaternion(pb_quat)
-        P_quat = p_sim.getQuaternionFromEuler(new_angle)
-        # pipe.send()
-        return normal_x, normal_y, normal_z, P_quat
+
+    # update particle cloud particle angle
+    def update_partcile_cloud_pose_PB(self, index, obj_index, x, y, z, ori, linearVelocity, angularVelocity):
+        self.particle_cloud[index][obj_index].pos = [x, y, z]
+        self.particle_cloud[index][obj_index].ori = copy.deepcopy(ori)
+        self.particle_cloud[index][obj_index].linearVelocity = linearVelocity
+        self.particle_cloud[index][obj_index].angularVelocity = angularVelocity
+        # self.particle_cloud[index][obj_index].rayTraceList = [1,2,3]
+        model = 'motion'
+        weight = 1
+        if version == "ray" and (self.do_obs_update==False or dope_detection_flag==False or sum(global_objects_visual_by_DOPE_list)==object_num):
+            par_pos = copy.deepcopy([x, y, z])
+            weight = self.single_ray_tracing(model, par_pos, p_sim, weight)
+        elif version == "multiray" and (self.do_obs_update == False or dope_detection_flag == False or sum(global_objects_visual_by_DOPE_list)==object_num):
+            # need to change
+            par_pos = copy.deepcopy([x, y, z])
+            par_ori = copy.deepcopy(ori)
+            weight = self.multi_ray_tracing(model, par_pos, par_ori, p_sim, obj_index, weight)
+    
+        self.particle_cloud[index][obj_index].w = weight
+    
+    # judge if any particles are contact
+    def isAnyParticleInContact(self):
+        for index, particle in enumerate(self.particle_cloud):
+            for obj_index in range(object_num):
+                # get pose from particle
+                pw_T_par_sim_pw_env = self.pybullet_env_id_collection[index]
+                # pw_T_par_sim_id = self.particle_no_visual_id_collection[index][obj_index]
+                pw_T_par_sim_id = particle[obj_index].no_visual_par_id
+                # sim_par_cur_pos, sim_par_cur_ori = self.get_item_pos(self.pybullet_env_id_collection[index], pw_T_par_sim_id)
+                sim_par_cur_pos, sim_par_cur_ori = self.get_item_pos(pw_T_par_sim_pw_env, pw_T_par_sim_id)
+
+                # check contact 
+                pmin, pmax = pw_T_par_sim_pw_env.getAABB(pw_T_par_sim_id)
+                collide_ids = pw_T_par_sim_pw_env.getOverlappingObjects(pmin, pmax)
+                length = len(collide_ids)
+                for t_i in range(length):
+                    # print("body id: ",collide_ids[t_i][1])
+                    if collide_ids[t_i][1] == 8 or collide_ids[t_i][1] == 9 or collide_ids[t_i][1] == 10 or collide_ids[t_i][1] == 11:
+                        return True
+        return False
+    
+    # observation model:
+    def observation_update_PB_parallelised(self, particle_cloud, pw_T_obj_obse_objects_pose_list):
+        threads = []
+        for index, particle in enumerate(particle_cloud):
+            thread = threading.Thread(target=self.observation_update_PB, args=(index, particle, pw_T_obj_obse_objects_pose_list))
+            thread.start()
+            threads.append(thread)
+        for thread in threads:
+            thread.join()
     
     # observation model
-    # begin to change
-    # begin to change2
     def observation_update_PB(self, index, particle, pw_T_obj_obse_objects_pose_list):
         objs_weight_list = []
         # for index, particle in enumerate(self.particle_cloud): # particle angle
@@ -417,8 +327,107 @@ class PBPFMove():
                 _par_ori = copy.deepcopy(par_ori)
                 weight = self.multi_ray_tracing(model, _par_pos, _par_ori, p_sim, obj_index, weight)
             particle[obj_index].w = weight
+      
+    # synchronizing the motion of the robot in the simulation
+    def sim_robot_move_direct(self, index, pybullet_env, robot_id, position):
+        num_joints = 9
+        for joint_index in range(num_joints):
+            if joint_index == 7 or joint_index == 8:
+                pybullet_env.resetJointState(robot_id[index],
+                                             joint_index+2,
+                                             targetValue=position[joint_index])
+            else:
+                pybullet_env.resetJointState(robot_id[index],
+                                             joint_index,
+                                             targetValue=position[joint_index])
+    
+    def pose_sim_robot_move(self, index, pybullet_env, fake_robot_id, real_robot_joint_pos):
+        flag_set_sim = 1
+        # ensure the robot arm in the simulation moves to the final state on each update
+        while not rospy.is_shutdown():
+            if flag_set_sim == 0:
+                break
+            self.set_real_robot_JointPosition(pybullet_env, fake_robot_id[index], real_robot_joint_pos)
+            pybullet_env.stepSimulation()
+            real_rob_joint_list_cur = self.get_real_robot_joint(pybullet_env, fake_robot_id[index])
+            flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur, real_robot_joint_pos)
+            
+    def collision_check(self, pybullet_env, collision_detection_obj_id, sim_par_cur_pos, sim_par_cur_ori, pw_T_par_sim_id, index, obj_index, par_pose_3_1):
+        normal_x = par_pose_3_1[0]
+        normal_y = par_pose_3_1[1]
+        normal_z = par_pose_3_1[2]
+        P_quat = par_pose_3_1[3]
+        if MOTION_NOISE == True:
+            nTries = 0
+            while nTries < 20:
+                nTries=nTries+1
+                # print("checking")
+                flag = 0
+                length_collision_detection_obj_id = len(collision_detection_obj_id)
+                for check_num in range(length_collision_detection_obj_id-1):
+                    pybullet_env.stepSimulation()
+                    # will return all collision points
+                    contacts = pybullet_env.getContactPoints(bodyA=collision_detection_obj_id[check_num], # robot, other object...
+                                                                bodyB=collision_detection_obj_id[-1]) # main(target) object
+                    # pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
+                    # collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
+                    # length = len(collide_ids)
+                    for contact in contacts:
+                        contactNormalOnBtoA = contact[7]
+                        contact_dis = contact[8]
+                        if contact_dis < -0.001:
+                            #print("detected contact during initialization. BodyA: %d, BodyB: %d, LinkOfA: %d, LinkOfB: %d", contact[1], contact[2], contact[3], contact[4])
+                            
+                            
+                            # par_x_ = sim_par_cur_pos[0] + contactNormalOnBtoA[0]*contact_dis/2
+                            # par_y_ = sim_par_cur_pos[1] + contactNormalOnBtoA[1]*contact_dis/2
+                            # par_z_ = sim_par_cur_pos[2] + contactNormalOnBtoA[2]*contact_dis/2
+                            # particle_pos = [par_x_, par_y_, par_z_]
+                            # normal_x = par_x_
+                            # normal_y = par_y_
+                            # normal_z = par_z_
+                            normal_x, normal_y, normal_z, P_quat = self.add_noise_pose(sim_par_cur_pos, sim_par_cur_ori)
+                            pybullet_env.resetBasePositionAndOrientation(pw_T_par_sim_id,
+                                                                            [normal_x, normal_y, normal_z],
+                                                                            P_quat)
+                            flag = 1
+                            break
+                    if flag == 1:
+                        break
+                if flag == 0:
+                    break
+            if nTries >= 10: # This means we could not find a non-colliding particle position.
+                print("WARNING: Could not find a non-colliding particle position after motion noise. Moving particle object to noise-less pose. Particle index, object index ", index, obj_index)
+                pybullet_env.resetBasePositionAndOrientation(pw_T_par_sim_id, sim_par_cur_pos, sim_par_cur_ori)
+        return normal_x, normal_y, normal_z, P_quat
 
-
+    # add noise
+    def add_noise_pose(self, sim_par_cur_pos, sim_par_cur_ori):
+        normal_x = self.add_noise_2_par(sim_par_cur_pos[0])
+        normal_y = self.add_noise_2_par(sim_par_cur_pos[1])
+        normal_z = self.add_noise_2_par(sim_par_cur_pos[2])
+        #add noise on ang of each particle
+        quat = copy.deepcopy(sim_par_cur_ori)#x,y,z,w
+        quat_QuatStyle = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])# w,x,y,z
+        random_dir = random.uniform(0, 2*math.pi)
+        z_axis = random.uniform(-1,1)
+        x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
+        y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
+        angle_noise = self.add_noise_2_ang(0)
+        w_quat = math.cos(angle_noise/2.0)
+        x_quat = math.sin(angle_noise/2.0) * x_axis
+        y_quat = math.sin(angle_noise/2.0) * y_axis
+        z_quat = math.sin(angle_noise/2.0) * z_axis
+        ###nois_quat(w,x,y,z); new_quat(w,x,y,z)
+        nois_quat = Quaternion(x=x_quat, y=y_quat, z=z_quat, w=w_quat)
+        new_quat = nois_quat * quat_QuatStyle
+        ###pb_quat(x,y,z,w)
+        pb_quat = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
+        new_angle = p_sim.getEulerFromQuaternion(pb_quat)
+        P_quat = p_sim.getQuaternionFromEuler(new_angle)
+        # pipe.send()
+        return normal_x, normal_y, normal_z, P_quat
+    
     def single_ray_tracing(self, model, par_pos, p_sim, weight=1):
         pw_T_par_sim_pos = copy.deepcopy(par_pos)
         rayTest_info = p_sim.rayTest(pw_T_cam_tf_pos, pw_T_par_sim_pos)
@@ -474,7 +483,6 @@ class PBPFMove():
                 weight = weight
         return weight
 
-        
     def show_debug_line(self, list_length, camera_pos_list, point_pos_list, p_sim):
         ray_id_list = []
         for list_index in range(list_length):
@@ -505,7 +513,6 @@ class PBPFMove():
         ray_id = p_sim.addUserDebugLine(point_pos_list[6], point_pos_list[7], [0,1,0], 5)
         ray_id_list.append(ray_id)
         self.rays_id_list.append(ray_id_list)
-
 
     def compare_rob_joint(self,real_rob_joint_list_cur,real_robot_joint_pos):
         for i in range(self.joint_num):
@@ -1666,11 +1673,11 @@ while reset_flag == True:
         # Motion model Noise
         pos_noise = 0.01 # original value = 0.005
         ang_noise = 0.1 # original value = 0.05
-        motion_noise = True
+        MOTION_NOISE = True
         show_ray = False
         # pos_noise = 0.0
         # ang_noise = 0.0
-        # motion_noise = True
+        # MOTION_NOISE = True
 
         # Standard deviation of computing the weight
         # boss_sigma_obs_ang = 0.216773873

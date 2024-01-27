@@ -30,3 +30,4 @@ run_alg_flag: PBPF
 task_flag: '2'
 update_style_flag: time
 version: multiray
+use_pybullet_camera: false

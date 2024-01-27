@@ -280,14 +280,14 @@ point_pos_list2 = cracker_debug_line_point_set(cracker_shape_size, pw_T_parC2_4_
 color2 = [0.02352941, 0.6627451, 0.61568627]
 add_debug_line(vector_length, pw_T_lens_pos, point_pos_list2, color2)
 
-
+width, height, rgbImg, depthImg, segImg = setCameraPicAndGetPic(real_robot_id)
 while True:
 # for i in range(240):
     a = 1
     p_visualisation.stepSimulation()
     time.sleep(1./240.)
     obstacle_info = p_visualisation.getBasePositionAndOrientation(cracker2_id)
-    # width, height, rgbImg, depthImg, segImg = setCameraPicAndGetPic(real_robot_id)
+    
     # print(depthImg)
     # time.sleep(1)
     

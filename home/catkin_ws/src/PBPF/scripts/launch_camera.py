@@ -23,28 +23,6 @@ from mpl_toolkits.mplot3d import Axes3D
 import tf
 import tf.transformations as transformations
 
-class ExpWorld():
-    def __init__(self):
-        self.pos_x_sigma = 0.05
-        self.pos_y_sigma = 0.05
-        self.pos_z_sigma = 0
-        self.ang_x_sigma = 0
-        self.ang_y_sigma = 0
-        self.ang_z_sigma = 0
-    def real_world_scene(self):
-        p_real_world = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
-        # physicsClient = p.connect(p.direct)
-        p_real_world.setAdditionalSearchPath(pybullet_data.getDataPath())
-        p_real_world.setGravity(0.2,0,-9.81)
-        p_real_world.resetDebugVisualizerCamera(cameraDistance=2,cameraYaw=0,cameraPitch=-40,cameraTargetPosition=[0.5,-0.9,0.5])#转变视角
-        plane_id = p_real_world.loadURDF("plane.urdf")
-        #load and set real robot
-        real_world_cracker_pos = [0, 0.2, 0.081]
-        real_world_cracker_ori = p_real_world.getQuaternionFromEuler([0, math.pi/2.0, 0])
-        real_world_cracker_id = p_real_world.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_par_no_visual_hor.urdf"),
-                                                    real_world_cracker_pos,
-                                                    real_world_cracker_ori)
-        return p_real_world, real_world_cracker_pos, real_world_cracker_ori
 class LaunchCamera():
     def __init__(self, width, height):
         self.a = 0
@@ -177,21 +155,5 @@ def quaternion_correction(quaternion): # x,y,z,w
     return new_quaternion
 
 
-if __name__ == '__main__':
-    run_camera_flag = True
-    loop_flag = 0
-    exp_world = ExpWorld()
-    p_real_world, real_world_cracker_pos, real_world_cracker_ori = exp_world.real_world_scene()
-    width = 1280
-    height = 720
-    launch_camera = LaunchCamera(width, height)
-    width, height, rgbImg, depthImg, segImg = launch_camera.setCameraPicAndGetPic(p_real_world)
-
-    while True:
-        width, height, rgbImg, depthImg, segImg = launch_camera.setCameraPicAndGetPic(p_real_world)
-        # width, height, rgbImg, depthImg, segImg = launch_camera.setCameraPicAndGetPic2(p_real_world)
-        p_real_world.stepSimulation()
-        # print(depthImg)
-        time.sleep(1/240)       
 
               

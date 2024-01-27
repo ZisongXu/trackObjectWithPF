@@ -31,3 +31,5 @@ task_flag: '2'
 update_style_flag: time
 version: multiray
 use_pybullet_camera: false
+width: 1280
+height: 720

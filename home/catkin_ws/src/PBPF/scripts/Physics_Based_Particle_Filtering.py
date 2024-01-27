@@ -135,7 +135,7 @@ class PBPFMove():
         
         self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
         self.set_paticle_in_each_sim_env()
-        # if (version=="ray" or version=="multiray") and (do_obs_update==False or dope_detection_flag==False or sum(global_objects_visual_by_DOPE_list)==object_num):
+        # if (VERSION=="ray" or VERSION=="multiray") and (do_obs_update==False or dope_detection_flag==False or sum(global_objects_visual_by_DOPE_list)==object_num):
         #     self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
         #     self.set_paticle_in_each_sim_env()
         # Compute mean of particles
@@ -231,10 +231,10 @@ class PBPFMove():
         # self.particle_cloud[index][obj_index].rayTraceList = [1,2,3]
         model = 'motion'
         weight = 1
-        if version == "ray" and (self.do_obs_update==False or dope_detection_flag==False or sum(global_objects_visual_by_DOPE_list)==object_num):
+        if VERSION == "ray" and (self.do_obs_update==False or dope_detection_flag==False or sum(global_objects_visual_by_DOPE_list)==object_num):
             par_pos = copy.deepcopy([x, y, z])
             weight = self.single_ray_tracing(model, par_pos, p_sim, weight)
-        elif version == "multiray" and (self.do_obs_update == False or dope_detection_flag == False or sum(global_objects_visual_by_DOPE_list)==object_num):
+        elif VERSION == "multiray" and (self.do_obs_update == False or dope_detection_flag == False or sum(global_objects_visual_by_DOPE_list)==object_num):
             # need to change
             par_pos = copy.deepcopy([x, y, z])
             par_ori = copy.deepcopy(ori)
@@ -318,14 +318,20 @@ class PBPFMove():
             weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
             weight = weight_xyz * weight_ang
             model = 'observation'
-            if version == "ray":
+            if VERSION == "ray":
                 par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
                 weight = self.single_ray_tracing(model, par_pos, p_sim, weight)
-            elif version == "multiray":
+            elif VERSION == "multiray":
                 # need to change
                 _par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
                 _par_ori = copy.deepcopy(par_ori)
                 weight = self.multi_ray_tracing(model, _par_pos, _par_ori, p_sim, obj_index, weight)
+            elif VERSION == "depth_img":
+                width, height, rgbImg, depthImg, segImg = launch_camera.setCameraPicAndGetPic(p_sim)
+                weight_depth_img = 1
+                weight = weight * weight_depth_img
+
+
             particle[obj_index].w = weight
       
     # synchronizing the motion of the robot in the simulation
@@ -808,7 +814,7 @@ class CVPFMove():
             self.observation_update_CV(pw_T_obj_obse_objects_pose_list)
             
             
-        # if (version == "ray" or version == "multiray") and do_obs_update == False:
+        # if (VERSION == "ray" or VERSION == "multiray") and do_obs_update == False:
         #     self.resample_particles_CV_update(pw_T_obj_obse_objects_pose_list)
         #     self.set_paticle_in_each_sim_env_CV()
             
@@ -1552,7 +1558,8 @@ while reset_flag == True:
         optitrack_flag = parameter_info['optitrack_flag']
         # using pybullet camera
         USE_PYBULLET_CAMERA = parameter_info['use_pybullet_camera']
-        
+        VERSION = parameter_info['version'] # old/ray/multiray/depth_img
+
         # the flag is used to determine whether the robot touches the particle in the simulation
         simRobot_touch_par_flag = 0
         object_num = parameter_info['object_num']
@@ -1576,9 +1583,12 @@ while reset_flag == True:
             particle_num = 150
             
         object_name_list = parameter_info['object_name_list']
-        version = parameter_info['version'] # old/ray/multiray
         obstacles_pos = parameter_info['obstacles_pos'] # old/ray/multiray
         obstacles_ori = parameter_info['obstacles_ori'] # old/ray/multiray
+
+        WIDTH = parameter_info['width'] #1280
+        HEIGHT = parameter_info['height'] #720
+
         # print(obstacles_pos)
         # print(type(obstacles_pos))
         pub_DOPE_list = []
@@ -1682,6 +1692,7 @@ while reset_flag == True:
         # build an object of class "Ros_Listener"
         ros_listener = Ros_Listener()
         create_scene = Create_Scene(object_num, robot_num, other_obj_num)
+        launch_camera = LaunchCamera(WIDTH, HEIGHT)
         listener = tf.TransformListener()
         time.sleep(0.5)
         
@@ -1713,7 +1724,7 @@ while reset_flag == True:
         estimated_object_set_old = copy.deepcopy(estimated_object_set)
         estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
         print("Before locating the pose of the camera")
-        # if version == "ray" or version == "multiray":
+        # if VERSION == "ray" or VERSION == "multiray":
         if optitrack_flag == True:
             realsense_tf = '/RealSense' # (use Optitrack)
         else:
@@ -1809,11 +1820,11 @@ while reset_flag == True:
                 obse_is_jumping = False
                 dope_detection_flag = True
                 # if ros_listener.detection_flag == False:
-                    # version = "old" # multiray/ray
+                    # VERSION = "old" # multiray/ray
                     # dope_detection_flag = False
                     # global_objects_visual_by_DOPE_list[obj_index] = 1
                 # else:
-                    # version = "old"
+                    # VERSION = "old"
                 try:
                     latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/'+object_name+use_gazebo)
                     # print("rospy.get_time():")

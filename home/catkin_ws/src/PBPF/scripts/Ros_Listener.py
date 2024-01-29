@@ -1,10 +1,11 @@
 #!/usr/bin/python3
 import rospy
-from sensor_msgs.msg import JointState
+from sensor_msgs.msg import JointState, Image
 from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, TransformStamped, Vector3
 from PBPF.msg import object_pose, particle_pose, particle_list, estimated_obj_pose
 from gazebo_msgs.msg import ModelStates
 from vision_msgs.msg import Detection3DArray
+
 
 import tf
 import tf.transformations as transformations
@@ -33,6 +34,9 @@ class Ros_Listener():
         
         rospy.Subscriber('/joint_states', JointState, self.joint_values_callback, queue_size=1)
         self.joint_subscriber = JointState()
+
+        rospy.Subscriber('/camera/aligned_depth_to_color/image_raw', Image, self.depth_image_callback, queue_size=1)
+        self.depth_image_subscriber = Image()
         
         rospy.Subscriber('/gazebo/model_states', ModelStates, self.model_states_callback, queue_size=1)
         self.model_states = ModelStates()
@@ -79,6 +83,10 @@ class Ros_Listener():
     #         self.detection_flag = False
     #     else:
     #         self.detection_flag =  True
+
+    def depth_image_callback(self, depth_image_data):
+        return depth_image_data
+
 
 
     def model_states_callback(self, model_states):

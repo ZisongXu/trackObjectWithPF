@@ -37,8 +37,7 @@ class LaunchCamera():
                        [ 0.        ,  0.        ,  0.        ,  1.        ]]
         pw_T_cam_tf_pos = [pw_T_cam_tf[0][3], pw_T_cam_tf[1][3], pw_T_cam_tf[2][3]]
         pw_T_cam_tf_ori = transformations.quaternion_from_matrix(pw_T_cam_tf)
-        print("pw_T_cam_tf_ori")
-        print(pw_T_cam_tf_ori)
+        
         pw_T_cam_tf_ori = quaternion_correction(pw_T_cam_tf_ori) # x, y, z, w
         # getEulerFromQuaternion returns a list of 3 floating point values, a vec3. 
         # The rotation order is first roll around X, then pitch around Y and finally yaw around Z, as in the ROS URDF rpy convention.
@@ -60,9 +59,7 @@ class LaunchCamera():
             cameraTargetPosition=targetPos,
             cameraUpVector=tz_vec
         )
-        print("x:", x_ang)
-        print("y:", y_ang)
-        print("z:", z_ang)
+        
         # Facing y
         camTargetPos = [0., 0., 0.3]
         camDistance = 1

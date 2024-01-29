@@ -29,7 +29,7 @@ robot_num: 1
 run_alg_flag: PBPF
 task_flag: '2'
 update_style_flag: time
-version: multiray
+version: depth_img
 use_pybullet_camera: false
 width: 1280
 height: 720

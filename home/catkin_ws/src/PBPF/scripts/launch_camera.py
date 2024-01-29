@@ -90,8 +90,8 @@ class LaunchCamera():
         width, height, rgbImg, depthImg, segImg = p_world.getCameraImage(
             width=width, height=height,
             viewMatrix=viewMatrix,
-            projectionMatrix=projectionMatrix
-            # flags=p.ER_NO_SEGMENTATION_MASK
+            projectionMatrix=projectionMatrix,
+            flags=p.ER_NO_SEGMENTATION_MASK
         )
         return width, height, rgbImg, depthImg, segImg
     def setCameraPicAndGetPic2(self, p_world=0):

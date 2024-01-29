@@ -81,8 +81,8 @@ class PBPFMove():
         self.ray_list_empty = True
         self.num = 0
 
-        self.weight_depth_img_list = [1] * PARTICLE_NUM
-        
+        self.depth_value_difference_sum_list = [1] * PARTICLE_NUM
+
     def get_real_robot_joint(self, pybullet_env_id, real_robot_id):
         real_robot_joint_list = []
         for index in range(self.joint_num):
@@ -227,26 +227,28 @@ class PBPFMove():
             self.update_partcile_cloud_pose_PB(index, obj_index, normal_x, normal_y, normal_z, P_quat, linearVelocity, angularVelocity)
         
         # mark
-        model = 'motion'
+        MODEL = 'motion'
         weight = 1
         if VERSION == "depth_img":
-            a = 1
-            # width, height, rgbImg, depthImg, segImg = launch_camera.setCameraPicAndGetPic(pybullet_env)
-            # weight_depth_img = 1
-            # self.weight_depth_img_list[index] = weight_depth_img
-
+            depth_image_real = ros_listener.depth_image
+            depth_image_real = self.depthImageRealTransfer(depth_image_real)
+            width, height, rgbImg, depth_image_render, segImg = launch_camera.setCameraPicAndGetPic(pybullet_env)
+            depth_value_difference = self.computeDifferenceBtTwoDepthImg(depth_image_real, depth_image_render)
+            depth_value_difference_sum = self.depthValueDifferenceSquareRoot(depth_value_difference)
+            self.depth_value_difference_sum_list[index] = depth_value_difference_sum
+            
         else:
             for obj_index in range(self.obj_num):
                 
                 pybullet_env = self.pybullet_env_id_collection[index]
                 if VERSION == "ray" and (self.do_obs_update==False or dope_detection_flag==False or sum(global_objects_visual_by_DOPE_list)==OBJECT_NUM):
                     par_pos = copy.deepcopy([normal_x, normal_y, normal_z])
-                    weight = self.single_ray_tracing(model, par_pos, pybullet_env, weight)
+                    weight = self.single_ray_tracing(MODEL, par_pos, pybullet_env, weight)
                 elif VERSION == "multiray" and (self.do_obs_update == False or dope_detection_flag == False or sum(global_objects_visual_by_DOPE_list)==OBJECT_NUM):
                     # need to change
                     par_pos = copy.deepcopy([normal_x, normal_y, normal_z])
                     par_ori = copy.deepcopy(P_quat)
-                    weight = self.multi_ray_tracing(model, par_pos, par_ori, pybullet_env, obj_index, weight)
+                    weight = self.multi_ray_tracing(MODEL, par_pos, par_ori, pybullet_env, obj_index, weight)
                 
                 self.particle_cloud[index][obj_index].w = weight
         
@@ -266,9 +268,22 @@ class PBPFMove():
         particle_ori = copy.deepcopy(ori)
         self.set_particle_in_each_sim_env_single(index, obj_index, particle_pos, particle_ori)
 
+    def computeDifferenceBtTwoDepthImg(self, depthImg1, depthImg2):
+        depth_value_diff = depthImg1-depthImg2
+        return depth_value_diff
 
-        
-    
+    def depthValueDifferenceSquareRoot(self, depth_value_diff):
+        dim_number = depth_value_diff.ndim
+        depth_value_diff_square = depth_value_diff ** 2
+        interim_container = copy.deepcopy(depth_value_diff_square)
+        for dim_n in range(dim_number):
+            interim_container = sum(interim_container)
+        depth_value_difference_square_root = math.sqrt(interim_container)
+        return depth_value_difference_square_root        
+
+    def depthImageRealTransfer(self, depth_image_real):
+        return depth_image_real
+
     # judge if any particles are contact
     def isAnyParticleInContact(self):
         for index, particle in enumerate(self.particle_cloud):
@@ -348,15 +363,15 @@ class PBPFMove():
             weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
             weight = weight_xyz * weight_ang
 
-            model = 'observation'
+            MODEL = 'observation'
             if VERSION == "ray":
                 par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
-                weight = self.single_ray_tracing(model, par_pos, pybullet_env, weight)
+                weight = self.single_ray_tracing(MODEL, par_pos, pybullet_env, weight)
             elif VERSION == "multiray":
                 # need to change
                 _par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
                 _par_ori = copy.deepcopy(par_ori)
-                weight = self.multi_ray_tracing(model, _par_pos, _par_ori, pybullet_env, obj_index, weight)
+                weight = self.multi_ray_tracing(MODEL, _par_pos, _par_ori, pybullet_env, obj_index, weight)
 
             particle[obj_index].w = weight
       
@@ -662,7 +677,8 @@ class PBPFMove():
             
             # mark
             if VERSION == "depth_img":
-                each_par_weight = each_par_weight * self.weight_depth_img_list[index]
+                weight_depth_img = self.computeWeightFromDepthImage(index, self.depth_value_difference_sum_list)
+                each_par_weight = each_par_weight * weight_depth_img
 
             particles_w.append(each_par_weight) # to compute the sum
             base_w = base_w + each_par_weight
@@ -709,6 +725,12 @@ class PBPFMove():
                 newParticles_list[index].append(particle)
                 
         self.particle_cloud = copy.deepcopy(newParticles_list)   
+
+    def computeWeightFromDepthImage(self, index, depth_value_difference_sum_list):
+        depth_value_difference_sum_list_ = copy.deepcopy(depth_value_difference_sum_list)
+        weight_depth_img_sum = sum(depth_value_difference_sum_list_)
+        weight_depth_img = 1.0 * depth_value_difference_sum_list_[index] / weight_depth_img_sum 
+        return weight_depth_img
 
     def compute_position(self, position, base_w_list):
         for index in range(1, len(base_w_list)):

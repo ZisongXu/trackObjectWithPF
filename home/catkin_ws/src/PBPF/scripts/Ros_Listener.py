@@ -9,6 +9,8 @@ from vision_msgs.msg import Detection3DArray
 
 import tf
 import tf.transformations as transformations
+from cv_bridge import CvBridge
+from cv_bridge import CvBridgeError
 
 import copy
 import random
@@ -32,6 +34,8 @@ class Ros_Listener():
         self.model_pose_added_noise = []
         self.rob_T_obj_obse_4_4_list = []
         
+        self.bridge = CvBridge()
+
         rospy.Subscriber('/joint_states', JointState, self.joint_values_callback, queue_size=1)
         self.joint_subscriber = JointState()
 
@@ -74,7 +78,7 @@ class Ros_Listener():
         # rospy.Subscriber('/dope/detected_objects', Detection3DArray, self.detected_objects, queue_size=10)
         # self.detection_flag = Detection3DArray()
 
-        rospy.spin
+        # rospy.spin()
         
     # def detected_objects(self, detection_state):
     #     detection_info = detection_state.detections
@@ -85,7 +89,9 @@ class Ros_Listener():
     #         self.detection_flag =  True
 
     def depth_image_callback(self, depth_image_data):
-        return depth_image_data
+        cv_image = self.bridge.imgmsg_to_cv2(depth_image_data,"16UC1")
+        # cv_image = (cv_image).astype(np.uint16)
+        self.depth_image = cv_image
 
 
 

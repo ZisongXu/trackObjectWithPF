@@ -230,11 +230,18 @@ class PBPFMove():
         MODEL = 'motion'
         weight = 1
         if VERSION == "depth_img":
+            depth_value_difference_sum = 1
             depth_image_real = ros_listener.depth_image
             depth_image_real = self.depthImageRealTransfer(depth_image_real)
-            width, height, rgbImg, depth_image_render, segImg = launch_camera.setCameraPicAndGetPic(pybullet_env)
-            depth_value_difference = self.computeDifferenceBtTwoDepthImg(depth_image_real, depth_image_render)
-            depth_value_difference_sum = self.depthValueDifferenceSquareRoot(depth_value_difference)
+            width, height, rgbImg, depth_image_render, segImg = launch_camera.setCameraPicAndGetPic(pybullet_env, tf_listener, _pw_T_rob_sim_4_4)
+            farVal = 1000
+            nearVal = 0.01
+            depth = farVal * nearVal / (farVal - (farVal - nearVal) * depth_image_render)
+            
+            print(depth)
+
+            # depth_value_difference = self.computeDifferenceBtTwoDepthImg(depth_image_real, depth_image_render)
+            # depth_value_difference_sum = self.depthValueDifferenceSquareRoot(depth_value_difference)
             self.depth_value_difference_sum_list[index] = depth_value_difference_sum
             
         else:
@@ -689,7 +696,7 @@ class PBPFMove():
         for index in range(par_num_for_resample):
             if w_sum > 0.00000001:
                 position = (r + index * w_sum / PARTICLE_NUM) % w_sum
-                position_index = self.compute_position(position, base_w_list)
+                position_index = self.computePosition(position, base_w_list)
                 particle_array_list.append(position_index)
             else:
                 particle_array_list.append(index) # [45, 45, 1, 4, 6, 6, ..., 43]
@@ -732,7 +739,7 @@ class PBPFMove():
         weight_depth_img = 1.0 * depth_value_difference_sum_list_[index] / weight_depth_img_sum 
         return weight_depth_img
 
-    def compute_position(self, position, base_w_list):
+    def computePosition(self, position, base_w_list):
         for index in range(1, len(base_w_list)):
             if position <= base_w_list[index] and position > base_w_list[index - 1]:
                 return index - 1
@@ -831,11 +838,6 @@ class PBPFMove():
         ang_std = np.std(ang_list)
         return dis_std, ang_std
 
-    def rotation_4_4_to_transformation_4_4(self, rotation_4_4,pos):
-        rotation_4_4[0][3] = pos[0]
-        rotation_4_4[1][3] = pos[1]
-        rotation_4_4[2][3] = pos[2]
-        return rotation_4_4
 
 
 #Class of Constant-velocity Particle Filtering
@@ -1007,7 +1009,7 @@ class CVPFMove():
             pw_T_parO_pos = copy.deepcopy(self.particle_cloud_CV[index][obj_index].pos)
             pw_T_parO_ori = copy.deepcopy(self.particle_cloud_CV[index][obj_index].ori)
             pw_T_parO_3_3 = transformations.quaternion_matrix(pw_T_parO_ori)
-            pw_T_parO_4_4 = self.rotation_4_4_to_transformation_4_4(pw_T_parO_3_3,pw_T_parO_pos)
+            pw_T_parO_4_4 = rotation_4_4_to_transformation_4_4(pw_T_parO_3_3,pw_T_parO_pos)
             pw_T_parN = np.dot(pw_T_parO_4_4, parO_T_parN)
             pw_T_parN_pos = [pw_T_parN[0][3], pw_T_parN[1][3], pw_T_parN[2][3]]
             pw_T_parN_ori = transformations.quaternion_from_matrix(pw_T_parN)
@@ -1128,7 +1130,7 @@ class CVPFMove():
             for index in range(par_num_for_resample):
                 if w_sum > 0.00000001:
                     position = (r + index * w_sum / PARTICLE_NUM) % w_sum
-                    position_index = self.compute_position_CV(position, base_w_list)
+                    position_index = self.computePosition_CV(position, base_w_list)
                     particle_array_list.append(position_index)
                 else:
                     particle_array_list.append(index)
@@ -1160,7 +1162,7 @@ class CVPFMove():
 #                newParticles.append(particle)
         self.particle_cloud_CV = copy.deepcopy(newParticles_list)
         
-    def compute_position_CV(self, position, base_w_list):
+    def computePosition_CV(self, position, base_w_list):
         for index in range(1, len(base_w_list)):
             if position <= base_w_list[index] and position > base_w_list[index - 1]:
                 return index - 1
@@ -1253,18 +1255,12 @@ class CVPFMove():
     
     def compute_transformation_matrix(self, a_pos, a_ori, b_pos, b_ori):
         ow_T_a_3_3 = transformations.quaternion_matrix(a_ori)
-        ow_T_a_4_4 = self.rotation_4_4_to_transformation_4_4(ow_T_a_3_3,a_pos)
+        ow_T_a_4_4 = rotation_4_4_to_transformation_4_4(ow_T_a_3_3, a_pos)
         ow_T_b_3_3 = transformations.quaternion_matrix(b_ori)
-        ow_T_b_4_4 = self.rotation_4_4_to_transformation_4_4(ow_T_b_3_3,b_pos)
+        ow_T_b_4_4 = rotation_4_4_to_transformation_4_4(ow_T_b_3_3, b_pos)
         a_T_ow_4_4 = np.linalg.inv(ow_T_a_4_4)
         a_T_b_4_4 = np.dot(a_T_ow_4_4,ow_T_b_4_4)
         return a_T_b_4_4
-
-    def rotation_4_4_to_transformation_4_4(self, rotation_4_4,pos):
-        rotation_4_4[0][3] = pos[0]
-        rotation_4_4[1][3] = pos[1]
-        rotation_4_4[2][3] = pos[2]
-        return rotation_4_4
 
 # function independent of Class
 # add position into transformation matrix
@@ -1755,12 +1751,12 @@ while reset_flag == True:
         ros_listener = Ros_Listener()
         create_scene = Create_Scene(OBJECT_NUM, robot_num, other_obj_num)
         launch_camera = LaunchCamera(WIDTH, HEIGHT)
-        listener = tf.TransformListener()
+        tf_listener = tf.TransformListener()
         time.sleep(0.5)
         
         pw_T_rob_sim_pose_list_alg = create_scene.initialize_robot()
         print("After initializing robot")
-        pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
+        _pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
         pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object()
         print(trans_ob_list, rot_ob_list)
         print("After initializing scene")
@@ -1800,7 +1796,7 @@ while reset_flag == True:
             if gazebo_flag == True:
                 realsense_tf = '/realsense_camera'
             try:
-                (trans_camera, rot_camera) = listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
+                (trans_camera, rot_camera) = tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
                 break
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 continue
@@ -1809,7 +1805,7 @@ while reset_flag == True:
         rob_T_cam_tf_ori = list(rot_camera)
         rob_T_cam_tf_3_3 = transformations.quaternion_matrix(rob_T_cam_tf_ori)
         rob_T_cam_tf_4_4 = rotation_4_4_to_transformation_4_4(rob_T_cam_tf_3_3, rob_T_cam_tf_pos)
-        pw_T_cam_tf = np.dot(pw_T_rob_sim_4_4, rob_T_cam_tf_4_4)
+        pw_T_cam_tf = np.dot(_pw_T_rob_sim_4_4, rob_T_cam_tf_4_4)
         pw_T_cam_tf_pos = [pw_T_cam_tf[0][3], pw_T_cam_tf[1][3], pw_T_cam_tf[2][3]]
         
         print("==========")
@@ -1888,14 +1884,14 @@ while reset_flag == True:
                 # else:
                     # VERSION = "old"
                 try:
-                    latest_obse_time = listener.getLatestCommonTime('/panda_link0', '/'+object_name+use_gazebo)
+                    latest_obse_time = tf_listener.getLatestCommonTime('/panda_link0', '/'+object_name+use_gazebo)
                     # print("rospy.get_time():")
                     # print(rospy.get_time())
                     # print("latest_obse_time.to_sec():")
                     # print(latest_obse_time.to_sec())
                     # old_obse_time = latest_obse_time.to_sec()
                     # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                    #     (trans_ob,rot_ob) = listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
+                    #     (trans_ob,rot_ob) = tf_listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
                     #     obse_is_fresh = True
                     #     print("obse is FRESH")
 
@@ -1906,7 +1902,7 @@ while reset_flag == True:
                     # print(latest_obse_time.to_sec())
                     # print("difference:", latest_obse_time.to_sec() - old_obse_time)
                     if (latest_obse_time.to_sec() > old_obse_time):
-                        (trans_ob,rot_ob) = listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
+                        (trans_ob,rot_ob) = tf_listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
                         obse_is_fresh = True
                         t_after = time.time()
                         trans_ob_list[obj_index] = trans_ob
@@ -1931,7 +1927,7 @@ while reset_flag == True:
                 rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
                 rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
                 
-                pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
+                pw_T_obj_obse = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
                 pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
                 pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
 

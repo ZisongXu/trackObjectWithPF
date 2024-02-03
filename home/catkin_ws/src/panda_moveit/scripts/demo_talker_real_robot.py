@@ -416,7 +416,7 @@ if __name__ == '__main__':
     #panda.move_minus_y_straight_line_ccp
     #panda.fully_close_gripper()
     #cylinder
-    panda.fully_open_gripper()
+    # panda.fully_open_gripper()
     panda.fully_close_gripper()
     # sys.exit()
     # for index in range(5):
@@ -481,13 +481,13 @@ if __name__ == '__main__':
     
     panda.move_to_target_joints(targetPositionsJoints_test)
     panda.fully_close_gripper()
-    sys.exit()
+    # sys.exit()
     # input("hit enter to move forward")
     
-    for index in range(5):
+    for index in range(10):
         wpose = panda.moveit_group.get_current_pose().pose
         waypoints = []
-        wpose.position.y += 0.1
+        wpose.position.y += 0.05
         # wpose.position.z -= 0.06
         # wpose.position.y += 0.15
         waypoints.append(copy.deepcopy(wpose))    

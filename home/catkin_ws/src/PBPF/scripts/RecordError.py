@@ -214,17 +214,17 @@ def signal_handler(sig, frame):
             # file_name_obse_ang = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_obse_err_ang.csv'
             # file_name_PBPF_ang = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_PBPF_err_ang.csv'
 
-            file_name_obse_pos = update_style_flag+'_obse_err_pos.csv'
-            file_name_PBPF_pos = update_style_flag+'_PBPFV_err_pos.csv'
-            file_name_obse_ang = update_style_flag+'_obse_err_ang.csv'
-            file_name_PBPF_ang = update_style_flag+'_PBPFV_err_ang.csv'
+            file_name_obse_pos = update_style_flag+'_obse_err_pos_'+version+'.csv'
+            file_name_PBPF_pos = update_style_flag+'_PBPFV_err_pos_'+version+'.csv'
+            file_name_obse_ang = update_style_flag+'_obse_err_ang_'+version+'.csv'
+            file_name_PBPF_ang = update_style_flag+'_PBPFV_err_ang_'+version+'.csv'
 
             boss_obse_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_obse_pos,index=0,header=0,mode='a')
             boss_obse_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_obse_ang,index=0,header=0,mode='a')
-            print("write "+obj_name+" obser file")
+            print("write "+obj_name+" obser file: "+version)
             boss_PBPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_PBPF_pos,index=0,header=0,mode='a')
             boss_PBPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_PBPF_ang,index=0,header=0,mode='a')
-            print("write "+obj_name+" PBPF file")
+            print("write "+obj_name+" PBPF file: "+version)
 
             
     if run_alg_flag == "CVPF":
@@ -493,8 +493,13 @@ if __name__ == '__main__':
                     boss_obse_err_pos_df_list[obj_index].loc[flag_record_obse] = [flag_record_obse, t_before_record - t_begin, err_opti_obse_pos, 'obse', obj_scene, particle_num, version, obj_name]
                     boss_obse_err_ang_df_list[obj_index].loc[flag_record_obse] = [flag_record_obse, t_before_record - t_begin, err_opti_obse_ang, 'obse', obj_scene, particle_num, version, obj_name]
                     flag_record_obse = flag_record_obse + 1
-                    boss_PBPF_err_pos_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_pos, 'PBPF-V', obj_scene, particle_num, version, obj_name]
-                    boss_PBPF_err_ang_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_ang, 'PBPF-V', obj_scene, particle_num, version, obj_name]
+                    if version == "depth_img":
+                        boss_PBPF_err_pos_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_pos, 'PBPF-D', obj_scene, particle_num, version, obj_name]
+                        boss_PBPF_err_ang_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_ang, 'PBPF-D', obj_scene, particle_num, version, obj_name]
+                    else:
+                        boss_PBPF_err_pos_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_pos, 'PBPF-V', obj_scene, particle_num, version, obj_name]
+                        boss_PBPF_err_ang_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_ang, 'PBPF-V', obj_scene, particle_num, version, obj_name]
+                    
                     flag_record_PBPF = flag_record_PBPF + 1
                     
                 else:

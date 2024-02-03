@@ -37,7 +37,9 @@ class LaunchCamera():
         self.gazebo_flag = self.parameter_info['gazebo_flag']
         self.pw_T_cam_tf_4_4 = 0
         self.compute_cam_pose_flag = 0
-
+        self.nearVal = 0.01
+        self.farVal = 10.0
+        
     def setCameraPicAndGetPic(self, p_world=0, tf_listener=0, pw_T_rob_sim_4_4=0):
         # 从四元数中获取变换矩阵，从中获知指向(左乘(1,0,0)，因为在原本的坐标系内，摄像机的朝向为(1,0,0))
         # width = 1
@@ -70,10 +72,10 @@ class LaunchCamera():
             # aspect=16.0/9,          # width / height
             # nearVal=0.3,            # 摄像头焦距下限
             # farVal=3                # 摄像头能看上限
-            fov = 69.40,               # 摄像头的视线夹角
+            fov = 57.86,               # 摄像头的视线夹角
             aspect = self.pixelWidth/self.pixelHeight,          # width / height
-            nearVal = 0.01,            # 摄像头焦距下限
-            farVal = 1000.0                # 摄像头能看上限
+            nearVal = self.nearVal,            # 摄像头焦距下限
+            farVal = self.farVal                # 摄像头能看上限
         )
         width, height, rgbImg, depthImg, segImg = p_world.getCameraImage(
             width=self.pixelWidth, height=self.pixelHeight,
@@ -81,7 +83,7 @@ class LaunchCamera():
             projectionMatrix=projectionMatrix,
             flags=p.ER_NO_SEGMENTATION_MASK
         )
-        return width, height, rgbImg, depthImg, segImg
+        return width, height, rgbImg, depthImg, segImg, self.nearVal, self.farVal
 
 
     def setCameraPicAndGetPic2(self, p_world=0):

@@ -78,11 +78,11 @@ if ang_and_pos == "ang":
         x_xlim = 340
         y_ylim = 5
     if sceneName == "scene2":
-        x_range_max = 28
-        x_range_unit = 2
+        x_range_max = 1000
+        x_range_unit = 100
         y_range_max = 2.5
         y_range_unit = 0.2
-        x_xlim = 28
+        x_xlim = 1000
         y_ylim = 2.5
     if sceneName == "scene3":
         # x_range_max = 28
@@ -134,7 +134,7 @@ if ang_and_pos == "ang":
     plt.ylim(0, y_ylim)
     plt.title(title_ang, fontsize=16)
     svg_fig_ang = figure_ang.get_figure()
-    svg_fig_ang.savefig(save_file_path+file_name+".svg",format="svg")
+    svg_fig_ang.savefig(save_file_path+file_name+".png",format="png")
 
 if ang_and_pos == "pos":
     if sceneName == "scene1":
@@ -145,11 +145,11 @@ if ang_and_pos == "pos":
         x_xlim = 265 # 28
         y_ylim = 0.5 # 0.5
     if sceneName == "scene2":
-        x_range_max = 28
-        x_range_unit = 2
+        x_range_max = 1000
+        x_range_unit = 100
         y_range_max = 0.5
         y_range_unit = 0.04
-        x_xlim = 28
+        x_xlim = 1000
         y_ylim = 0.5
     if sceneName == "scene3":
         # x_range_max = 28
@@ -212,6 +212,6 @@ if ang_and_pos == "pos":
     plt.ylim(0, y_ylim)
     plt.title(title_pos, fontsize=16)
     svg_fig_pos = figure_pos.get_figure()
-    svg_fig_pos.savefig(save_file_path+file_name+".svg",format="svg")
+    svg_fig_pos.savefig(save_file_path+file_name+".png",format="png")
 
 print("finished")

@@ -91,7 +91,7 @@ class Ros_Listener():
     def depth_image_callback(self, depth_image_data):
         cv_image = self.bridge.imgmsg_to_cv2(depth_image_data,"16UC1")
         # cv_image = (cv_image).astype(np.uint16)
-        self.depth_image = cv_image
+        self.depth_image = depth_image_data
 
 
 

@@ -69,11 +69,11 @@ flag_CVPF = True
 correct_time_flag = False
 
 loop_flag = 10
-prepare_time = 2800
-prepare_time = 12900
-prepare_time = 26500
-prepare_time = 173000
-prepare_time = 348000
+prepare_time = 28 * 100
+prepare_time = 129 * 100
+prepare_time = 265 * 100
+prepare_time = 1730 * 100
+prepare_time = 1000 * 100
 
 # prepare_time = 134000
 

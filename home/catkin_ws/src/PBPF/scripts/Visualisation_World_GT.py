@@ -505,6 +505,7 @@ while reset_flag == True:
                         print("=======================================")
                         print("obj_name:", obj_name)
                         print("pw_T_obj_opti_pos:", pw_T_obj_opti_pos)
+                        print("pw_T_obj_opti_ori:", pw_T_obj_opti_ori)
                         print("=======================================")
                         pw_T_target_obj_opti_pose_lsit_param[obj_index].pos = pw_T_obj_opti_pos
                         pw_T_target_obj_opti_pose_lsit_param[obj_index].ori = pw_T_obj_opti_ori

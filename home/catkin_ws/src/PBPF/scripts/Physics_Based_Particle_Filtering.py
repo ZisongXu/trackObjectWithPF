@@ -21,12 +21,14 @@ from std_msgs.msg import String
 from std_msgs.msg import Float32
 from std_msgs.msg import Int8
 from std_msgs.msg import ColorRGBA, Header
+from visualization_msgs.msg import Marker
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, TransformStamped, Vector3
 from PBPF.msg import estimated_obj_pose, object_pose, particle_list, particle_pose
 import tf
 import tf.transformations as transformations
-from visualization_msgs.msg import Marker
+from cv_bridge import CvBridge
+from cv_bridge import CvBridgeError
 #pybullet
 from pyquaternion import Quaternion
 import pybullet as p
@@ -81,7 +83,9 @@ class PBPFMove():
         self.ray_list_empty = True
         self.num = 0
 
-        self.depth_value_difference_sum_list = [1] * PARTICLE_NUM
+        self.depth_value_difference_square_root_list = [1] * PARTICLE_NUM
+
+        self.bridge = CvBridge()
 
     def get_real_robot_joint(self, pybullet_env_id, real_robot_id):
         real_robot_joint_list = []
@@ -232,17 +236,12 @@ class PBPFMove():
         if VERSION == "depth_img":
             depth_value_difference_sum = 1
             depth_image_real = ros_listener.depth_image
-            depth_image_real = self.depthImageRealTransfer(depth_image_real)
-            width, height, rgbImg, depth_image_render, segImg = launch_camera.setCameraPicAndGetPic(pybullet_env, tf_listener, _pw_T_rob_sim_4_4)
-            farVal = 1000
-            nearVal = 0.01
-            depth = farVal * nearVal / (farVal - (farVal - nearVal) * depth_image_render)
-            
-            print(depth)
-
-            # depth_value_difference = self.computeDifferenceBtTwoDepthImg(depth_image_real, depth_image_render)
-            # depth_value_difference_sum = self.depthValueDifferenceSquareRoot(depth_value_difference)
-            self.depth_value_difference_sum_list[index] = depth_value_difference_sum
+            pybullet_env.stepSimulation()
+            real_depth_image_transferred = self.depthImageRealTransfer(depth_image_real)
+            width, height, rgbImg, depth_image_render, segImg, nearVal, farVal= launch_camera.setCameraPicAndGetPic(pybullet_env, tf_listener, _pw_T_rob_sim_4_4)
+            pybullet_depth_image_transferred = self.pybulletDepthImageValueBufferTransfer(depth_image_render, nearVal, farVal)
+            depth_value_difference_square_root = self.compareDifferenceBtTwoDepthImgs(real_depth_image_transferred, pybullet_depth_image_transferred)
+            self.depth_value_difference_square_root_list[index] = depth_value_difference_square_root
             
         else:
             for obj_index in range(self.obj_num):
@@ -275,7 +274,12 @@ class PBPFMove():
         particle_ori = copy.deepcopy(ori)
         self.set_particle_in_each_sim_env_single(index, obj_index, particle_pos, particle_ori)
 
-    def computeDifferenceBtTwoDepthImg(self, depthImg1, depthImg2):
+    def compareDifferenceBtTwoDepthImgs(self, real_depth_image_transferred, pybullet_depth_image_transferred):
+        depth_value_difference = self.subtractionTwoDepthImgs(real_depth_image_transferred, pybullet_depth_image_transferred)
+        depth_value_difference_square_root = self.depthValueDifferenceSquareRoot(depth_value_difference)
+        return depth_value_difference_square_root
+
+    def subtractionTwoDepthImgs(self, depthImg1, depthImg2):
         depth_value_diff = depthImg1-depthImg2
         return depth_value_diff
 
@@ -289,7 +293,14 @@ class PBPFMove():
         return depth_value_difference_square_root        
 
     def depthImageRealTransfer(self, depth_image_real):
-        return depth_image_real
+        cv_image = self.bridge.imgmsg_to_cv2(depth_image_real,"16UC1")
+        cv_image = cv_image / 1000
+        return cv_image
+
+    def pybulletDepthImageValueBufferTransfer(self, depth_image_render, nearVal, farVal):
+        pybullet_depth_image_value_transferred = farVal * nearVal / (farVal - (farVal - nearVal) * depth_image_render)
+        return pybullet_depth_image_value_transferred
+
 
     # judge if any particles are contact
     def isAnyParticleInContact(self):
@@ -684,7 +695,7 @@ class PBPFMove():
             
             # mark
             if VERSION == "depth_img":
-                weight_depth_img = self.computeWeightFromDepthImage(index, self.depth_value_difference_sum_list)
+                weight_depth_img = self.computeWeightFromDepthImage(index, self.depth_value_difference_square_root_list)
                 each_par_weight = each_par_weight * weight_depth_img
 
             particles_w.append(each_par_weight) # to compute the sum
@@ -733,10 +744,10 @@ class PBPFMove():
                 
         self.particle_cloud = copy.deepcopy(newParticles_list)   
 
-    def computeWeightFromDepthImage(self, index, depth_value_difference_sum_list):
-        depth_value_difference_sum_list_ = copy.deepcopy(depth_value_difference_sum_list)
-        weight_depth_img_sum = sum(depth_value_difference_sum_list_)
-        weight_depth_img = 1.0 * depth_value_difference_sum_list_[index] / weight_depth_img_sum 
+    def computeWeightFromDepthImage(self, index, depth_value_difference_square_root_list):
+        depth_value_difference_square_root_list_ = copy.deepcopy(depth_value_difference_square_root_list)
+        weight_depth_img_sum = sum(depth_value_difference_square_root_list_)
+        weight_depth_img = 1.0 * depth_value_difference_square_root_list_[index] / weight_depth_img_sum 
         return weight_depth_img
 
     def computePosition(self, position, base_w_list):
@@ -1926,9 +1937,12 @@ while reset_flag == True:
                 rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
                 rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
                 rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
-                
+                # mark
+                bias_obse_x = -0.05
+                bias_obse_y = 0
+                bias_obse_z = 0.04
                 pw_T_obj_obse = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
-                pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
+                pw_T_obj_obse_pos = [pw_T_obj_obse[0][3]+bias_obse_x, pw_T_obj_obse[1][3]+bias_obse_y, pw_T_obj_obse[2][3]+bias_obse_z]
                 pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
 
                 

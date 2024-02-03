@@ -15,12 +15,14 @@ from std_msgs.msg import String
 from std_msgs.msg import Float32
 from std_msgs.msg import Int8
 from std_msgs.msg import ColorRGBA, Header
+from visualization_msgs.msg import Marker
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, TransformStamped, Vector3
 from PBPF.msg import estimated_obj_pose, object_pose, particle_list, particle_pose
 import tf
 import tf.transformations as transformations
-from visualization_msgs.msg import Marker
+from cv_bridge import CvBridge
+from cv_bridge import CvBridgeError
 #pybullet
 from pyquaternion import Quaternion
 import pybullet as p
@@ -50,6 +52,8 @@ from Visualisation_World import Visualisation_World
 from Create_Scene import Create_Scene
 from Object_Pose import Object_Pose
 from Robot_Pose import Robot_Pose
+from Center_T_Point_for_Ray import Center_T_Point_for_Ray
+from launch_camera import LaunchCamera
 
 
 with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
@@ -61,6 +65,7 @@ run_alg_flag = parameter_info['run_alg_flag'] # PBPF/CVPF
 task_flag = parameter_info['task_flag'] # 1/2/3/4 parameter_info['task_flag']
 file_name = sys.argv[1]
 err_file = parameter_info['err_file']
+
 DOPE_fresh_flag = False
 # file_time = 11 # 1~10
 # when optitrack does not work
@@ -99,6 +104,58 @@ def rotation_4_4_to_transformation_4_4(rotation_4_4, pos):
     rotation_4_4[1][3] = pos[1]
     rotation_4_4[2][3] = pos[2]
     return rotation_4_4
+
+def computeCorrespondPointDistanceBtTwoObjects(obj_name, pos1, ori1, pos2, oir2):
+    center_T_points_pose_4_4_list = getCenterTPointsList(obj_name)
+    pw_T_points_pose_4_4_list_1 = getPwTPointsList(center_T_points_pose_4_4_list, pos1, ori1)
+    pw_T_points_pose_4_4_list_2 = getPwTPointsList(center_T_points_pose_4_4_list, pos2, oir2)
+    err_distance = computeCorrespondPointDistance(pw_T_points_pose_4_4_list_1, pw_T_points_pose_4_4_list_2)
+    return err_distance
+
+def getCenterTPointsList(object_name, pw_T_center_pos, pw_T_center_ori):
+    center_T_points_pose_4_4_list = []
+    if object_name == "cracker":
+        x_w = 0.159
+        y_l = 0.21243700408935547
+        z_h = 0.06
+        vector_list = [[1,1,1], [1,1,-1], [1,-1,1], [1,-1,-1], [-1,1,1], [-1,1,-1], [-1,-1,1], [-1,-1,-1], [1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1], [1,0.5,0.5], [1,0.5,-0.5], [1,-0.5,0.5], [1,-0.5,-0.5], [-1,0.5,0.5], [-1,0.5,-0.5], [-1,-0.5,0.5], [-1,-0.5,-0.5], [0.5,1,0.5], [0.5,1,-0.5], [-0.5,1,0.5], [-0.5,1,-0.5], [0.5,-1,0.5], [0.5,-1,-0.5], [-0.5,-1,0.5], [-0.5,-1,-0.5], [0.5,0.5,1], [0.5,-0.5,1], [-0.5,0.5,1], [-0.5,-0.5,1], [0.5,0.5,-1], [0.5,-0.5,-1], [-0.5,0.5,-1], [-0.5,-0.5,-1]]
+    else:
+        x_w = 0.032829689025878906
+        y_l = 0.032829689025878906
+        z_h = 0.099
+        r = math.sqrt(2)
+        vector_list = [[0,0,1], [0,0,-1], [2,2,1], [2,-2,1], [-2,2,1], [-2,-2,1], [r,r,1], [r,-r,1], [-r,r,1], [-r,-r,1], [2,2,0.5], [2,-2,0.5], [-2,2,0.5], [-2,-2,0.5], [r,r,0.5], [r,-r,0.5], [-r,r,0.5], [-r,-r,0.5], [2,2,0], [2,-2,0], [-2,2,0], [-2,-2,0], [r,r,0], [r,-r,0], [-r,r,0], [-r,-r,0], [2,2,-0.5], [2,-2,-0.5], [-2,2,-0.5], [-2,-2,-0.5], [r,r,-0.5], [r,-r,-0.5], [-r,r,-0.5], [-r,-r,-0.5], [2,2,-1], [2,-2,-1], [-2,2,-1], [-2,-2,-1], [r,r,-1], [r,-r,-1], [-r,r,-1], [-r,-r,-1]]
+    for index in range(len(vector_list)):
+        center_T_p_x_new = vector_list[index][0] * x_w/2
+        center_T_p_y_new = vector_list[index][1] * y_l/2
+        center_T_p_z_new = vector_list[index][2] * z_h/2
+        center_T_p_pos = [center_T_p_x_new, center_T_p_y_new, center_T_p_z_new]
+        center_T_p_ori = [0, 0, 0, 1] # x, y, z, w
+        center_T_p_3_3 = transformations.quaternion_matrix(center_T_p_ori)
+        center_T_p_4_4 = rotation_4_4_to_transformation_4_4(center_T_p_3_3, center_T_p_pos)
+        center_T_points_pose_4_4_list.append(center_T_p_4_4)
+    return center_T_points_pose_4_4_list
+
+def getPwTPointsList(center_T_points_pose_4_4_list, pos, ori):
+    pw_T_points_pose_4_4_list = []
+    pw_T_center_ori_3_3 = transformations.quaternion_matrix(ori)
+    pw_T_center_ori_4_4 = rotation_4_4_to_transformation_4_4(pw_T_center_ori_3_3, pos)
+    for index in range(len(center_T_points_pose_4_4_list)):
+        center_T_p_4_4 = copy.deepcopy(center_T_points_pose_4_4_list[index])
+        pw_T_p_4_4 = np.dot(pw_T_center_ori_4_4, center_T_p_4_4)
+        pw_T_points_pose_4_4_list.append(pw_T_p_4_4)
+    return pw_T_points_pose_4_4_list
+
+def computeCorrespondPointDistance(pw_T_points_pose_4_4_list_1, pw_T_points_pose_4_4_list_2):
+    dis_sum = 0
+    points_num = len(pw_T_points_pose_4_4_list_1)
+    for index in range(points_num):
+        pw_T_p_pos1 = [pw_T_points_pose_4_4_list_1[0][3], pw_T_points_pose_4_4_list_1[1][3], pw_T_points_pose_4_4_list_1[2][3]]
+        pw_T_p_pos2 = [pw_T_points_pose_4_4_list_2[0][3], pw_T_points_pose_4_4_list_2[1][3], pw_T_points_pose_4_4_list_2[2][3]]
+        distance = compute_pos_err_bt_2_points(pw_T_p_pos1, pw_T_p_pos2)
+        dis_sum = dis_sum + distance
+    distance = 1.0 * distance / points_num
+    return distance
 
 # compute the position distance between two objects
 def compute_pos_err_bt_2_points(pos1, pos2):
@@ -332,9 +389,13 @@ if __name__ == '__main__':
             # print("=======================================")
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3, rob_T_obj_obse_pos)
-            
+            # mark
+            bias_obse_x = -0.05
+            bias_obse_y = 0
+            bias_obse_z = 0.04
+
             pw_T_obj_obse_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
-            pw_T_obj_obse_pos = [pw_T_obj_obse_4_4[0][3], pw_T_obj_obse_4_4[1][3], pw_T_obj_obse_4_4[2][3]]
+            pw_T_obj_obse_pos = [pw_T_obj_obse_4_4[0][3]+bias_obse_x, pw_T_obj_obse_4_4[1][3]+bias_obse_y, pw_T_obj_obse_4_4[2][3]+bias_obse_z]
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse_4_4)
             
             # ground truth pose information

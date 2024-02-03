@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# declare -a objectNames=("cracker" "soup")
-declare -a objectNames=("cracker" "gelatin" "soup")
+declare -a objectNames=("cracker")
+# declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a sceneNames=("scene5")
+declare -a sceneNames=("scene2")
 
-declare -a particleNumbers=(150)
+declare -a particleNumbers=(70)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("obse" "PBPFV")
@@ -59,7 +59,7 @@ do
 					for ((rosbag=8;rosbag<=8;rosbag++)); 
 					do
 						# for repeat in {1..10}
-						for ((repeat=0;repeat<=9;repeat++));
+						for ((repeat=0;repeat<=19;repeat++));
 						do
 						
 							python3 data_processing.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" &

@@ -3,66 +3,70 @@
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
 # declare -a objectNames=("cracker" "gelatin" "soup")
 declare -a objectNames=("cracker")
-declare -a sceneNames=("scene5")
-declare -a particleNumbers=(150)
+declare -a sceneNames=("scene2")
+declare -a particleNumbers=(70)
 declare -a runAlgFlags=("PBPF")
 declare -a diffRadSigma=(0.32505 0.2167)
-declare -a repeats=(10)
+declare -a repeats=(1)
+declare -a runVersions=("depth_img" "multiray")
 
-for runAlgFlag in "${runAlgFlags[@]}"
+
+for runVersion in "${runVersions[@]}"
 do
-	for particleNumber in "${particleNumbers[@]}"
+	for runAlgFlag in "${runAlgFlags[@]}"
 	do
-		for objectName in "${objectNames[@]}"
+		for particleNumber in "${particleNumbers[@]}"
 		do
-			
-			for sceneName in "${sceneNames[@]}"
+			for objectName in "${objectNames[@]}"
 			do
-				if [[ "$objectName" == "soup" ]]; then
-					if [[ "$sceneName" == "scene4" ]]; then
-						continue
-					fi
-				fi
-
 				
-				python3 update_yaml_file_automated.py "${objectName}" "${particleNumber}" "${sceneName}" "${runAlgFlag}"
-				
-				# for rosbag in {1..10}
-				# for rosbag in {1..2}
-				for ((rosbag=8;rosbag<=8;rosbag++)); 
+				for sceneName in "${sceneNames[@]}"
 				do
-					duration=$(python3 get_info_from_rosbag.py "${objectName}" "${particleNumber}" "${sceneName}" "${rosbag}")
+					if [[ "$objectName" == "soup" ]]; then
+						if [[ "$sceneName" == "scene4" ]]; then
+							continue
+						fi
+					fi
 
-					# for repeat in {1..10}
-					# for repeat in "${repeats[@]}"
-					for ((repeat=0;repeat<=0;repeat++));
+					
+					python3 update_yaml_file_automated.py "${objectName}" "${particleNumber}" "${sceneName}" "${runAlgFlag}" "${runVersion}" 
+					
+					# for rosbag in {1..10}
+					# for rosbag in {1..2}
+					for ((rosbag=1;rosbag<=4;rosbag++)); 
 					do
-						echo "I will sleep for $duration seconds"
-						# rosbag play "rosbag/latest_rosbag/${objectName}_${sceneName}/${objectName}_${sceneName}_70_${rosbag}.bag" --clock  > /dev/null 2>&1 & 
-						rosbag play "rosbag/multi_obj_${rosbag}.bag" --clock --rate 0.02  > /dev/null 2>&1 & 
-						# rosbag play "rosbag/multi_obj_5.bag" --clock  > /dev/null 2>&1 & 
-						ROSBAGPID=$!
+						duration=$(python3 get_info_from_rosbag.py "${objectName}" "${particleNumber}" "${sceneName}" "${rosbag}")
 
-						rosrun PBPF Physics_Based_Particle_Filtering.py &
-						PBPF_PID=$!
+						# for repeat in {1..10}
+						# for repeat in "${repeats[@]}"
+						for ((repeat=0;repeat<=9;repeat++));
+						do
+							echo "I will sleep for $duration seconds"
+							# rosbag play "rosbag/latest_rosbag/${objectName}_${sceneName}/${objectName}_${sceneName}_70_${rosbag}.bag" --clock  > /dev/null 2>&1 & 
+							rosbag play "rosbag/depth_img_rosbag${rosbag}.bag" --clock --rate 1  > /dev/null 2>&1 & 
+							ROSBAGPID=$!
 
-						# sleep 14
-						
-						# fileName="${particleNumber}_${objectName}_${sceneName}_rosbag${rosbag}_repeat${repeat}_"
-						fileName="${particleNumber}_${sceneName}_rosbag${rosbag}_repeat${repeat}_"
-						rosrun PBPF RecordError.py "${fileName}" &
-						REPID=$!
-						
-						sleep $duration
-						kill -SIGINT $REPID
-						sleep 10
-						pkill -9 RecordE*
-						kill -SIGINT $PBPF_PID
-						pkill -9 Physics_Based_*
-						sleep 2
+							rosrun PBPF Physics_Based_Particle_Filtering.py &
+							PBPF_PID=$!
+
+							# sleep 14
+							
+							# fileName="${particleNumber}_${objectName}_${sceneName}_rosbag${rosbag}_repeat${repeat}_"
+							fileName="${particleNumber}_${sceneName}_rosbag${rosbag}_repeat${repeat}_"
+							rosrun PBPF RecordError.py "${fileName}" &
+							REPID=$!
+							
+							sleep $duration
+							kill -SIGINT $REPID
+							sleep 10
+							pkill -9 RecordE*
+							kill -SIGINT $PBPF_PID
+							pkill -9 Physics_Based_*
+							sleep 2
+						done
 					done
-				done
 
+				done
 			done
 		done
 	done

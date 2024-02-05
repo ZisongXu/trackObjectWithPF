@@ -483,8 +483,40 @@ if __name__ == '__main__':
     panda.fully_close_gripper()
     sys.exit()
     # input("hit enter to move forward")
-    
-    for index in range(10):
+    # 10
+    for index in range(3):
+        wpose = panda.moveit_group.get_current_pose().pose
+        waypoints = []
+        wpose.position.y += 0.05
+        # wpose.position.z -= 0.06
+        # wpose.position.y += 0.15
+        waypoints.append(copy.deepcopy(wpose))    
+        panda.move_through_waypoints(waypoints)
+    for index in range(3):
+        wpose = panda.moveit_group.get_current_pose().pose
+        waypoints = []
+        wpose.position.x -= 0.05
+        # wpose.position.z -= 0.06
+        # wpose.position.y += 0.15
+        waypoints.append(copy.deepcopy(wpose))    
+        panda.move_through_waypoints(waypoints)
+    for index in range(2):
+        wpose = panda.moveit_group.get_current_pose().pose
+        waypoints = []
+        wpose.position.y += 0.05
+        # wpose.position.z -= 0.06
+        # wpose.position.y += 0.15
+        waypoints.append(copy.deepcopy(wpose))    
+        panda.move_through_waypoints(waypoints)
+    for index in range(3):
+        wpose = panda.moveit_group.get_current_pose().pose
+        waypoints = []
+        wpose.position.x += 0.05
+        # wpose.position.z -= 0.06
+        # wpose.position.y += 0.15
+        waypoints.append(copy.deepcopy(wpose))    
+        panda.move_through_waypoints(waypoints)
+    for index in range(4):
         wpose = panda.moveit_group.get_current_pose().pose
         waypoints = []
         wpose.position.y += 0.05

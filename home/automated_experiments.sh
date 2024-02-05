@@ -8,7 +8,8 @@ declare -a particleNumbers=(70)
 declare -a runAlgFlags=("PBPF")
 declare -a diffRadSigma=(0.32505 0.2167)
 declare -a repeats=(1)
-declare -a runVersions=("depth_img" "multiray")
+# declare -a runVersions=("depth_img" "multiray")
+declare -a runVersions=("multiray")
 
 
 for runVersion in "${runVersions[@]}"
@@ -33,7 +34,7 @@ do
 					
 					# for rosbag in {1..10}
 					# for rosbag in {1..2}
-					for ((rosbag=1;rosbag<=4;rosbag++)); 
+					for ((rosbag=2;rosbag<=4;rosbag++)); 
 					do
 						duration=$(python3 get_info_from_rosbag.py "${objectName}" "${particleNumber}" "${sceneName}" "${rosbag}")
 
@@ -43,7 +44,7 @@ do
 						do
 							echo "I will sleep for $duration seconds"
 							# rosbag play "rosbag/latest_rosbag/${objectName}_${sceneName}/${objectName}_${sceneName}_70_${rosbag}.bag" --clock  > /dev/null 2>&1 & 
-							rosbag play "rosbag/depth_img_rosbag${rosbag}.bag" --clock --rate 1  > /dev/null 2>&1 & 
+							rosbag play "rosbag/depth_img_rosbag${rosbag}.bag" --clock --rate 0.04  > /dev/null 2>&1 & 
 							ROSBAGPID=$!
 
 							rosrun PBPF Physics_Based_Particle_Filtering.py &

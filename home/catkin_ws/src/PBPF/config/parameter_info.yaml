@@ -31,5 +31,5 @@ run_alg_flag: PBPF
 task_flag: '2'
 update_style_flag: time
 use_pybullet_camera: false
-version: depth_img
+version: multiray
 width: 1280

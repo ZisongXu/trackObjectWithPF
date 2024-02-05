@@ -39,7 +39,8 @@ class Ros_Listener():
         rospy.Subscriber('/joint_states', JointState, self.joint_values_callback, queue_size=1)
         self.joint_subscriber = JointState()
 
-        rospy.Subscriber('/camera/depth/image_rect_raw', Image, self.depth_image_callback, queue_size=1)
+        # rospy.Subscriber('/camera/depth/image_rect_raw', Image, self.depth_image_callback, queue_size=1)
+        rospy.Subscriber('/camera/aligned_depth_to_color/image_raw', Image, self.depth_image_callback, queue_size=1)
         self.depth_image_subscriber = Image()
         
         rospy.Subscriber('/gazebo/model_states', ModelStates, self.model_states_callback, queue_size=1)

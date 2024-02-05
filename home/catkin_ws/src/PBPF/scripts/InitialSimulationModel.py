@@ -182,9 +182,13 @@ class InitialSimulationModel():
             collision_detection_obj_id.append(fake_robot_id)
 
             object_list = []
-
+            # mark
+            bias_obse_x = -0.05
+            bias_obse_y = 0
+            bias_obse_z = 0.04
             for obj_index in range(self.object_num):
                 obj_obse_pos = self.pw_T_obj_obse_obj_list_alg[obj_index].pos
+                obj_obse_pos = [obj_obse_pos+bias_obse_x, obj_obse_pos+bias_obse_y, obj_obse_pos+bias_obse_z]
                 obj_obse_ori = self.pw_T_obj_obse_obj_list_alg[obj_index].ori
                 obj_obse_name = self.pw_T_obj_obse_obj_list_alg[obj_index].obj_name
                 

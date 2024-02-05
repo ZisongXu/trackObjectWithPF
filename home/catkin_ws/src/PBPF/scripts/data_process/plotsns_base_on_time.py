@@ -122,7 +122,7 @@ if ang_and_pos == "ang":
     print("Ready to plot the figure of ang")
     dataset_ang = pd.read_csv(save_file_path+file_name+'.csv', header=None)
     dataset_ang.columns=["index","time","Rotational Error (rad)","alg","obj_scene","particle_num","ray_type","obj_name"]
-    figure_ang = sns.lineplot(x="time", y="Rotational Error (rad)", data=dataset_ang, palette=['y', 'g'], hue = 'alg', errorbar=('ci', 95), legend=True, linewidth = 0.5)
+    figure_ang = sns.lineplot(x="time", y="Rotational Error (rad)", data=dataset_ang, palette=['y', 'g', 'r'], hue = 'alg', errorbar=('ci', 95), legend=True, linewidth = 0.5)
     figure_ang.set(xlabel = None, ylabel = None)
     # figure_ang.set_xlabel(None)
     x = range(0, x_range_max, x_range_unit)
@@ -200,7 +200,7 @@ if ang_and_pos == "pos":
     # print(dataset_pos)
 
 
-    figure_pos = sns.lineplot(data=dataset_pos, x="time", y="Positional Error (m)", palette=['y', 'g'], hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5)
+    figure_pos = sns.lineplot(data=dataset_pos, x="time", y="Positional Error (m)", palette=['y', 'g', 'r'], hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5)
     # figure_pos = sns.lineplot(data=dataset_pos, x=1, y=2, hue=3, errorbar=('ci', 95), legend=False, linewidth = 0.5)
     figure_pos.set(xlabel = None, ylabel = None)
     x = range(0, x_range_max, x_range_unit)

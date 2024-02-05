@@ -11,7 +11,7 @@ declare -a particleNumbers=(70)
 declare -a runAlgFlags=("obse" "PBPFV")
 declare -a Ang_and_Pos=("ang" "pos")
 declare -a update_style_flag=("time") # "time" "pose"
-
+declare -a runVersions=("depth_img" "multiray")
 # for runAlgFlag in "${runAlgFlags[@]}"
 # do
 # 	for particleNumber in "${particleNumbers[@]}"
@@ -56,17 +56,18 @@ do
 						fi
 					fi
 					# for rosbag in {1..10}
-					for ((rosbag=8;rosbag<=8;rosbag++)); 
+					for ((rosbag=1;rosbag<=1;rosbag++)); 
 					do
 						# for repeat in {1..10}
-						for ((repeat=0;repeat<=19;repeat++));
+						for ((repeat=0;repeat<=9;repeat++));
 						do
-						
-							python3 data_processing.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" &
-							DATA_PRO_PID=$!
+							for runVersion in "${runVersions[@]}"
+							do
+								python3 data_processing.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" &
+								DATA_PRO_PID=$!
 
-							sleep 4
-
+								sleep 4
+							done
 						done
 					done
 				done

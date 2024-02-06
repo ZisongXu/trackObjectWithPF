@@ -29,6 +29,7 @@ import tf
 import tf.transformations as transformations
 from cv_bridge import CvBridge
 from cv_bridge import CvBridgeError
+import cv2
 #pybullet
 from pyquaternion import Quaternion
 import pybullet as p
@@ -42,7 +43,9 @@ import copy
 import os
 import signal
 import sys
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.pyplot import imsave
 import pandas as pd
 import multiprocessing
 import yaml
@@ -61,6 +64,8 @@ from Robot_Pose import Robot_Pose
 from Center_T_Point_for_Ray import Center_T_Point_for_Ray
 from launch_camera import LaunchCamera
 
+# mark
+# - gelatin
 
 #Class of Physics-based Particle Filtering
 class PBPFMove():
@@ -83,7 +88,8 @@ class PBPFMove():
         self.ray_list_empty = True
         self.num = 0
 
-        self.depth_value_difference_square_root_list = [1] * PARTICLE_NUM
+        self.depth_value_difference_list = [1] * PARTICLE_NUM
+        self.rendered_depth_images_list = [1] * PARTICLE_NUM
 
         self.bridge = CvBridge()
 
@@ -127,7 +133,8 @@ class PBPFMove():
         pybullet_sim_envs = self.pybullet_env_id_collection
         fake_robot_id = self.pybullet_sim_fake_robot_id_collection
         
-        
+        self.rendered_depth_images_list = [1] * PARTICLE_NUM
+
         self.times = []
         t1 = time.time()
         # motion model
@@ -135,6 +142,7 @@ class PBPFMove():
         t2 = time.time()
         self.times.append(t2-t1)
         # observation model
+        print(sum(global_objects_visual_by_DOPE_list))
         if do_obs_update or sum(global_objects_visual_by_DOPE_list)<OBJECT_NUM:
             self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs)
             # self.observation_update_PB(pw_T_obj_obse_objects_pose_list)
@@ -209,6 +217,7 @@ class PBPFMove():
             collision_detection_obj_id.append(self.pybullet_sim_other_object_id_collection[oto_index])
 
         for obj_index in range(self.obj_num):
+            
             pw_T_par_sim_id = self.particle_cloud[index][obj_index].no_visual_par_id
             # get linearVelocity and angularVelocity of each particle
             linearVelocity, angularVelocity = pybullet_env.getBaseVelocity(pw_T_par_sim_id)
@@ -239,9 +248,17 @@ class PBPFMove():
             pybullet_env.stepSimulation()
             real_depth_image_transferred = self.depthImageRealTransfer(depth_image_real)
             width, height, rgbImg, depth_image_render, segImg, nearVal, farVal= launch_camera.setCameraPicAndGetPic(pybullet_env, tf_listener, _pw_T_rob_sim_4_4)
-            pybullet_depth_image_transferred = self.pybulletDepthImageValueBufferTransfer(depth_image_render, nearVal, farVal)
-            depth_value_difference_square_root = self.compareDifferenceBtTwoDepthImgs(real_depth_image_transferred, pybullet_depth_image_transferred)
-            self.depth_value_difference_square_root_list[index] = depth_value_difference_square_root
+            
+            self.rendered_depth_images_list[index] = depth_image_render
+            
+            rendered_depth_image_transferred = self.renderedDepthImageValueBufferTransfer(depth_image_render, nearVal, farVal)
+
+            if USE_CONVOLUTION_FLAG == True:
+                depth_value_difference = self.compute_difference_bt_2_depthImg_convolution(real_depth_image_transferred, rendered_depth_image_transferred)
+            else:
+                depth_value_difference = self.compareDifferenceBtTwoDepthImgs(real_depth_image_transferred, rendered_depth_image_transferred)
+            
+            self.depth_value_difference_list[index] = depth_value_difference
             
         else:
             for obj_index in range(self.obj_num):
@@ -260,6 +277,8 @@ class PBPFMove():
         
         # pipe.send()
 
+    
+
     # update particle cloud particle angle
     def update_partcile_cloud_pose_PB(self, index, obj_index, x, y, z, ori, linearVelocity, angularVelocity):
         self.particle_cloud[index][obj_index].pos = [x, y, z]
@@ -274,30 +293,67 @@ class PBPFMove():
         particle_ori = copy.deepcopy(ori)
         self.set_particle_in_each_sim_env_single(index, obj_index, particle_pos, particle_ori)
 
-    def compareDifferenceBtTwoDepthImgs(self, real_depth_image_transferred, pybullet_depth_image_transferred):
-        depth_value_difference = self.subtractionTwoDepthImgs(real_depth_image_transferred, pybullet_depth_image_transferred)
-        depth_value_difference_square_root = self.depthValueDifferenceSquareRoot(depth_value_difference)
-        return depth_value_difference_square_root
+    def compute_difference_bt_2_depthImg_convolution(self, test_arr1, test_arr2):
+        compare_root_list = []
+        loop_size = 2 * CONVOLUTION_SIZE + 1
+        for h_size in range(loop_size):
+            for w_size in range(loop_size):
+                if h_size <= CONVOLUTION_SIZE:
+                    if w_size <= CONVOLUTION_SIZE:
+                        a = test_arr1[     0:HEIGHT-h_size,      0:WIDTH-w_size]
+                        b = test_arr2[h_size:HEIGHT       , w_size:WIDTH]
+                    else:
+                        a = test_arr1[     0:HEIGHT-h_size, w_size-CONVOLUTION_SIZE:WIDTH-0]
+                        b = test_arr2[h_size:HEIGHT       ,           0:WIDTH-(w_size-CONVOLUTION_SIZE)]
+                else:
+                    if w_size <= CONVOLUTION_SIZE:
+                        a = test_arr1[h_size-CONVOLUTION_SIZE:HEIGHT-0,                  0:WIDTH-w_size]
+                        b = test_arr2[          0:HEIGHT-(h_size-CONVOLUTION_SIZE), w_size:WIDTH]
+                    else:
+                        a = test_arr1[h_size-CONVOLUTION_SIZE:HEIGHT-0,           w_size-CONVOLUTION_SIZE:WIDTH-0]
+                        b = test_arr2[          0:HEIGHT-(h_size-CONVOLUTION_SIZE),         0:WIDTH-(w_size-CONVOLUTION_SIZE)]
+                compare_array = a - b
+                dim_number = compare_array.ndim
+                compare_array_square = compare_array ** 2
+                compare_array_square_copy = copy.deepcopy(compare_array_square)
+                for dim_n in range(dim_number):
+                    compare_array_square_copy = sum(compare_array_square_copy)
+                compare_array_square_sum_root = math.sqrt(compare_array_square_copy)
+                compare_root_list.append(compare_array_square_sum_root)
+        compare_root_list_array = np.array(compare_root_list)
+        compare_root_list_array_square = compare_root_list_array ** 2
+        compare_root_list_array_square_sum = sum(compare_root_list_array_square)
+        compare_root_list_array_square_sum_root = math.sqrt(compare_root_list_array_square_sum)
+        return compare_root_list_array_square_sum_root
+
+
+    def compareDifferenceBtTwoDepthImgs(self, real_depth_image_transferred, rendered_depth_image_transferred):
+        depth_value_diff_subtraction = self.subtractionTwoDepthImgs(real_depth_image_transferred, rendered_depth_image_transferred)
+        depth_value_diff_subtraction_square_root = self.depthValueDifferenceSquareRoot(depth_value_diff_subtraction)
+        return depth_value_diff_subtraction_square_root
 
     def subtractionTwoDepthImgs(self, depthImg1, depthImg2):
-        depth_value_diff = depthImg1-depthImg2
-        return depth_value_diff
+        depth_value_diff_subtraction = depthImg1 - depthImg2
+        return depth_value_diff_subtraction
 
-    def depthValueDifferenceSquareRoot(self, depth_value_diff):
-        dim_number = depth_value_diff.ndim
-        depth_value_diff_square = depth_value_diff ** 2
-        interim_container = copy.deepcopy(depth_value_diff_square)
+    def depthValueDifferenceSquareRoot(self, depth_value_diff_subtraction):
+        dim_number = depth_value_diff_subtraction.ndim
+        depth_value_diff_subtraction_square = depth_value_diff_subtraction ** 2
+        interim_container = copy.deepcopy(depth_value_diff_subtraction_square)
         for dim_n in range(dim_number):
             interim_container = sum(interim_container)
-        depth_value_difference_square_root = math.sqrt(interim_container)
-        return depth_value_difference_square_root        
+        depth_value_diff_subtraction_square_root = math.sqrt(interim_container)
+        return depth_value_diff_subtraction_square_root        
 
     def depthImageRealTransfer(self, depth_image_real):
         cv_image = self.bridge.imgmsg_to_cv2(depth_image_real,"16UC1")
+        if DEBUG_DEPTH_IMG_FLAG == True:
+            real_depth_img_name = str(_particle_update_time) + "_real_depth_img.png"
+            cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
         cv_image = cv_image / 1000
         return cv_image
 
-    def pybulletDepthImageValueBufferTransfer(self, depth_image_render, nearVal, farVal):
+    def renderedDepthImageValueBufferTransfer(self, depth_image_render, nearVal, farVal):
         pybullet_depth_image_value_transferred = farVal * nearVal / (farVal - (farVal - nearVal) * depth_image_render)
         return pybullet_depth_image_value_transferred
 
@@ -325,13 +381,13 @@ class PBPFMove():
     
     # observation model:
     def observation_update_PB_parallelised(self, particle_cloud, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs):
-        threads = []
+        threads_obs = []
         for index, particle in enumerate(particle_cloud):
-            thread = threading.Thread(target=self.observation_update_PB, args=(index, particle, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs))
-            thread.start()
-            threads.append(thread)
-        for thread in threads:
-            thread.join()
+            thread_obs = threading.Thread(target=self.observation_update_PB, args=(index, particle, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs))
+            thread_obs.start()
+            threads_obs.append(thread_obs)
+        for thread_obs in threads_obs:
+            thread_obs.join()
     
     # observation model
     def observation_update_PB(self, index, particle, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs):
@@ -341,8 +397,9 @@ class PBPFMove():
         weight =  1.0 / PARTICLE_NUM
         
         for obj_index in range(self.obj_num):
+            
             local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
-            if local_obj_visual_by_DOPE_val == 1: # 1 means DOPE does not detect the object[obj_index] 
+            if local_obj_visual_by_DOPE_val == 1: # 1 means DOPE does not detect the object[obj_index] and skip this loop
                 particle[obj_index].w = weight
                 continue
             obse_obj_pos = pw_T_obj_obse_objects_pose_list[obj_index].pos
@@ -387,12 +444,20 @@ class PBPFMove():
                 weight = self.single_ray_tracing(MODEL, par_pos, pybullet_env, weight)
             elif VERSION == "multiray":
                 # need to change
-                _par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
-                _par_ori = copy.deepcopy(par_ori)
-                weight = self.multi_ray_tracing(MODEL, _par_pos, _par_ori, pybullet_env, obj_index, weight)
+                par_pos_ = copy.deepcopy([particle_x, particle_y, particle_z])
+                par_ori_ = copy.deepcopy(par_ori)
+                weight = self.multi_ray_tracing(MODEL, par_pos_, par_ori_, pybullet_env, obj_index, weight)
 
             particle[obj_index].w = weight
-      
+
+        if DEBUG_DEPTH_IMG_FLAG == True:
+            self.saveDepthImage(index, self.rendered_depth_images_list)
+
+
+    def saveDepthImage(self, index, rendered_depth_images_list):
+        rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
+        imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_images_list[index], cmap='gray')
+
     # synchronizing the motion of the robot in the simulation
     def sim_robot_move_direct(self, index, pybullet_env, robot_id, position):
         num_joints = 9
@@ -695,7 +760,7 @@ class PBPFMove():
             
             # mark
             if VERSION == "depth_img":
-                weight_depth_img = self.computeWeightFromDepthImage(index, self.depth_value_difference_square_root_list)
+                weight_depth_img = self.computeWeightFromDepthImage(index, self.depth_value_difference_list)
                 each_par_weight = each_par_weight * weight_depth_img
 
             particles_w.append(each_par_weight) # to compute the sum
@@ -744,10 +809,10 @@ class PBPFMove():
                 
         self.particle_cloud = copy.deepcopy(newParticles_list)   
 
-    def computeWeightFromDepthImage(self, index, depth_value_difference_square_root_list):
-        depth_value_difference_square_root_list_ = copy.deepcopy(depth_value_difference_square_root_list)
-        weight_depth_img_sum = sum(depth_value_difference_square_root_list_)
-        weight_depth_img = 1.0 * depth_value_difference_square_root_list_[index] / weight_depth_img_sum 
+    def computeWeightFromDepthImage(self, index, depth_value_difference_list):
+        depth_value_difference_list_ = copy.deepcopy(depth_value_difference_list)
+        weight_depth_img_sum = sum(depth_value_difference_list_)
+        weight_depth_img = 1.0 * depth_value_difference_list_[index] / weight_depth_img_sum 
         return weight_depth_img
 
     def computePosition(self, position, base_w_list):
@@ -1628,12 +1693,15 @@ while reset_flag == True:
         # using pybullet camera
         USE_PYBULLET_CAMERA = parameter_info['use_pybullet_camera']
         VERSION = parameter_info['version'] # old/ray/multiray/depth_img
-
+        DEBUG_DEPTH_IMG_FLAG = parameter_info['debug_depth_img_flag'] # old/ray/multiray/depth_img
+        USE_CONVOLUTION_FLAG = parameter_info['use_convolution_flag'] # old/ray/multiray/depth_img
+        CONVOLUTION_SIZE = parameter_info['convolution_size'] # old/ray/multiray/depth_img
         # the flag is used to determine whether the robot touches the particle in the simulation
         simRobot_touch_par_flag = 0
         OBJECT_NUM = parameter_info['object_num']
-        robot_num = 1
-        
+        ROBOT_NUM = parameter_info['robot_num']
+        _particle_update_time = 0
+
         check_dope_work_flag_init = 0
         if task_flag == "4": 
             other_obj_num = 1 # parameter_info['other_obj_num']
@@ -1760,7 +1828,7 @@ while reset_flag == True:
         ang_std_list = [a_thresh_obse]
         # build an object of class "Ros_Listener"
         ros_listener = Ros_Listener()
-        create_scene = Create_Scene(OBJECT_NUM, robot_num, other_obj_num)
+        create_scene = Create_Scene(OBJECT_NUM, ROBOT_NUM, other_obj_num)
         launch_camera = LaunchCamera(WIDTH, HEIGHT)
         tf_listener = tf.TransformListener()
         time.sleep(0.5)
@@ -1774,7 +1842,7 @@ while reset_flag == True:
         for obj_index in range(other_obj_num):
             pw_T_obj_obse_oto_list_alg = create_scene.initialize_base_of_cheezit()
 
-        initial_parameter = InitialSimulationModel(OBJECT_NUM, robot_num, other_obj_num, PARTICLE_NUM, 
+        initial_parameter = InitialSimulationModel(OBJECT_NUM, ROBOT_NUM, other_obj_num, PARTICLE_NUM, 
                                                 pw_T_rob_sim_pose_list_alg, 
                                                 pw_T_obj_obse_obj_list_alg,
                                                 pw_T_obj_obse_oto_list_alg,
@@ -1836,7 +1904,7 @@ while reset_flag == True:
         # rob_T_obj_obse_ori_old = list(rot_ob)
 
 
-        print("Welcome to Our Approach !")
+        print("Welcome to Our Approach ! VERSION: ", VERSION)
         PBPF_alg = PBPFMove(OBJECT_NUM) # PF_alg
         CVPF_alg = CVPFMove(OBJECT_NUM) 
         # while True:
@@ -1938,11 +2006,11 @@ while reset_flag == True:
                 rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
                 rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
                 # mark
-                bias_obse_x = -0.05
-                bias_obse_y = 0
-                bias_obse_z = 0.04
+                # bias_obse_x = -0.05
+                # bias_obse_y = 0
+                # bias_obse_z = 0.04
                 pw_T_obj_obse = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
-                pw_T_obj_obse_pos = [pw_T_obj_obse[0][3]+bias_obse_x, pw_T_obj_obse[1][3]+bias_obse_y, pw_T_obj_obse[2][3]+bias_obse_z]
+                pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
                 pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
 
                 
@@ -2034,6 +2102,7 @@ while reset_flag == True:
                         # judgement for any particles contact
                         if PBPF_alg.isAnyParticleInContact():
                             simRobot_touch_par_flag = 1
+                            _particle_update_time = _particle_update_time + 1
                             t_begin_PBPF = time.time()
                             flag_update_num_PB = flag_update_num_PB + 1
                             pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
@@ -2082,6 +2151,7 @@ while reset_flag == True:
                     if run_alg_flag == "PBPF":
                         if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
                             simRobot_touch_par_flag = 1
+                            _particle_update_time = _particle_update_time + 1
                             t_begin_PBPF = time.time()
                             flag_update_num_PB = flag_update_num_PB + 1
                             pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
@@ -2092,6 +2162,7 @@ while reset_flag == True:
                             rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
                             t_finish_PBPF = time.time()
                             PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
+                            # mark
                             print("Time consuming:", t_finish_PBPF - t_begin_PBPF)
                             print("Max value:", max(PBPF_time_cosuming_list))
                             simRobot_touch_par_flag = 0

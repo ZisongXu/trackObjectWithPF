@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -a objectNames=("cracker")
+declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
 declare -a sceneNames=("scene2")
@@ -56,7 +56,7 @@ do
 						fi
 					fi
 					# for rosbag in {1..10}
-					for ((rosbag=1;rosbag<=1;rosbag++)); 
+					for ((rosbag=2;rosbag<=2;rosbag++)); 
 					do
 						# for repeat in {1..10}
 						for ((repeat=0;repeat<=9;repeat++));

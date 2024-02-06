@@ -57,6 +57,7 @@ runVersion = sys.argv[8] # multiray/ang
 # file_name = tem_name+'_'+object_name+'_'+update_style_flag+'_'+run_alg_flag+'_err_'+ang_and_pos
 file_name = str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_'+run_alg_flag+'_err_'+ang_and_pos+'_'+runVersion
 # 70_scene2_rosbag1_repeat0_cracker_time_obse_err_ang_multiray
+# 70_scene2_rosbag1_repeat0_soup_time_obse_err_ang_depth_img
 # PBPF_pos_file_name = '_'+update_style_flag+'_PBPF_err_pos.csv'
 # PBPF_ang_file_name = '_'+update_style_flag+'_PBPF_err_ang.csv'
 # obse_pos_file_name = '_'+update_style_flag+'_obse_err_pos.csv'
@@ -74,7 +75,7 @@ prepare_time = 28 * 100
 prepare_time = 129 * 100
 prepare_time = 265 * 100
 prepare_time = 1730 * 100
-prepare_time = 1200 * 100
+prepare_time = 1300 * 100
 
 # prepare_time = 134000
 

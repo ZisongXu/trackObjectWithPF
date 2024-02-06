@@ -9,33 +9,35 @@ declare -a runAlgFlags=("PBPF")
 declare -a diffRadSigma=(0.32505 0.2167)
 declare -a repeats=(1)
 # declare -a runVersions=("depth_img" "multiray")
-declare -a runVersions=("multiray")
+declare -a runVersions=("depth_img" "multiray")
 
 
-for runVersion in "${runVersions[@]}"
+
+for runAlgFlag in "${runAlgFlags[@]}"
 do
-	for runAlgFlag in "${runAlgFlags[@]}"
+	for particleNumber in "${particleNumbers[@]}"
 	do
-		for particleNumber in "${particleNumbers[@]}"
+		for objectName in "${objectNames[@]}"
 		do
-			for objectName in "${objectNames[@]}"
+			
+			for sceneName in "${sceneNames[@]}"
 			do
-				
-				for sceneName in "${sceneNames[@]}"
-				do
-					if [[ "$objectName" == "soup" ]]; then
-						if [[ "$sceneName" == "scene4" ]]; then
-							continue
-						fi
+				if [[ "$objectName" == "soup" ]]; then
+					if [[ "$sceneName" == "scene4" ]]; then
+						continue
 					fi
+				fi
 
-					
-					python3 update_yaml_file_automated.py "${objectName}" "${particleNumber}" "${sceneName}" "${runAlgFlag}" "${runVersion}" 
-					
-					# for rosbag in {1..10}
-					# for rosbag in {1..2}
-					for ((rosbag=2;rosbag<=4;rosbag++)); 
+				
+				# for rosbag in {1..10}
+				# for rosbag in {1..2}
+				for ((rosbag=1;rosbag<=2;rosbag++)); 
+				do
+					for runVersion in "${runVersions[@]}"
 					do
+						
+						python3 update_yaml_file_automated.py "${objectName}" "${particleNumber}" "${sceneName}" "${runAlgFlag}" "${runVersion}" 
+
 						duration=$(python3 get_info_from_rosbag.py "${objectName}" "${particleNumber}" "${sceneName}" "${rosbag}")
 
 						# for repeat in {1..10}
@@ -44,7 +46,7 @@ do
 						do
 							echo "I will sleep for $duration seconds"
 							# rosbag play "rosbag/latest_rosbag/${objectName}_${sceneName}/${objectName}_${sceneName}_70_${rosbag}.bag" --clock  > /dev/null 2>&1 & 
-							rosbag play "rosbag/depth_img_rosbag${rosbag}.bag" --clock --rate 0.04  > /dev/null 2>&1 & 
+							rosbag play "rosbag/depth_img_cracker_soup${rosbag}.bag" --clock --rate 0.04  > /dev/null 2>&1 & 
 							ROSBAGPID=$!
 
 							rosrun PBPF Physics_Based_Particle_Filtering.py &

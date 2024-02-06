@@ -75,6 +75,9 @@ write_estDO_pose_flag = "False"
 print("The "+str(file_name)+"th time")
 # panda data frame to record the error and to compare them
 # pos
+
+ADDMATRIX_FLAG = True
+
 if compute_error_flag == True:
     # when OptiTrack does not work, record the previous OptiTrack pose in the rosbag
     boss_opti_pos_x_df = pd.DataFrame(columns=['step','time','pos_x','alg'],index=[])
@@ -105,19 +108,25 @@ def rotation_4_4_to_transformation_4_4(rotation_4_4, pos):
     rotation_4_4[2][3] = pos[2]
     return rotation_4_4
 
-def computeCorrespondPointDistanceBtTwoObjects(obj_name, pos1, ori1, pos2, oir2):
+# mark
+def ADDMatrixBtTwoObjects(obj_name, pos1, ori1, pos2, oir2):
     center_T_points_pose_4_4_list = getCenterTPointsList(obj_name)
     pw_T_points_pose_4_4_list_1 = getPwTPointsList(center_T_points_pose_4_4_list, pos1, ori1)
     pw_T_points_pose_4_4_list_2 = getPwTPointsList(center_T_points_pose_4_4_list, pos2, oir2)
     err_distance = computeCorrespondPointDistance(pw_T_points_pose_4_4_list_1, pw_T_points_pose_4_4_list_2)
     return err_distance
 
-def getCenterTPointsList(object_name, pw_T_center_pos, pw_T_center_ori):
+def getCenterTPointsList(object_name):
     center_T_points_pose_4_4_list = []
-    if object_name == "cracker":
-        x_w = 0.159
-        y_l = 0.21243700408935547
-        z_h = 0.06
+    if object_name == "cracker" or object_name == "gelatin":
+        if object_name == "cracker":
+            x_w = 0.159
+            y_l = 0.21243700408935547
+            z_h = 0.06
+        else:
+            x_w = 0.0851
+            y_l = 0.0737
+            z_h = 0.0279
         vector_list = [[1,1,1], [1,1,-1], [1,-1,1], [1,-1,-1], [-1,1,1], [-1,1,-1], [-1,-1,1], [-1,-1,-1], [1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1], [1,0.5,0.5], [1,0.5,-0.5], [1,-0.5,0.5], [1,-0.5,-0.5], [-1,0.5,0.5], [-1,0.5,-0.5], [-1,-0.5,0.5], [-1,-0.5,-0.5], [0.5,1,0.5], [0.5,1,-0.5], [-0.5,1,0.5], [-0.5,1,-0.5], [0.5,-1,0.5], [0.5,-1,-0.5], [-0.5,-1,0.5], [-0.5,-1,-0.5], [0.5,0.5,1], [0.5,-0.5,1], [-0.5,0.5,1], [-0.5,-0.5,1], [0.5,0.5,-1], [0.5,-0.5,-1], [-0.5,0.5,-1], [-0.5,-0.5,-1]]
     else:
         x_w = 0.032829689025878906
@@ -154,8 +163,8 @@ def computeCorrespondPointDistance(pw_T_points_pose_4_4_list_1, pw_T_points_pose
         pw_T_p_pos2 = [pw_T_points_pose_4_4_list_2[0][3], pw_T_points_pose_4_4_list_2[1][3], pw_T_points_pose_4_4_list_2[2][3]]
         distance = compute_pos_err_bt_2_points(pw_T_p_pos1, pw_T_p_pos2)
         dis_sum = dis_sum + distance
-    distance = 1.0 * distance / points_num
-    return distance
+    average_distance = 1.0 * dis_sum / points_num
+    return average_distance
 
 # compute the position distance between two objects
 def compute_pos_err_bt_2_points(pos1, pos2):
@@ -213,18 +222,27 @@ def signal_handler(sig, frame):
             # file_name_PBPF_pos = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_PBPF_err_pos.csv'
             # file_name_obse_ang = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_obse_err_ang.csv'
             # file_name_PBPF_ang = object_name_list[obj_index]+'_'+update_style_flag+'_scene'+task_flag+'_PBPF_err_ang.csv'
+            if ADDMATRIX_FLAG == True:
+                file_name_obse_ADD = update_style_flag+'_obse_err_ADD_'+version+'.csv'
+                file_name_PBPF_ADD = update_style_flag+'_PBPFV_err_ADD_'+version+'.csv'
 
-            file_name_obse_pos = update_style_flag+'_obse_err_pos_'+version+'.csv'
-            file_name_PBPF_pos = update_style_flag+'_PBPFV_err_pos_'+version+'.csv'
-            file_name_obse_ang = update_style_flag+'_obse_err_ang_'+version+'.csv'
-            file_name_PBPF_ang = update_style_flag+'_PBPFV_err_ang_'+version+'.csv'
+                boss_obse_err_ADD_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_obse_ADD,index=0,header=0,mode='a')
+                print("ADD: write "+obj_name+" obser file: "+version)
+                boss_PBPF_err_ADD_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_PBPF_ADD,index=0,header=0,mode='a')
+                print("ADD: write "+obj_name+" PBPF file: "+version)
 
-            boss_obse_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_obse_pos,index=0,header=0,mode='a')
-            boss_obse_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_obse_ang,index=0,header=0,mode='a')
-            print("write "+obj_name+" obser file: "+version)
-            boss_PBPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_PBPF_pos,index=0,header=0,mode='a')
-            boss_PBPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_PBPF_ang,index=0,header=0,mode='a')
-            print("write "+obj_name+" PBPF file: "+version)
+            else:
+                file_name_obse_pos = update_style_flag+'_obse_err_pos_'+version+'.csv'
+                file_name_PBPF_pos = update_style_flag+'_PBPFV_err_pos_'+version+'.csv'
+                file_name_obse_ang = update_style_flag+'_obse_err_ang_'+version+'.csv'
+                file_name_PBPF_ang = update_style_flag+'_PBPFV_err_ang_'+version+'.csv'
+
+                boss_obse_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_obse_pos,index=0,header=0,mode='a')
+                boss_obse_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_obse_ang,index=0,header=0,mode='a')
+                print("write "+obj_name+" obser file: "+version)
+                boss_PBPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_PBPF_pos,index=0,header=0,mode='a')
+                boss_PBPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_PBPF_ang,index=0,header=0,mode='a')
+                print("write "+obj_name+" PBPF file: "+version)
 
             
     if run_alg_flag == "CVPF":
@@ -268,7 +286,6 @@ if __name__ == '__main__':
     boss_obse_err_pos_df_list = []
     boss_PBPF_err_pos_df_list = []
     boss_CVPF_err_pos_df_list = []
-    boss_err_pos_df_list = []
     boss_obse_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
     boss_PBPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
     boss_CVPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
@@ -277,11 +294,15 @@ if __name__ == '__main__':
     boss_obse_err_ang_df_list = []
     boss_PBPF_err_ang_df_list = []
     boss_CVPF_err_ang_df_list = []
-    boss_err_ang_df_list = []
     boss_obse_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
     boss_PBPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
     boss_CVPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
     # boss_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+    # ADD Matrix
+    boss_obse_err_ADD_df_list = []
+    boss_PBPF_err_ADD_df_list = []
+    boss_obse_err_ADD_df = pd.DataFrame(columns=['step','time','ADD','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+    boss_PBPF_err_ADD_df = pd.DataFrame(columns=['step','time','ADD','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
 
     pw_T_rob_sim_pos = [0.0, 0.0, 0.026]
     pw_T_rob_sim_pos = [0.0, 0.0, 0.02]
@@ -309,19 +330,26 @@ if __name__ == '__main__':
         for obj_index in range(object_num):
             obj_name = object_name_list[obj_index]
             if first_get_info_from_tf_flag == 0:
-                boss_obse_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
-                boss_obse_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
-                boss_PBPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
-                boss_PBPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
-                boss_CVPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
-                boss_CVPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
-                
-                boss_obse_err_pos_df_list.append(boss_obse_err_pos_df)
-                boss_obse_err_ang_df_list.append(boss_obse_err_ang_df)
-                boss_PBPF_err_pos_df_list.append(boss_PBPF_err_pos_df)
-                boss_PBPF_err_ang_df_list.append(boss_PBPF_err_ang_df)
-                boss_CVPF_err_pos_df_list.append(boss_CVPF_err_pos_df)
-                boss_CVPF_err_ang_df_list.append(boss_CVPF_err_ang_df)
+                if ADDMATRIX_FLAG == True:
+                    boss_obse_err_ADD_df = pd.DataFrame(columns=['step','time','ADD','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+                    boss_PBPF_err_ADD_df = pd.DataFrame(columns=['step','time','ADD','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+                    boss_obse_err_ADD_df_list.append(boss_obse_err_ADD_df)
+                    boss_PBPF_err_ADD_df_list.append(boss_PBPF_err_ADD_df)
+                    
+                else:
+                    boss_obse_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+                    boss_obse_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+                    boss_PBPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+                    boss_PBPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+                    boss_CVPF_err_pos_df = pd.DataFrame(columns=['step','time','pos','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+                    boss_CVPF_err_ang_df = pd.DataFrame(columns=['step','time','ang','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+                    
+                    boss_obse_err_pos_df_list.append(boss_obse_err_pos_df)
+                    boss_obse_err_ang_df_list.append(boss_obse_err_ang_df)
+                    boss_PBPF_err_pos_df_list.append(boss_PBPF_err_pos_df)
+                    boss_PBPF_err_ang_df_list.append(boss_PBPF_err_ang_df)
+                    boss_CVPF_err_pos_df_list.append(boss_CVPF_err_pos_df)
+                    boss_CVPF_err_ang_df_list.append(boss_CVPF_err_ang_df)
                 if obj_index == object_num - 1:
                     first_get_info_from_tf_flag = 1
                 use_gazebo = ""
@@ -390,12 +418,12 @@ if __name__ == '__main__':
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
             rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3, rob_T_obj_obse_pos)
             # mark
-            bias_obse_x = -0.05
-            bias_obse_y = 0
-            bias_obse_z = 0.04
+            # bias_obse_x = -0.05
+            # bias_obse_y = 0
+            # bias_obse_z = 0.04
 
             pw_T_obj_obse_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
-            pw_T_obj_obse_pos = [pw_T_obj_obse_4_4[0][3]+bias_obse_x, pw_T_obj_obse_4_4[1][3]+bias_obse_y, pw_T_obj_obse_4_4[2][3]+bias_obse_z]
+            pw_T_obj_obse_pos = [pw_T_obj_obse_4_4[0][3], pw_T_obj_obse_4_4[1][3], pw_T_obj_obse_4_4[2][3]]
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse_4_4)
             
             # ground truth pose information
@@ -472,35 +500,43 @@ if __name__ == '__main__':
 
             if esti_obj_list_not_pub == 0:
                 if run_alg_flag == "PBPF":
-                    
-                    # error bt ground truth and observation
-                    err_opti_obse_pos = compute_pos_err_bt_2_points(pw_T_obj_opti_pos, pw_T_obj_obse_pos)
-                    # print("=======================================")
-                    # print("obj_name:", object_name_list[obj_index]+use_gazebo)
-                    # print("err_opti_obse_pos:", err_opti_obse_pos)
-                    # print("pw_T_obj_opti_pos:", pw_T_obj_opti_pos)
-                    # print("pw_T_obj_obse_pos:", pw_T_obj_obse_pos)
-                    # print("=======================================")
-                    err_opti_obse_ang = compute_ang_err_bt_2_points(pw_T_obj_opti_ori, pw_T_obj_obse_ori)
-                    err_opti_obse_ang = angle_correction(err_opti_obse_ang)
-                    # error bt ground truth and PBPF
-                    err_opti_PBPF_pos = compute_pos_err_bt_2_points(pw_T_obj_opti_pos, pw_T_obj_PBPF_pos)
-                    err_opti_PBPF_ang = compute_ang_err_bt_2_points(pw_T_obj_opti_ori, pw_T_obj_PBPF_ori)
-                    err_opti_PBPF_ang = angle_correction(err_opti_PBPF_ang)
                     obj_scene = object_name_list[obj_index]+'_scene'+task_flag
                     t_before_record = time.time()
-                    # if obse_is_fresh == True:
-                    boss_obse_err_pos_df_list[obj_index].loc[flag_record_obse] = [flag_record_obse, t_before_record - t_begin, err_opti_obse_pos, 'obse', obj_scene, particle_num, version, obj_name]
-                    boss_obse_err_ang_df_list[obj_index].loc[flag_record_obse] = [flag_record_obse, t_before_record - t_begin, err_opti_obse_ang, 'obse', obj_scene, particle_num, version, obj_name]
-                    flag_record_obse = flag_record_obse + 1
-                    if version == "depth_img":
-                        boss_PBPF_err_pos_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_pos, 'PBPF-D', obj_scene, particle_num, version, obj_name]
-                        boss_PBPF_err_ang_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_ang, 'PBPF-D', obj_scene, particle_num, version, obj_name]
+
+                    if ADDMATRIX_FLAG == True:
+                        ADD_matrix_err_opti_obse = ADDMatrixBtTwoObjects(obj_name, pw_T_obj_opti_pos, pw_T_obj_opti_ori, pw_T_obj_obse_pos, pw_T_obj_obse_ori)
+                        ADD_matrix_err_opti_PBPF = ADDMatrixBtTwoObjects(obj_name, pw_T_obj_opti_pos, pw_T_obj_opti_ori, pw_T_obj_PBPF_pos, pw_T_obj_PBPF_ori)
+                        
+                        boss_obse_err_ADD_df_list[obj_index].loc[flag_record_obse] = [flag_record_obse, t_before_record - t_begin, ADD_matrix_err_opti_obse, 'obse', obj_scene, particle_num, version, obj_name]
+                        flag_record_obse = flag_record_obse + 1
+
+                        if version == "depth_img":
+                            boss_PBPF_err_ADD_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, ADD_matrix_err_opti_PBPF, 'PBPF-RGBD', obj_scene, particle_num, version, obj_name]
+                        else:
+                            boss_PBPF_err_ADD_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, ADD_matrix_err_opti_PBPF, 'PBPF-RGB', obj_scene, particle_num, version, obj_name]
+                        flag_record_PBPF = flag_record_PBPF + 1
                     else:
-                        boss_PBPF_err_pos_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_pos, 'PBPF-V', obj_scene, particle_num, version, obj_name]
-                        boss_PBPF_err_ang_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_ang, 'PBPF-V', obj_scene, particle_num, version, obj_name]
-                    
-                    flag_record_PBPF = flag_record_PBPF + 1
+                        # error bt ground truth and observation
+                        err_opti_obse_pos = compute_pos_err_bt_2_points(pw_T_obj_opti_pos, pw_T_obj_obse_pos)
+                        err_opti_obse_ang = compute_ang_err_bt_2_points(pw_T_obj_opti_ori, pw_T_obj_obse_ori)
+                        err_opti_obse_ang = angle_correction(err_opti_obse_ang)
+
+                        # error bt ground truth and PBPF
+                        err_opti_PBPF_pos = compute_pos_err_bt_2_points(pw_T_obj_opti_pos, pw_T_obj_PBPF_pos)
+                        err_opti_PBPF_ang = compute_ang_err_bt_2_points(pw_T_obj_opti_ori, pw_T_obj_PBPF_ori)
+                        err_opti_PBPF_ang = angle_correction(err_opti_PBPF_ang)
+
+                        # if obse_is_fresh == True:
+                        boss_obse_err_pos_df_list[obj_index].loc[flag_record_obse] = [flag_record_obse, t_before_record - t_begin, err_opti_obse_pos, 'obse', obj_scene, particle_num, version, obj_name]
+                        boss_obse_err_ang_df_list[obj_index].loc[flag_record_obse] = [flag_record_obse, t_before_record - t_begin, err_opti_obse_ang, 'obse', obj_scene, particle_num, version, obj_name]
+                        flag_record_obse = flag_record_obse + 1
+                        if version == "depth_img":
+                            boss_PBPF_err_pos_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_pos, 'PBPF-RGBD', obj_scene, particle_num, version, obj_name]
+                            boss_PBPF_err_ang_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_ang, 'PBPF-RGBD', obj_scene, particle_num, version, obj_name]
+                        else:
+                            boss_PBPF_err_pos_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_pos, 'PBPF-RGB', obj_scene, particle_num, version, obj_name]
+                            boss_PBPF_err_ang_df_list[obj_index].loc[flag_record_PBPF] = [flag_record_PBPF, t_before_record - t_begin, err_opti_PBPF_ang, 'PBPF-RGB', obj_scene, particle_num, version, obj_name]
+                        flag_record_PBPF = flag_record_PBPF + 1
                     
                 else:
                     err_opti_CVPF_pos = compute_pos_err_bt_2_points(pw_T_obj_opti_pos, pw_T_obj_CVPF_pos)

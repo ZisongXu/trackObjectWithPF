@@ -65,6 +65,7 @@ run_alg_flag = parameter_info['run_alg_flag'] # PBPF/CVPF
 task_flag = parameter_info['task_flag'] # 1/2/3/4 parameter_info['task_flag']
 file_name = sys.argv[1]
 err_file = parameter_info['err_file']
+ADDMATRIX_FLAG = parameter_info['ADDMatrix_flag']
 
 DOPE_fresh_flag = False
 # file_time = 11 # 1~10
@@ -76,7 +77,6 @@ print("The "+str(file_name)+"th time")
 # panda data frame to record the error and to compare them
 # pos
 
-ADDMATRIX_FLAG = True
 
 if compute_error_flag == True:
     # when OptiTrack does not work, record the previous OptiTrack pose in the rosbag
@@ -134,6 +134,7 @@ def getCenterTPointsList(object_name):
         z_h = 0.099
         r = math.sqrt(2)
         vector_list = [[0,0,1], [0,0,-1], [2,2,1], [2,-2,1], [-2,2,1], [-2,-2,1], [r,r,1], [r,-r,1], [-r,r,1], [-r,-r,1], [2,2,0.5], [2,-2,0.5], [-2,2,0.5], [-2,-2,0.5], [r,r,0.5], [r,-r,0.5], [-r,r,0.5], [-r,-r,0.5], [2,2,0], [2,-2,0], [-2,2,0], [-2,-2,0], [r,r,0], [r,-r,0], [-r,r,0], [-r,-r,0], [2,2,-0.5], [2,-2,-0.5], [-2,2,-0.5], [-2,-2,-0.5], [r,r,-0.5], [r,-r,-0.5], [-r,r,-0.5], [-r,-r,-0.5], [2,2,-1], [2,-2,-1], [-2,2,-1], [-2,-2,-1], [r,r,-1], [r,-r,-1], [-r,r,-1], [-r,-r,-1]]
+
     for index in range(len(vector_list)):
         center_T_p_x_new = vector_list[index][0] * x_w/2
         center_T_p_y_new = vector_list[index][1] * y_l/2
@@ -149,6 +150,7 @@ def getPwTPointsList(center_T_points_pose_4_4_list, pos, ori):
     pw_T_points_pose_4_4_list = []
     pw_T_center_ori_3_3 = transformations.quaternion_matrix(ori)
     pw_T_center_ori_4_4 = rotation_4_4_to_transformation_4_4(pw_T_center_ori_3_3, pos)
+    # mark
     for index in range(len(center_T_points_pose_4_4_list)):
         center_T_p_4_4 = copy.deepcopy(center_T_points_pose_4_4_list[index])
         pw_T_p_4_4 = np.dot(pw_T_center_ori_4_4, center_T_p_4_4)
@@ -159,8 +161,8 @@ def computeCorrespondPointDistance(pw_T_points_pose_4_4_list_1, pw_T_points_pose
     dis_sum = 0
     points_num = len(pw_T_points_pose_4_4_list_1)
     for index in range(points_num):
-        pw_T_p_pos1 = [pw_T_points_pose_4_4_list_1[0][3], pw_T_points_pose_4_4_list_1[1][3], pw_T_points_pose_4_4_list_1[2][3]]
-        pw_T_p_pos2 = [pw_T_points_pose_4_4_list_2[0][3], pw_T_points_pose_4_4_list_2[1][3], pw_T_points_pose_4_4_list_2[2][3]]
+        pw_T_p_pos1 = [pw_T_points_pose_4_4_list_1[index][0][3], pw_T_points_pose_4_4_list_1[index][1][3], pw_T_points_pose_4_4_list_1[index][2][3]]
+        pw_T_p_pos2 = [pw_T_points_pose_4_4_list_2[index][0][3], pw_T_points_pose_4_4_list_2[index][1][3], pw_T_points_pose_4_4_list_2[index][2][3]]
         distance = compute_pos_err_bt_2_points(pw_T_p_pos1, pw_T_p_pos2)
         dis_sum = dis_sum + distance
     average_distance = 1.0 * dis_sum / points_num
@@ -502,8 +504,9 @@ if __name__ == '__main__':
                 if run_alg_flag == "PBPF":
                     obj_scene = object_name_list[obj_index]+'_scene'+task_flag
                     t_before_record = time.time()
-
+                    
                     if ADDMATRIX_FLAG == True:
+                        
                         ADD_matrix_err_opti_obse = ADDMatrixBtTwoObjects(obj_name, pw_T_obj_opti_pos, pw_T_obj_opti_ori, pw_T_obj_obse_pos, pw_T_obj_obse_ori)
                         ADD_matrix_err_opti_PBPF = ADDMatrixBtTwoObjects(obj_name, pw_T_obj_opti_pos, pw_T_obj_opti_ori, pw_T_obj_PBPF_pos, pw_T_obj_PBPF_ori)
                         

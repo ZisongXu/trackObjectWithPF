@@ -50,7 +50,7 @@ class LaunchCamera():
 
         pw_T_cam_tf_4_4 = self.getCameraInPybulletWorldPose44(tf_listener, pw_T_rob_sim_4_4)
         
-        camera_eye_position = [pw_T_cam_tf_4_4[0][3], pw_T_cam_tf_4_4[1][3], pw_T_cam_tf_4_4[2][3]]
+        camera_eye_position = [pw_T_cam_tf_4_4[0][3]-0.25, pw_T_cam_tf_4_4[1][3]+0.05, pw_T_cam_tf_4_4[2][3]+0.05]
         tz_vec_x = [pw_T_cam_tf_4_4[0][0], pw_T_cam_tf_4_4[1][0], pw_T_cam_tf_4_4[2][0]]
         tz_vec_y = [pw_T_cam_tf_4_4[0][1], pw_T_cam_tf_4_4[1][1], pw_T_cam_tf_4_4[2][1]]
         tz_vec_z = [pw_T_cam_tf_4_4[0][2], pw_T_cam_tf_4_4[1][2], pw_T_cam_tf_4_4[2][2]]

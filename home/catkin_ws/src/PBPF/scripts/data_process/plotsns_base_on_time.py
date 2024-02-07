@@ -64,8 +64,7 @@ elif update_style_flag == "time":
 # based_on_time_150_scene3_time_cracker_ang
 # based_on_time_150_scene3_rosbag4_time_cracker_ang
 file_name = "based_on_time_"+str(particle_num)+'_'+sceneName+'_rosbag'+str(rosbag_flag)+'_'+update_style_flag+'_'+object_name+'_'+ang_and_pos
-file_name_ang = test+update_style_flag+"_scene"+sceneName+"_ang"
-file_name_pos = test+update_style_flag+"_scene"+sceneName+"_pos"
+
 title_ang = "Rotational errors (rad) vs Time (s)"
 title_pos = "Positional errors (m) vs Time (s)"
 
@@ -78,11 +77,11 @@ if ang_and_pos == "ang":
         x_xlim = 340
         y_ylim = 5
     if sceneName == "scene2":
-        x_range_max = 1000
+        x_range_max = 1300
         x_range_unit = 100
         y_range_max = 2.5
         y_range_unit = 0.2
-        x_xlim = 1000
+        x_xlim = 1300
         y_ylim = 2.5
     if sceneName == "scene3":
         # x_range_max = 28
@@ -145,12 +144,12 @@ if ang_and_pos == "pos":
         x_xlim = 265 # 28
         y_ylim = 0.5 # 0.5
     if sceneName == "scene2":
-        x_range_max = 1000
+        x_range_max = 1300
         x_range_unit = 100
-        y_range_max = 0.5
-        y_range_unit = 0.04
-        x_xlim = 1000
-        y_ylim = 0.5
+        y_range_max = 1.5
+        y_range_unit = 0.1
+        x_xlim = 1300
+        y_ylim = 1.5
     if sceneName == "scene3":
         # x_range_max = 28
         # x_range_unit = 2
@@ -213,5 +212,86 @@ if ang_and_pos == "pos":
     plt.title(title_pos, fontsize=16)
     svg_fig_pos = figure_pos.get_figure()
     svg_fig_pos.savefig(save_file_path+file_name+".png",format="png")
+
+if ang_and_pos == "ADD":
+    if sceneName == "scene1":
+        x_range_max = 265 # 28, 129, 265
+        x_range_unit = 25 # 2, 6, 25, 125
+        y_range_max = 0.5 # 0.5
+        y_range_unit = 0.04 # 0.04
+        x_xlim = 265 # 28
+        y_ylim = 0.5 # 0.5
+    if sceneName == "scene2":
+        x_range_max = 1300
+        x_range_unit = 130
+        y_range_max = 1.5
+        y_range_unit = 0.15
+        x_xlim = 1300
+        y_ylim = 1.5
+    if sceneName == "scene3":
+        # x_range_max = 28
+        # x_range_unit = 2
+        # y_range_max = 0.5
+        # y_range_unit = 0.04
+        # x_xlim = 28
+        # y_ylim = 0.5
+        x_range_max = 265 # 28, 129, 265, 1
+        x_range_unit = 25 # 2, 6, 25, 125
+        y_range_max = 0.5 # 0.5
+        y_range_unit = 0.04 # 0.04
+        x_xlim = 265 # 28
+        y_ylim = 0.5 # 0.5
+    if sceneName == "scene4":
+        x_range_max = 28
+        x_range_unit = 2
+        y_range_max = 0.5
+        y_range_unit = 0.04
+        x_xlim = 28
+        y_ylim = 0.5
+    if sceneName == "scene5":
+        # x_range_max = 28
+        # x_range_unit = 2
+        # y_range_max = 0.5
+        # y_range_unit = 0.04
+        # x_xlim = 28
+        # y_ylim = 0.5
+        x_range_max = 3480 # 28, 129, 265, 1
+        x_range_unit = 300 # 2, 6, 25, 125
+        y_range_max = 0.5 # 0.5
+        y_range_unit = 0.04 # 0.04
+        x_xlim = 3480 # 28
+        y_ylim = 0.5 # 0.5
+    print("Ready to plot the figure of pos")
+    ymax = 0.12
+    dataset_pos = pd.read_csv(save_file_path+file_name+'.csv', header=None)
+
+    print(dataset_pos)
+    dataset_pos.columns=["index","time","ADD Matrix Error (m)","alg","obj_scene","particle_num","ray_type","obj_name"]
+    print(pd.__version__)
+    print(sns.__version__)
+    print(matplotlib.__version__)
+    # print("Before")
+    # print(dataset_pos)
+    # dataset_pos = dataset_pos.to_numpy()[:,np.newaxis]
+    # print("After")
+    # print(dataset_pos)
+
+
+    figure_pos = sns.lineplot(data=dataset_pos, x="time", y="ADD Matrix Error (m)", palette=['y', 'g', 'r'], hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5)
+    # figure_pos = sns.lineplot(data=dataset_pos, x=1, y=2, hue=3, errorbar=('ci', 95), legend=False, linewidth = 0.5)
+    figure_pos.set(xlabel = None, ylabel = None)
+    x = range(0, x_range_max, x_range_unit)
+    y = np.arange(0, y_range_max, y_range_unit)
+    plt.xticks(x)
+    plt.yticks(y)
+    plt.tick_params(labelsize=15)
+    plt.xlim(0, x_xlim)
+    plt.ylim(0, y_ylim)
+    plt.title(title_pos, fontsize=16)
+    svg_fig_pos = figure_pos.get_figure()
+    svg_fig_pos.savefig(save_file_path+file_name+".png",format="png")
+
+
+
 
 print("finished")

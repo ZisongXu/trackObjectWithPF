@@ -9,7 +9,8 @@ declare -a particleNumbers=(70)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("obse" "PBPFV")
-declare -a Ang_and_Pos=("ang" "pos")
+# declare -a Ang_and_Pos=("ang" "pos")
+declare -a Ang_and_Pos=("ADD")
 declare -a update_style_flag=("time") # "time" "pose"
 declare -a runVersions=("depth_img" "multiray")
 # for runAlgFlag in "${runAlgFlags[@]}"
@@ -56,10 +57,10 @@ do
 						fi
 					fi
 					# for rosbag in {1..10}
-					for ((rosbag=2;rosbag<=2;rosbag++)); 
+					for ((rosbag=1;rosbag<=2;rosbag++)); 
 					do
 						# for repeat in {1..10}
-						for ((repeat=0;repeat<=9;repeat++));
+						for ((repeat=0;repeat<=4;repeat++));
 						do
 							for runVersion in "${runVersions[@]}"
 							do

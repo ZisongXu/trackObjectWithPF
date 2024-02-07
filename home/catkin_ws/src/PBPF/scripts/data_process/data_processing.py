@@ -85,7 +85,7 @@ prepare_time = 1300 * 100
 # save file
 # save_file_name = tem_name+'_'+'based_on_time_'+str(particle_num)+'_'+object_name+'_'+task_flag+'_'+update_style_flag+'_'+ang_and_pos+'.csv'
 # save_file_name = 'based_on_time_'+str(particle_num)+'_'+task_flag+'_'+update_style_flag+'_'+object_name+'_'+ang_and_pos+'.csv'
-save_file_name = 'based_on_time_'+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_'+update_style_flag+'_'+object_name+'_'+ang_and_pos+'.csv'
+save_file_name = 'based_on_time_'+str(particle_num)+'_'+task_flag+'_'+update_style_flag+'_'+object_name+'_'+ang_and_pos+'.csv'
 
 # save_file_path = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/error_file_diff_par_num/70/1_cracker_scene1/inter_data_"+ang_and_pos+"/")
 save_file_path = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/"+err_file+"/")

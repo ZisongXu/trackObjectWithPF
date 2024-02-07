@@ -1,3 +1,6 @@
+ADDMatrix_flag: true
+convolution_size: 0
+debug_depth_img_flag: False
 dope_flag: true
 err_file: rayTracing
 gazebo_flag: false
@@ -23,15 +26,12 @@ oto_name_list:
 otob_name_list:
 - cracker_obstacle
 - fish_can
-particle_num: 2
+particle_num: 70
 pick_particle_rate: 0.0
 robot_num: 1
 run_alg_flag: PBPF
 task_flag: '2'
 update_style_flag: time
-use_pybullet_camera: false
+use_convolution_flag: False
 version: depth_img
 width: 1280
-debug_depth_img_flag: True
-use_convolution_flag: False
-convolution_size: 2

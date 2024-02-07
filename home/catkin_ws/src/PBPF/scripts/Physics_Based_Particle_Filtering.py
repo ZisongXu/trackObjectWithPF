@@ -142,7 +142,6 @@ class PBPFMove():
         t2 = time.time()
         self.times.append(t2-t1)
         # observation model
-        print(sum(global_objects_visual_by_DOPE_list))
         if do_obs_update or sum(global_objects_visual_by_DOPE_list)<OBJECT_NUM:
             self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs)
             # self.observation_update_PB(pw_T_obj_obse_objects_pose_list)
@@ -1690,8 +1689,7 @@ while reset_flag == True:
         # observation model
         pick_particle_rate = parameter_info['pick_particle_rate']
         optitrack_flag = parameter_info['optitrack_flag']
-        # using pybullet camera
-        USE_PYBULLET_CAMERA = parameter_info['use_pybullet_camera']
+        
         VERSION = parameter_info['version'] # old/ray/multiray/depth_img
         DEBUG_DEPTH_IMG_FLAG = parameter_info['debug_depth_img_flag'] # old/ray/multiray/depth_img
         USE_CONVOLUTION_FLAG = parameter_info['use_convolution_flag'] # old/ray/multiray/depth_img
@@ -2006,11 +2004,11 @@ while reset_flag == True:
                 rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
                 rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
                 # mark
-                # bias_obse_x = -0.05
-                # bias_obse_y = 0
-                # bias_obse_z = 0.04
+                bias_obse_x = -0.05
+                bias_obse_y = 0
+                bias_obse_z = 0.08
                 pw_T_obj_obse = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
-                pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
+                pw_T_obj_obse_pos = [pw_T_obj_obse[0][3]+bias_obse_x, pw_T_obj_obse[1][3]+bias_obse_y, pw_T_obj_obse[2][3]+bias_obse_z]
                 pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
 
                 

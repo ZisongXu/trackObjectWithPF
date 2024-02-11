@@ -247,11 +247,12 @@ class PBPFMove():
             pybullet_env.stepSimulation()
             real_depth_image_transferred = self.depthImageRealTransfer(depth_image_real)
             width, height, rgbImg, depth_image_render, segImg, nearVal, farVal= launch_camera.setCameraPicAndGetPic(pybullet_env, tf_listener, _pw_T_rob_sim_4_4)
-            
+            if IMAGE_CUT_FLAG == True:
+                depth_image_render = self.cutImage(depth_image_render, up=0, down=80, left=20, right=0) # up, down, left, right
             self.rendered_depth_images_list[index] = depth_image_render
             
             rendered_depth_image_transferred = self.renderedDepthImageValueBufferTransfer(depth_image_render, nearVal, farVal)
-
+                
             if USE_CONVOLUTION_FLAG == True:
                 depth_value_difference = self.compute_difference_bt_2_depthImg_convolution(real_depth_image_transferred, rendered_depth_image_transferred)
             else:
@@ -276,7 +277,9 @@ class PBPFMove():
         
         # pipe.send()
 
-    
+    def cutImage(self, image, up=0, down=0, left=0, right=0):
+        image_cutted = image[up:HEIGHT-down, left:WIDTH-right]
+        return image_cutted
 
     # update particle cloud particle angle
     def update_partcile_cloud_pose_PB(self, index, obj_index, x, y, z, ori, linearVelocity, angularVelocity):
@@ -346,6 +349,10 @@ class PBPFMove():
 
     def depthImageRealTransfer(self, depth_image_real):
         cv_image = self.bridge.imgmsg_to_cv2(depth_image_real,"16UC1")
+
+        if IMAGE_CUT_FLAG == True:
+            cv_image = self.cutImage(cv_image, up=80, down=0, left=0, right=20) # up, down, left, right
+
         if DEBUG_DEPTH_IMG_FLAG == True:
             real_depth_img_name = str(_particle_update_time) + "_real_depth_img.png"
             cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
@@ -581,8 +588,13 @@ class PBPFMove():
         pw_T_parC_pos = copy.deepcopy(par_pos)
         pw_T_parC_ori = copy.deepcopy(par_ori) # x, y, z, w
         pw_T_parC_ori = quaternion_correction(pw_T_parC_ori)
-        pw_T_parC_3_3 = transformations.quaternion_matrix(pw_T_parC_ori)
-        pw_T_parC_4_4 = rotation_4_4_to_transformation_4_4(pw_T_parC_3_3, pw_T_parC_pos)
+
+        pw_T_parC_3_3 = np.array(p.getMatrixFromQuaternion(pw_T_parC_ori)).reshape(3, 3)
+        pw_T_parC_3_4 = np.c_[pw_T_parC_3_3, pw_T_parC_pos]  # Add position to create 3x4 matrix
+        pw_T_parC_4_4 = np.r_[pw_T_parC_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+
+        # pw_T_parC_3_3 = transformations.quaternion_matrix(pw_T_parC_ori)
+        # pw_T_parC_4_4 = rotation_4_4_to_transformation_4_4(pw_T_parC_3_3, pw_T_parC_pos)
         
         point_list, point_pos_list = generate_point_for_ray(pw_T_parC_pos, pw_T_parC_4_4, obj_index)
         point_pos_list.append(pw_T_parC_pos)
@@ -1015,7 +1027,7 @@ class CVPFMove():
                 # print("obs_last_pos: ",obs_last_pos)
                 # print("obs_curr_pos: ",obs_curr_pos)
                 obs_curr_ori = obs_curr_pose.ori
-                obsO_T_obsN = self.compute_transformation_matrix(obs_last_pos, obs_last_ori, obs_curr_pos, obs_curr_ori)
+                obsO_T_obsN = compute_transformation_matrix(obs_last_pos, obs_last_ori, obs_curr_pos, obs_curr_ori)
                 parO_T_parN = copy.deepcopy(obsO_T_obsN)
                 self.update_particle_in_motion_model_CV(obj_index, parO_T_parN, pw_T_obj_obse_objects_pose_list)
         # after t1: use (est0, est1) to update motion
@@ -1032,7 +1044,7 @@ class CVPFMove():
                 # print("est_last_pos: ",est_last_pos)
                 # print("est_curr_pos: ",est_curr_pos)
                 est_last_ori = est_last_pose.ori
-                estO_T_estN = self.compute_transformation_matrix(est_last_pos, est_last_ori, est_curr_pos, est_curr_ori)
+                estO_T_estN = compute_transformation_matrix(est_last_pos, est_last_ori, est_curr_pos, est_curr_ori)
                 parO_T_parN = copy.deepcopy(estO_T_estN)
                 self.update_particle_in_motion_model_CV(obj_index, parO_T_parN, pw_T_obj_obse_objects_pose_list)
         return
@@ -1083,8 +1095,14 @@ class CVPFMove():
         for index, pybullet_env in enumerate(self.pybullet_env_id_collection_CV):
             pw_T_parO_pos = copy.deepcopy(self.particle_cloud_CV[index][obj_index].pos)
             pw_T_parO_ori = copy.deepcopy(self.particle_cloud_CV[index][obj_index].ori)
-            pw_T_parO_3_3 = transformations.quaternion_matrix(pw_T_parO_ori)
-            pw_T_parO_4_4 = rotation_4_4_to_transformation_4_4(pw_T_parO_3_3,pw_T_parO_pos)
+            # pw_T_parO_3_3 = transformations.quaternion_matrix(pw_T_parO_ori)
+            # pw_T_parO_4_4 = rotation_4_4_to_transformation_4_4(pw_T_parO_3_3,pw_T_parO_pos)
+
+            pw_T_parO_3_3 = np.array(p.getMatrixFromQuaternion(pw_T_parO_ori)).reshape(3, 3)
+            pw_T_parO_3_4 = np.c_[pw_T_parO_3_3, pw_T_parO_pos]  # Add position to create 3x4 matrix
+            pw_T_parO_4_4 = np.r_[pw_T_parO_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+
+
             pw_T_parN = np.dot(pw_T_parO_4_4, parO_T_parN)
             pw_T_parN_pos = [pw_T_parN[0][3], pw_T_parN[1][3], pw_T_parN[2][3]]
             pw_T_parN_ori = transformations.quaternion_from_matrix(pw_T_parN)
@@ -1327,23 +1345,14 @@ class CVPFMove():
         dis_std = np.std(dis_list)
         ang_std = np.std(ang_list)
         return dis_std, ang_std
-    
-    def compute_transformation_matrix(self, a_pos, a_ori, b_pos, b_ori):
-        ow_T_a_3_3 = transformations.quaternion_matrix(a_ori)
-        ow_T_a_4_4 = rotation_4_4_to_transformation_4_4(ow_T_a_3_3, a_pos)
-        ow_T_b_3_3 = transformations.quaternion_matrix(b_ori)
-        ow_T_b_4_4 = rotation_4_4_to_transformation_4_4(ow_T_b_3_3, b_pos)
-        a_T_ow_4_4 = np.linalg.inv(ow_T_a_4_4)
-        a_T_b_4_4 = np.dot(a_T_ow_4_4,ow_T_b_4_4)
-        return a_T_b_4_4
 
 # function independent of Class
 # add position into transformation matrix
-def rotation_4_4_to_transformation_4_4(rotation_4_4, pos):
-    rotation_4_4[0][3] = pos[0]
-    rotation_4_4[1][3] = pos[1]
-    rotation_4_4[2][3] = pos[2]
-    return rotation_4_4
+# def rotation_4_4_to_transformation_4_4(rotation_4_4, pos):
+#     rotation_4_4[0][3] = pos[0]
+#     rotation_4_4[1][3] = pos[1]
+#     rotation_4_4[2][3] = pos[2]
+#     return rotation_4_4
 # compute the position distance between two objects
 def compute_pos_err_bt_2_points(pos1, pos2):
     x1=pos1[0]
@@ -1399,10 +1408,20 @@ def compute_diff_bt_two_pose(obj_index, particle_cloud_pub, pw_T_obj_obse_pose_n
 
 # compute the transformation matrix represent that the pose of object in the robot world
 def compute_transformation_matrix(a_pos, a_ori, b_pos, b_ori):
-    ow_T_a_3_3 = transformations.quaternion_matrix(a_ori)
-    ow_T_a_4_4 = rotation_4_4_to_transformation_4_4(ow_T_a_3_3,a_pos)
-    ow_T_b_3_3 = transformations.quaternion_matrix(b_ori)
-    ow_T_b_4_4 = rotation_4_4_to_transformation_4_4(ow_T_b_3_3,b_pos)
+    # ow_T_a_3_3 = transformations.quaternion_matrix(a_ori)
+    # ow_T_a_4_4 = rotation_4_4_to_transformation_4_4(ow_T_a_3_3,a_pos)
+    # ow_T_b_3_3 = transformations.quaternion_matrix(b_ori)
+    # ow_T_b_4_4 = rotation_4_4_to_transformation_4_4(ow_T_b_3_3,b_pos)
+    # a_T_ow_4_4 = np.linalg.inv(ow_T_a_4_4)
+    # a_T_b_4_4 = np.dot(a_T_ow_4_4,ow_T_b_4_4)
+    ow_T_a_3_3 = np.array(p.getMatrixFromQuaternion(a_ori)).reshape(3, 3)
+    ow_T_a_3_4 = np.c_[ow_T_a_3_3, a_pos]  # Add position to create 3x4 matrix
+    ow_T_a_4_4 = np.r_[ow_T_a_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+
+    ow_T_b_3_3 = np.array(p.getMatrixFromQuaternion(b_ori)).reshape(3, 3)
+    ow_T_b_3_4 = np.c_[ow_T_b_3_3, b_pos]  # Add position to create 3x4 matrix
+    ow_T_b_4_4 = np.r_[ow_T_b_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+
     a_T_ow_4_4 = np.linalg.inv(ow_T_a_4_4)
     a_T_b_4_4 = np.dot(a_T_ow_4_4,ow_T_b_4_4)
     return a_T_b_4_4
@@ -1601,8 +1620,11 @@ def generate_point_for_ray(pw_T_c_pos, pw_T_parC_4_4, obj_index):
         parC_T_p_z_new = vector_list[index][2] * z_h/2
         parC_T_p_pos = [parC_T_p_x_new, parC_T_p_y_new, parC_T_p_z_new]
         parC_T_p_ori = [0, 0, 0, 1] # x, y, z, w
-        parC_T_p_3_3 = transformations.quaternion_matrix(parC_T_p_ori)
-        parC_T_p_4_4 = rotation_4_4_to_transformation_4_4(parC_T_p_3_3, parC_T_p_pos)
+        # parC_T_p_3_3 = transformations.quaternion_matrix(parC_T_p_ori)
+        # parC_T_p_4_4 = rotation_4_4_to_transformation_4_4(parC_T_p_3_3, parC_T_p_pos)
+        parC_T_p_3_3 = np.array(p.getMatrixFromQuaternion(parC_T_p_ori)).reshape(3, 3)
+        parC_T_p_3_4 = np.c_[parC_T_p_3_3, parC_T_p_pos]  # Add position to create 3x4 matrix
+        parC_T_p_4_4 = np.r_[parC_T_p_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
         pw_T_p_4_4 = np.dot(pw_T_parC_4_4, parC_T_p_4_4)
         pw_T_p_pos = [pw_T_p_4_4[0][3], pw_T_p_4_4[1][3], pw_T_p_4_4[2][3]]
         pw_T_p_ori = transformations.quaternion_from_matrix(pw_T_p_4_4)
@@ -1721,8 +1743,9 @@ while reset_flag == True:
         obstacles_pos = parameter_info['obstacles_pos'] # old/ray/multiray
         obstacles_ori = parameter_info['obstacles_ori'] # old/ray/multiray
 
-        WIDTH = parameter_info['width'] #1280
-        HEIGHT = parameter_info['height'] #720
+        WIDTH = parameter_info['width'] #1280/848
+        HEIGHT = parameter_info['height'] #720/480
+        IMAGE_CUT_FLAG = parameter_info['image_cut_flag'] 
 
         # print(obstacles_pos)
         # print(type(obstacles_pos))
@@ -1835,6 +1858,7 @@ while reset_flag == True:
         print("After initializing robot")
         _pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
         pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object()
+        print("trans_ob_list, rot_ob_list:")
         print(trans_ob_list, rot_ob_list)
         print("After initializing scene")
         for obj_index in range(other_obj_num):
@@ -1880,14 +1904,19 @@ while reset_flag == True:
         print("I am here2")
         rob_T_cam_tf_pos = list(trans_camera)
         rob_T_cam_tf_ori = list(rot_camera)
-        rob_T_cam_tf_3_3 = transformations.quaternion_matrix(rob_T_cam_tf_ori)
-        rob_T_cam_tf_4_4 = rotation_4_4_to_transformation_4_4(rob_T_cam_tf_3_3, rob_T_cam_tf_pos)
+        # rob_T_cam_tf_3_3 = transformations.quaternion_matrix(rob_T_cam_tf_ori)
+        # rob_T_cam_tf_4_4 = rotation_4_4_to_transformation_4_4(rob_T_cam_tf_3_3, rob_T_cam_tf_pos)
+        rob_T_cam_tf_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_cam_tf_ori)).reshape(3, 3)
+        rob_T_cam_tf_3_4 = np.c_[rob_T_cam_tf_3_3, rob_T_cam_tf_pos]  # Add position to create 3x4 matrix
+        rob_T_cam_tf_4_4 = np.r_[rob_T_cam_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
         pw_T_cam_tf = np.dot(_pw_T_rob_sim_4_4, rob_T_cam_tf_4_4)
         pw_T_cam_tf_pos = [pw_T_cam_tf[0][3], pw_T_cam_tf[1][3], pw_T_cam_tf[2][3]]
-        
+        print("rob_T_cam_tf_4_4")
+        print(rob_T_cam_tf_4_4)
         print("==========")
-        print(pw_T_cam_tf)
         print("pw_T_cam_tf")
+        print(pw_T_cam_tf)
+        
 
         # run the simulation
         Flag = True
@@ -2001,8 +2030,11 @@ while reset_flag == True:
                     
                 rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
                 rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
-                rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
-                rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
+                # rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
+                # rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
+                rob_T_obj_obse_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_obj_obse_ori)).reshape(3, 3)
+                rob_T_obj_obse_3_4 = np.c_[rob_T_obj_obse_3_3, rob_T_obj_obse_pos]  # Add position to create 3x4 matrix
+                rob_T_obj_obse_4_4 = np.r_[rob_T_obj_obse_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
                 # mark
                 bias_obse_x = -0.05
                 bias_obse_y = 0

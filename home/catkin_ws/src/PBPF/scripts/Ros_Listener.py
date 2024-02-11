@@ -39,8 +39,8 @@ class Ros_Listener():
         rospy.Subscriber('/joint_states', JointState, self.joint_values_callback, queue_size=1)
         self.joint_subscriber = JointState()
 
-        # rospy.Subscriber('/camera/depth/image_rect_raw', Image, self.depth_image_callback, queue_size=1)
-        rospy.Subscriber('/camera/aligned_depth_to_color/image_raw', Image, self.depth_image_callback, queue_size=1)
+        rospy.Subscriber('/camera/depth/image_rect_raw', Image, self.depth_image_callback, queue_size=1)
+        # rospy.Subscriber('/camera/aligned_depth_to_color/image_raw', Image, self.depth_image_callback, queue_size=1)
         self.depth_image_subscriber = Image()
         
         rospy.Subscriber('/gazebo/model_states', ModelStates, self.model_states_callback, queue_size=1)
@@ -90,6 +90,10 @@ class Ros_Listener():
     #         self.detection_flag =  True
 
     def depth_image_callback(self, depth_image_data):
+        # print(len(depth_image_data.data))
+        # print(depth_image_data.width)
+        # print(depth_image_data.height)
+        # print("================================")
         cv_image = self.bridge.imgmsg_to_cv2(depth_image_data,"16UC1")
         # cv_image = (cv_image).astype(np.uint16)
         self.depth_image = depth_image_data

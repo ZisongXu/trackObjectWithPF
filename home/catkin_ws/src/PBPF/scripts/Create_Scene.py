@@ -154,6 +154,7 @@ class Create_Scene():
             
     def initialize_robot(self):
         time.sleep(0.5)
+        # mark
         for rob_index in range(self.rob_num):
             pw_T_rob_sim_pos = [0.0, 0.0, 0.026]
             pw_T_rob_sim_pos = [0.0, 0.0, 0.02]

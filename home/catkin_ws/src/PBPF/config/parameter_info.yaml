@@ -1,10 +1,10 @@
 ADDMatrix_flag: true
 convolution_size: 0
-debug_depth_img_flag: False
+debug_depth_img_flag: true
 dope_flag: true
 err_file: rayTracing
 gazebo_flag: false
-height: 720
+height: 480
 object_name_list:
 - cracker
 - soup
@@ -26,7 +26,7 @@ oto_name_list:
 otob_name_list:
 - cracker_obstacle
 - fish_can
-particle_num: 70
+particle_num: 1
 pick_particle_rate: 0.0
 robot_num: 1
 run_alg_flag: PBPF
@@ -34,4 +34,5 @@ task_flag: '2'
 update_style_flag: time
 use_convolution_flag: False
 version: depth_img
-width: 1280
+width: 848
+image_cut_flag: True

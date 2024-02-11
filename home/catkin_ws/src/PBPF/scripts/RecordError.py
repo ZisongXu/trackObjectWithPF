@@ -102,11 +102,11 @@ if compute_error_flag == True:
     boss_estDO_ori_z_df = pd.DataFrame(columns=['step','time','ang_z','alg'],index=[])
     boss_estDO_ori_w_df = pd.DataFrame(columns=['step','time','ang_w','alg'],index=[])
 
-def rotation_4_4_to_transformation_4_4(rotation_4_4, pos):
-    rotation_4_4[0][3] = pos[0]
-    rotation_4_4[1][3] = pos[1]
-    rotation_4_4[2][3] = pos[2]
-    return rotation_4_4
+# def rotation_4_4_to_transformation_4_4(rotation_4_4, pos):
+#     rotation_4_4[0][3] = pos[0]
+#     rotation_4_4[1][3] = pos[1]
+#     rotation_4_4[2][3] = pos[2]
+#     return rotation_4_4
 
 # mark
 def ADDMatrixBtTwoObjects(obj_name, pos1, ori1, pos2, oir2):
@@ -141,15 +141,22 @@ def getCenterTPointsList(object_name):
         center_T_p_z_new = vector_list[index][2] * z_h/2
         center_T_p_pos = [center_T_p_x_new, center_T_p_y_new, center_T_p_z_new]
         center_T_p_ori = [0, 0, 0, 1] # x, y, z, w
-        center_T_p_3_3 = transformations.quaternion_matrix(center_T_p_ori)
-        center_T_p_4_4 = rotation_4_4_to_transformation_4_4(center_T_p_3_3, center_T_p_pos)
+        # center_T_p_3_3 = transformations.quaternion_matrix(center_T_p_ori)
+        # center_T_p_4_4 = rotation_4_4_to_transformation_4_4(center_T_p_3_3, center_T_p_pos)
+        center_T_p_3_3 = np.array(p.getMatrixFromQuaternion(center_T_p_ori)).reshape(3, 3)
+        center_T_p_3_4 = np.c_[center_T_p_3_3, center_T_p_pos]  # Add position to create 3x4 matrix
+        center_T_p_4_4 = np.r_[center_T_p_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+        
         center_T_points_pose_4_4_list.append(center_T_p_4_4)
     return center_T_points_pose_4_4_list
 
 def getPwTPointsList(center_T_points_pose_4_4_list, pos, ori):
     pw_T_points_pose_4_4_list = []
-    pw_T_center_ori_3_3 = transformations.quaternion_matrix(ori)
-    pw_T_center_ori_4_4 = rotation_4_4_to_transformation_4_4(pw_T_center_ori_3_3, pos)
+    # pw_T_center_ori_3_3 = transformations.quaternion_matrix(ori)
+    # pw_T_center_ori_4_4 = rotation_4_4_to_transformation_4_4(pw_T_center_ori_3_3, pos)
+    pw_T_center_ori_3_3 = np.array(p.getMatrixFromQuaternion(ori)).reshape(3, 3)
+    pw_T_center_ori_3_4 = np.c_[pw_T_center_ori_3_3, pos]  # Add position to create 3x4 matrix
+    pw_T_center_ori_4_4 = np.r_[pw_T_center_ori_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
     # mark
     for index in range(len(center_T_points_pose_4_4_list)):
         center_T_p_4_4 = copy.deepcopy(center_T_points_pose_4_4_list[index])
@@ -208,10 +215,20 @@ def angle_correction(angle):
 
 # compute the transformation matrix represent that the pose of object in the robot world
 def compute_transformation_matrix(a_pos, a_ori, b_pos, b_ori):
-    ow_T_a_3_3 = transformations.quaternion_matrix(a_ori)
-    ow_T_a_4_4 = rotation_4_4_to_transformation_4_4(ow_T_a_3_3,a_pos)
-    ow_T_b_3_3 = transformations.quaternion_matrix(b_ori)
-    ow_T_b_4_4 = rotation_4_4_to_transformation_4_4(ow_T_b_3_3,b_pos)
+    # ow_T_a_3_3 = transformations.quaternion_matrix(a_ori)
+    # ow_T_a_4_4 = rotation_4_4_to_transformation_4_4(ow_T_a_3_3,a_pos)
+    # ow_T_b_3_3 = transformations.quaternion_matrix(b_ori)
+    # ow_T_b_4_4 = rotation_4_4_to_transformation_4_4(ow_T_b_3_3,b_pos)
+    # a_T_ow_4_4 = np.linalg.inv(ow_T_a_4_4)
+    # a_T_b_4_4 = np.dot(a_T_ow_4_4,ow_T_b_4_4)
+    ow_T_a_3_3 = np.array(p.getMatrixFromQuaternion(a_ori)).reshape(3, 3)
+    ow_T_a_3_4 = np.c_[ow_T_a_3_3, a_pos]  # Add position to create 3x4 matrix
+    ow_T_a_4_4 = np.r_[ow_T_a_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+
+    ow_T_b_3_3 = np.array(p.getMatrixFromQuaternion(b_ori)).reshape(3, 3)
+    ow_T_b_3_4 = np.c_[ow_T_b_3_3, b_pos]  # Add position to create 3x4 matrix
+    ow_T_b_4_4 = np.r_[ow_T_b_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+
     a_T_ow_4_4 = np.linalg.inv(ow_T_a_4_4)
     a_T_b_4_4 = np.dot(a_T_ow_4_4,ow_T_b_4_4)
     return a_T_b_4_4        
@@ -309,9 +326,12 @@ if __name__ == '__main__':
     pw_T_rob_sim_pos = [0.0, 0.0, 0.026]
     pw_T_rob_sim_pos = [0.0, 0.0, 0.02]
     pw_T_rob_sim_ori = [0, 0, 0, 1]
-    pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
-    pw_T_rob_sim_4_4 = rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
-    
+    # pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
+    # pw_T_rob_sim_4_4 = rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
+    pw_T_rob_sim_3_3 = np.array(p.getMatrixFromQuaternion(pw_T_rob_sim_ori)).reshape(3, 3)
+    pw_T_rob_sim_3_4 = np.c_[pw_T_rob_sim_3_3, pw_T_rob_sim_pos]  # Add position to create 3x4 matrix
+    pw_T_rob_sim_4_4 = np.r_[pw_T_rob_sim_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+
     signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
     esti_obj_list_not_pub = 2
     t_begin = 0
@@ -417,8 +437,11 @@ if __name__ == '__main__':
             # print("tf__name:", object_name_list[obj_index]+use_gazebo)
             # print("rob_T_obj_obse_pos:", rob_T_obj_obse_pos)
             # print("=======================================")
-            rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
-            rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3, rob_T_obj_obse_pos)
+            # rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
+            # rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3, rob_T_obj_obse_pos)
+            rob_T_obj_obse_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_obj_obse_ori)).reshape(3, 3)
+            rob_T_obj_obse_3_4 = np.c_[rob_T_obj_obse_3_3, rob_T_obj_obse_pos]  # Add position to create 3x4 matrix
+            rob_T_obj_obse_4_4 = np.r_[rob_T_obj_obse_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
             # mark
             # bias_obse_x = -0.05
             # bias_obse_y = 0
@@ -452,9 +475,12 @@ if __name__ == '__main__':
                 rob_T_obj_opti_ori = list(rot_gt_list[obj_index])                        
                 # rob_T_obj_opti_pos = copy.deepcopy(rob_T_obj_obse_pos)
                 # rob_T_obj_opti_ori = copy.deepcopy(rob_T_obj_obse_ori)
-                rob_T_obj_opti_3_3 = transformations.quaternion_matrix(rob_T_obj_opti_ori)
-                rob_T_obj_opti_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_opti_3_3, rob_T_obj_opti_pos)
-                
+                # rob_T_obj_opti_3_3 = transformations.quaternion_matrix(rob_T_obj_opti_ori)
+                # rob_T_obj_opti_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_opti_3_3, rob_T_obj_opti_pos)
+                rob_T_obj_opti_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_obj_opti_ori)).reshape(3, 3)
+                rob_T_obj_opti_3_4 = np.c_[rob_T_obj_opti_3_3, rob_T_obj_opti_pos]  # Add position to create 3x4 matrix
+                rob_T_obj_opti_4_4 = np.r_[rob_T_obj_opti_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+            
                 pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
                 pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
                 pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)

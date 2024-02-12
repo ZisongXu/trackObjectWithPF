@@ -481,7 +481,7 @@ if __name__ == '__main__':
     
     panda.move_to_target_joints(targetPositionsJoints_test)
     panda.fully_close_gripper()
-    # sys.exit()
+    sys.exit()
     # input("hit enter to move forward")
     # 10
     for index in range(4):

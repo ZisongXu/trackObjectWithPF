@@ -248,7 +248,7 @@ class PBPFMove():
             real_depth_image_transferred = self.depthImageRealTransfer(depth_image_real)
             width, height, rgbImg, depth_image_render, segImg, nearVal, farVal= launch_camera.setCameraPicAndGetPic(pybullet_env, tf_listener, _pw_T_rob_sim_4_4)
             if IMAGE_CUT_FLAG == True:
-                depth_image_render = self.cutImage(depth_image_render, up=0, down=80, left=20, right=0) # up, down, left, right
+                depth_image_render = self.cutImage(depth_image_render, up=0, down=10, left=10, right=0) # up, down, left, right
             self.rendered_depth_images_list[index] = depth_image_render
             
             rendered_depth_image_transferred = self.renderedDepthImageValueBufferTransfer(depth_image_render, nearVal, farVal)
@@ -351,7 +351,7 @@ class PBPFMove():
         cv_image = self.bridge.imgmsg_to_cv2(depth_image_real,"16UC1")
 
         if IMAGE_CUT_FLAG == True:
-            cv_image = self.cutImage(cv_image, up=80, down=0, left=0, right=20) # up, down, left, right
+            cv_image = self.cutImage(cv_image, up=10, down=0, left=0, right=10) # up, down, left, right
 
         if DEBUG_DEPTH_IMG_FLAG == True:
             real_depth_img_name = str(_particle_update_time) + "_real_depth_img.png"

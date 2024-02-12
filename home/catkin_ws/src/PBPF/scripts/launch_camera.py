@@ -54,7 +54,6 @@ class LaunchCamera():
         camera_eye_position = [pw_T_cam_tf_4_4[0][3], pw_T_cam_tf_4_4[1][3], pw_T_cam_tf_4_4[2][3]] # pw_T_cam_tf_4_4[2][3]+0.05
 
         vector_x = camera_orientation @ np.array([1, 0, 0])
-        print(vector_x)
         vector_y = camera_orientation @ np.array([0, 1, 0])
         vector_z = camera_orientation @ np.array([0, 0, 1])
         # Calculate camera target position based on its orientation

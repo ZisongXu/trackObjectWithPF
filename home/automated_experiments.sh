@@ -31,7 +31,7 @@ do
 				
 				# for rosbag in {1..10}
 				# for rosbag in {1..2}
-				for ((rosbag=1;rosbag<=2;rosbag++)); 
+				for ((rosbag=8;rosbag<=8;rosbag++)); 
 				do
 					for runVersion in "${runVersions[@]}"
 					do

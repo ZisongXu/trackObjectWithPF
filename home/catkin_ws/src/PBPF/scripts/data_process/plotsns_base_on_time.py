@@ -63,10 +63,12 @@ elif update_style_flag == "time":
 # 70_cracker_scene1_time_pos.csv
 # based_on_time_150_scene3_time_cracker_ang
 # based_on_time_150_scene3_rosbag4_time_cracker_ang
-file_name = "based_on_time_"+str(particle_num)+'_'+sceneName+'_rosbag'+str(rosbag_flag)+'_'+update_style_flag+'_'+object_name+'_'+ang_and_pos
+# based_on_time_70_scene2_time_cracker_ADD
+file_name = "based_on_time_"+str(particle_num)+'_'+sceneName+'_'+update_style_flag+'_'+object_name+'_'+ang_and_pos
 
 title_ang = "Rotational errors (rad) vs Time (s)"
 title_pos = "Positional errors (m) vs Time (s)"
+title_ADD = "ADD Matrix errors (m) vs Time (s)"
 
 if ang_and_pos == "ang":
     if sceneName == "scene1":
@@ -222,12 +224,12 @@ if ang_and_pos == "ADD":
         x_xlim = 265 # 28
         y_ylim = 0.5 # 0.5
     if sceneName == "scene2":
-        x_range_max = 1300
-        x_range_unit = 130
-        y_range_max = 1.5
-        y_range_unit = 0.15
-        x_xlim = 1300
-        y_ylim = 1.5
+        x_range_max = 1100
+        x_range_unit = 110
+        y_range_max = 0.6
+        y_range_unit = 0.06
+        x_xlim = 1100
+        y_ylim = 0.6
     if sceneName == "scene3":
         # x_range_max = 28
         # x_range_unit = 2
@@ -261,25 +263,25 @@ if ang_and_pos == "ADD":
         y_range_unit = 0.04 # 0.04
         x_xlim = 3480 # 28
         y_ylim = 0.5 # 0.5
-    print("Ready to plot the figure of pos")
+    print("Ready to plot the figure of ADD")
     ymax = 0.12
-    dataset_pos = pd.read_csv(save_file_path+file_name+'.csv', header=None)
+    dataset_ADD = pd.read_csv(save_file_path+file_name+'.csv', header=None)
 
-    print(dataset_pos)
-    dataset_pos.columns=["index","time","ADD Matrix Error (m)","alg","obj_scene","particle_num","ray_type","obj_name"]
+    print(dataset_ADD)
+    dataset_ADD.columns=["index","time","ADD Matrix Error (m)","alg","obj_scene","particle_num","ray_type","obj_name"]
     print(pd.__version__)
     print(sns.__version__)
     print(matplotlib.__version__)
     # print("Before")
-    # print(dataset_pos)
-    # dataset_pos = dataset_pos.to_numpy()[:,np.newaxis]
+    # print(dataset_ADD)
+    # dataset_ADD = dataset_ADD.to_numpy()[:,np.newaxis]
     # print("After")
-    # print(dataset_pos)
+    # print(dataset_ADD)
 
-
-    figure_pos = sns.lineplot(data=dataset_pos, x="time", y="ADD Matrix Error (m)", palette=['y', 'g', 'r'], hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5)
-    # figure_pos = sns.lineplot(data=dataset_pos, x=1, y=2, hue=3, errorbar=('ci', 95), legend=False, linewidth = 0.5)
-    figure_pos.set(xlabel = None, ylabel = None)
+    figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADD Matrix Error (m)", hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5)
+    # figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADD Matrix Error (m)", palette=['y', 'g', 'r'], hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5)
+    # figure_ADD = sns.lineplot(data=dataset_ADD, x=1, y=2, hue=3, errorbar=('ci', 95), legend=False, linewidth = 0.5)
+    figure_ADD.set(xlabel = None, ylabel = None)
     x = range(0, x_range_max, x_range_unit)
     y = np.arange(0, y_range_max, y_range_unit)
     plt.xticks(x)
@@ -287,11 +289,9 @@ if ang_and_pos == "ADD":
     plt.tick_params(labelsize=15)
     plt.xlim(0, x_xlim)
     plt.ylim(0, y_ylim)
-    plt.title(title_pos, fontsize=16)
-    svg_fig_pos = figure_pos.get_figure()
-    svg_fig_pos.savefig(save_file_path+file_name+".png",format="png")
-
-
-
+    plt.title(title_ADD, fontsize=16)
+    svg_fig_ADD = figure_ADD.get_figure()
+    # svg_fig_ADD.savefig(save_file_path+file_name+".png",format="png")
+    svg_fig_ADD.savefig(save_file_path+file_name+".svg", format="svg", dpi=150)
 
 print("finished")

@@ -9,8 +9,8 @@ declare -a particleNumbers=(70)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("PBPFV" "obse")
-declare -a Ang_and_Pos=("pos" "ang")
-# declare -a Ang_and_Pos=("ADD")
+# declare -a Ang_and_Pos=("pos" "ang")
+declare -a Ang_and_Pos=("ADD")
 declare -a update_style_flag=("time") # "time" "pose"
 
 
@@ -24,7 +24,7 @@ do
 			do
 				for ang_and_pos in "${Ang_and_Pos[@]}"
 				do
-					for ((rosbag=1;rosbag<=2;rosbag++)); 
+					for ((rosbag=8;rosbag<=8;rosbag++)); 
 					do
 						# python3 inter_data.py "${ang_and_pos}" &
 						# INTER_DATA_PID=$!

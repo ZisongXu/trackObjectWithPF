@@ -484,46 +484,58 @@ if __name__ == '__main__':
     sys.exit()
     # input("hit enter to move forward")
     # 10
-    for index in range(4):
-        wpose = panda.moveit_group.get_current_pose().pose
-        waypoints = []
-        wpose.position.y += 0.05
-        # wpose.position.z -= 0.06
-        # wpose.position.y += 0.15
-        waypoints.append(copy.deepcopy(wpose))    
-        panda.move_through_waypoints(waypoints)
-    for index in range(3):
-        wpose = panda.moveit_group.get_current_pose().pose
-        waypoints = []
-        wpose.position.x -= 0.05
-        # wpose.position.z -= 0.06
-        # wpose.position.y += 0.15
-        waypoints.append(copy.deepcopy(wpose))    
-        panda.move_through_waypoints(waypoints)
-    for index in range(1):
-        wpose = panda.moveit_group.get_current_pose().pose
-        waypoints = []
-        wpose.position.y += 0.05
-        # wpose.position.z -= 0.06
-        # wpose.position.y += 0.15
-        waypoints.append(copy.deepcopy(wpose))    
-        panda.move_through_waypoints(waypoints)
-    for index in range(3):
-        wpose = panda.moveit_group.get_current_pose().pose
-        waypoints = []
-        wpose.position.x += 0.05
-        # wpose.position.z -= 0.06
-        # wpose.position.y += 0.15
-        waypoints.append(copy.deepcopy(wpose))    
-        panda.move_through_waypoints(waypoints)
-    for index in range(4):
-        wpose = panda.moveit_group.get_current_pose().pose
-        waypoints = []
-        wpose.position.y += 0.05
-        # wpose.position.z -= 0.06
-        # wpose.position.y += 0.15
-        waypoints.append(copy.deepcopy(wpose))    
-        panda.move_through_waypoints(waypoints)
+    object_num = 2
+    if object_num == 1:
+        for index in range(20):
+            wpose = panda.moveit_group.get_current_pose().pose
+            waypoints = []
+            wpose.position.y += 0.025
+            # wpose.position.z -= 0.06
+            # wpose.position.y += 0.15
+            waypoints.append(copy.deepcopy(wpose))    
+            panda.move_through_waypoints(waypoints)
+            
+    elif object_num == 2:
+        for index in range(4):
+            wpose = panda.moveit_group.get_current_pose().pose
+            waypoints = []
+            wpose.position.y += 0.05
+            # wpose.position.z -= 0.06
+            # wpose.position.y += 0.15
+            waypoints.append(copy.deepcopy(wpose))    
+            panda.move_through_waypoints(waypoints)
+        for index in range(3):
+            wpose = panda.moveit_group.get_current_pose().pose
+            waypoints = []
+            wpose.position.x -= 0.05
+            # wpose.position.z -= 0.06
+            # wpose.position.y += 0.15
+            waypoints.append(copy.deepcopy(wpose))    
+            panda.move_through_waypoints(waypoints)
+        for index in range(1):
+            wpose = panda.moveit_group.get_current_pose().pose
+            waypoints = []
+            wpose.position.y += 0.05
+            # wpose.position.z -= 0.06
+            # wpose.position.y += 0.15
+            waypoints.append(copy.deepcopy(wpose))    
+            panda.move_through_waypoints(waypoints)
+        for index in range(3):
+            wpose = panda.moveit_group.get_current_pose().pose
+            waypoints = []
+            wpose.position.x += 0.05
+            # wpose.position.z -= 0.06
+            # wpose.position.y += 0.15
+            waypoints.append(copy.deepcopy(wpose))    
+            panda.move_through_waypoints(waypoints)
+        for index in range(4):
+            wpose = panda.moveit_group.get_current_pose().pose
+            waypoints = []
+            wpose.position.y += 0.05
+            # wpose.position.z -= 0.06
+            # wpose.position.y += 0.15
+            waypoints.append(copy.deepcopy(wpose))    
+            panda.move_through_waypoints(waypoints)
 
 #    panda.move_y_straight_line_ccp()
 #    panda.move_straight_line_jac()

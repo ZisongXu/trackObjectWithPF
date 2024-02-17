@@ -484,12 +484,12 @@ if __name__ == '__main__':
     sys.exit()
     # input("hit enter to move forward")
     # 10
-    object_num = 2
+    object_num = 1
     if object_num == 1:
-        for index in range(20):
+        for index in range(5):
             wpose = panda.moveit_group.get_current_pose().pose
             waypoints = []
-            wpose.position.y += 0.025
+            wpose.position.y += 0.1
             # wpose.position.z -= 0.06
             # wpose.position.y += 0.15
             waypoints.append(copy.deepcopy(wpose))    

@@ -33,12 +33,14 @@ class LaunchCamera():
 
         with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
             self.parameter_info = yaml.safe_load(file)
-        self.optitrack_flag = self.parameter_info['optitrack_flag']
-        self.gazebo_flag = self.parameter_info['gazebo_flag']
+        self.OPTITRACK_FLAG = self.parameter_info['optitrack_flag']
+        self.GAZEBO_FLAG = self.parameter_info['gazebo_flag']
+        self.LOCATE_CAMERA_FLAG = self.parameter_info['locate_camera_flag']
+
         self.pw_T_cam_tf_4_4 = 0
         self.compute_cam_pose_flag = 0
-        self.nearVal = 0.01
-        self.farVal = 10.0
+        self.nearVal = 0.3
+        self.farVal = 3
         
     def setCameraPicAndGetPic(self, p_world=0, tf_listener=0, pw_T_rob_sim_4_4=0):
         # 从四元数中获取变换矩阵，从中获知指向(左乘(1,0,0)，因为在原本的坐标系内，摄像机的朝向为(1,0,0))
@@ -69,12 +71,11 @@ class LaunchCamera():
         )
 
         projectionMatrix = p_world.computeProjectionMatrixFOV(
-            # fov=86.0,               # 摄像头的视线夹角
+            # fov=57.86,               # 摄像头的视线夹角
             # aspect=16.0/9,          # width / height
             # nearVal=0.3,            # 摄像头焦距下限
             # farVal=3                # 摄像头能看上限
-            fov = 57.86,               # 摄像头的视线夹角
-            # fov = 80,               # 摄像头的视线夹角
+            fov = 58,               # 摄像头的视线夹角
             aspect = self.pixelWidth/self.pixelHeight,          # width / height
             nearVal = self.nearVal,            # 摄像头焦距下限
             farVal = self.farVal                # 摄像头能看上限
@@ -131,30 +132,42 @@ class LaunchCamera():
 
     def getCameraInPybulletWorldPose44(self, tf_listener, pw_T_rob_sim_4_4):
         if self.compute_cam_pose_flag == 0:
-            if self.optitrack_flag == True:
+            if self.OPTITRACK_FLAG == True and self.LOCATE_CAMERA_FLAG == "opti":
                 realsense_tf = '/RealSense' # (use Optitrack)
             else:
                 realsense_tf = '/ar_tracking_camera_frame' # (do not use Optitrack)
-            if self.gazebo_flag == True:
+            if self.GAZEBO_FLAG == True:
                 realsense_tf = '/realsense_camera'
             
             try:
-                (trans_camera, rot_camera) = tf_listener.lookupTransform('/pandaRobot', realsense_tf, rospy.Time(0))
+                (trans_camera, rot_camera) = tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
                 # (trans_camera_link0, rot_camera_link0) = tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 print("Can not find the pose of the camera!!!!")
 
-            rob_T_cam_tf_pos = list(trans_camera)
-            rob_T_cam_tf_ori = list(rot_camera)
-            rob_T_cam_tf_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_cam_tf_ori)).reshape(3, 3)
-            rob_T_cam_tf_3_4 = np.c_[rob_T_cam_tf_3_3, rob_T_cam_tf_pos]  # Add position to create 3x4 matrix
-            rob_T_cam_tf_4_4 = np.r_[rob_T_cam_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+            camRGB_T_camD_tf_pos = [0.04, 0.0, 0.0]
+            camRGB_T_camD_tf_ori = [0.0, 0.0, -0.008, 1] # x, y, z, w
 
-            self.pw_T_cam_tf_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_cam_tf_4_4)
+            # camRGB_T_camD_tf_pos = [0.0, 0.0, 0.0]
+            # camRGB_T_camD_tf_ori = [0.0, 0.0, -0.00, 1] # x, y, z, w
+
+            camRGB_T_camD_tf_3_3 = np.array(p.getMatrixFromQuaternion(camRGB_T_camD_tf_ori)).reshape(3, 3)
+            camRGB_T_camD_tf_3_4 = np.c_[camRGB_T_camD_tf_3_3, camRGB_T_camD_tf_pos]  # Add position to create 3x4 matrix
+            camRGB_T_camD_tf_4_4 = np.r_[camRGB_T_camD_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+
+            rob_T_camRGB_tf_pos = list(trans_camera)
+            rob_T_camRGB_tf_ori = list(rot_camera)
+            rob_T_camRGB_tf_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_camRGB_tf_ori)).reshape(3, 3)
+            rob_T_camRGB_tf_3_4 = np.c_[rob_T_camRGB_tf_3_3, rob_T_camRGB_tf_pos]  # Add position to create 3x4 matrix
+            rob_T_camRGB_tf_4_4 = np.r_[rob_T_camRGB_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+
+            rob_T_camD_tf_4_4 = np.dot(rob_T_camRGB_tf_4_4, camRGB_T_camD_tf_4_4)
+            self.pw_T_cam_tf_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_camD_tf_4_4)
             self.compute_cam_pose_flag = 1
         else:
             return self.pw_T_cam_tf_4_4
-        return self.pw_T_cam_tf_4_4
+
+        return self.pw_T_cam_tf_4_4 # pw_T_camD_tf_4_4
 
     def getFocalLength(self):
         F_x = 651.248474121094

@@ -65,13 +65,14 @@ class Visualisation_World():
         self.pw_T_other_obj_opti_pose_list = []
         
         self.object_name_list = self.parameter_info['object_name_list']
-        
+        self.SIM_REAL_WORLD_FLAG = self.parameter_info['sim_real_world_flag']
         self.obstacles_pos = self.parameter_info['obstacles_pos'] # old/ray/multiray
         self.obstacles_ori = self.parameter_info['obstacles_ori'] # old/ray/multiray
         
         self.test = False 
         
     def initialize_visual_world_pybullet_env(self, task_flag):
+        
         trans_ob = []
         rot_ob = []
         trans_gt = []
@@ -126,7 +127,33 @@ class Visualisation_World():
             pw_T_rob_sim_pose_list[rob_index].obj_id = real_robot_id
             pw_T_rob_sim_pose_list[rob_index].joints = joint_pos
         self.pw_T_rob_sim_pose_list = pw_T_rob_sim_pose_list
-        
+        if self.SIM_REAL_WORLD_FLAG == True:
+            table_pos_1 = [0.46, -0.01, 0.710]
+            table_ori_1 = p_visualisation.getQuaternionFromEuler([0,0,0])
+            table_id_1 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1)
+
+            barry_pos_1 = [-1.074, 0.443, 0.895]
+            barry_ori_1 = p_visualisation.getQuaternionFromEuler([0,math.pi/2,0])
+            barry_id_1 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_1, barry_ori_1, useFixedBase = 1)
+            
+            barry_pos_2 = [-1.074, -0.607, 0.895]
+            barry_ori_2 = p_visualisation.getQuaternionFromEuler([0,math.pi/2,0])
+            barry_id_2 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_2, barry_ori_2, useFixedBase = 1)
+
+            barry_pos_3 = [0.459, -0.972, 0.895]
+            barry_ori_3 = p_visualisation.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
+            barry_id_3 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_3, barry_ori_3, useFixedBase = 1)
+
+            barry_pos_4 = [-0.549, 0.61, 0.895]
+            barry_ori_4 = p_visualisation.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
+            barry_id_4 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_4, barry_ori_4, useFixedBase = 1)
+            
+            barry_pos_5 = [0.499, 0.61, 0.895]
+            barry_ori_5 = p_visualisation.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
+            barry_id_5 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_5, barry_ori_5, useFixedBase = 1)
+
+
+
         # observation: target obejct pose list
         pw_T_target_obj_obse_pose_lsit, trans_ob_list, rot_ob_list = self.create_scene.initialize_object()
         self.pw_T_target_obj_obse_pose_lsit = pw_T_target_obj_obse_pose_lsit
@@ -138,6 +165,7 @@ class Visualisation_World():
             if self.optitrack_flag == True:
                 print("Load Target Object from OptiTrackssssssssss")
                 pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list, trans_gt, rot_gt = self.create_scene.initialize_ground_truth_objects()
+                
                 self.pw_T_target_obj_opti_pose_lsit = pw_T_target_obj_opti_pose_lsit
                 for obj_index in range(self.other_obj_num):
                     other_obj_name = pw_T_other_obj_opti_pose_list[obj_index].obj_name
@@ -379,8 +407,8 @@ while reset_flag == True:
 
 
         visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
-        
         trans_ob_list, rot_ob_list, trans_gt, rot_gt = visual_world.initialize_visual_world_pybullet_env(task_flag)
+        
         # print("I am here")
         # input("stop")
         listener_tf = visual_world.listener
@@ -494,6 +522,7 @@ while reset_flag == True:
                         if init_gt_obj_flag == 0:
                             if obj_index == object_num - 1:
                                 init_gt_obj_flag = 1
+                            
                             visual_world.init_display_ground_truth_object(pw_T_target_obj_opti_pose_lsit_param[obj_index])
                             
                         pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)

@@ -75,12 +75,21 @@ class InitialSimulationModel():
         self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_z = 0.02
         self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
+        
+        # mark
+        # self.boss_sigma_obs_x = 0
+        # self.boss_sigma_obs_y = 0
+        # self.boss_sigma_obs_z = 0
+        # self.boss_sigma_obs_ang_init = 0
+
+
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 1
         
         with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
             self.parameter_info = yaml.safe_load(file)
         self.gazebo_flag = self.parameter_info['gazebo_flag']
         self.task_flag = self.parameter_info['task_flag']
+        self.SIM_REAL_WORLD_FLAG = self.parameter_info['sim_real_world_flag']
         
     def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):
         position = copy.deepcopy(pw_T_obj_obse_pos)
@@ -144,8 +153,7 @@ class InitialSimulationModel():
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0, 0, -9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
-            
-            
+
             if self.task_flag == "5":
                 pw_T_she_pos = [0.75889274, -0.24494845, 0.33818097+0.02]
                 pw_T_she_ori = [0, 0, 0, 1]
@@ -167,7 +175,7 @@ class InitialSimulationModel():
                 collision_detection_obj_id.append(sim_base_id)
                 other_obj_id_list.append(sim_base_id)    
             
-            
+            # mark
             for rob_index in range(self.robot_num):
                 real_robot_start_pos = self.pw_T_rob_sim_pose_list_alg[rob_index].pos
                 real_robot_start_ori = self.pw_T_rob_sim_pose_list_alg[rob_index].ori
@@ -180,18 +188,64 @@ class InitialSimulationModel():
                 self.fake_robot_id_collection.append(fake_robot_id)
             # need to change
             collision_detection_obj_id.append(fake_robot_id)
+            
+            if self.SIM_REAL_WORLD_FLAG == True:
+                table_pos_1 = [0.46, -0.01, 0.710]
+                table_ori_1 = pybullet_simulation_env.getQuaternionFromEuler([0,0,0])
+                table_id_1 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1, useFixedBase = 1)
+
+                barry_pos_1 = [-1.074, 0.443, 0.895]
+                barry_ori_1 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,0])
+                barry_id_1 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_1, barry_ori_1, useFixedBase = 1)
+                
+                barry_pos_2 = [-1.074, -0.607, 0.895]
+                barry_ori_2 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,0])
+                barry_id_2 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_2, barry_ori_2, useFixedBase = 1)
+
+                barry_pos_3 = [0.459, -0.972, 0.895]
+                barry_ori_3 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
+                barry_id_3 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_3, barry_ori_3, useFixedBase = 1)
+
+                barry_pos_4 = [-0.549, 0.61, 0.895]
+                barry_ori_4 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
+                barry_id_4 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_4, barry_ori_4, useFixedBase = 1)
+                
+                barry_pos_5 = [0.499, 0.61, 0.895]
+                barry_ori_5 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
+                barry_id_5 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_5, barry_ori_5, useFixedBase = 1)
 
             object_list = []
             # mark
-            bias_obse_x = -0.05
+            bias_obse_x = 0
             bias_obse_y = 0
-            bias_obse_z = 0.08
+            bias_obse_z = 0
             for obj_index in range(self.object_num):
                 obj_obse_pos = self.pw_T_obj_obse_obj_list_alg[obj_index].pos
                 obj_obse_pos = [obj_obse_pos[0]+bias_obse_x, obj_obse_pos[1]+bias_obse_y, obj_obse_pos[2]+bias_obse_z]
                 obj_obse_ori = self.pw_T_obj_obse_obj_list_alg[obj_index].ori
                 obj_obse_name = self.pw_T_obj_obse_obj_list_alg[obj_index].obj_name
+
                 
+                # test mark
+                # if par_index == 0:
+                #     obj_obse_pos = [0.41057040081550633, 0.3075305688269914, 0.7841038744699835]
+                # elif par_index == 1:
+                #     obj_obse_pos = [0.31057040081550633, 0.3075305688269914, 0.7841038744699835]
+                # elif par_index == 2:
+                #     obj_obse_pos = [0.21057040081550633, 0.3075305688269914, 0.7841038744699835]
+                # elif par_index == 3:
+                #     obj_obse_pos = [0.51057040081550633, 0.3075305688269914, 0.7841038744699835]
+                # elif par_index == 4:
+                #     obj_obse_pos = [0.61057040081550633, 0.3075305688269914, 0.7841038744699835]
+                # elif par_index == 5:
+                #     obj_obse_pos = [0.41057040081550633, 0.4075305688269914, 0.7841038744699835]
+                # elif par_index == 6:
+                #     obj_obse_pos = [0.41057040081550633, 0.5075305688269914, 0.7841038744699835]
+                # elif par_index == 7:
+                #     obj_obse_pos = [0.41057040081550633, 0.2075305688269914, 0.7841038744699835]
+                # elif par_index == 8:
+                #     obj_obse_pos = [0.41057040081550633, 0.1075305688269914, 0.7841038744699835]
+
                 if print_name_flag == obj_index:
                     print_name_flag = print_name_flag + 1
                     print("Generate particles for the target object:")
@@ -234,7 +288,9 @@ class InitialSimulationModel():
                             break
                     if flag == 0:
                         break
-                    
+
+
+
                 objPose = Particle(obj_obse_name, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, par_index, 0, 0)
                 object_list.append(objPose)
                 PBPF_par_no_visual_id[par_index].append(particle_no_visual_id)

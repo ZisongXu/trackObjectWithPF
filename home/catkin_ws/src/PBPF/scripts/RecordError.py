@@ -300,7 +300,7 @@ if __name__ == '__main__':
     gazebo_flag = parameter_info['gazebo_flag']
     task_flag = parameter_info['task_flag']
     version = parameter_info['version']
-
+    SIM_REAL_WORLD_FLAG = parameter_info['sim_real_world_flag']
     # pos
     boss_obse_err_pos_df_list = []
     boss_PBPF_err_pos_df_list = []
@@ -323,8 +323,14 @@ if __name__ == '__main__':
     boss_obse_err_ADD_df = pd.DataFrame(columns=['step','time','ADD','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
     boss_PBPF_err_ADD_df = pd.DataFrame(columns=['step','time','ADD','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
 
-    pw_T_rob_sim_pos = [0.0, 0.0, 0.026]
-    pw_T_rob_sim_pos = [0.0, 0.0, 0.02]
+    table_pos_1 = [0.46, -0.01, 0.710]
+
+    if SIM_REAL_WORLD_FLAG == True:
+        bias_z = table_pos_1[2]
+    else:
+        bias_z = 0
+    pw_T_rob_sim_pos = [0.0, 0.0, 0.026+bias_z]
+    pw_T_rob_sim_pos = [0.0, 0.0, 0.02+bias_z]
     pw_T_rob_sim_ori = [0, 0, 0, 1]
     # pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
     # pw_T_rob_sim_4_4 = rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
@@ -532,7 +538,6 @@ if __name__ == '__main__':
                     t_before_record = time.time()
                     
                     if ADDMATRIX_FLAG == True:
-                        
                         ADD_matrix_err_opti_obse = ADDMatrixBtTwoObjects(obj_name, pw_T_obj_opti_pos, pw_T_obj_opti_ori, pw_T_obj_obse_pos, pw_T_obj_obse_ori)
                         ADD_matrix_err_opti_PBPF = ADDMatrixBtTwoObjects(obj_name, pw_T_obj_opti_pos, pw_T_obj_opti_ori, pw_T_obj_PBPF_pos, pw_T_obj_PBPF_ori)
                         

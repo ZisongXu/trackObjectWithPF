@@ -33,7 +33,7 @@ class Ros_Listener():
         self.ori_added_noise = []
         self.model_pose_added_noise = []
         self.rob_T_obj_obse_4_4_list = []
-        
+        self.current_joint_values = [0,0,0,0,0,0,0,0,0]
         self.bridge = CvBridge()
 
         rospy.Subscriber('/joint_states', JointState, self.joint_values_callback, queue_size=1)

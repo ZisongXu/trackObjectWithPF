@@ -88,8 +88,10 @@ class PBPFMove():
         self.ray_list_empty = True
         self.num = 0
 
+        self.depth_image_real = 0
         self.depth_value_difference_list = [1] * PARTICLE_NUM
         self.rendered_depth_images_list = [1] * PARTICLE_NUM
+        self.rendered_depth_image_transferred_list = [1] * PARTICLE_NUM
 
         self.bridge = CvBridge()
 
@@ -134,10 +136,15 @@ class PBPFMove():
         fake_robot_id = self.pybullet_sim_fake_robot_id_collection
         
         self.rendered_depth_images_list = [1] * PARTICLE_NUM
+        self.rendered_depth_image_transferred_list = [1] * PARTICLE_NUM
 
         self.times = []
         t1 = time.time()
+
+        if VERSION == "depth_img":
+            self.depth_image_real = ros_listener.depth_image
         # motion model
+
         self.motion_update_PB_parallelised(pybullet_sim_envs, fake_robot_id, real_robot_joint_pos)
         t2 = time.time()
         self.times.append(t2-t1)
@@ -146,15 +153,14 @@ class PBPFMove():
             self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs)
             # self.observation_update_PB(pw_T_obj_obse_objects_pose_list)
 
-
         self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
+
         self.set_particle_in_each_sim_env()
         # if (VERSION=="ray" or VERSION=="multiray") and (do_obs_update==False or dope_detection_flag==False or sum(global_objects_visual_by_DOPE_list)==OBJECT_NUM):
         #     self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
         #     self.set_particle_in_each_sim_env()
         # Compute mean of particles
         object_estimate_pose, dis_std_list, ang_std_list = self.compute_estimate_pos_of_object(self.particle_cloud)
-        
         # publish pose of particles
         publish_par_pose_info(self.particle_cloud)
         publish_esti_pose_info(object_estimate_pose)
@@ -204,7 +210,7 @@ class PBPFMove():
             self.pose_sim_robot_move(index, pybullet_env, fake_robot_id, real_robot_joint_pos)
         elif update_style_flag == "time":
             # change simulation time
-            pf_update_interval_in_sim = boss_pf_update_interval_in_real / change_sim_time
+            pf_update_interval_in_sim = BOSS_PF_UPDATE_INTERVAL_IN_REAL / CHANGE_SIM_TIME
             # make sure all particles are updated
             for time_index in range(int(pf_update_interval_in_sim)):
                 self.set_real_robot_JointPosition(pybullet_env, fake_robot_id[index], real_robot_joint_pos)
@@ -241,23 +247,49 @@ class PBPFMove():
         # mark
         MODEL = 'motion'
         weight = 1
+        flag_show = 0
         if VERSION == "depth_img":
+            flag_show = flag_show + 1
             depth_value_difference_sum = 1
-            depth_image_real = ros_listener.depth_image
+            # depth_image_real = ros_listener.depth_image
             pybullet_env.stepSimulation()
-            real_depth_image_transferred = self.depthImageRealTransfer(depth_image_real)
+            real_depth_image_transferred = self.depthImageRealTransfer(self.depth_image_real)
+            
             width, height, rgbImg, depth_image_render, segImg, nearVal, farVal= launch_camera.setCameraPicAndGetPic(pybullet_env, tf_listener, _pw_T_rob_sim_4_4)
             if IMAGE_CUT_FLAG == True:
-                depth_image_render = self.cutImage(depth_image_render, up=0, down=10, left=10, right=0) # up, down, left, right
+                depth_image_render = self.cutImage(depth_image_render, up=226, down=164, left=400, right=299) # up, down, left, right
+                # depth_image_render = self.cutImage(depth_image_render, up=100, down=123, left=268, right=250) # up, down, left, right
+                # depth_image_render = self.cutImage(depth_image_render, up=100, down=118, left=265, right=250) # up, down, left, right
             self.rendered_depth_images_list[index] = depth_image_render
             
+            # self.plot(depth_image_render)
+
             rendered_depth_image_transferred = self.renderedDepthImageValueBufferTransfer(depth_image_render, nearVal, farVal)
-                
+            self.rendered_depth_image_transferred_list[index] = rendered_depth_image_transferred
+            # mark_v
+            # vectorized_function = np.vectorize(self.find_square)
+            # rendered_depth_image_transferred = vectorized_function(rendered_depth_image_transferred)
+
+            # mark
+            if DEBUG_DEPTH_IMG_FLAG == True:
+                real_depth_img_name = str(_particle_update_time) + "_real_depth_img_"+str(index)+".png"
+                # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
+                imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, real_depth_image_transferred, cmap='gray')
+
+                rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
+                imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred, cmap='gray')
+
+            
             if USE_CONVOLUTION_FLAG == True:
                 depth_value_difference = self.compute_difference_bt_2_depthImg_convolution(real_depth_image_transferred, rendered_depth_image_transferred)
             else:
                 depth_value_difference = self.compareDifferenceBtTwoDepthImgs(real_depth_image_transferred, rendered_depth_image_transferred)
-            
+                # rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img__"+str(index)+".png"
+                # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred, cmap='gray')
+                # depth_value_difference = self.compareDifferenceBtTwoDepthImgs(self.rendered_depth_image_transferred_list[0], rendered_depth_image_transferred)
+
+            # print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; depth_value_difference: ",depth_value_difference)
+            # print("==================================")
             self.depth_value_difference_list[index] = depth_value_difference
             
         else:
@@ -276,6 +308,16 @@ class PBPFMove():
                 self.particle_cloud[index][obj_index].w = weight
         
         # pipe.send()
+
+    def plot(self, depth_image):
+        # fig, axs = plt.subplots(1,3)
+        # axs[0].imshow(depth_image, cmap="gray")
+        # axs[0].set_title('Depth image')
+        # plt.plot(label='ax2')
+        # plt.show()
+        # print("I am here")
+        plt.imshow(depth_image, cmap="gray")
+        plt.savefig('test.png')
 
     def cutImage(self, image, up=0, down=0, left=0, right=0):
         image_cutted = image[up:HEIGHT-down, left:WIDTH-right]
@@ -351,13 +393,32 @@ class PBPFMove():
         cv_image = self.bridge.imgmsg_to_cv2(depth_image_real,"16UC1")
 
         if IMAGE_CUT_FLAG == True:
-            cv_image = self.cutImage(cv_image, up=10, down=0, left=0, right=10) # up, down, left, right
+            cv_image = self.cutImage(cv_image, up=226, down=164, left=400, right=299) # up, down, left, right
+            # cv_image = self.cutImage(cv_image, up=100, down=100, left=250, right=250) # up, down, left, right
+            # cv_image = self.cutImage(cv_image, up=123, down=100, left=250, right=268) # up, down, left, right
 
-        if DEBUG_DEPTH_IMG_FLAG == True:
-            real_depth_img_name = str(_particle_update_time) + "_real_depth_img.png"
-            cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
+
         cv_image = cv_image / 1000
+
+        # mark_v
+        # vectorized_function = np.vectorize(self.find_square)
+        # cv_image = vectorized_function(cv_image)
+
+        # if DEBUG_DEPTH_IMG_FLAG == True:
+            
+        #     real_depth_img_name = str(_particle_update_time) + "_real_depth_img.png"
+        #     # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
+        #     imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, cv_image, cmap='gray')
+
+            
+        
         return cv_image
+
+    def find_square(self, x):
+        if x <= 0.4 or x >= 1.2:
+            return 0.0
+        else:
+            return x
 
     def renderedDepthImageValueBufferTransfer(self, depth_image_render, nearVal, farVal):
         pybullet_depth_image_value_transferred = farVal * nearVal / (farVal - (farVal - nearVal) * depth_image_render)
@@ -461,8 +522,15 @@ class PBPFMove():
 
 
     def saveDepthImage(self, index, rendered_depth_images_list):
-        rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
-        imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_images_list[index], cmap='gray')
+        rendered_depth_image = rendered_depth_images_list[index]
+        # mark_v
+        # vectorized_function = np.vectorize(self.find_square)
+        # rendered_depth_image = vectorized_function(rendered_depth_images_list[index])
+
+        # mark
+        # rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
+        # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image, cmap='gray')
+
 
     # synchronizing the motion of the robot in the simulation
     def sim_robot_move_direct(self, index, pybullet_env, robot_id, position):
@@ -768,10 +836,11 @@ class PBPFMove():
             each_par_weight = 1
             for obj_index in range(self.obj_num):
                 each_par_weight = each_par_weight * particle[obj_index].w
-            
+                
             # mark
             if VERSION == "depth_img":
                 weight_depth_img = self.computeWeightFromDepthImage(index, self.depth_value_difference_list)
+                print("weight_depth_img: ",weight_depth_img,"; each_par_weight: ", each_par_weight)
                 each_par_weight = each_par_weight * weight_depth_img
 
             particles_w.append(each_par_weight) # to compute the sum
@@ -822,8 +891,16 @@ class PBPFMove():
 
     def computeWeightFromDepthImage(self, index, depth_value_difference_list):
         depth_value_difference_list_ = copy.deepcopy(depth_value_difference_list)
-        weight_depth_img_sum = sum(depth_value_difference_list_)
-        weight_depth_img = 1.0 * depth_value_difference_list_[index] / weight_depth_img_sum 
+        value_min = min(depth_value_difference_list_)
+        depth_value_difference_list_array_ = np.array(depth_value_difference_list_)
+        depth_value_difference_list_array_ = depth_value_difference_list_array_ - value_min
+        depth_value_difference_list_array_list_ = list(depth_value_difference_list_array_)
+
+        # weight_depth_img_sum = sum(depth_value_difference_list_)
+        # weight_depth_img = 1.0 * (weight_depth_img_sum - depth_value_difference_list_[index]) / weight_depth_img_sum 
+        weight_depth_img_sum = sum(depth_value_difference_list_array_list_)
+        weight_depth_img = 1.0 * (weight_depth_img_sum - depth_value_difference_list_array_list_[index]) / weight_depth_img_sum 
+        weight_depth_img = weight_depth_img / PARTICLE_NUM * 1.0
         return weight_depth_img
 
     def computePosition(self, position, base_w_list):
@@ -1641,9 +1718,13 @@ def track_fk_sim_world():
         p_track_fk_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
     p_track_fk_env.setAdditionalSearchPath(pybullet_data.getDataPath())
     track_fk_plane_id = p_track_fk_env.loadURDF("plane.urdf")
-    p_track_fk_env.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=90, cameraPitch=-20, cameraTargetPosition=[0.3,0.1,0.2]) 
+    p_track_fk_env.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=90, cameraPitch=-20, cameraTargetPosition=[0.3,0.1,0.2])
+    if SIM_REAL_WORLD_FLAG == True:
+        table_pos_1 = [0.46, -0.01, 0.710]
+    else:
+        table_pos_1 = [0, 0, 0]
     track_fk_rob_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
-                                              [0, 0, 0],
+                                              [0, 0, 0.02+table_pos_1[2]],
                                               [0, 0, 0, 1],
                                               useFixedBase=1)
     if task_flag == "1":
@@ -1710,7 +1791,7 @@ while reset_flag == True:
         update_style_flag = parameter_info['update_style_flag'] # time/pose
         # observation model
         pick_particle_rate = parameter_info['pick_particle_rate']
-        optitrack_flag = parameter_info['optitrack_flag']
+        OPTITRACK_FLAG = parameter_info['optitrack_flag']
         
         VERSION = parameter_info['version'] # old/ray/multiray/depth_img
         DEBUG_DEPTH_IMG_FLAG = parameter_info['debug_depth_img_flag'] # old/ray/multiray/depth_img
@@ -1720,6 +1801,10 @@ while reset_flag == True:
         simRobot_touch_par_flag = 0
         OBJECT_NUM = parameter_info['object_num']
         ROBOT_NUM = parameter_info['robot_num']
+        SIM_REAL_WORLD_FLAG = parameter_info['sim_real_world_flag']
+
+        LOCATE_CAMERA_FLAG = parameter_info['locate_camera_flag']
+
         _particle_update_time = 0
 
         check_dope_work_flag_init = 0
@@ -1771,12 +1856,27 @@ while reset_flag == True:
         flag_record_CVPF = 0
         flag_update_num_CV = 0
         flag_update_num_PB = 0
-        change_sim_time = 1.0/90
-        if run_alg_flag == "PBPF":
-            boss_pf_update_interval_in_real = 0.16 # original value = 0.16
-        elif run_alg_flag == "CVPF":
-            boss_pf_update_interval_in_real = 0.16 # original value = 0.16
-        pf_update_rate = rospy.Rate(1.0/boss_pf_update_interval_in_real)
+        CHANGE_SIM_TIME = 1.0/90
+        if run_alg_flag == "PBPF" and VERSION == "old":
+            print("1: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION)
+            BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.05 # original value = 0.16
+            PF_UPDATE_TIME_ONCE = 0.4 # rosbag slow down 0.125
+        elif run_alg_flag == "PBPF" and VERSION == "multiray":
+            print("2: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION)
+            BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.20 # original value = 0.16
+            PF_UPDATE_TIME_ONCE = 2.5 # rosbag slow down 0.08
+        elif run_alg_flag == "PBPF" and VERSION == "depth_img": # old/ray/multiray/depth_img
+            print("3: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION)
+            BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.30 # original value = 0.16
+            PF_UPDATE_TIME_ONCE = 0.3 # rosbag slow down 0.02 0.3*(1/0.02)=15s
+        else: # run_alg_flag == "CVPF":
+            print("4: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION)
+            BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.16 # original value = 0.16
+            PF_UPDATE_TIME_ONCE = 0.16
+        PF_UPDATE_RATE = rospy.Rate(1.0/BOSS_PF_UPDATE_INTERVAL_IN_REAL)
+        PF_UPDATE_RATE = rospy.Rate(1.0/PF_UPDATE_TIME_ONCE)
+        print("PF_UPDATE_TIME_ONCE")
+        print(PF_UPDATE_TIME_ONCE)
         # # error in xyz axis obse before recalibrating
         # boss_sigma_obs_x = 0.03973017808163751 / 2.0
         # boss_sigma_obs_y = 0.01167211468503462 / 2.0
@@ -1792,8 +1892,7 @@ while reset_flag == True:
         ang_noise = 0.1 # original value = 0.05
         MOTION_NOISE = True
         show_ray = False
-        # pos_noise = 0.0
-        # ang_noise = 0.0
+        
         # MOTION_NOISE = True
 
         # Standard deviation of computing the weight
@@ -1809,6 +1908,11 @@ while reset_flag == True:
                 boss_sigma_obs_pos = 0.10 
                 pos_noise = 0.001 * 5.0
                 ang_noise = 0.05 * 3.0
+                # mark
+                # boss_sigma_obs_ang = 0.0
+                # boss_sigma_obs_pos = 0.0
+                # pos_noise = 0.0
+                # ang_noise = 0.0
             else:
                 boss_sigma_obs_ang = 0.0216773873 * 10
                 # boss_sigma_obs_ang = 0.0216773873 * 20
@@ -1868,7 +1972,7 @@ while reset_flag == True:
                                                 pw_T_rob_sim_pose_list_alg, 
                                                 pw_T_obj_obse_obj_list_alg,
                                                 pw_T_obj_obse_oto_list_alg,
-                                                update_style_flag, change_sim_time)
+                                                update_style_flag, CHANGE_SIM_TIME)
         
         # get estimated object
         if run_alg_flag == "PBPF":
@@ -1884,7 +1988,7 @@ while reset_flag == True:
         estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
         print("Before locating the pose of the camera")
         # if VERSION == "ray" or VERSION == "multiray":
-        if optitrack_flag == True:
+        if OPTITRACK_FLAG == True and LOCATE_CAMERA_FLAG == "opti":
             realsense_tf = '/RealSense' # (use Optitrack)
         else:
             realsense_tf = '/ar_tracking_camera_frame' # (do not use Optitrack)
@@ -1937,6 +2041,8 @@ while reset_flag == True:
         # while True:
         #     print(ros_listener.detection_flag)
         t_begin = time.time()
+
+
         while not rospy.is_shutdown():
             
             if reset_flag == False:
@@ -2036,14 +2142,21 @@ while reset_flag == True:
                 rob_T_obj_obse_3_4 = np.c_[rob_T_obj_obse_3_3, rob_T_obj_obse_pos]  # Add position to create 3x4 matrix
                 rob_T_obj_obse_4_4 = np.r_[rob_T_obj_obse_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
                 # mark
-                bias_obse_x = -0.05
+                bias_obse_x = -0.0
                 bias_obse_y = 0
-                bias_obse_z = 0.08
+                bias_obse_z = 0.0
                 pw_T_obj_obse = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
                 pw_T_obj_obse_pos = [pw_T_obj_obse[0][3]+bias_obse_x, pw_T_obj_obse[1][3]+bias_obse_y, pw_T_obj_obse[2][3]+bias_obse_z]
                 pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
 
-                
+                # mark
+                # if OPTITRACK_FLAG == False:
+                #     # opti
+                #     pw_T_obj_obse_pos = [0.42126008888811123, 0.170478291576308, 0.7841043693538842]
+                #     pw_T_obj_obse_ori = [ 0.71232545,  0.01881896,  0.70146424, -0.01364641]
+                #     # ar
+                #     pw_T_obj_obse_pos = [0.4111173962619566, 0.2417332651514922, 0.7841262399213144]
+                #     pw_T_obj_obse_ori = [7.13209378e-01, 4.71191996e-03, 7.00935199e-01, 1.64560070e-04]
                 
                 # need to change when we run alg in multi-object tracking scene
                 # in the futrue we need to use "for obj_index in range(OBJECT_NUM):"
@@ -2133,6 +2246,8 @@ while reset_flag == True:
                         if PBPF_alg.isAnyParticleInContact():
                             simRobot_touch_par_flag = 1
                             _particle_update_time = _particle_update_time + 1
+                            print("_particle_update_time:")
+                            print(_particle_update_time)
                             t_begin_PBPF = time.time()
                             flag_update_num_PB = flag_update_num_PB + 1
                             pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
@@ -2177,9 +2292,14 @@ while reset_flag == True:
             # update according to the time
             elif update_style_flag == "time":
                 while not rospy.is_shutdown():
+                    t_begin_sleep = time.time()
                     # PBPF algorithm
+                    Only_update_robot_flag = False
                     if run_alg_flag == "PBPF":
+                        # mark
                         if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
+                        # if True:
+                            print("Run PBPF")
                             simRobot_touch_par_flag = 1
                             _particle_update_time = _particle_update_time + 1
                             t_begin_PBPF = time.time()
@@ -2197,11 +2317,13 @@ while reset_flag == True:
                             print("Max value:", max(PBPF_time_cosuming_list))
                             simRobot_touch_par_flag = 0
                         else:
+                            Only_update_robot_flag = True
+                            print("Just Update Robot")
                             PBPF_alg.motion_update_PB_parallelised(initial_parameter.pybullet_particle_env_collection,
                                                                 initial_parameter.fake_robot_id_collection,
                                                                 ros_listener.current_joint_values)
                     # CVPF algorithm
-                    if run_alg_flag == "CVPF":
+                    elif run_alg_flag == "CVPF":
                         # if CVPF_alg.isAnyParticleInContact():
                         # if dis_robcur_robold > 0.002:
                         flag_update_num_CV = flag_update_num_CV + 1
@@ -2216,7 +2338,13 @@ while reset_flag == True:
                             
                     estimated_object_set_old = copy.deepcopy(estimated_object_set)
                     estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
-                    pf_update_rate.sleep()
+                    
+                    if Only_update_robot_flag == False:
+                        print("Waiting for next loop")
+                        PF_UPDATE_RATE.sleep()
+                        t_finish_sleep = time.time()
+                        print("sleep time:", t_finish_sleep - t_begin_sleep)
+                        print("========================================")
                     break    
             t_end_while = time.time()
             if Flag is False:

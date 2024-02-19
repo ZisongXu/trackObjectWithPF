@@ -69,7 +69,7 @@ class Visualisation_World():
         self.obstacles_pos = self.parameter_info['obstacles_pos'] # old/ray/multiray
         self.obstacles_ori = self.parameter_info['obstacles_ori'] # old/ray/multiray
         
-        self.test = True
+        self.test = False
         
     def initialize_visual_world_pybullet_env(self, task_flag):
         trans_ob = []
@@ -144,13 +144,18 @@ class Visualisation_World():
             barry_ori_3 = p_visualisation.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
             barry_id_3 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_3, barry_ori_3, useFixedBase = 1)
 
-            barry_pos_4 = [-0.549, 0.61, 0.895]
-            barry_ori_4 = p_visualisation.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
-            barry_id_4 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_4, barry_ori_4, useFixedBase = 1)
+            # barry_pos_4 = [-0.549, 0.61, 0.895]
+            # barry_ori_4 = p_visualisation.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
+            # barry_id_4 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_4, barry_ori_4, useFixedBase = 1)
             
-            barry_pos_5 = [0.499, 0.61, 0.895]
-            barry_ori_5 = p_visualisation.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
-            barry_id_5 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_5, barry_ori_5, useFixedBase = 1)
+            # barry_pos_5 = [0.499, 0.61, 0.895]
+            # barry_ori_5 = p_visualisation.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
+            # barry_id_5 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_5, barry_ori_5, useFixedBase = 1)
+
+            board_pos_1 = [0.274, 0.581, 0.87575]
+            board_ori_1 = p_visualisation.getQuaternionFromEuler([math.pi/2,math.pi/2,0])
+            board_id_1 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"), board_pos_1, board_ori_1, useFixedBase = 1)
+           
 
         # observation: target obejct pose list
         pw_T_target_obj_obse_pose_lsit, trans_ob_list, rot_ob_list = self.create_scene.initialize_object()
@@ -435,7 +440,7 @@ while reset_flag == True:
                 pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_param[rob_index].trans_matrix
                 visual_world.set_real_robot_JointPosition(p_visual, rob_id, joint_states)
                 
-            test = True 
+            test = False 
             if test == False:
                 if display_gt_flag == True:
                     # print("display_gt_flag")

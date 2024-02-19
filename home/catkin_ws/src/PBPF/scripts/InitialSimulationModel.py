@@ -206,14 +206,18 @@ class InitialSimulationModel():
                 barry_ori_3 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
                 barry_id_3 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_3, barry_ori_3, useFixedBase = 1)
 
-                barry_pos_4 = [-0.549, 0.61, 0.895]
-                barry_ori_4 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
-                barry_id_4 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_4, barry_ori_4, useFixedBase = 1)
+                # barry_pos_4 = [-0.549, 0.61, 0.895]
+                # barry_ori_4 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
+                # barry_id_4 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_4, barry_ori_4, useFixedBase = 1)
                 
-                barry_pos_5 = [0.499, 0.61, 0.895]
-                barry_ori_5 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
-                barry_id_5 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_5, barry_ori_5, useFixedBase = 1)
+                # barry_pos_5 = [0.499, 0.61, 0.895]
+                # barry_ori_5 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
+                # barry_id_5 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_5, barry_ori_5, useFixedBase = 1)
 
+                board_pos_1 = [0.274, 0.581, 0.87575]
+                board_ori_1 = pybullet_simulation_env.getQuaternionFromEuler([math.pi/2,math.pi/2,0])
+                board_id_1 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"), board_pos_1, board_ori_1, useFixedBase = 1)
+            
             object_list = []
             # mark
             bias_obse_x = 0

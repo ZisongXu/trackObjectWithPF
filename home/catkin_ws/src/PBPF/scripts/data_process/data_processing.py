@@ -75,7 +75,7 @@ prepare_time = 28 * 100
 prepare_time = 129 * 100
 prepare_time = 265 * 100
 prepare_time = 1730 * 100
-prepare_time = 1100 * 100
+prepare_time = 1850 * 100
 
 # prepare_time = 134000
 

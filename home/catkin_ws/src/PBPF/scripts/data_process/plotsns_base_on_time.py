@@ -224,12 +224,12 @@ if ang_and_pos == "ADD":
         x_xlim = 265 # 28
         y_ylim = 0.5 # 0.5
     if sceneName == "scene2":
-        x_range_max = 1100
-        x_range_unit = 110
-        y_range_max = 0.6
-        y_range_unit = 0.06
-        x_xlim = 1100
-        y_ylim = 0.6
+        x_range_max = 1850
+        x_range_unit = 185
+        y_range_max = 0.4
+        y_range_unit = 0.04
+        x_xlim = 1850
+        y_ylim = 0.4
     if sceneName == "scene3":
         # x_range_max = 28
         # x_range_unit = 2
@@ -291,7 +291,7 @@ if ang_and_pos == "ADD":
     plt.ylim(0, y_ylim)
     plt.title(title_ADD, fontsize=16)
     svg_fig_ADD = figure_ADD.get_figure()
-    # svg_fig_ADD.savefig(save_file_path+file_name+".png",format="png")
-    svg_fig_ADD.savefig(save_file_path+file_name+".svg", format="svg", dpi=150)
+    svg_fig_ADD.savefig(save_file_path+file_name+".png",format="png")
+    # svg_fig_ADD.savefig(save_file_path+file_name+".svg", format="svg", dpi=150)
 
 print("finished")

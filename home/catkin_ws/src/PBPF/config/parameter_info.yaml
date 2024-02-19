@@ -1,6 +1,6 @@
 ADDMatrix_flag: true
 convolution_size: 0
-debug_depth_img_flag: True
+debug_depth_img_flag: true
 dope_flag: true
 err_file: rayTracing
 gazebo_flag: false
@@ -36,5 +36,5 @@ sim_real_world_flag: true
 task_flag: '2'
 update_style_flag: time
 use_convolution_flag: false
-version: depth_img
+version: multiray
 width: 848

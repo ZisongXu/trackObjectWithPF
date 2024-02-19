@@ -832,6 +832,10 @@ class PBPFMove():
         base_w_list = []
         base_w_list.append(base_w)
         particle_array_list = []
+        if VERSION == "depth_img":
+            weight_depth_img_array = self.computeWeightFromDepthImage(self.depth_value_difference_list)
+            
+
         for index, particle in enumerate(self.particle_cloud):
             each_par_weight = 1
             for obj_index in range(self.obj_num):
@@ -839,9 +843,8 @@ class PBPFMove():
                 
             # mark
             if VERSION == "depth_img":
-                weight_depth_img = self.computeWeightFromDepthImage(index, self.depth_value_difference_list)
-                print("weight_depth_img: ",weight_depth_img,"; each_par_weight: ", each_par_weight)
-                each_par_weight = each_par_weight * weight_depth_img
+                # print("weight_depth_img: ",weight_depth_img,"; each_par_weight: ", each_par_weight)
+                each_par_weight = each_par_weight * weight_depth_img_array[index]
 
             particles_w.append(each_par_weight) # to compute the sum
             base_w = base_w + each_par_weight
@@ -889,19 +892,56 @@ class PBPFMove():
                 
         self.particle_cloud = copy.deepcopy(newParticles_list)   
 
-    def computeWeightFromDepthImage(self, index, depth_value_difference_list):
+    def computeWeightFromDepthImage(self, depth_value_difference_list):
+        depth_difference_max = 0
+        depth_difference_min = min(depth_value_difference_list)
         depth_value_difference_list_ = copy.deepcopy(depth_value_difference_list)
-        value_min = min(depth_value_difference_list_)
         depth_value_difference_list_array_ = np.array(depth_value_difference_list_)
-        depth_value_difference_list_array_ = depth_value_difference_list_array_ - value_min
-        depth_value_difference_list_array_list_ = list(depth_value_difference_list_array_)
+        depth_value_difference_list_array_sub = depth_value_difference_list_array_ - depth_difference_min
+        if depth_value_difference_list_array_sub.ndim == 1:
+            depth_difference_max = max(depth_value_difference_list_array_sub)
+        else:
+            print("Error: max(depth_value_difference_list_array_sub)")
+        mean = 0
+        sigma = depth_difference_max / 3.0
+        vectorized_function = np.vectorize(self.array_normal_distribution)
+        weight_depth_img_array = vectorized_function(depth_value_difference_list_array_sub, mean, sigma)
+        # print("depth_value_difference_list_array_sub:")
+        # print(depth_value_difference_list_array_sub)
+        # print("weight_depth_img_array:")
+        # print(weight_depth_img_array)
+        return weight_depth_img_array
+
+        # depth_value_difference_list_ = copy.deepcopy(depth_value_difference_list)
+        # value_min = min(depth_value_difference_list_)
+        # depth_value_difference_list_array_ = np.array(depth_value_difference_list_)
+        # print(depth_value_difference_list_array_)
+        # print(value_min)
+        # depth_value_difference_list_array_ = depth_value_difference_list_array_ - value_min
+        # print(depth_value_difference_list_array_)
+        # depth_value_difference_list_array_list_ = list(depth_value_difference_list_array_)
+        # value_max = max(depth_value_difference_list_array_list_)
+        # sigma_ = value_max / 3.0
+        
+
+        # vectorized_function = np.vectorize(self.array_normal_distribution)
+        # rendered_depth_image = vectorized_function(rendered_depth_images_list[index], mean, sigma_)
+
+        # weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
+
 
         # weight_depth_img_sum = sum(depth_value_difference_list_)
         # weight_depth_img = 1.0 * (weight_depth_img_sum - depth_value_difference_list_[index]) / weight_depth_img_sum 
-        weight_depth_img_sum = sum(depth_value_difference_list_array_list_)
-        weight_depth_img = 1.0 * (weight_depth_img_sum - depth_value_difference_list_array_list_[index]) / weight_depth_img_sum 
-        weight_depth_img = weight_depth_img / PARTICLE_NUM * 1.0
-        return weight_depth_img
+        # weight_depth_img_sum = sum(depth_value_difference_list_array_list_)
+        # print("weight_depth_img_sum:")
+        # print(weight_depth_img_sum)
+        # print(weight_depth_img_sum - depth_value_difference_list_array_list_[index])
+        # weight_depth_img = 1.0 * (weight_depth_img_sum - depth_value_difference_list_array_list_[index]) / weight_depth_img_sum
+        # print("weight_depth_img: ",weight_depth_img) 
+        # return weight_depth_img
+
+    def array_normal_distribution(self, x, mean, sigma):
+        return np.exp(-1*((x-mean)**2)/(2*(sigma**2)))/(math.sqrt(2*np.pi)* sigma)
 
     def computePosition(self, position, base_w_list):
         for index in range(1, len(base_w_list)):
@@ -1864,7 +1904,7 @@ while reset_flag == True:
         elif run_alg_flag == "PBPF" and VERSION == "multiray":
             print("2: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION)
             BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.20 # original value = 0.16
-            PF_UPDATE_TIME_ONCE = 2.5 # rosbag slow down 0.08
+            PF_UPDATE_TIME_ONCE = 0.3 # rosbag slow down 0.08
         elif run_alg_flag == "PBPF" and VERSION == "depth_img": # old/ray/multiray/depth_img
             print("3: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION)
             BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.30 # original value = 0.16

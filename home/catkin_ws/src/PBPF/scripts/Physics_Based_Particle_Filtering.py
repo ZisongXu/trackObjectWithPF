@@ -124,14 +124,14 @@ class PBPFMove():
         return distance
     
     # executed_control
-    def update_particle_filter_PB(self, real_robot_joint_pos, pw_T_obj_obse_objects_pose_list, do_obs_update):
+    def update_particle_filter_PB(self, real_robot_joint_pos, pw_T_obj_obse_objects_pose_list, do_obs_update_list):
         global flag_record_obse
         global flag_record_PBPF
         global flag_record
         
         self.rays_id_list = []
         
-        self.do_obs_update = do_obs_update
+        self.do_obs_update_list = do_obs_update_list
         pybullet_sim_envs = self.pybullet_env_id_collection
         fake_robot_id = self.pybullet_sim_fake_robot_id_collection
         
@@ -149,14 +149,14 @@ class PBPFMove():
         t2 = time.time()
         self.times.append(t2-t1)
         # observation model
-        if do_obs_update or sum(global_objects_visual_by_DOPE_list)<OBJECT_NUM:
+        if sum(do_obs_update_list)<OBJECT_NUM or sum(global_objects_visual_by_DOPE_list)<OBJECT_NUM:
             self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs)
             # self.observation_update_PB(pw_T_obj_obse_objects_pose_list)
 
         self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
 
         self.set_particle_in_each_sim_env()
-        # if (VERSION=="ray" or VERSION=="multiray") and (do_obs_update==False or dope_detection_flag==False or sum(global_objects_visual_by_DOPE_list)==OBJECT_NUM):
+        # if (VERSION=="ray" or VERSION=="multiray") and (do_obs_update_list==False or dope_detection_flag==False or sum(global_objects_visual_by_DOPE_list)==OBJECT_NUM):
         #     self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
         #     self.set_particle_in_each_sim_env()
         # Compute mean of particles
@@ -218,6 +218,7 @@ class PBPFMove():
         ### ori: x,y,z,w
         # collision check: add robot
         collision_detection_obj_id.append(fake_robot_id[index])
+        # now is empty
         for oto_index in range(self.other_obj_num):
             collision_detection_obj_id.append(self.pybullet_sim_other_object_id_collection[oto_index])
 
@@ -296,10 +297,10 @@ class PBPFMove():
             for obj_index in range(self.obj_num):
                 
                 pybullet_env = self.pybullet_env_id_collection[index]
-                if VERSION == "ray" and (self.do_obs_update==False or dope_detection_flag==False or sum(global_objects_visual_by_DOPE_list)==OBJECT_NUM):
+                if VERSION == "ray" and (sum(self.do_obs_update_list)==OBJECT_NUM or dope_detection_flag==False or sum(global_objects_visual_by_DOPE_list)==OBJECT_NUM):
                     par_pos = copy.deepcopy([normal_x, normal_y, normal_z])
                     weight = self.single_ray_tracing(MODEL, par_pos, pybullet_env, weight)
-                elif VERSION == "multiray" and (self.do_obs_update == False or dope_detection_flag == False or sum(global_objects_visual_by_DOPE_list)==OBJECT_NUM):
+                elif VERSION == "multiray" and (sum(self.do_obs_update_list)==OBJECT_NUM or dope_detection_flag == False or sum(global_objects_visual_by_DOPE_list)==OBJECT_NUM):
                     # need to change
                     par_pos = copy.deepcopy([normal_x, normal_y, normal_z])
                     par_ori = copy.deepcopy(P_quat)
@@ -818,7 +819,7 @@ class PBPFMove():
     # new
     def resample_particles_update(self, pw_T_obj_obse_objects_pose_list):
         local_pick_particle_rate = pick_particle_rate
-        if self.do_obs_update == False:
+        if sum(self.do_obs_update_list) == OBJECT_NUM:
             local_pick_particle_rate = 0.0
         pw_T_obj_obse_objs_pose_list = copy.deepcopy(pw_T_obj_obse_objects_pose_list)
         n_particle = len(self.particle_cloud)
@@ -903,7 +904,7 @@ class PBPFMove():
         else:
             print("Error: max(depth_value_difference_list_array_sub)")
         mean = 0
-        sigma = depth_difference_max / 3.0
+        sigma = depth_difference_max / 1.0
         vectorized_function = np.vectorize(self.array_normal_distribution)
         weight_depth_img_array = vectorized_function(depth_value_difference_list_array_sub, mean, sigma)
         # print("depth_value_difference_list_array_sub:")
@@ -1060,7 +1061,7 @@ class CVPFMove():
         self.object_real_____pose_y = []
         self.rays_id_list = []
         self.ray_list_empty = True
-        self.do_obs_update = True
+        self.do_obs_update_list = []
 
     def compute_pos_err_bt_2_points(self,pos1,pos2):
         x_d = pos1[0]-pos2[0]
@@ -1070,19 +1071,19 @@ class CVPFMove():
         return distance
 
     # executed_control
-    def update_particle_filter_CV(self, pw_T_obj_obse_objects_pose_list, do_obs_update):
+    def update_particle_filter_CV(self, pw_T_obj_obse_objects_pose_list, do_obs_update_list):
         global flag_record_CVPF
         global flag_record
         # motion model
-        self.do_obs_update = do_obs_update
+        self.do_obs_update_list = do_obs_update_list
 
         self.motion_update_CV(pw_T_obj_obse_objects_pose_list)
         # observation model
-        if do_obs_update:
+        if sum(self.do_obs_update_list) < OBJECT_NUM:
             self.observation_update_CV(pw_T_obj_obse_objects_pose_list)
             
             
-        # if (VERSION == "ray" or VERSION == "multiray") and do_obs_update == False:
+        # if (VERSION == "ray" or VERSION == "multiray") and sum(self.do_obs_update_list) == OBJECT_NUM:
         #     self.resample_particles_CV_update(pw_T_obj_obse_objects_pose_list)
         #     self.set_particle_in_each_sim_env_CV()
             
@@ -1311,7 +1312,7 @@ class CVPFMove():
         
     def resample_particles_CV_update(self, pw_T_obj_obse_objects_pose_list):
         local_pick_particle_rate = pick_particle_rate
-        if self.do_obs_update == False:
+        if sum(self.do_obs_update_list) == OBJECT_NUM:
             local_pick_particle_rate = 0.0
         pw_T_obj_obse_objs_pose_list = copy.deepcopy(pw_T_obj_obse_objects_pose_list)
         n_particle = len(self.particle_cloud_CV)
@@ -1904,11 +1905,11 @@ while reset_flag == True:
         elif run_alg_flag == "PBPF" and VERSION == "multiray":
             print("2: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION)
             BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.20 # original value = 0.16
-            PF_UPDATE_TIME_ONCE = 0.3 # rosbag slow down 0.08
+            PF_UPDATE_TIME_ONCE = 0.32 # rosbag slow down 0.08
         elif run_alg_flag == "PBPF" and VERSION == "depth_img": # old/ray/multiray/depth_img
             print("3: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION)
             BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.30 # original value = 0.16
-            PF_UPDATE_TIME_ONCE = 0.3 # rosbag slow down 0.02 0.3*(1/0.02)=15s
+            PF_UPDATE_TIME_ONCE = 0.32 # rosbag slow down 0.02 0.3*(1/0.02)=15s
         else: # run_alg_flag == "CVPF":
             print("4: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION)
             BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.16 # original value = 0.16
@@ -2090,11 +2091,13 @@ while reset_flag == True:
             elif reset_flag == True:
                 break
             
-            global_objects_visual_by_DOPE_list = []
-            global_objects_outlier_by_DOPE_list = []
-            for obj_indx in range(OBJECT_NUM):
-                global_objects_visual_by_DOPE_list.append(0)
-                global_objects_outlier_by_DOPE_list.append(0)
+
+            obse_is_fresh_list = [0] * OBJECT_NUM
+            obse_is_jumping_list = [0] * OBJECT_NUM
+            dope_detection_flag_list = [0] * OBJECT_NUM
+            global_objects_visual_by_DOPE_list = [0] * OBJECT_NUM
+            global_objects_outlier_by_DOPE_list = [0] * OBJECT_NUM
+            
             #panda robot moves in the visualization window
             temp_pw_T_obj_obse_objs_list = []
             track_fk_world_rob_mv(p_sim, sim_rob_id, ros_listener.current_joint_values)
@@ -2129,6 +2132,7 @@ while reset_flag == True:
                 obse_is_fresh = True
                 obse_is_jumping = False
                 dope_detection_flag = True
+
                 # if ros_listener.detection_flag == False:
                     # VERSION = "old" # multiray/ray
                     # dope_detection_flag = False
@@ -2145,6 +2149,7 @@ while reset_flag == True:
                     # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
                     #     (trans_ob,rot_ob) = tf_listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
                     #     obse_is_fresh = True
+                    #     obse_is_fresh_list[obj_index] = 0
                     #     print("obse is FRESH")
 
                     if check_dope_work_flag_init == 0:
@@ -2156,6 +2161,8 @@ while reset_flag == True:
                     if (latest_obse_time.to_sec() > old_obse_time):
                         (trans_ob,rot_ob) = tf_listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
                         obse_is_fresh = True
+                        obse_is_fresh_list[obj_index] = 0
+                        global_objects_visual_by_DOPE_list[obj_index] = 0
                         t_after = time.time()
                         trans_ob_list[obj_index] = trans_ob
                         rot_ob_list[obj_index] = rot_ob
@@ -2164,6 +2171,7 @@ while reset_flag == True:
                     else:
                         # obse has not been updating for a while
                         obse_is_fresh = False
+                        obse_is_fresh_list[obj_index] = 1
                         global_objects_visual_by_DOPE_list[obj_index] = 1
                         # print("obse is NOT fresh")
                     old_obse_time = latest_obse_time.to_sec()
@@ -2218,19 +2226,23 @@ while reset_flag == True:
                         # print("DOPE becomes crazy")
                         count_DOPE_jumping_time = count_DOPE_jumping_time + 1
                         obse_is_fresh = False
+                        obse_is_fresh_list[obj_index] = 1
                         obse_is_jumping = True
+                        obse_is_jumping_list[obj_index] = 1
                         global_objects_outlier_by_DOPE_list[obj_index] = 1
                 # if :
                 #     if minDis_obseCur_parOld > 0.10 or minAng_obseCur_parOld > math.pi * 1 / 2.0:
                 #         # print("DOPE becomes crazy")
                 #         count_DOPE_jumping_time = count_DOPE_jumping_time + 1
                 #         obse_is_fresh = False
+                #         obse_is_fresh_list[obj_index] = 1
                 #         obse_is_jumping = True
                 # if dis_obseCur_estiOld > dis_std_list[obj_index]*3 or ang_obseCur_estiOld > ang_std_list[obj_index]*3:
                 # if dis_obseCur_estiOld > 0.30:# or ang_obseCur_estiOld > math.pi * 1 / 2.0:
                 #     # print("DOPE becomes crazy")
                 #     count_DOPE_jumping_time = count_DOPE_jumping_time + 1
                 #     obse_is_fresh = False
+                #     obse_is_fresh_list[obj_index] = 1
                 #     obse_is_jumping = True
 
                 # only for drawing BOX/ need to change
@@ -2294,7 +2306,7 @@ while reset_flag == True:
                             # execute PBPF algorithm movement
                             estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = PBPF_alg.update_particle_filter_PB(ros_listener.current_joint_values, # joints of robot arm
                                                                                     pw_T_obj_obse_objects_pose_list,
-                                                                                    do_obs_update=obse_is_fresh) # flag for judging obse work
+                                                                                    do_obs_update=obse_is_fresh_list) # flag for judging obse work
                             rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
 
                             # print("Average time of updating: ",np.mean(PBPF_alg.times))
@@ -2322,7 +2334,7 @@ while reset_flag == True:
                             # execute CVPF algorithm movement
                             pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                             estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list, # [obse_obj1_pose, obse_obj2_pose]
-                                                                                    do_obs_update=obse_is_fresh) # flag for judging obse work
+                                                                                    do_obs_update=obse_is_fresh_list) # flag for judging obse work
                             rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
                         else:
                             CVPF_alg.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm
@@ -2348,7 +2360,7 @@ while reset_flag == True:
                             # execute PBPF algorithm movement
                             estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = PBPF_alg.update_particle_filter_PB(ros_listener.current_joint_values, # joints of robot arm
                                                                                     pw_T_obj_obse_objects_pose_list, # [obse_obj1_pose, obse_obj2_pose]
-                                                                                    do_obs_update=obse_is_fresh) # flag for judging obse work
+                                                                                    do_obs_update=obse_is_fresh_list) # flag for judging obse work
                             rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
                             t_finish_PBPF = time.time()
                             PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
@@ -2371,7 +2383,7 @@ while reset_flag == True:
                         # execute CVPF algorithm movement
                         pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                         estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list,
-                                                                                                                                  do_obs_update=obse_is_fresh) # flag for judging obse work
+                                                                                                                                  do_obs_update=obse_is_fresh_list) # flag for judging obse work
                         rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
                         # else:
                         #     CVPF_alg.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm

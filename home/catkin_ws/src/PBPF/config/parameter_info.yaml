@@ -10,7 +10,7 @@ locate_camera_flag: ar
 object_name_list:
 - cracker
 - soup
-object_num: 1
+object_num: 2
 obstacles_ori:
 - - 1.0
   - 0.0
@@ -36,5 +36,5 @@ sim_real_world_flag: true
 task_flag: '2'
 update_style_flag: time
 use_convolution_flag: false
-version: multiray
+version: depth_img
 width: 848

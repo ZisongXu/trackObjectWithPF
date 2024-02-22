@@ -122,7 +122,7 @@ class Create_Scene():
             while True:
                 while_time = while_time + 1
                 if while_time > 1000:
-                    # print("WARNING: Problem happened in create_scene.py; maybe there is a problem on DOPE")
+                    print("WARNING: Problem happened in create_scene.py; maybe there is a problem on DOPE")
                     a = 1
                     # if self.optitrack_flag == False:
                     #     # mark
@@ -156,15 +156,10 @@ class Create_Scene():
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
 
             # mark
-            # opti
-            # pw_T_obj_obse_pos = [0.42126008888811123, 0.170478291576308, 0.7841043693538842]
-            # pw_T_obj_obse_ori = [ 0.71232545,  0.01881896,  0.70146424, -0.01364641]
-            # # ar
-            # pw_T_obj_obse_pos = [0.4111173962619566, 0.2417332651514922, 0.7841262399213144]
-            # pw_T_obj_obse_ori = [7.13209378e-01, 4.71191996e-03, 7.00935199e-01, 1.64560070e-04]
-            # # ar2
-            # pw_T_obj_obse_pos = [0.41057040081550633, 0.3075305688269914, 0.7841038744699835]
-            # pw_T_obj_obse_ori = [7.12901606e-01, 7.84032560e-05, 7.01247554e-01, 4.81267407e-03]
+            # ar
+            # pw_T_obj_obse_pos = [0.3084858323441205, 0.09149436877842132, 0.7853899450676181]
+            # pw_T_obj_obse_ori = [ 0.59071692,  0.39490482,  0.58601579, -0.38947297]
+    
 
 
 

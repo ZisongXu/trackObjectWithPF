@@ -57,7 +57,7 @@ do
 						fi
 					fi
 					# for rosbag in {1..10}
-					for ((rosbag=3;rosbag<=3;rosbag++)); 
+					for ((rosbag=2;rosbag<=2;rosbag++)); 
 					do
 						# for repeat in {1..10}
 						for ((repeat=0;repeat<=4;repeat++));

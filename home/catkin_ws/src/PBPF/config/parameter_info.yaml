@@ -37,5 +37,5 @@ task_flag: '2'
 update_style_flag: time
 use_convolution_flag: false
 version: multiray
-depth_image_flag: True
+depth_image_flag: false
 width: 848

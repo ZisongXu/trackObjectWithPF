@@ -137,6 +137,7 @@ class PBPFMove():
         self.rendered_depth_images_list = [1] * PARTICLE_NUM
         self.rendered_depth_image_transferred_list = [1] * PARTICLE_NUM
 
+        self.DOPE_rep_flag = 0
         self.times = []
         t1 = time.time()
 
@@ -452,6 +453,9 @@ class PBPFMove():
                 particle[obj_index].w = weight
         
         else:
+            if self.DOPE_rep_flag == 0:
+                print("DOPE x")
+                self.DOPE_rep_flag = self.DOPE_rep_flag + 1
             for obj_index in range(self.obj_num):
                 local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
                 local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
@@ -700,10 +704,10 @@ class PBPFMove():
         else:
             # visible_score<0.95 low, weight high
             if visible_threshold_dope_X_small_list[obj_index]<=visible_score and visible_score<=visible_threshold_dope_X_list[obj_index]: # 0.95
-                weight = visible_weight_dope_X_smaller_than_threshold_list[obj_index] # 0.75/0.6
+                weight = visible_weight_dope_X_smaller_than_threshold_list[obj_index] * weight # 0.75/0.6
             # visible_score>0.95 high, weight low
             else: 
-                weight = visible_weight_dope_X_larger_than_threshold_list[obj_index] # 0.25/0.5
+                weight = visible_weight_dope_X_larger_than_threshold_list[obj_index] * weight # 0.25/0.5
 
         return weight
 
@@ -2133,13 +2137,13 @@ while reset_flag == True:
                     x_w_list[obj_index] = 0.159
                     y_l_list[obj_index] = 0.21243700408935547
                     z_h_list[obj_index] = 0.06
-                    visible_threshold_dope_X_list[obj_index] = 0.4 # 0.95
+                    visible_threshold_dope_X_list[obj_index] = 0.6 # 0.95
                     visible_threshold_dope_X_small_list[obj_index] = 0
                     visible_threshold_outlier_S_list[obj_index] = 0.4
                     visible_threshold_outlier_L_list[obj_index] = 0.5
                     visible_threshold_dope_is_fresh_list[obj_index] = 0.5
                     visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.75
-                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.15 # 0.25
+                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.05 # 0.25
                     visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
                     visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.45
                 elif object_name == "soup":

@@ -22,7 +22,8 @@ apt-get install -y --force-yes \
     apt-utils \
     python3-pip \
     mesa-utils \
-    software-properties-common
+    software-properties-common \
+    pciutils
 
 # Installation of ROS Noetic and essential packages
 sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'

@@ -49,6 +49,8 @@ from matplotlib.pyplot import imsave
 import pandas as pd
 import multiprocessing
 import yaml
+import jax.numpy as jnp
+
 #from sksurgerycore.algorithms.averagequaternions import average_quaternions
 from quaternion_averaging import weightedAverageQuaternions
 #class in other files
@@ -143,17 +145,15 @@ class PBPFMove():
 
         if DEPTH_IMAGE_FLAG == True:
             self.depth_image_real = ros_listener.depth_image
+        
         # motion model
-
         self.motion_update_PB_parallelised(pybullet_sim_envs, fake_robot_id, real_robot_joint_pos)
         t2 = time.time()
         self.times.append(t2-t1)
-        # observation model
-        # begin to change
-        # if sum(global_objects_visual_by_DOPE_list)<OBJECT_NUM:
-        self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs)
-            # self.observation_update_PB(pw_T_obj_obse_objects_pose_list)
 
+        # observation model
+        self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs)
+        
         # mark
         self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
 
@@ -476,9 +476,18 @@ class PBPFMove():
         if DEPTH_IMAGE_FLAG == True:
             # depth_image_real = ros_listener.depth_image
             pybullet_env.stepSimulation()
+            obj_id_array = jnp.array([0] * 45)
+            # object_id_array = jnp.array([2, 4, 89])
+
             real_depth_image_transferred = self.depthImageRealTransfer(self.depth_image_real)
             
             width, height, rgbImg, depth_image_render, segImg, nearVal, farVal = _launch_camera.setCameraPicAndGetPic(pybullet_env, _tf_listener, _pw_T_rob_sim_4_4)
+            
+            for obj_index in range(self.obj_num):
+                obj_id = particle[obj_index].no_visual_par_id
+                obj_id_array = obj_id_array.at[obj_index].set(obj_id)
+            
+            print(obj_id_array)
             
             if DEPTH_IMAGE_CUT_FLAG == True:
                 depth_image_render = self.cutImage(depth_image_render, up=226, down=164, left=400, right=299) # up, down, left, right

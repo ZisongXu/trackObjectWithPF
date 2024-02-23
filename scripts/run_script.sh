@@ -15,6 +15,8 @@ if [ ! -d "$HOME/catkin_ws/devel" ]; then
     pip3 install scikit-surgerycore
     pip3 install seaborn==0.12.2
     pip3 install matplotlib==3.7.1
+    pip install --upgrade pip
+    pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 fi
 
 source $HOME/catkin_ws/devel/setup.bash

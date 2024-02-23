@@ -1,0 +1,102 @@
+<?xml version="1.0"?>
+<robot name="base_box">
+  <material name="silver">
+    <color rgba="0.75294118 0.75294118 0.75294118 1"/>
+  </material>
+
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="1.200 1.20 0.016"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+      <material name="silver"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="1.200 1.200 0.016"/>
+      </geometry>
+    </collision>
+  </link>
+
+
+  <link name="right_long">
+    <visual>
+      <geometry>
+        <box size="0.02 0.02 0.694"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -0.0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.02 0.02 0.694"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="left_long">
+    <visual>
+      <geometry>
+        <box size="0.02 0.02 0.694"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -0.0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.02 0.02 0.694"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="forward_short">
+    <visual>
+      <geometry>
+        <box size="0.02 0.02 0.694"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -0.0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.02 0.02 0.694"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="back_short">
+    <visual>
+      <geometry>
+        <box size="0.02 0.02 0.694"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -0.0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.02 0.02 0.694"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="base_to_right_long" type="fixed">
+    <parent link="base_link"/>
+    <child link="right_long"/>
+    <origin xyz="0.59 0.59 -0.355"/>
+  </joint>
+
+  <joint name="base_to_left_long" type="fixed">
+    <parent link="base_link"/>
+    <child link="left_long"/>
+    <origin xyz="0.59 -0.59 -0.355"/>
+  </joint>
+
+  <joint name="base_to_forward_short" type="fixed">
+    <parent link="base_link"/>
+    <child link="forward_short"/>
+    <origin xyz="-0.59 0.59 -0.355"/>
+  </joint>
+
+  <joint name="base_to_back_short" type="fixed">
+    <parent link="base_link"/>
+    <child link="back_short"/>
+    <origin xyz="-0.59 -0.59 -0.355"/>
+  </joint>
+</robot>

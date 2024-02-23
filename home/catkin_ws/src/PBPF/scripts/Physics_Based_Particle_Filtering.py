@@ -406,6 +406,10 @@ class PBPFMove():
             for obj_index in range(self.obj_num):
                 local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
                 local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
+                particle_x = particle[obj_index].pos[0]
+                particle_y = particle[obj_index].pos[1]
+                particle_z = particle[obj_index].pos[2]
+                par_ori = quaternion_correction(particle[obj_index].ori)
                 # 0 means DOPE detects the object[obj_index]
                 # 1 means DOPE does not detect the object[obj_index] and skip this loop
                 if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0: 
@@ -413,10 +417,7 @@ class PBPFMove():
                     obse_obj_ori = pw_T_obj_obse_objects_pose_list[obj_index].ori # pybullet x,y,z,w
                     # make sure theta between -pi and pi
                     obse_obj_ori_corr = quaternion_correction(obse_obj_ori)
-                
-                    particle_x = particle[obj_index].pos[0]
-                    particle_y = particle[obj_index].pos[1]
-                    particle_z = particle[obj_index].pos[2]
+            
                     mean = 0
                     # position weight
                     dis_x = abs(particle_x - obse_obj_pos[0])
@@ -425,7 +426,6 @@ class PBPFMove():
                     dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
                     weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
                     # rotation weight
-                    par_ori = quaternion_correction(particle[obj_index].ori)
                     obse_obj_quat = Quaternion(x=obse_obj_ori_corr[0], 
                                             y=obse_obj_ori_corr[1], 
                                             z=obse_obj_ori_corr[2], 
@@ -486,7 +486,9 @@ class PBPFMove():
             for obj_index in range(self.obj_num):
                 obj_id = particle[obj_index].no_visual_par_id
                 obj_id_array = obj_id_array.at[obj_index].set(obj_id)
-            
+            print("obj_id_array")
+            print(obj_id_array)
+            print("================")
             
 
 

@@ -476,7 +476,7 @@ class PBPFMove():
         if DEPTH_IMAGE_FLAG == True:
             # depth_image_real = ros_listener.depth_image
             pybullet_env.stepSimulation()
-            obj_id_array = jnp.array([0] * 45)
+            obj_id_array = jnp.array([0] * self.obj_num)
             # object_id_array = jnp.array([2, 4, 89])
 
             real_depth_image_transferred = self.depthImageRealTransfer(self.depth_image_real)
@@ -487,8 +487,9 @@ class PBPFMove():
                 obj_id = particle[obj_index].no_visual_par_id
                 obj_id_array = obj_id_array.at[obj_index].set(obj_id)
             
-            print(obj_id_array)
             
+
+
             if DEPTH_IMAGE_CUT_FLAG == True:
                 depth_image_render = self.cutImage(depth_image_render, up=226, down=164, left=400, right=299) # up, down, left, right
             
@@ -524,6 +525,17 @@ class PBPFMove():
         if DEBUG_DEPTH_IMG_FLAG == True:
             self.saveDepthImage(index, self.rendered_depth_images_list)
 
+    def find_positions(self, matrix, targets):
+        # 使用广播和比较来创建一个布尔数组，其中True代表匹配的元素
+        match_positions = matrix == targets[:, None, None]
+        print("match_positions:")
+        print(match_positions)
+        # 获取匹配位置的索引
+        positions = jnp.argwhere(match_positions)
+        
+        # 返回每个目标的第一个匹配位置（如果有多个匹配）
+        # 注意：这里假设每个目标在matrix中至少出现一次
+        return positions
 
     def saveDepthImage(self, index, rendered_depth_images_list):
         rendered_depth_image = rendered_depth_images_list[index]

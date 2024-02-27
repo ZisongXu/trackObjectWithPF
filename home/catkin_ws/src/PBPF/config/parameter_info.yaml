@@ -1,6 +1,6 @@
 ADDMatrix_flag: true
 convolution_size: 0
-debug_depth_img_flag: true
+debug_depth_img_flag: false
 dope_flag: true
 err_file: rayTracing
 gazebo_flag: false
@@ -10,7 +10,7 @@ locate_camera_flag: ar
 object_name_list:
 - cracker
 - soup
-object_num: 2
+object_num: 1
 obstacles_ori:
 - - 1.0
   - 0.0
@@ -28,7 +28,7 @@ oto_name_list:
 otob_name_list:
 - cracker_obstacle
 - fish_can
-particle_num: 5
+particle_num: 25
 pick_particle_rate: 0.0
 robot_num: 1
 run_alg_flag: PBPF
@@ -37,5 +37,11 @@ task_flag: '2'
 update_style_flag: time
 use_convolution_flag: false
 version: multiray
-depth_image_flag: True
+depth_image_flag: true
 width: 848
+fov_y: 57.86
+nearVal: 0.3
+farVal: 3
+persp_to_ortho_flag: false
+ortho_to_persp_flag: false
+depth_mask_flag: true

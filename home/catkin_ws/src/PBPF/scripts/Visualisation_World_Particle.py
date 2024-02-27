@@ -397,7 +397,7 @@ while reset_flag == True:
         if optitrack_flag == False:
             display_gt_flag = False
 
-        display_obse_flag = False
+        display_obse_flag = True
         object_name_list = parameter_info['object_name_list']
         task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
         dope_flag = parameter_info['dope_flag']

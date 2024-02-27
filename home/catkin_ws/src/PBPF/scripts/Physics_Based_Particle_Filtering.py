@@ -50,6 +50,7 @@ import pandas as pd
 import multiprocessing
 import yaml
 import jax.numpy as jnp
+from jax import jit
 
 #from sksurgerycore.algorithms.averagequaternions import average_quaternions
 from quaternion_averaging import weightedAverageQuaternions
@@ -78,6 +79,7 @@ class PBPFMove():
         self.particle_no_visual_id_collection = copy.deepcopy(initial_parameter.particle_no_visual_id_collection)
         self.pybullet_env_id_collection = copy.deepcopy(initial_parameter.pybullet_particle_env_collection)
         self.pybullet_sim_fake_robot_id_collection = copy.deepcopy(initial_parameter.fake_robot_id_collection)
+        self.pybullet_sim_env_fix_obj_id_collection = copy.deepcopy(initial_parameter.env_fix_obj_id_collection)
         self.pybullet_sim_other_object_id_collection = copy.deepcopy(initial_parameter.other_object_id_collection)
         self.other_obj_num = other_obj_num
         self.joint_num = 7
@@ -91,6 +93,8 @@ class PBPFMove():
         self.num = 0
 
         self.depth_image_real = 0
+        self.real_depth_image_transferred = 0
+        self.real_depth_image_transferred_jax = 0
         self.depth_value_difference_list = [1] * PARTICLE_NUM
         self.rendered_depth_images_list = [1] * PARTICLE_NUM
         self.rendered_depth_image_transferred_list = [1] * PARTICLE_NUM
@@ -144,8 +148,21 @@ class PBPFMove():
         t1 = time.time()
 
         if DEPTH_IMAGE_FLAG == True:
-            self.depth_image_real = ros_listener.depth_image
-        
+            depth_image_real = ros_listener.depth_image # persp
+            self.real_depth_image_transferred = self.depthImageRealTransfer(depth_image_real) # persp
+            if DEPTH_MASK_FLAG == True:
+                self.real_depth_image_transferred_jax = jnp.array(self.real_depth_image_transferred) # persp
+                if PERSP_TO_ORTHO_FLAG == True:
+                    # mark
+                    print("Begin to change from persp to ortho")
+                    self.real_depth_image_transferred_jax = persp_to_ortho(self.real_depth_image_transferred_jax, FOV_Y, RESOLUTION)
+        print("-------------------------------------")
+        print("global_objects_visual_by_DOPE_list: -")
+        print(global_objects_visual_by_DOPE_list)
+        print("global_objects_outlier_by_DOPE_list:-")
+        print(global_objects_outlier_by_DOPE_list)
+        print("-------------------------------------")
+
         # motion model
         self.motion_update_PB_parallelised(pybullet_sim_envs, fake_robot_id, real_robot_joint_pos)
         t2 = time.time()
@@ -155,7 +172,7 @@ class PBPFMove():
         self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs)
         
         # mark
-        self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
+        # self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
 
         self.set_particle_in_each_sim_env()
         
@@ -218,6 +235,7 @@ class PBPFMove():
         ### ori: x,y,z,w
         # collision check: add robot
         collision_detection_obj_id.append(fake_robot_id[index])
+        collision_detection_obj_id.append(self.pybullet_sim_env_fix_obj_id_collection[index])
         # now is empty
         for oto_index in range(self.other_obj_num):
             collision_detection_obj_id.append(self.pybullet_sim_other_object_id_collection[oto_index])
@@ -479,25 +497,27 @@ class PBPFMove():
             obj_id_array = jnp.array([0] * self.obj_num)
             # object_id_array = jnp.array([2, 4, 89])
 
-            real_depth_image_transferred = self.depthImageRealTransfer(self.depth_image_real)
+            
             
             width, height, rgbImg, depth_image_render, segImg, nearVal, farVal = _launch_camera.setCameraPicAndGetPic(pybullet_env, _tf_listener, _pw_T_rob_sim_4_4)
             
             for obj_index in range(self.obj_num):
                 obj_id = particle[obj_index].no_visual_par_id
                 obj_id_array = obj_id_array.at[obj_index].set(obj_id)
-            print("obj_id_array")
-            print(obj_id_array)
-            print("================")
+
+            segImg_ID_array = segImg & ((1 << 24) - 1)
+            mask_position_from_segImg = self.findPositions(segImg_ID_array, obj_id_array)
             
-
-
+            
+            
             if DEPTH_IMAGE_CUT_FLAG == True:
                 depth_image_render = self.cutImage(depth_image_render, up=226, down=164, left=400, right=299) # up, down, left, right
             
+            # not use for now (save image)
             self.rendered_depth_images_list[index] = depth_image_render
 
             rendered_depth_image_transferred = self.renderedDepthImageValueBufferTransfer(depth_image_render, nearVal, farVal)
+            # not use for now
             self.rendered_depth_image_transferred_list[index] = rendered_depth_image_transferred
             # mark_v
             # vectorized_function = np.vectorize(self.find_square)
@@ -507,38 +527,49 @@ class PBPFMove():
             if DEBUG_DEPTH_IMG_FLAG == True:
                 real_depth_img_name = str(_particle_update_time) + "_real_depth_img_"+str(index)+".png"
                 # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
-                imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, real_depth_image_transferred, cmap='gray')
+                imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, self.real_depth_image_transferred, cmap='gray')
 
                 rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
                 imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred, cmap='gray')
+
+                # rendered_seg_img_name = str(_particle_update_time)+"_rendered_seg_img_"+str(index)+".png"
+                # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_seg_img_name, segImg)
 
             
             if USE_CONVOLUTION_FLAG == True:
                 depth_value_difference = self.compute_difference_bt_2_depthImg_convolution(real_depth_image_transferred, rendered_depth_image_transferred)
             else:
-                depth_value_difference = self.compareDifferenceBtTwoDepthImgs(real_depth_image_transferred, rendered_depth_image_transferred)
-                # rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img__"+str(index)+".png"
-                # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred, cmap='gray')
+                if DEPTH_MASK_FLAG == True:
+                    rendered_depth_image_transferred_jax = jnp.array(rendered_depth_image_transferred)
+                    
+                    if ORTHO_TO_PERSP_FLAG == True:
+                        # mark
+                        print("Begin to change from ortho to persp")
+                        rendered_depth_image_transferred_jax = ortho_to_persp(rendered_depth_image_transferred_jax, FOV_Y, RESOLUTION)
+
+                    real_depth_image_mask_values = _extractValues(self.real_depth_image_transferred_jax, mask_position_from_segImg)
+                    rendered_depth_image_mask_values = _extractValues(rendered_depth_image_transferred_jax, mask_position_from_segImg)
+                    number_of_pixels = len(rendered_depth_image_mask_values)
+                    depth_value_difference_jax = jnp.linalg.norm(real_depth_image_mask_values - rendered_depth_image_mask_values)
+                    depth_value_difference_jax = depth_value_difference_jax / (math.sqrt(number_of_pixels))
+                    depth_value_difference = float(depth_value_difference_jax.item())
+                else:
+                    depth_value_difference = self.compareDifferenceBtTwoDepthImgs(self.real_depth_image_transferred, rendered_depth_image_transferred)
+                
             # mark
-            # print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; depth_value_difference: ",depth_value_difference)
-            # print("==================================")
+            print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; depth_value_difference: ",depth_value_difference)
+            print("==================================")
             self.depth_value_difference_list[index] = depth_value_difference
 
         if DEBUG_DEPTH_IMG_FLAG == True:
             self.saveDepthImage(index, self.rendered_depth_images_list)
 
-    def find_positions(self, matrix, targets):
-        # 使用广播和比较来创建一个布尔数组，其中True代表匹配的元素
+    def findPositions(self, matrix, targets):
         match_positions = matrix == targets[:, None, None]
-        print("match_positions:")
-        print(match_positions)
-        # 获取匹配位置的索引
-        positions = jnp.argwhere(match_positions)
-        
-        # 返回每个目标的第一个匹配位置（如果有多个匹配）
-        # 注意：这里假设每个目标在matrix中至少出现一次
+        all_positions = jnp.argwhere(match_positions)
+        positions = all_positions[:, 1:]
         return positions
-
+    
     def saveDepthImage(self, index, rendered_depth_images_list):
         rendered_depth_image = rendered_depth_images_list[index]
         # mark_v
@@ -946,7 +977,8 @@ class PBPFMove():
         else:
             print("Error: depth_value_difference_list_array_sub.ndim != 1")
         mean = 0
-        sigma = depth_difference_max / 1.0
+        sigma = depth_difference_max / 3
+        sigma = 5
         vectorized_function = np.vectorize(self.array_normal_distribution)
         weight_depth_img_array = vectorized_function(depth_value_difference_list_array_sub, mean, sigma)
         # print("depth_value_difference_list_array_sub:")
@@ -1514,6 +1546,41 @@ class CVPFMove():
 #     rotation_4_4[2][3] = pos[2]
 #     return rotation_4_4
 # compute the position distance between two objects
+
+# Jax
+@jit
+def _extractValues(matrix, positions):         
+    values = matrix[positions[:, 0], positions[:, 1]]     
+    return values 
+
+@jit
+def compute_projection_parameters(fov, resolution):
+    h, w = resolution
+    # f = 0.5 * w / jnp.tan(fov * 0.5)  # fov: horizontal
+    f = 0.5 * h / jnp.tan(fov * 0.5)  # fov: vertical
+    cx, cy = w * 0.5, h * 0.5
+    return f, cx, cy
+ 
+@jit
+def ortho_to_persp(depth_ortho, fov, resolution):
+    f, cx, cy = compute_projection_parameters(fov, resolution)
+    y, x = jnp.indices(depth_ortho.shape)
+    z = depth_ortho
+    x_persp = (x - cx) * z / f
+    y_persp = (y - cy) * z / f
+    depth_persp = jnp.sqrt(x_persp**2 + y_persp**2 + z**2)
+    return depth_persp
+ 
+@jit
+def persp_to_ortho(depth_persp, fov, resolution):   
+    f, cx, cy = compute_projection_parameters(fov, resolution)     
+    y, x = jnp.indices(depth_persp.shape)   
+    z = depth_persp 
+    depth_ortho = z / jnp.sqrt(((x - cx) / f)**2 + ((y - cy) / f)**2 + 1)     
+    return depth_ortho
+
+# ===============================================================================================================
+
 def compute_pos_err_bt_2_points(pos1, pos2):
     x1=pos1[0]
     y1=pos1[1]
@@ -1910,10 +1977,16 @@ while reset_flag == True:
         obstacles_pos = parameter_info['obstacles_pos'] # old/ray/multiray
         obstacles_ori = parameter_info['obstacles_ori'] # old/ray/multiray
 
-        WIDTH = parameter_info['width'] #1280/848
-        HEIGHT = parameter_info['height'] #720/480
+        WIDTH = parameter_info['width'] # 1280/848
+        HEIGHT = parameter_info['height'] # 720/480
+        FOV_Y = parameter_info['fov_y'] # 57.86
+        RESOLUTION = (HEIGHT, WIDTH)
         DEPTH_IMAGE_CUT_FLAG = parameter_info['depth_image_cut_flag'] 
         DEPTH_IMAGE_FLAG = parameter_info['depth_image_flag'] 
+        PERSP_TO_ORTHO_FLAG = parameter_info['persp_to_ortho_flag'] 
+        ORTHO_TO_PERSP_FLAG = parameter_info['ortho_to_persp_flag'] 
+        DEPTH_MASK_FLAG = parameter_info['depth_mask_flag'] 
+
         # print(obstacles_pos)
         # print(type(obstacles_pos))
         pub_DOPE_list = []
@@ -1993,8 +2066,8 @@ while reset_flag == True:
                 # mark
                 # boss_sigma_obs_ang = 0.0
                 # boss_sigma_obs_pos = 0.0
-                # pos_noise = 0.0
-                # ang_noise = 0.0
+                pos_noise = 0.0
+                ang_noise = 0.0
             else:
                 boss_sigma_obs_ang = 0.0216773873 * 10
                 # boss_sigma_obs_ang = 0.0216773873 * 20
@@ -2005,6 +2078,9 @@ while reset_flag == True:
                 # boss_sigma_obs_pos = 0.10 # 0.02 need to increase
                 pos_noise = 0.001 * 5.0
                 ang_noise = 0.05 * 3.0
+                # mark
+                # pos_noise = 0.0
+                # ang_noise = 0.0
 
         mass_mean = 0.380 # 0.380
         mass_sigma = 0.5
@@ -2279,7 +2355,7 @@ while reset_flag == True:
                 
                 all_frame = all_frame + 1
                 if run_alg_flag == "PBPF":
-                    if minDis_obseCur_parOld > 0.1 or minAng_obseCur_parOld > math.pi * 1 / 2.0:
+                    if minDis_obseCur_parOld > 0.05 or minAng_obseCur_parOld > math.pi * 1 / 4.0:
                         # print("DOPE becomes crazy")
                         global_objects_outlier_by_DOPE_list[obj_index] = 1
                 # if :
@@ -2391,8 +2467,8 @@ while reset_flag == True:
                     Only_update_robot_flag = False
                     if run_alg_flag == "PBPF":
                         # mark
-                        if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
-                        # if True:
+                        # if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
+                        if True:
                             print("Run PBPF")
                             simRobot_touch_par_flag = 1
                             _particle_update_time = _particle_update_time + 1

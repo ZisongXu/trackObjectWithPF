@@ -36,11 +36,11 @@ class LaunchCamera():
         self.OPTITRACK_FLAG = self.parameter_info['optitrack_flag']
         self.GAZEBO_FLAG = self.parameter_info['gazebo_flag']
         self.LOCATE_CAMERA_FLAG = self.parameter_info['locate_camera_flag']
-
+        self.FOV_Y = self.parameter_info['fov_y']
+        self.NEARVAL = self.parameter_info['nearVal']
+        self.FARVAL = self.parameter_info['farVal']
         self.pw_T_cam_tf_4_4 = 0
         self.compute_cam_pose_flag = 0
-        self.nearVal = 0.3
-        self.farVal = 3
         
     def setCameraPicAndGetPic(self, p_world=0, tf_listener=0, pw_T_rob_sim_4_4=0):
         # 从四元数中获取变换矩阵，从中获知指向(左乘(1,0,0)，因为在原本的坐标系内，摄像机的朝向为(1,0,0))
@@ -75,19 +75,19 @@ class LaunchCamera():
             # aspect=16.0/9,          # width / height
             # nearVal=0.3,            # 摄像头焦距下限
             # farVal=3                # 摄像头能看上限
-            fov = 58,               # 摄像头的视线夹角
+            fov = self.FOV_Y,               # 摄像头的视线夹角
             aspect = self.pixelWidth/self.pixelHeight,          # width / height
-            nearVal = self.nearVal,            # 摄像头焦距下限
-            farVal = self.farVal                # 摄像头能看上限
+            nearVal = self.NEARVAL,            # 摄像头焦距下限
+            farVal = self.FARVAL                # 摄像头能看上限
         )
         width, height, rgbImg, depthImg, segImg = p_world.getCameraImage(
             width = self.pixelWidth, 
             height = self.pixelHeight,
             viewMatrix = viewMatrix,
-            projectionMatrix = projectionMatrix,
-            flags = p.ER_NO_SEGMENTATION_MASK
+            projectionMatrix = projectionMatrix
+            # flags = p.ER_NO_SEGMENTATION_MASK
         )
-        return width, height, rgbImg, depthImg, segImg, self.nearVal, self.farVal
+        return width, height, rgbImg, depthImg, segImg, self.NEARVAL, self.FARVAL
 
 
     def setCameraPicAndGetPic2(self, p_world=0):
@@ -163,6 +163,8 @@ class LaunchCamera():
 
             rob_T_camD_tf_4_4 = np.dot(rob_T_camRGB_tf_4_4, camRGB_T_camD_tf_4_4)
             self.pw_T_cam_tf_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_camD_tf_4_4)
+            # self.pw_T_cam_tf_4_4[0][3] = self.pw_T_cam_tf_4_4[0][3] - 0.02
+            # self.pw_T_cam_tf_4_4[1][3] = self.pw_T_cam_tf_4_4[1][3] - 0.02
             self.compute_cam_pose_flag = 1
         else:
             return self.pw_T_cam_tf_4_4

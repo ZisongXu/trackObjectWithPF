@@ -1,6 +1,6 @@
 ADDMatrix_flag: true
 convolution_size: 0
-debug_depth_img_flag: false
+debug_depth_img_flag: true
 dope_flag: true
 err_file: rayTracing
 gazebo_flag: false
@@ -28,7 +28,7 @@ oto_name_list:
 otob_name_list:
 - cracker_obstacle
 - fish_can
-particle_num: 25
+particle_num: 70
 pick_particle_rate: 0.0
 robot_num: 1
 run_alg_flag: PBPF
@@ -37,7 +37,8 @@ task_flag: '2'
 update_style_flag: time
 use_convolution_flag: false
 version: multiray
-depth_image_flag: true
+ray_tracing_type: multiray
+running_model: PBPF_D
 width: 848
 fov_y: 57.86
 nearVal: 0.3

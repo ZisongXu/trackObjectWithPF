@@ -147,7 +147,7 @@ class PBPFMove():
         self.times = []
         t1 = time.time()
 
-        if DEPTH_IMAGE_FLAG == True:
+        if USING_D_FLAG == True:
             depth_image_real = ros_listener.depth_image # persp
             self.real_depth_image_transferred = self.depthImageRealTransfer(depth_image_real) # persp
             if DEPTH_MASK_FLAG == True:
@@ -172,7 +172,7 @@ class PBPFMove():
         self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs)
         
         # mark
-        # self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
+        self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
 
         self.set_particle_in_each_sim_env()
         
@@ -419,86 +419,87 @@ class PBPFMove():
     def observation_update_PB(self, index, particle, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs):
         pybullet_env = self.pybullet_env_id_collection[index]
         weight =  1.0 / PARTICLE_NUM
+        for obj_index in range(self.obj_num):
+            particle[obj_index].w = weight
 
-        if (sum(global_objects_visual_by_DOPE_list)<OBJECT_NUM) and (sum(global_objects_outlier_by_DOPE_list)<OBJECT_NUM):       
-            for obj_index in range(self.obj_num):
-                local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
-                local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
-                particle_x = particle[obj_index].pos[0]
-                particle_y = particle[obj_index].pos[1]
-                particle_z = particle[obj_index].pos[2]
-                par_ori = quaternion_correction(particle[obj_index].ori)
-                # 0 means DOPE detects the object[obj_index]
-                # 1 means DOPE does not detect the object[obj_index] and skip this loop
-                if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0: 
-                    obse_obj_pos = pw_T_obj_obse_objects_pose_list[obj_index].pos
-                    obse_obj_ori = pw_T_obj_obse_objects_pose_list[obj_index].ori # pybullet x,y,z,w
-                    # make sure theta between -pi and pi
-                    obse_obj_ori_corr = quaternion_correction(obse_obj_ori)
-            
-                    mean = 0
-                    # position weight
-                    dis_x = abs(particle_x - obse_obj_pos[0])
-                    dis_y = abs(particle_y - obse_obj_pos[1])
-                    dis_z = abs(particle_z - obse_obj_pos[2])
-                    dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
-                    weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
-                    # rotation weight
-                    obse_obj_quat = Quaternion(x=obse_obj_ori_corr[0], 
-                                            y=obse_obj_ori_corr[1], 
-                                            z=obse_obj_ori_corr[2], 
-                                            w=obse_obj_ori_corr[3]) # Quaternion(): w,x,y,z
-                    par_quat = Quaternion(x=par_ori[0], y=par_ori[1], z=par_ori[2], w=par_ori[3])
-                    err_bt_par_obse = par_quat * obse_obj_quat.inverse
-                    err_bt_par_obse_corr = quaternion_correction([err_bt_par_obse.x, err_bt_par_obse.y, err_bt_par_obse.z, err_bt_par_obse.w])
-                    err_bt_par_obse_corr_quat = Quaternion(x=err_bt_par_obse_corr[0], 
-                                                        y=err_bt_par_obse_corr[1], 
-                                                        z=err_bt_par_obse_corr[2], 
-                                                        w=err_bt_par_obse_corr[3])
-                    cos_theta_over_2 = err_bt_par_obse_corr_quat.w
-                    sin_theta_over_2 = math.sqrt(err_bt_par_obse_corr_quat.x ** 2 + err_bt_par_obse_corr_quat.y ** 2 + err_bt_par_obse_corr_quat.z ** 2)
-                    theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
-                    theta = theta_over_2 * 2.0
-                    weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
-                    weight = weight_xyz * weight_ang
-                if VERSION == "multiray":
-                    par_pos_ = copy.deepcopy([particle_x, particle_y, particle_z])
-                    par_ori_ = copy.deepcopy(par_ori)
-                    weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val)
-                elif VERSION == "ray":
-                    par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
-                    weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val)
-                particle[obj_index].w = weight
-        
-        else:
-            if self.DOPE_rep_flag == 0:
-                print("DOPE x")
-                self.DOPE_rep_flag = self.DOPE_rep_flag + 1
-            for obj_index in range(self.obj_num):
-                local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
-                local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
-                particle_x = particle[obj_index].pos[0]
-                particle_y = particle[obj_index].pos[1]
-                particle_z = particle[obj_index].pos[2]
-                par_ori = quaternion_correction(particle[obj_index].ori)
-                if VERSION == "multiray":
-                    # need to change
-                    par_pos_ = copy.deepcopy([particle_x, particle_y, particle_z])
-                    par_ori_ = copy.deepcopy(par_ori)
-                    weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val)
-                elif VERSION == "ray":
-                    par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
-                    weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val)
-                particle[obj_index].w = weight
+        if USING_RGB_FLAG == True:
+            if (sum(global_objects_visual_by_DOPE_list)<OBJECT_NUM) and (sum(global_objects_outlier_by_DOPE_list)<OBJECT_NUM):       
+                for obj_index in range(self.obj_num):
+                    local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
+                    local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
+                    particle_x = particle[obj_index].pos[0]
+                    particle_y = particle[obj_index].pos[1]
+                    particle_z = particle[obj_index].pos[2]
+                    par_ori = quaternion_correction(particle[obj_index].ori)
+                    # 0 means DOPE detects the object[obj_index]
+                    # 1 means DOPE does not detect the object[obj_index] and skip this loop
+                    if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0: 
+                        obse_obj_pos = pw_T_obj_obse_objects_pose_list[obj_index].pos
+                        obse_obj_ori = pw_T_obj_obse_objects_pose_list[obj_index].ori # pybullet x,y,z,w
+                        # make sure theta between -pi and pi
+                        obse_obj_ori_corr = quaternion_correction(obse_obj_ori)
                 
-        if DEPTH_IMAGE_FLAG == True:
+                        mean = 0
+                        # position weight
+                        dis_x = abs(particle_x - obse_obj_pos[0])
+                        dis_y = abs(particle_y - obse_obj_pos[1])
+                        dis_z = abs(particle_z - obse_obj_pos[2])
+                        dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
+                        weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
+                        # rotation weight
+                        obse_obj_quat = Quaternion(x=obse_obj_ori_corr[0], 
+                                                y=obse_obj_ori_corr[1], 
+                                                z=obse_obj_ori_corr[2], 
+                                                w=obse_obj_ori_corr[3]) # Quaternion(): w,x,y,z
+                        par_quat = Quaternion(x=par_ori[0], y=par_ori[1], z=par_ori[2], w=par_ori[3])
+                        err_bt_par_obse = par_quat * obse_obj_quat.inverse
+                        err_bt_par_obse_corr = quaternion_correction([err_bt_par_obse.x, err_bt_par_obse.y, err_bt_par_obse.z, err_bt_par_obse.w])
+                        err_bt_par_obse_corr_quat = Quaternion(x=err_bt_par_obse_corr[0], 
+                                                            y=err_bt_par_obse_corr[1], 
+                                                            z=err_bt_par_obse_corr[2], 
+                                                            w=err_bt_par_obse_corr[3])
+                        cos_theta_over_2 = err_bt_par_obse_corr_quat.w
+                        sin_theta_over_2 = math.sqrt(err_bt_par_obse_corr_quat.x ** 2 + err_bt_par_obse_corr_quat.y ** 2 + err_bt_par_obse_corr_quat.z ** 2)
+                        theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
+                        theta = theta_over_2 * 2.0
+                        weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
+                        weight = weight_xyz * weight_ang
+                    if VERSION == "multiray":
+                        par_pos_ = copy.deepcopy([particle_x, particle_y, particle_z])
+                        par_ori_ = copy.deepcopy(par_ori)
+                        weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val)
+                    elif VERSION == "ray":
+                        par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
+                        weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val)
+                    particle[obj_index].w = weight
+            
+            else:
+                if self.DOPE_rep_flag == 0:
+                    print("DOPE x")
+                    self.DOPE_rep_flag = self.DOPE_rep_flag + 1
+                for obj_index in range(self.obj_num):
+                    local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
+                    local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
+                    particle_x = particle[obj_index].pos[0]
+                    particle_y = particle[obj_index].pos[1]
+                    particle_z = particle[obj_index].pos[2]
+                    par_ori = quaternion_correction(particle[obj_index].ori)
+                    if VERSION == "multiray":
+                        # need to change
+                        par_pos_ = copy.deepcopy([particle_x, particle_y, particle_z])
+                        par_ori_ = copy.deepcopy(par_ori)
+                        weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val)
+                    elif VERSION == "ray":
+                        par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
+                        weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val)
+                    particle[obj_index].w = weight
+                
+        if USING_D_FLAG == True:
             # depth_image_real = ros_listener.depth_image
             pybullet_env.stepSimulation()
             obj_id_array = jnp.array([0] * self.obj_num)
             # object_id_array = jnp.array([2, 4, 89])
 
-            
-            
             width, height, rgbImg, depth_image_render, segImg, nearVal, farVal = _launch_camera.setCameraPicAndGetPic(pybullet_env, _tf_listener, _pw_T_rob_sim_4_4)
             
             for obj_index in range(self.obj_num):
@@ -508,17 +509,18 @@ class PBPFMove():
             segImg_ID_array = segImg & ((1 << 24) - 1)
             mask_position_from_segImg = self.findPositions(segImg_ID_array, obj_id_array)
             
-            
-            
-            if DEPTH_IMAGE_CUT_FLAG == True:
-                depth_image_render = self.cutImage(depth_image_render, up=226, down=164, left=400, right=299) # up, down, left, right
+            # not use for now (cut image)
+            # if DEPTH_IMAGE_CUT_FLAG == True:
+            #     depth_image_render = self.cutImage(depth_image_render, up=226, down=164, left=400, right=299) # up, down, left, right
             
             # not use for now (save image)
-            self.rendered_depth_images_list[index] = depth_image_render
+            # self.rendered_depth_images_list[index] = depth_image_render
 
             rendered_depth_image_transferred = self.renderedDepthImageValueBufferTransfer(depth_image_render, nearVal, farVal)
+            
             # not use for now
-            self.rendered_depth_image_transferred_list[index] = rendered_depth_image_transferred
+            # self.rendered_depth_image_transferred_list[index] = rendered_depth_image_transferred
+            
             # mark_v
             # vectorized_function = np.vectorize(self.find_square)
             # rendered_depth_image_transferred = vectorized_function(rendered_depth_image_transferred)
@@ -557,29 +559,16 @@ class PBPFMove():
                     depth_value_difference = self.compareDifferenceBtTwoDepthImgs(self.real_depth_image_transferred, rendered_depth_image_transferred)
                 
             # mark
-            print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; depth_value_difference: ",depth_value_difference)
-            print("==================================")
+            # print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; depth_value_difference: ",depth_value_difference)
+            # print("==================================")
             self.depth_value_difference_list[index] = depth_value_difference
 
-        if DEBUG_DEPTH_IMG_FLAG == True:
-            self.saveDepthImage(index, self.rendered_depth_images_list)
 
     def findPositions(self, matrix, targets):
         match_positions = matrix == targets[:, None, None]
         all_positions = jnp.argwhere(match_positions)
         positions = all_positions[:, 1:]
         return positions
-    
-    def saveDepthImage(self, index, rendered_depth_images_list):
-        rendered_depth_image = rendered_depth_images_list[index]
-        # mark_v
-        # vectorized_function = np.vectorize(self.find_square)
-        # rendered_depth_image = vectorized_function(rendered_depth_images_list[index])
-
-        # mark
-        # rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
-        # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image, cmap='gray')
-
 
     # synchronizing the motion of the robot in the simulation
     def sim_robot_move_direct(self, index, pybullet_env, robot_id, position):
@@ -907,7 +896,7 @@ class PBPFMove():
         base_w_list.append(base_w)
         particle_array_list = []
 
-        if DEPTH_IMAGE_FLAG == True:
+        if USING_D_FLAG == True:
             weight_depth_img_array = self.computeWeightFromDepthImage(self.depth_value_difference_list)    
 
         for index, particle in enumerate(self.particle_cloud):
@@ -916,7 +905,7 @@ class PBPFMove():
                 each_par_weight = each_par_weight * particle[obj_index].w
                 
             # mark
-            if DEPTH_IMAGE_FLAG == True:
+            if USING_D_FLAG == True:
                 # print("weight_depth_img: ",weight_depth_img,"; each_par_weight: ", each_par_weight)
                 each_par_weight = each_par_weight * weight_depth_img_array[index]
 
@@ -978,7 +967,7 @@ class PBPFMove():
             print("Error: depth_value_difference_list_array_sub.ndim != 1")
         mean = 0
         sigma = depth_difference_max / 3
-        sigma = 5
+        sigma = 0.03
         vectorized_function = np.vectorize(self.array_normal_distribution)
         weight_depth_img_array = vectorized_function(depth_value_difference_list_array_sub, mean, sigma)
         # print("depth_value_difference_list_array_sub:")
@@ -1942,7 +1931,18 @@ while reset_flag == True:
         pick_particle_rate = parameter_info['pick_particle_rate']
         OPTITRACK_FLAG = parameter_info['optitrack_flag']
         
-        VERSION = parameter_info['version'] # old/ray/multiray/depth_img
+        VERSION = parameter_info['version'] # old/ray/multiray/
+        RUNNING_MODEL = parameter_info['running_model'] # PBPF_RGB/PBPF_RGBD/PBPF_D
+        if RUNNING_MODEL == "PBPF_RGB":
+            USING_RGB_FLAG = True
+            USING_D_FLAG = False
+        elif RUNNING_MODEL == "PBPF_RGBD":
+            USING_RGB_FLAG = True
+            USING_D_FLAG = True
+        else: # PBPF_D
+            USING_RGB_FLAG = False
+            USING_D_FLAG = True
+
         DEBUG_DEPTH_IMG_FLAG = parameter_info['debug_depth_img_flag'] # old/ray/multiray/depth_img
         USE_CONVOLUTION_FLAG = parameter_info['use_convolution_flag'] # old/ray/multiray/depth_img
         CONVOLUTION_SIZE = parameter_info['convolution_size'] # old/ray/multiray/depth_img
@@ -1982,7 +1982,6 @@ while reset_flag == True:
         FOV_Y = parameter_info['fov_y'] # 57.86
         RESOLUTION = (HEIGHT, WIDTH)
         DEPTH_IMAGE_CUT_FLAG = parameter_info['depth_image_cut_flag'] 
-        DEPTH_IMAGE_FLAG = parameter_info['depth_image_flag'] 
         PERSP_TO_ORTHO_FLAG = parameter_info['persp_to_ortho_flag'] 
         ORTHO_TO_PERSP_FLAG = parameter_info['ortho_to_persp_flag'] 
         DEPTH_MASK_FLAG = parameter_info['depth_mask_flag'] 
@@ -2012,22 +2011,23 @@ while reset_flag == True:
         flag_update_num_CV = 0
         flag_update_num_PB = 0
         CHANGE_SIM_TIME = 1.0/90
-        if run_alg_flag == "PBPF" and VERSION == "old" and DEPTH_IMAGE_FLAG == False:
-            print("1: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION, "; DEPTH_IMAGE_FLAG: ", DEPTH_IMAGE_FLAG)
+        if run_alg_flag == "PBPF" and VERSION == "old" and USING_D_FLAG == False:
+            print("1: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION, "; USING_D_FLAG: ", USING_D_FLAG)
             BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.05 # original value = 0.16
             PF_UPDATE_TIME_ONCE = 0.4 # rosbag slow down 0.125
-        elif run_alg_flag == "PBPF" and VERSION == "multiray" and DEPTH_IMAGE_FLAG == False:
-            print("2: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION, "; DEPTH_IMAGE_FLAG: ", DEPTH_IMAGE_FLAG)
+        # elif run_alg_flag == "PBPF" and VERSION == "multiray" and USING_D_FLAG == False:
+        elif RUNNING_MODEL == "PBPF_RGB":
+            print("2: RUNNING_MODEL: ",RUNNING_MODEL)
             BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.20 # original value = 0.16
-            PF_UPDATE_TIME_ONCE = 0.32 # rosbag slow down 0.08
-        elif run_alg_flag == "PBPF" and VERSION == "multiray" and DEPTH_IMAGE_FLAG == True: # old/ray/multiray/depth_img
-            print("3: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION, "; DEPTH_IMAGE_FLAG: ", DEPTH_IMAGE_FLAG)
+            PF_UPDATE_TIME_ONCE = 0.03 # rosbag slow down 0.08
+        elif RUNNING_MODEL == "PBPF_RGBD":
+            print("3: RUNNING_MODEL: ",RUNNING_MODEL)
+            BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.30 # original value = 0.16 
+            PF_UPDATE_TIME_ONCE = 0.32 # 70 particles -> 35s
+        else: # run_alg_flag == "CVPF":
+            print("4: RUNNING_MODEL: ",RUNNING_MODEL)
             BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.30 # original value = 0.16
             PF_UPDATE_TIME_ONCE = 0.32 # rosbag slow down 0.02 0.3*(1/0.02)=15s
-        else: # run_alg_flag == "CVPF":
-            print("4: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION, "; DEPTH_IMAGE_FLAG: ", DEPTH_IMAGE_FLAG)
-            BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.16 # original value = 0.16
-            PF_UPDATE_TIME_ONCE = 0.16
         PF_UPDATE_RATE = rospy.Rate(1.0/BOSS_PF_UPDATE_INTERVAL_IN_REAL)
         PF_UPDATE_RATE = rospy.Rate(1.0/PF_UPDATE_TIME_ONCE)
         print("PF_UPDATE_TIME_ONCE")
@@ -2192,7 +2192,7 @@ while reset_flag == True:
         # rob_T_obj_obse_ori_old = list(rot_ob)
 
 
-        print("Welcome to Our Approach ! VERSION: ", VERSION,"; DEPTH_IMAGE_FLAG: ", DEPTH_IMAGE_FLAG)
+        print("Welcome to Our Approach ! RUNNING MODEL: ", RUNNING_MODEL)
         PBPF_alg = PBPFMove(OBJECT_NUM) # PF_alg
         CVPF_alg = CVPFMove(OBJECT_NUM) 
         # while True:

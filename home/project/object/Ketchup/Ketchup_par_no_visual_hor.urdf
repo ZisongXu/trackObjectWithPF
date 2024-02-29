@@ -36,6 +36,7 @@
     </visual>
    </link>
    
+   
    <joint name="fake_2_Ketchup" type="fixed">
     <parent link="fake"/>
     <child link="Ketchup"/>

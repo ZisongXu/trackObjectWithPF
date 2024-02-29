@@ -138,6 +138,8 @@ class Visualisation_World():
             if self.optitrack_flag == True:
                 print("Load Target Object from OptiTrackssssssssss")
                 pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list, trans_gt, rot_gt = self.create_scene.initialize_ground_truth_objects()
+                print("=========")
+                print(pw_T_target_obj_opti_pose_lsit)
                 self.pw_T_target_obj_opti_pose_lsit = pw_T_target_obj_opti_pose_lsit
                 for obj_index in range(self.other_obj_num):
                     other_obj_name = pw_T_other_obj_opti_pose_list[obj_index].obj_name
@@ -368,7 +370,7 @@ while reset_flag == True:
         
         display_gt_flag = True
             
-        display_obse_flag = False
+        display_obse_flag = True
         object_name_list = parameter_info['object_name_list']
         task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
         dope_flag = parameter_info['dope_flag']
@@ -494,6 +496,7 @@ while reset_flag == True:
                         if init_gt_obj_flag == 0:
                             if obj_index == object_num - 1:
                                 init_gt_obj_flag = 1
+                            print(pw_T_target_obj_opti_pose_lsit_param)
                             visual_world.init_display_ground_truth_object(pw_T_target_obj_opti_pose_lsit_param[obj_index])
                             
                         pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
@@ -502,10 +505,10 @@ while reset_flag == True:
                         # print("pw_T_obj_opti_pos:")
                         # print(pw_T_obj_opti_pos)
                         # display gt object update pose
-                        print("=======================================")
-                        print("obj_name:", obj_name)
-                        print("pw_T_obj_opti_pos:", pw_T_obj_opti_pos)
-                        print("=======================================")
+                        # print("=======================================")
+                        # print("obj_name:", obj_name)
+                        # print("pw_T_obj_opti_pos:", pw_T_obj_opti_pos)
+                        # print("=======================================")
                         pw_T_target_obj_opti_pose_lsit_param[obj_index].pos = pw_T_obj_opti_pos
                         pw_T_target_obj_opti_pose_lsit_param[obj_index].ori = pw_T_obj_opti_ori
                         visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_opti_pose_lsit_param[obj_index])
@@ -534,6 +537,8 @@ while reset_flag == True:
                         # latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo)
                         # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
                         (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                        # (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/cracker_far', rospy.Time(0))
+                        
                         # (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
                         # (trans_ob_cTo, rot_ob_cTo) = listener_tf.lookupTransform('/camera_gt', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
                         # (trans_ob_pTc, rot_ob_pTc) = listener_tf.lookupTransform('/panda_link0', '/camera_gt', rospy.Time(0))

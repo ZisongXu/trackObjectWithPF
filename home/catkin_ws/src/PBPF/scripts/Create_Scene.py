@@ -120,6 +120,7 @@ class Create_Scene():
                 if while_time > 1000:
                     print("WARNING: Problem happened in create_scene.py; maybe there is a problem on DOPE")
                     asdfasd = 12
+                    
                 try:
                     (trans_ob, rot_ob) = self.listener.lookupTransform('/panda_link0', '/'+self.object_name_list[obj_index]+use_gazebo, rospy.Time(0))
                     break

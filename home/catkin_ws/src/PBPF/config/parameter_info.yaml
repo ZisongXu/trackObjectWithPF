@@ -4,7 +4,7 @@ gazebo_flag: false
 object_name_list:
 - cracker
 - soup
-object_num: 2
+object_num: 1
 obstacles_ori:
 - - 1.0
   - 0.0
@@ -14,7 +14,7 @@ obstacles_pos:
 - - 0.8315
   - 0.215
   - 0.14765408574692843
-optitrack_flag: false
+optitrack_flag: true
 other_obj_num: 1
 oto_name_list:
 - base_of_cracker

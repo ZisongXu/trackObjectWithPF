@@ -6,16 +6,35 @@
    <material name="coral">
      <color rgba="1 0.498 0.3137 1"/>
    </material>
-   <link name="right_leg">
+   <link name="cracker">
      <visual>
        <geometry>
-         <box size="0.16 0.21343700408935547 0.061"/>
+         <!-- <box size="0.16 0.21343700408935547 0.061"/> -->
+         <mesh filename="textured_simple_reoriented.obj" scale="1 1 1"/>
        </geometry>
-       <material name="light_green"/>
+       <!-- <material name="light_green"/> -->
+       <material name="white">
+        <color rgba="1. 1. 1. 1."/>
+       </material>
      </visual>
      <inertial>
        <mass value="0"/>
        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
      </inertial>
    </link>
+   <link name="fake">
+    <visual>
+      <geometry>
+        <box size="0.0001 0.0001 0.0001"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -0.0"/>
+    </visual>
+   </link>
+   
+   <joint name="fake_2_cracker" type="fixed">
+    <parent link="fake"/>
+    <child link="cracker"/>
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 -1.5707963 1.5707963"/>
+   </joint>
+   
  </robot>

@@ -38,7 +38,7 @@ update_style_flag: time
 use_convolution_flag: false
 version: multiray
 ray_tracing_type: multiray
-running_model: PBPF_D
+running_model: PBPF_RGBD
 width: 848
 fov_y: 57.86
 nearVal: 0.3

@@ -41,7 +41,7 @@ def create_pybullet_world():
     print(pos)
     table_pos_1 = [0.46, -0.01, 0.710]
     table_ori_1 = pybullet.getQuaternionFromEuler([0,0,0])
-    table_id_1 = pybullet.loadURDF("table.urdf", table_pos_1, table_ori_1)
+    table_id_1 = pybullet.loadURDF("table.urdf", table_pos_1, table_ori_1, useFixedBase = 1)
 
     barry_pos_1 = [-1.074, 0.443, 0.895]
     barry_ori_1 = pybullet.getQuaternionFromEuler([0,math.pi/2,0])
@@ -66,9 +66,20 @@ def create_pybullet_world():
     board_pos_1 = [0.274, 0.581, 0.87575]
     board_ori_1 = pybullet.getQuaternionFromEuler([math.pi/2,math.pi/2,0])
     board_id_1 = pybullet.loadURDF("board.urdf", board_pos_1, board_ori_1, useFixedBase = 1)
-	
+    
+    ketchup_pos_1 = [0.274, 0.381, 0.085+table_pos_1[2]]
+    ketchup_ori_1 = pybullet.getQuaternionFromEuler([math.pi/2,0,0])
+    # ketchup_id_1 = pybullet.loadURDF(os.path.expanduser("tomato_ketchup/tomato_ketchup.urdf"), ketchup_pos_1, ketchup_ori_1)
+    
+    ketchup_pos_1 = [0.274, 0.381, 0.0743+table_pos_1[2]]
+    ketchup_ori_1 = pybullet.getQuaternionFromEuler([math.pi/2,0,0])
+    ketchup_id_1 = pybullet.loadURDF(os.path.expanduser("tomato_ketchup/tomato_ketchup.urdf"), ketchup_pos_1, ketchup_ori_1)
+    
+    # ketchup_pos_1 = [0.274, 0.381, 0.11+table_pos_1[2]]
+    # ketchup_ori_1 = pybullet.getQuaternionFromEuler([math.pi/2,0,0])
+    # ketchup_id_1 = pybullet.loadURDF(os.path.expanduser("orange_juice/orange_juice.urdf"), ketchup_pos_1, ketchup_ori_1)
+    
     panda_robot_start_pos = [0, 0, 0.02+table_pos_1[2]]
-
     panda_robot_start_ori = [0, 0, 0, 1]
     panda_robot_id = pybullet.loadURDF(os.path.expanduser("franka_panda/panda.urdf"), panda_robot_start_pos, panda_robot_start_ori, useFixedBase = 1)
 

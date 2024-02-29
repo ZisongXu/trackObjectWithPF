@@ -555,6 +555,11 @@ class PBPFMove():
                     depth_value_difference_jax = jnp.linalg.norm(real_depth_image_mask_values - rendered_depth_image_mask_values)
                     depth_value_difference_jax = depth_value_difference_jax / (math.sqrt(number_of_pixels))
                     depth_value_difference = float(depth_value_difference_jax.item())
+                    if DEPTH_DIFF_VALUE_0_1_FLAG == True:
+                        if depth_value_difference >= 0.5:
+                            depth_value_difference = 1
+                        else:
+                            depth_value_difference = 0
                 else:
                     depth_value_difference = self.compareDifferenceBtTwoDepthImgs(self.real_depth_image_transferred, rendered_depth_image_transferred)
                 
@@ -1984,6 +1989,7 @@ while reset_flag == True:
         DEPTH_IMAGE_CUT_FLAG = parameter_info['depth_image_cut_flag'] 
         PERSP_TO_ORTHO_FLAG = parameter_info['persp_to_ortho_flag'] 
         ORTHO_TO_PERSP_FLAG = parameter_info['ortho_to_persp_flag'] 
+        DEPTH_DIFF_VALUE_0_1_FLAG = parameter_info['depth_diff_value_0_1_flag'] 
         DEPTH_MASK_FLAG = parameter_info['depth_mask_flag'] 
 
         # print(obstacles_pos)
@@ -2019,7 +2025,7 @@ while reset_flag == True:
         elif RUNNING_MODEL == "PBPF_RGB":
             print("2: RUNNING_MODEL: ",RUNNING_MODEL)
             BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.20 # original value = 0.16
-            PF_UPDATE_TIME_ONCE = 0.03 # rosbag slow down 0.08
+            PF_UPDATE_TIME_ONCE = 0.32 # 70 particles -> 2s
         elif RUNNING_MODEL == "PBPF_RGBD":
             print("3: RUNNING_MODEL: ",RUNNING_MODEL)
             BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.30 # original value = 0.16 
@@ -2066,8 +2072,8 @@ while reset_flag == True:
                 # mark
                 # boss_sigma_obs_ang = 0.0
                 # boss_sigma_obs_pos = 0.0
-                pos_noise = 0.0
-                ang_noise = 0.0
+                # pos_noise = 0.0
+                # ang_noise = 0.0
             else:
                 boss_sigma_obs_ang = 0.0216773873 * 10
                 # boss_sigma_obs_ang = 0.0216773873 * 20
@@ -2467,8 +2473,8 @@ while reset_flag == True:
                     Only_update_robot_flag = False
                     if run_alg_flag == "PBPF":
                         # mark
-                        # if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
-                        if True:
+                        if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
+                        # if True:
                             print("Run PBPF")
                             simRobot_touch_par_flag = 1
                             _particle_update_time = _particle_update_time + 1

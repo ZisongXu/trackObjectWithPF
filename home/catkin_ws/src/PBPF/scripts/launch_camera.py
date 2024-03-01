@@ -138,15 +138,23 @@ class LaunchCamera():
                 realsense_tf = '/ar_tracking_camera_frame' # (do not use Optitrack)
             if self.GAZEBO_FLAG == True:
                 realsense_tf = '/realsense_camera'
-            
-            try:
-                (trans_camera, rot_camera) = tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
-                # (trans_camera_link0, rot_camera_link0) = tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
-            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                print("Can not find the pose of the camera!!!!")
-
-            camRGB_T_camD_tf_pos = [0.04, 0.0, 0.0]
+            # mark
+            while_time = 0
+            while True:
+                while_time = while_time + 1
+                if while_time > 1000:
+                    print("Can not find the pose of the camera!!!!")
+                try:
+                    # (trans_camera, rot_camera) = tf_listener.lookupTransform('/zisong_robot', realsense_tf, rospy.Time(0))
+                    (trans_camera, rot_camera) = tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
+                    # (trans_camera_link0, rot_camera_link0) = tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
+                    break
+                except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                    continue
+            camRGB_T_camD_tf_pos = [0.015, 0.0, 0.0]
             camRGB_T_camD_tf_ori = [0.0, 0.0, -0.008, 1] # x, y, z, w
+            # camRGB_T_camD_tf_ori = [0.001, 0.001, -0.009, 1] # x, y, z, w
+
 
             # camRGB_T_camD_tf_pos = [0.0, 0.0, 0.0]
             # camRGB_T_camD_tf_ori = [0.0, 0.0, -0.00, 1] # x, y, z, w

@@ -156,7 +156,7 @@ class Create_Scene():
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
 
             # mark
-            # ar
+            # ar1
             # pw_T_obj_obse_pos = [0.3084858323441205, 0.09149436877842132, 0.7853899450676181]
             # pw_T_obj_obse_ori = [ 0.59071692,  0.39490482,  0.58601579, -0.38947297]
             # if obj_index == 0:
@@ -166,7 +166,9 @@ class Create_Scene():
             #     pw_T_obj_obse_pos = [0.3271812145099885, 0.1747841428896269, 0.7525646138525897]
             #     pw_T_obj_obse_ori = [ 0.46895268, -0.52027885,  0.53579401, -0.47150618]
 
-
+            # ar1
+            pw_T_obj_opti_pos = [0.46837179556790687, 0.21121399431455762, 0.7835508265728949]
+            pw_T_obj_opti_ori = [ 0.66134779,  0.26198556,  0.65410057, -0.25716747]
 
 
             obse_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)

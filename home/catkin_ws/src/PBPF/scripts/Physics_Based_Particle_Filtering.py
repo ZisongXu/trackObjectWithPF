@@ -172,7 +172,7 @@ class PBPFMove():
         self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs)
         
         # mark
-        self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
+        # self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
 
         self.set_particle_in_each_sim_env()
         
@@ -551,21 +551,22 @@ class PBPFMove():
 
                     real_depth_image_mask_values = _extractValues(self.real_depth_image_transferred_jax, mask_position_from_segImg)
                     rendered_depth_image_mask_values = _extractValues(rendered_depth_image_transferred_jax, mask_position_from_segImg)
+
                     number_of_pixels = len(rendered_depth_image_mask_values)
                     depth_value_difference_jax = jnp.linalg.norm(real_depth_image_mask_values - rendered_depth_image_mask_values)
                     depth_value_difference_jax = depth_value_difference_jax / (math.sqrt(number_of_pixels))
+
+                    if DEPTH_DIFF_VALUE_0_1_FLAG == True:
+                        real_depth_image_mask_values = _threshold_array_optimized(real_depth_image_mask_values)
+
                     depth_value_difference = float(depth_value_difference_jax.item())
-                    # if DEPTH_DIFF_VALUE_0_1_FLAG == True:
-                    #     if depth_value_difference >= 0.5:
-                    #         depth_value_difference = 1
-                    #     else:
-                    #         depth_value_difference = 0
+
                 else:
                     depth_value_difference = self.compareDifferenceBtTwoDepthImgs(self.real_depth_image_transferred, rendered_depth_image_transferred)
                 
             # mark
-            # print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; depth_value_difference: ",depth_value_difference)
-            # print("==================================")
+            print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; depth_value_difference: ",depth_value_difference)
+            print("==================================")
             self.depth_value_difference_list[index] = depth_value_difference
 
 
@@ -2079,8 +2080,8 @@ while reset_flag == True:
                 # mark
                 # boss_sigma_obs_ang = 0.0
                 # boss_sigma_obs_pos = 0.0
-                # pos_noise = 0.0
-                # ang_noise = 0.0
+                pos_noise = 0.0
+                ang_noise = 0.0
             else:
                 boss_sigma_obs_ang = 0.0216773873 * 10
                 # boss_sigma_obs_ang = 0.0216773873 * 20
@@ -2481,8 +2482,8 @@ while reset_flag == True:
                     Only_update_robot_flag = False
                     if run_alg_flag == "PBPF":
                         # mark
-                        if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
-                        # if True:
+                        # if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
+                        if True:
                             print("Run PBPF")
                             simRobot_touch_par_flag = 1
                             _particle_update_time = _particle_update_time + 1

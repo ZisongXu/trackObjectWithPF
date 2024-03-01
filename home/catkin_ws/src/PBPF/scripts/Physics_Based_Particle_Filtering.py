@@ -551,13 +551,17 @@ class PBPFMove():
 
                     real_depth_image_mask_values = _extractValues(self.real_depth_image_transferred_jax, mask_position_from_segImg)
                     rendered_depth_image_mask_values = _extractValues(rendered_depth_image_transferred_jax, mask_position_from_segImg)
-
+                    
                     number_of_pixels = len(rendered_depth_image_mask_values)
-                    depth_value_difference_jax = jnp.linalg.norm(real_depth_image_mask_values - rendered_depth_image_mask_values)
-                    depth_value_difference_jax = depth_value_difference_jax / (math.sqrt(number_of_pixels))
 
                     if DEPTH_DIFF_VALUE_0_1_FLAG == True:
-                        real_depth_image_mask_values = _threshold_array_optimized(real_depth_image_mask_values)
+                        depth_value_diff_sub_abs_jax = inp.abs(real_depth_image_mask_values - rendered_depth_image_mask_values)
+                        depth_value_diff_sub_abs_0_1_jax, num_zeros = _threshold_array_optimized(depth_value_diff_sub_abs_jax)
+                        e_VSD_o = jnp.sum(depth_value_diff_sub_abs_0_1_jax) / number_of_pixels
+                        score = depth_diff_value_0_1_alpha * (1-e_VSD_o) + (1-depth_diff_value_0_1_alpha) * num_zeros/number_of_pixels
+                    else:
+                        depth_value_difference_jax = jnp.linalg.norm(real_depth_image_mask_values - rendered_depth_image_mask_values)
+                        depth_value_difference_jax = depth_value_difference_jax / (math.sqrt(number_of_pixels))
 
                     depth_value_difference = float(depth_value_difference_jax.item())
 
@@ -1576,7 +1580,9 @@ def _persp_to_ortho(depth_persp, fov, resolution):
 
 @jit
 def _threshold_array_optimized(arr):
-    return (arr > DEPTH_DIFF_VALUE_0_1_THRESHOLD).astype(jnp.int32)
+    modified_array = (arr > DEPTH_DIFF_VALUE_0_1_THRESHOLD).astype(jnp.int32)
+    num_zeros = jnp.sum(modified_array == 0)
+    return modified_array, num_zeros
 
 
 # ===============================================================================================================
@@ -1997,7 +2003,7 @@ while reset_flag == True:
         ORTHO_TO_PERSP_FLAG = parameter_info['ortho_to_persp_flag'] 
         DEPTH_DIFF_VALUE_0_1_FLAG = parameter_info['depth_diff_value_0_1_flag'] 
         DEPTH_DIFF_VALUE_0_1_THRESHOLD = parameter_info['depth_diff_value_0_1_threshold'] 
-
+        DEPTH_DIFF_VALUE_0_1_ALPHA = parameter_info['depth_diff_value_0_1_alpha'] 
         DEPTH_MASK_FLAG = parameter_info['depth_mask_flag'] 
 
         # print(obstacles_pos)

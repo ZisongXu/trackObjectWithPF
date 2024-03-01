@@ -48,3 +48,4 @@ ortho_to_persp_flag: false
 depth_mask_flag: true
 depth_diff_value_0_1_flag: false
 depth_diff_value_0_1_threshold: 0.5
+depth_diff_value_0_1_alpha: 0.5

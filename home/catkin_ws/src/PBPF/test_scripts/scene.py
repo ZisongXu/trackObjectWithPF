@@ -69,11 +69,11 @@ def create_pybullet_world():
     
     ketchup_pos_1 = [0.274, 0.381, 0.085+table_pos_1[2]]
     ketchup_ori_1 = pybullet.getQuaternionFromEuler([math.pi/2,0,0])
-    # ketchup_id_1 = pybullet.loadURDF(os.path.expanduser("tomato_ketchup/tomato_ketchup.urdf"), ketchup_pos_1, ketchup_ori_1)
+    ketchup_id_1 = pybullet.loadURDF(os.path.expanduser("YcbTomatoSoupCan/model.urdf"), ketchup_pos_1, ketchup_ori_1)
     
-    ketchup_pos_1 = [0.274, 0.381, 0.0743+table_pos_1[2]]
-    ketchup_ori_1 = pybullet.getQuaternionFromEuler([math.pi/2,0,0])
-    ketchup_id_1 = pybullet.loadURDF(os.path.expanduser("tomato_ketchup/tomato_ketchup.urdf"), ketchup_pos_1, ketchup_ori_1)
+    # ketchup_pos_1 = [0.274, 0.381, 0.0743+table_pos_1[2]]
+    # ketchup_ori_1 = pybullet.getQuaternionFromEuler([math.pi/2,0,0])
+    # ketchup_id_1 = pybullet.loadURDF(os.path.expanduser("tomato_ketchup/tomato_ketchup.urdf"), ketchup_pos_1, ketchup_ori_1)
     
     # ketchup_pos_1 = [0.274, 0.381, 0.11+table_pos_1[2]]
     # ketchup_ori_1 = pybullet.getQuaternionFromEuler([math.pi/2,0,0])

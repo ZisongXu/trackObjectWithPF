@@ -28,7 +28,7 @@ oto_name_list:
 otob_name_list:
 - cracker_obstacle
 - fish_can
-particle_num: 70
+particle_num: 10
 pick_particle_rate: 0.0
 robot_num: 1
 run_alg_flag: PBPF

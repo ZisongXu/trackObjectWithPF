@@ -32,9 +32,9 @@
    </link>
    
    <joint name="fake_2_Ketchup" type="fixed">
-    <parent link="fake"/>
-    <child link="Ketchup"/>
-    <origin xyz="0.0 0.0 0.0" rpy="0.0 -1.5707963 1.5707963"/>
+     <parent link="fake"/>
+     <child link="Ketchup"/>
+     <origin xyz="0.0 0.0 0.0" rpy="0.0 -1.5707963 1.5707963"/>
    </joint>
    
  </robot>

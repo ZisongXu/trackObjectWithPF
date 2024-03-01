@@ -155,7 +155,7 @@ class PBPFMove():
                 if PERSP_TO_ORTHO_FLAG == True:
                     # mark
                     print("Begin to change from persp to ortho")
-                    self.real_depth_image_transferred_jax = persp_to_ortho(self.real_depth_image_transferred_jax, FOV_Y, RESOLUTION)
+                    self.real_depth_image_transferred_jax = _persp_to_ortho(self.real_depth_image_transferred_jax, FOV_Y, RESOLUTION)
         print("-------------------------------------")
         print("global_objects_visual_by_DOPE_list: -")
         print(global_objects_visual_by_DOPE_list)
@@ -547,7 +547,7 @@ class PBPFMove():
                     if ORTHO_TO_PERSP_FLAG == True:
                         # mark
                         print("Begin to change from ortho to persp")
-                        rendered_depth_image_transferred_jax = ortho_to_persp(rendered_depth_image_transferred_jax, FOV_Y, RESOLUTION)
+                        rendered_depth_image_transferred_jax = _ortho_to_persp(rendered_depth_image_transferred_jax, FOV_Y, RESOLUTION)
 
                     real_depth_image_mask_values = _extractValues(self.real_depth_image_transferred_jax, mask_position_from_segImg)
                     rendered_depth_image_mask_values = _extractValues(rendered_depth_image_transferred_jax, mask_position_from_segImg)
@@ -555,11 +555,11 @@ class PBPFMove():
                     depth_value_difference_jax = jnp.linalg.norm(real_depth_image_mask_values - rendered_depth_image_mask_values)
                     depth_value_difference_jax = depth_value_difference_jax / (math.sqrt(number_of_pixels))
                     depth_value_difference = float(depth_value_difference_jax.item())
-                    if DEPTH_DIFF_VALUE_0_1_FLAG == True:
-                        if depth_value_difference >= 0.5:
-                            depth_value_difference = 1
-                        else:
-                            depth_value_difference = 0
+                    # if DEPTH_DIFF_VALUE_0_1_FLAG == True:
+                    #     if depth_value_difference >= 0.5:
+                    #         depth_value_difference = 1
+                    #     else:
+                    #         depth_value_difference = 0
                 else:
                     depth_value_difference = self.compareDifferenceBtTwoDepthImgs(self.real_depth_image_transferred, rendered_depth_image_transferred)
                 
@@ -1548,7 +1548,7 @@ def _extractValues(matrix, positions):
     return values 
 
 @jit
-def compute_projection_parameters(fov, resolution):
+def _compute_projection_parameters(fov, resolution):
     h, w = resolution
     # f = 0.5 * w / jnp.tan(fov * 0.5)  # fov: horizontal
     f = 0.5 * h / jnp.tan(fov * 0.5)  # fov: vertical
@@ -1556,8 +1556,8 @@ def compute_projection_parameters(fov, resolution):
     return f, cx, cy
  
 @jit
-def ortho_to_persp(depth_ortho, fov, resolution):
-    f, cx, cy = compute_projection_parameters(fov, resolution)
+def _ortho_to_persp(depth_ortho, fov, resolution):
+    f, cx, cy = _compute_projection_parameters(fov, resolution)
     y, x = jnp.indices(depth_ortho.shape)
     z = depth_ortho
     x_persp = (x - cx) * z / f
@@ -1566,12 +1566,17 @@ def ortho_to_persp(depth_ortho, fov, resolution):
     return depth_persp
  
 @jit
-def persp_to_ortho(depth_persp, fov, resolution):   
-    f, cx, cy = compute_projection_parameters(fov, resolution)     
+def _persp_to_ortho(depth_persp, fov, resolution):   
+    f, cx, cy = _compute_projection_parameters(fov, resolution)     
     y, x = jnp.indices(depth_persp.shape)   
     z = depth_persp 
     depth_ortho = z / jnp.sqrt(((x - cx) / f)**2 + ((y - cy) / f)**2 + 1)     
     return depth_ortho
+
+@jit
+def _threshold_array_optimized(arr):
+    return (arr > DEPTH_DIFF_VALUE_0_1_THRESHOLD).astype(jnp.int32)
+
 
 # ===============================================================================================================
 
@@ -1990,6 +1995,8 @@ while reset_flag == True:
         PERSP_TO_ORTHO_FLAG = parameter_info['persp_to_ortho_flag'] 
         ORTHO_TO_PERSP_FLAG = parameter_info['ortho_to_persp_flag'] 
         DEPTH_DIFF_VALUE_0_1_FLAG = parameter_info['depth_diff_value_0_1_flag'] 
+        DEPTH_DIFF_VALUE_0_1_THRESHOLD = parameter_info['depth_diff_value_0_1_threshold'] 
+
         DEPTH_MASK_FLAG = parameter_info['depth_mask_flag'] 
 
         # print(obstacles_pos)
@@ -2088,6 +2095,7 @@ while reset_flag == True:
                 # pos_noise = 0.0
                 # ang_noise = 0.0
 
+        # mark
         mass_mean = 0.380 # 0.380
         mass_sigma = 0.5
         friction_mean = 0.1

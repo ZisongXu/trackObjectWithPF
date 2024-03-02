@@ -166,9 +166,9 @@ class Create_Scene():
             #     pw_T_obj_obse_pos = [0.3271812145099885, 0.1747841428896269, 0.7525646138525897]
             #     pw_T_obj_obse_ori = [ 0.46895268, -0.52027885,  0.53579401, -0.47150618]
 
-            # ar1
-            pw_T_obj_opti_pos = [0.46837179556790687, 0.21121399431455762, 0.7835508265728949]
-            pw_T_obj_opti_ori = [ 0.66134779,  0.26198556,  0.65410057, -0.25716747]
+            # ar1 cracker
+            # pw_T_obj_opti_pos = [0.46837179556790687, 0.21121399431455762, 0.7835508265728949]
+            # pw_T_obj_opti_ori = [ 0.66134779,  0.26198556,  0.65410057, -0.25716747]
 
 
             obse_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
@@ -286,6 +286,7 @@ class Create_Scene():
                 # opti_T_obj_opti_ori = [opti_T_obj_opti_ori_x, opti_T_obj_opti_ori_y, opti_T_obj_opti_ori_z, opti_T_obj_opti_ori_w]
                 # print("opti_T_obj_opti_ori")
                 # print(opti_T_obj_opti_ori)
+                
                 opti_T_obj_opti_pos = self.ros_listener.listen_2_object_pose(obj_name)[0]
                 opti_T_obj_opti_ori = self.ros_listener.listen_2_object_pose(obj_name)[1]
 

@@ -54,6 +54,9 @@ class Ros_Listener():
         
         rospy.Subscriber('/mocap/rigid_bodies/soup_opti/pose', PoseStamped, self.object_pose_callback_soup, queue_size=1)
         self.object_soup_pose = PoseStamped()
+
+        rospy.Subscriber('/mocap/rigid_bodies/Ketchup_opti/pose', PoseStamped, self.object_pose_callback_Ketchup, queue_size=1)
+        self.object_Ketchup_pose = PoseStamped()
         
         rospy.Subscriber('/mocap/rigid_bodies/gelation_opti/pose', PoseStamped, self.object_pose_callback_gelation, queue_size=1)
         self.object_gelation_pose = PoseStamped()
@@ -185,6 +188,12 @@ class Ros_Listener():
             # print(self.object_gelation_pose)
             # print("==============")
             return self.object_gelation_pose
+        elif object_flag == "Ketchup":
+            # print("==============")
+            # print("Ketchup: In the Ros_Listener")
+            # print(self.object_Ketchup_pose)
+            # print("==============")
+            return self.object_Ketchup_pose
         elif object_flag == "base":
             return self.base_pose
         elif object_flag == "smallobstacle":
@@ -264,6 +273,20 @@ class Ros_Listener():
         w_ori = data.pose.orientation.w
         self.object_ori = [x_ori, y_ori, z_ori, w_ori]
         self.object_soup_pose = [self.object_pos, self.object_ori]
+    
+    def object_pose_callback_Ketchup(self, data):
+        #pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.object_pos = [x_pos, y_pos, z_pos]
+        #ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.object_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.object_Ketchup_pose = [self.object_pos, self.object_ori]
         
     def base_of_cheezit_callback(self, data):
         # pos

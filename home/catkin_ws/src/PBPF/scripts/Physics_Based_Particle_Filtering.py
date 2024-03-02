@@ -172,7 +172,7 @@ class PBPFMove():
         self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs)
         
         # mark
-        # self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
+        self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
 
         self.set_particle_in_each_sim_env()
         
@@ -353,23 +353,8 @@ class PBPFMove():
 
         if DEPTH_IMAGE_CUT_FLAG == True:
             cv_image = self.cutImage(cv_image, up=226, down=164, left=400, right=299) # up, down, left, right
-            # cv_image = self.cutImage(cv_image, up=100, down=100, left=250, right=250) # up, down, left, right
-            # cv_image = self.cutImage(cv_image, up=123, down=100, left=250, right=268) # up, down, left, right
-
 
         cv_image = cv_image / 1000
-
-        # mark_v
-        # vectorized_function = np.vectorize(self.find_square)
-        # cv_image = vectorized_function(cv_image)
-
-        # if DEBUG_DEPTH_IMG_FLAG == True:
-            
-        #     real_depth_img_name = str(_particle_update_time) + "_real_depth_img.png"
-        #     # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
-        #     imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, cv_image, cmap='gray')
-
-            
         
         return cv_image
 
@@ -520,10 +505,7 @@ class PBPFMove():
             
             # not use for now
             # self.rendered_depth_image_transferred_list[index] = rendered_depth_image_transferred
-            
-            # mark_v
-            # vectorized_function = np.vectorize(self.find_square)
-            # rendered_depth_image_transferred = vectorized_function(rendered_depth_image_transferred)
+
 
             # mark
             if DEBUG_DEPTH_IMG_FLAG == True:
@@ -553,12 +535,13 @@ class PBPFMove():
                     rendered_depth_image_mask_values = _extractValues(rendered_depth_image_transferred_jax, mask_position_from_segImg)
                     
                     number_of_pixels = len(rendered_depth_image_mask_values)
-
+                    # mark
                     if DEPTH_DIFF_VALUE_0_1_FLAG == True:
-                        depth_value_diff_sub_abs_jax = inp.abs(real_depth_image_mask_values - rendered_depth_image_mask_values)
+                        depth_value_diff_sub_abs_jax = jnp.abs(real_depth_image_mask_values - rendered_depth_image_mask_values)
                         depth_value_diff_sub_abs_0_1_jax, num_zeros = _threshold_array_optimized(depth_value_diff_sub_abs_jax)
                         e_VSD_o = jnp.sum(depth_value_diff_sub_abs_0_1_jax) / number_of_pixels
-                        score = depth_diff_value_0_1_alpha * (1-e_VSD_o) + (1-depth_diff_value_0_1_alpha) * num_zeros/number_of_pixels
+                        score = DEPTH_DIFF_VALUE_0_1_ALPHA * (1-e_VSD_o) + (1-DEPTH_DIFF_VALUE_0_1_ALPHA) * num_zeros/number_of_pixels
+                        depth_value_difference_jax = score # score_that_particle_get: high->high weight; low->low weight
                     else:
                         depth_value_difference_jax = jnp.linalg.norm(real_depth_image_mask_values - rendered_depth_image_mask_values)
                         depth_value_difference_jax = depth_value_difference_jax / (math.sqrt(number_of_pixels))
@@ -569,8 +552,13 @@ class PBPFMove():
                     depth_value_difference = self.compareDifferenceBtTwoDepthImgs(self.real_depth_image_transferred, rendered_depth_image_transferred)
                 
             # mark
-            print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; depth_value_difference: ",depth_value_difference)
-            print("==================================")
+            if DEPTH_DIFF_VALUE_0_1_FLAG == True:
+                print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; score_that_particle_get: ",depth_value_difference)
+                print("==================================")
+            else:
+                print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; depth_value_difference: ",depth_value_difference)
+                print("==================================")
+            
             self.depth_value_difference_list[index] = depth_value_difference
 
 
@@ -906,8 +894,14 @@ class PBPFMove():
         base_w_list.append(base_w)
         particle_array_list = []
 
+        # mark
         if USING_D_FLAG == True:
-            weight_depth_img_array = self.computeWeightFromDepthImage(self.depth_value_difference_list)    
+            if DEPTH_DIFF_VALUE_0_1_FLAG == True:
+                # score_that_particle_get: high->high weight; low->low weight
+                weight_depth_img_array = copy.deepcopy(self.depth_value_difference_list)
+            else:
+                weight_depth_img_array = self.computeWeightFromDepthImage(self.depth_value_difference_list)    
+        
 
         for index, particle in enumerate(self.particle_cloud):
             each_par_weight = 1
@@ -2086,8 +2080,8 @@ while reset_flag == True:
                 # mark
                 # boss_sigma_obs_ang = 0.0
                 # boss_sigma_obs_pos = 0.0
-                pos_noise = 0.0
-                ang_noise = 0.0
+                # pos_noise = 0.0
+                # ang_noise = 0.0
             else:
                 boss_sigma_obs_ang = 0.0216773873 * 10
                 # boss_sigma_obs_ang = 0.0216773873 * 20
@@ -2280,7 +2274,8 @@ while reset_flag == True:
                     visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.45
                     visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
                 # mark
-                elif object_name == "gelatin":
+                # elif object_name == "gelatin":
+                else:
                     x_w_list[obj_index] = 0.159
                     y_l_list[obj_index] = 0.21243700408935547
                     z_h_list[obj_index] = 0.06

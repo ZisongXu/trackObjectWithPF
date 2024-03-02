@@ -14,7 +14,8 @@ with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"),
         parameter_info['object_name_list'][0] = object_name
         parameter_info['task_flag'] = scene_name[-1]
         parameter_info['run_alg_flag'] = run_alg_flag
-        parameter_info['version'] = version
+        parameter_info['running_model'] = version
+        
 
 with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'w') as file:
         yaml.dump(parameter_info, file, default_flow_style=False)

@@ -1,15 +1,23 @@
 ADDMatrix_flag: true
 convolution_size: 0
-debug_depth_img_flag: true
+debug_depth_img_flag: false
+depth_diff_value_0_1_alpha: 0.8
+depth_diff_value_0_1_flag: true
+depth_diff_value_0_1_threshold: 0.1
+depth_image_cut_flag: false
+depth_mask_flag: true
 dope_flag: true
 err_file: rayTracing
+farVal: 3
+fov_y: 57.86
 gazebo_flag: false
 height: 480
-depth_image_cut_flag: false
 locate_camera_flag: ar
+nearVal: 0.3
 object_name_list:
 - cracker
 - soup
+- Ketchup
 object_num: 1
 obstacles_ori:
 - - 1.0
@@ -21,6 +29,7 @@ obstacles_pos:
   - 0.215
   - 0.14765408574692843
 optitrack_flag: true
+ortho_to_persp_flag: false
 other_obj_num: 0
 oto_name_list:
 - base_of_cracker
@@ -28,24 +37,16 @@ oto_name_list:
 otob_name_list:
 - cracker_obstacle
 - fish_can
-particle_num: 25
+particle_num: 70
+persp_to_ortho_flag: false
 pick_particle_rate: 0.0
+ray_tracing_type: multiray
 robot_num: 1
 run_alg_flag: PBPF
+running_model: PBPF_RGBD
 sim_real_world_flag: true
 task_flag: '2'
 update_style_flag: time
 use_convolution_flag: false
 version: multiray
-ray_tracing_type: multiray
-running_model: PBPF_RGBD
 width: 848
-fov_y: 57.86
-nearVal: 0.3
-farVal: 3
-persp_to_ortho_flag: false
-ortho_to_persp_flag: false
-depth_mask_flag: true
-depth_diff_value_0_1_flag: false
-depth_diff_value_0_1_threshold: 0.5
-depth_diff_value_0_1_alpha: 0.5

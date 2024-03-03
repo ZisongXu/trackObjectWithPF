@@ -9,6 +9,8 @@ declare -a particleNumbers=(70)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("PBPFV" "obse")
+
+declare -a runVersions=("PBPF_RGBD" "PBPF_RGB" "PBPF_D")
 # declare -a Ang_and_Pos=("pos" "ang")
 declare -a Ang_and_Pos=("ADD")
 declare -a update_style_flag=("time") # "time" "pose"

@@ -12,7 +12,8 @@ declare -a runAlgFlags=("obse" "PBPFV")
 # declare -a Ang_and_Pos=("ang" "pos")
 declare -a Ang_and_Pos=("ADD")
 declare -a update_style_flag=("time") # "time" "pose"
-declare -a runVersions=("depth_img" "multiray")
+# declare -a runVersions=("depth_img" "multiray")
+declare -a runVersions=("PBPF_RGBD" "PBPF_RGB" "PBPF_D")
 # for runAlgFlag in "${runAlgFlags[@]}"
 # do
 # 	for particleNumber in "${particleNumbers[@]}"
@@ -57,7 +58,7 @@ do
 						fi
 					fi
 					# for rosbag in {1..10}
-					for ((rosbag=2;rosbag<=2;rosbag++)); 
+					for ((rosbag=1;rosbag<=1;rosbag++)); 
 					do
 						# for repeat in {1..10}
 						for ((repeat=0;repeat<=4;repeat++));

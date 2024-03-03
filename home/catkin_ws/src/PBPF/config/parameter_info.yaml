@@ -43,7 +43,7 @@ pick_particle_rate: 0.0
 ray_tracing_type: multiray
 robot_num: 1
 run_alg_flag: PBPF
-running_model: PBPF_RGBD
+running_model: PBPF_D
 sim_real_world_flag: true
 task_flag: '2'
 update_style_flag: time

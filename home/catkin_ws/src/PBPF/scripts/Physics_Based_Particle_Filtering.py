@@ -2485,7 +2485,7 @@ while reset_flag == True:
                         # mark
                         if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
                         # if True:
-                            print("Run PBPF")
+                            print("Run ", RUNNING_MODEL)
                             simRobot_touch_par_flag = 1
                             _particle_update_time = _particle_update_time + 1
                             t_begin_PBPF = time.time()

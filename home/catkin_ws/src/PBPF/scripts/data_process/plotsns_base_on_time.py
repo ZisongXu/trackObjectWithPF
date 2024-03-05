@@ -64,6 +64,7 @@ elif update_style_flag == "time":
 # based_on_time_150_scene3_time_cracker_ang
 # based_on_time_150_scene3_rosbag4_time_cracker_ang
 # based_on_time_70_scene2_time_cracker_ADD
+# based_on_time_70_scene2_time_soup_ADD
 file_name = "based_on_time_"+str(particle_num)+'_'+sceneName+'_'+update_style_flag+'_'+object_name+'_'+ang_and_pos
 
 title_ang = "Rotational errors (rad) vs Time (s)"
@@ -224,11 +225,11 @@ if ang_and_pos == "ADD":
         x_xlim = 265 # 28
         y_ylim = 0.5 # 0.5
     if sceneName == "scene2":
-        x_range_max = 3800
-        x_range_unit = 380
+        x_range_max = 6200
+        x_range_unit = 620
         y_range_max = 0.5
         y_range_unit = 0.05
-        x_xlim = 3800
+        x_xlim = 6200
         y_ylim = 0.5
     if sceneName == "scene3":
         # x_range_max = 28

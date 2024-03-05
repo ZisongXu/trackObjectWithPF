@@ -18,7 +18,7 @@ object_name_list:
 - cracker
 - soup
 - Ketchup
-object_num: 1
+object_num: 2
 obstacles_ori:
 - - 1.0
   - 0.0

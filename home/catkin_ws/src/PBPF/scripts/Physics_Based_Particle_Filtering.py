@@ -172,7 +172,7 @@ class PBPFMove():
         self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs)
         
         # mark
-        self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
+        # self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
 
         self.set_particle_in_each_sim_env()
         
@@ -552,12 +552,12 @@ class PBPFMove():
                     depth_value_difference = self.compareDifferenceBtTwoDepthImgs(self.real_depth_image_transferred, rendered_depth_image_transferred)
                 
             # mark
-            # if DEPTH_DIFF_VALUE_0_1_FLAG == True:
-            #     print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; score_that_particle_get: ",depth_value_difference)
-            #     print("==================================")
-            # else:
-            #     print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; depth_value_difference: ",depth_value_difference)
-            #     print("==================================")
+            if DEPTH_DIFF_VALUE_0_1_FLAG == True:
+                print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; score_that_particle_get: ",depth_value_difference)
+                print("==================================")
+            else:
+                print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; depth_value_difference: ",depth_value_difference)
+                print("==================================")
             
             self.depth_value_difference_list[index] = depth_value_difference
 
@@ -2080,8 +2080,8 @@ while reset_flag == True:
                 # mark
                 # boss_sigma_obs_ang = 0.0
                 # boss_sigma_obs_pos = 0.0
-                # pos_noise = 0.0
-                # ang_noise = 0.0
+                pos_noise = 0.0
+                ang_noise = 0.0
             else:
                 boss_sigma_obs_ang = 0.0216773873 * 10
                 # boss_sigma_obs_ang = 0.0216773873 * 20
@@ -2483,8 +2483,8 @@ while reset_flag == True:
                     Only_update_robot_flag = False
                     if run_alg_flag == "PBPF":
                         # mark
-                        if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
-                        # if True:
+                        # if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
+                        if True:
                             print("Run ", RUNNING_MODEL)
                             simRobot_touch_par_flag = 1
                             _particle_update_time = _particle_update_time + 1

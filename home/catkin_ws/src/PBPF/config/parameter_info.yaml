@@ -1,6 +1,6 @@
 ADDMatrix_flag: true
 convolution_size: 0
-debug_depth_img_flag: false
+debug_depth_img_flag: true
 depth_diff_value_0_1_alpha: 0.8
 depth_diff_value_0_1_flag: true
 depth_diff_value_0_1_threshold: 0.1
@@ -18,7 +18,7 @@ object_name_list:
 - cracker
 - soup
 - Ketchup
-object_num: 2
+object_num: 1
 obstacles_ori:
 - - 1.0
   - 0.0
@@ -37,13 +37,13 @@ oto_name_list:
 otob_name_list:
 - cracker_obstacle
 - fish_can
-particle_num: 70
+particle_num: 25
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0
 ray_tracing_type: multiray
 robot_num: 1
 run_alg_flag: PBPF
-running_model: PBPF_D
+running_model: PBPF_RGBD
 sim_real_world_flag: true
 task_flag: '2'
 update_style_flag: time

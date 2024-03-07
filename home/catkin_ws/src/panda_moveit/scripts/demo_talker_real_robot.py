@@ -496,7 +496,7 @@ if __name__ == '__main__':
             panda.move_through_waypoints(waypoints)
             
     elif object_num == 2:
-        for index in range(4):
+        for index in range(2):
             wpose = panda.moveit_group.get_current_pose().pose
             waypoints = []
             wpose.position.y += 0.05
@@ -520,7 +520,7 @@ if __name__ == '__main__':
             # wpose.position.y += 0.15
             waypoints.append(copy.deepcopy(wpose))    
             panda.move_through_waypoints(waypoints)
-        for index in range(3):
+        for index in range(4):
             wpose = panda.moveit_group.get_current_pose().pose
             waypoints = []
             wpose.position.x += 0.05
@@ -528,7 +528,7 @@ if __name__ == '__main__':
             # wpose.position.y += 0.15
             waypoints.append(copy.deepcopy(wpose))    
             panda.move_through_waypoints(waypoints)
-        for index in range(5):
+        for index in range(6):
             wpose = panda.moveit_group.get_current_pose().pose
             waypoints = []
             wpose.position.y += 0.05

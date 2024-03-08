@@ -9,13 +9,13 @@
    <link name="soup">
      <visual>
        <geometry>
-         <!-- <cylinder length="0.1000" radius="0.033829689025878906"/> -->
-         <mesh filename="textured_simple_reoriented.obj" scale="1 1 1"/>
+         <cylinder length="0.1000" radius="0.033829689025878906"/>
+         <!-- <mesh filename="textured_simple_reoriented.obj" scale="1 1 1"/> -->
        </geometry>
-       <!-- <material name="light_green"/> -->
-       <material name="white">
-        <color rgba="1. 1. 1. 1."/>
-       </material>
+       <material name="light_green"/>
+       <!-- <material name="white"> -->
+        <!-- <color rgba="1. 1. 1. 1."/> -->
+       <!-- </material> -->
        <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
      </visual>
      <inertial>

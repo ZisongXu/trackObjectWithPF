@@ -122,7 +122,7 @@ class Create_Scene():
             while True:
                 while_time = while_time + 1
                 if while_time > 1000:
-                    print("WARNING: Problem happened in create_scene.py; maybe there is a problem on DOPE")
+                    # print("WARNING: Problem happened in create_scene.py; maybe there is a problem on DOPE")
                     a = 1
                     # if self.optitrack_flag == False:
                     #     # mark
@@ -157,8 +157,8 @@ class Create_Scene():
 
             # mark
             # ar1
-            pw_T_obj_obse_pos = [0.3084858323441205, 0.09149436877842132, 0.7853899450676181]
-            pw_T_obj_obse_ori = [ 0.59071692,  0.39490482,  0.58601579, -0.38947297]
+            # pw_T_obj_obse_pos = [0.3084858323441205, 0.09149436877842132, 0.7853899450676181]
+            # pw_T_obj_obse_ori = [ 0.59071692,  0.39490482,  0.58601579, -0.38947297]
             # if obj_index == 0:
             #     pw_T_obj_obse_pos = [0.34260080122584496, 0.08167958773431294, 0.7853546082956354]
             #     pw_T_obj_obse_ori = [ 0.5385327,   0.46348129,  0.53486163, -0.45726433]
@@ -167,8 +167,8 @@ class Create_Scene():
             #     pw_T_obj_obse_ori = [ 0.46895268, -0.52027885,  0.53579401, -0.47150618]
 
             # ar1 cracker
-            # pw_T_obj_opti_pos = [0.46837179556790687, 0.21121399431455762, 0.7835508265728949]
-            # pw_T_obj_opti_ori = [ 0.66134779,  0.26198556,  0.65410057, -0.25716747]
+            # pw_T_obj_obse_pos = [0.4681664555306407, 0.21128532879798734, 0.7842224385534314]
+            # pw_T_obj_obse_ori = [ 0.6615588,   0.26269033,  0.6537948,  -0.25668289]
 
 
             obse_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)

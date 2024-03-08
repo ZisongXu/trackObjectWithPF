@@ -78,10 +78,10 @@ class InitialSimulationModel():
         self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
         
         # mark
-        self.boss_sigma_obs_x = 0
-        self.boss_sigma_obs_y = 0
-        self.boss_sigma_obs_z = 0
-        self.boss_sigma_obs_ang_init = 0
+        # self.boss_sigma_obs_x = 0
+        # self.boss_sigma_obs_y = 0
+        # self.boss_sigma_obs_z = 0
+        # self.boss_sigma_obs_ang_init = 0
 
 
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 1
@@ -91,7 +91,8 @@ class InitialSimulationModel():
         self.gazebo_flag = self.parameter_info['gazebo_flag']
         self.task_flag = self.parameter_info['task_flag']
         self.SIM_REAL_WORLD_FLAG = self.parameter_info['sim_real_world_flag']
-        
+        self.SHOW_RAY = self.parameter_info['show_ray'] 
+
     def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):
         position = copy.deepcopy(pw_T_obj_obse_pos)
         quat = copy.deepcopy(pw_T_obj_obse_ori)#x,y,z,w
@@ -145,7 +146,10 @@ class InitialSimulationModel():
         other_obj_id_list = []
         for par_index in range(self.particle_num):
             collision_detection_obj_id = []
-            pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
+            if self.SHOW_RAY == True:
+                pybullet_simulation_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT,GUI_SERVER
+            else:
+                pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
             p_env_list.append(pybullet_simulation_env)
             self.pybullet_particle_env_collection.append(pybullet_simulation_env)
             if self.update_style_flag == "time":
@@ -336,59 +340,59 @@ class InitialSimulationModel():
                 #     obj_obse_pos = [0.2384858323441205, 0.11149436877842132, 0.7853899450676181]
 
                 # cracker_barrier1
-                if par_index == 0:
-                    obj_obse_pos = [0.3084858323441205, 0.09149436877842132, 0.7853899450676181]
-                elif par_index == 1:
-                    obj_obse_pos = [0.2984858323441205, 0.09149436877842132, 0.7853899450676181]
-                elif par_index == 2:
-                    obj_obse_pos = [0.2884858323441205, 0.09149436877842132, 0.7853899450676181]
-                elif par_index == 3:
-                    obj_obse_pos = [0.2684858323441205, 0.09149436877842132, 0.7853899450676181]
-                elif par_index == 4:
-                    obj_obse_pos = [0.2484858323441205, 0.09149436877842132, 0.7853899450676181]
-                elif par_index == 5:
-                    obj_obse_pos = [0.2284858323441205, 0.09149436877842132, 0.7853899450676181]    
-                elif par_index == 6:
-                    obj_obse_pos = [0.2084858323441205, 0.09149436877842132, 0.7853899450676181]
+                # if par_index == 0:
+                #     obj_obse_pos = [0.3084858323441205, 0.09149436877842132, 0.7853899450676181]
+                # elif par_index == 1:
+                #     obj_obse_pos = [0.2984858323441205, 0.09149436877842132, 0.7853899450676181]
+                # elif par_index == 2:
+                #     obj_obse_pos = [0.2884858323441205, 0.09149436877842132, 0.7853899450676181]
+                # elif par_index == 3:
+                #     obj_obse_pos = [0.2684858323441205, 0.09149436877842132, 0.7853899450676181]
+                # elif par_index == 4:
+                #     obj_obse_pos = [0.2484858323441205, 0.09149436877842132, 0.7853899450676181]
+                # elif par_index == 5:
+                #     obj_obse_pos = [0.2284858323441205, 0.09149436877842132, 0.7853899450676181]    
+                # elif par_index == 6:
+                #     obj_obse_pos = [0.2084858323441205, 0.09149436877842132, 0.7853899450676181]
 
-                elif par_index == 7:
-                    obj_obse_pos = [0.3184858323441205, 0.09149436877842132, 0.7853899450676181]
-                elif par_index == 8:
-                    obj_obse_pos = [0.3284858323441205, 0.09149436877842132, 0.7853899450676181]
-                elif par_index == 9:
-                    obj_obse_pos = [0.3484858323441205, 0.09149436877842132, 0.7853899450676181]
-                elif par_index == 10:
-                    obj_obse_pos = [0.3684858323441205, 0.09149436877842132, 0.7853899450676181]
-                elif par_index == 11:
-                    obj_obse_pos = [0.3884858323441205, 0.09149436877842132, 0.7853899450676181]
-                elif par_index == 12:
-                    obj_obse_pos = [0.4084858323441205, 0.09149436877842132, 0.7853899450676181]
+                # elif par_index == 7:
+                #     obj_obse_pos = [0.3184858323441205, 0.09149436877842132, 0.7853899450676181]
+                # elif par_index == 8:
+                #     obj_obse_pos = [0.3284858323441205, 0.09149436877842132, 0.7853899450676181]
+                # elif par_index == 9:
+                #     obj_obse_pos = [0.3484858323441205, 0.09149436877842132, 0.7853899450676181]
+                # elif par_index == 10:
+                #     obj_obse_pos = [0.3684858323441205, 0.09149436877842132, 0.7853899450676181]
+                # elif par_index == 11:
+                #     obj_obse_pos = [0.3884858323441205, 0.09149436877842132, 0.7853899450676181]
+                # elif par_index == 12:
+                #     obj_obse_pos = [0.4084858323441205, 0.09149436877842132, 0.7853899450676181]
 
-                elif par_index == 13:
-                    obj_obse_pos = [0.3084858323441205, 0.10149436877842132, 0.7853899450676181]
-                elif par_index == 14:
-                    obj_obse_pos = [0.3084858323441205, 0.11149436877842132, 0.7853899450676181]
-                elif par_index == 15:
-                    obj_obse_pos = [0.3084858323441205, 0.13149436877842132, 0.7853899450676181]
-                elif par_index == 16:
-                    obj_obse_pos = [0.3084858323441205, 0.15149436877842132, 0.7853899450676181]
-                elif par_index == 17:
-                    obj_obse_pos = [0.3084858323441205, 0.17149436877842132, 0.7853899450676181]
-                elif par_index == 18:
-                    obj_obse_pos = [0.3084858323441205, 0.19149436877842132, 0.7853899450676181]
+                # elif par_index == 13:
+                #     obj_obse_pos = [0.3084858323441205, 0.10149436877842132, 0.7853899450676181]
+                # elif par_index == 14:
+                #     obj_obse_pos = [0.3084858323441205, 0.11149436877842132, 0.7853899450676181]
+                # elif par_index == 15:
+                #     obj_obse_pos = [0.3084858323441205, 0.13149436877842132, 0.7853899450676181]
+                # elif par_index == 16:
+                #     obj_obse_pos = [0.3084858323441205, 0.15149436877842132, 0.7853899450676181]
+                # elif par_index == 17:
+                #     obj_obse_pos = [0.3084858323441205, 0.17149436877842132, 0.7853899450676181]
+                # elif par_index == 18:
+                #     obj_obse_pos = [0.3084858323441205, 0.19149436877842132, 0.7853899450676181]
 
-                elif par_index == 19:
-                    obj_obse_pos = [0.3084858323441205, 0.08149436877842132, 0.7853899450676181]
-                elif par_index == 20:
-                    obj_obse_pos = [0.3084858323441205, 0.07149436877842132, 0.7853899450676181]
-                elif par_index == 21:
-                    obj_obse_pos = [0.3084858323441205, 0.05149436877842132, 0.7853899450676181]
-                elif par_index == 22:
-                    obj_obse_pos = [0.3084858323441205, 0.03149436877842132, 0.7853899450676181]
-                elif par_index == 23:
-                    obj_obse_pos = [0.3084858323441205, 0.01149436877842132, 0.7853899450676181]
-                elif par_index == 24:
-                    obj_obse_pos = [0.3084858323441205, -0.008505631221579, 0.7853899450676181]
+                # elif par_index == 19:
+                #     obj_obse_pos = [0.3084858323441205, 0.08149436877842132, 0.7853899450676181]
+                # elif par_index == 20:
+                #     obj_obse_pos = [0.3084858323441205, 0.07149436877842132, 0.7853899450676181]
+                # elif par_index == 21:
+                #     obj_obse_pos = [0.3084858323441205, 0.05149436877842132, 0.7853899450676181]
+                # elif par_index == 22:
+                #     obj_obse_pos = [0.3084858323441205, 0.03149436877842132, 0.7853899450676181]
+                # elif par_index == 23:
+                #     obj_obse_pos = [0.3084858323441205, 0.01149436877842132, 0.7853899450676181]
+                # elif par_index == 24:
+                #     obj_obse_pos = [0.3084858323441205, -0.008505631221579, 0.7853899450676181]
 
                 # ketchup
                 # if par_index == 0:
@@ -444,6 +448,62 @@ class InitialSimulationModel():
                 #     obj_obse_pos = [0.46837179556790687, 0.13121399431455762, 0.7835508265728949]
                 # elif par_index == 24:
                 #     obj_obse_pos = [0.46837179556790687, 0.11121399431455762, 0.7835508265728949]
+
+
+                # cracker
+                # if par_index == 0:
+                #     obj_obse_pos = [0.4681664555306407, 0.21128532879798734, 0.7842224385534314]
+                # elif par_index == 1:
+                #     obj_obse_pos = [0.4581664555306407, 0.21128532879798734, 0.7842224385534314]
+                # elif par_index == 2:
+                #     obj_obse_pos = [0.4481664555306407, 0.21128532879798734, 0.7842224385534314]
+                # elif par_index == 3:
+                #     obj_obse_pos = [0.4281664555306407, 0.21128532879798734, 0.7842224385534314]
+                # elif par_index == 4:
+                #     obj_obse_pos = [0.4081664555306407, 0.21128532879798734, 0.7842224385534314]
+                # elif par_index == 5:
+                #     obj_obse_pos = [0.3881664555306407, 0.21128532879798734, 0.7842224385534314]    
+                # elif par_index == 6:
+                #     obj_obse_pos = [0.3681664555306407, 0.21128532879798734, 0.7842224385534314]
+
+                # elif par_index == 7:
+                #     obj_obse_pos = [0.4781664555306407, 0.21128532879798734, 0.7842224385534314]
+                # elif par_index == 8:
+                #     obj_obse_pos = [0.4881664555306407, 0.21128532879798734, 0.7842224385534314]
+                # elif par_index == 9:
+                #     obj_obse_pos = [0.5081664555306407, 0.21128532879798734, 0.7842224385534314]
+                # elif par_index == 10:
+                #     obj_obse_pos = [0.5281664555306407, 0.21128532879798734, 0.7842224385534314]
+                # elif par_index == 11:
+                #     obj_obse_pos = [0.5481664555306407, 0.21128532879798734, 0.7842224385534314]
+                # elif par_index == 12:
+                #     obj_obse_pos = [0.5681664555306407, 0.21128532879798734, 0.7842224385534314]
+
+                # elif par_index == 13:
+                #     obj_obse_pos = [0.4681664555306407, 0.22128532879798734, 0.7842224385534314]
+                # elif par_index == 14:
+                #     obj_obse_pos = [0.4681664555306407, 0.23128532879798734, 0.7842224385534314]
+                # elif par_index == 15:
+                #     obj_obse_pos = [0.4681664555306407, 0.25128532879798734, 0.7842224385534314]
+                # elif par_index == 16:
+                #     obj_obse_pos = [0.4681664555306407, 0.27128532879798734, 0.7842224385534314]
+                # elif par_index == 17:
+                #     obj_obse_pos = [0.4681664555306407, 0.29128532879798734, 0.7842224385534314]
+                # elif par_index == 18:
+                #     obj_obse_pos = [0.4681664555306407, 0.31128532879798734, 0.7842224385534314]
+
+                # elif par_index == 19:
+                #     obj_obse_pos = [0.4681664555306407, 0.20128532879798734, 0.7842224385534314]
+                # elif par_index == 20:
+                #     obj_obse_pos = [0.4681664555306407, 0.19128532879798734, 0.7842224385534314]
+                # elif par_index == 21:
+                #     obj_obse_pos = [0.4681664555306407, 0.17128532879798734, 0.7842224385534314]
+                # elif par_index == 22:
+                #     obj_obse_pos = [0.4681664555306407, 0.15128532879798734, 0.7842224385534314]
+                # elif par_index == 23:
+                #     obj_obse_pos = [0.4681664555306407, 0.13128532879798734, 0.7842224385534314]
+                # elif par_index == 24:
+                #     obj_obse_pos = [0.4681664555306407, 0.11128532879798734, 0.7842224385534314]
 
 
 

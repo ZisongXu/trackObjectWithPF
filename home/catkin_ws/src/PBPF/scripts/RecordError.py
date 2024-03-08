@@ -111,6 +111,13 @@ if compute_error_flag == True:
 # mark
 def ADDMatrixBtTwoObjects(obj_name, pos1, ori1, pos2, oir2):
     center_T_points_pose_4_4_list = getCenterTPointsList(obj_name)
+
+    # mark
+    # if obj_name == "soup":
+    #     pw_T_parC_ang = list(p.getEulerFromQuaternion(pw_T_parC_ori))
+    #     pw_T_parC_ang[0] = pw_T_parC_ang[0] + 1.5707963
+    #     pw_T_parC_ori = p.getQuaternionFromEuler(pw_T_parC_ang)
+
     pw_T_points_pose_4_4_list_1 = getPwTPointsList(center_T_points_pose_4_4_list, pos1, ori1)
     pw_T_points_pose_4_4_list_2 = getPwTPointsList(center_T_points_pose_4_4_list, pos2, oir2)
     err_distance = computeCorrespondPointDistance(pw_T_points_pose_4_4_list_1, pw_T_points_pose_4_4_list_2)
@@ -133,8 +140,12 @@ def getCenterTPointsList(object_name):
         y_l = 0.032829689025878906
         z_h = 0.099
         r = math.sqrt(2)
-        vector_list = [[0,0,1], [0,0,-1], [2,2,1], [2,-2,1], [-2,2,1], [-2,-2,1], [r,r,1], [r,-r,1], [-r,r,1], [-r,-r,1], [2,2,0.5], [2,-2,0.5], [-2,2,0.5], [-2,-2,0.5], [r,r,0.5], [r,-r,0.5], [-r,r,0.5], [-r,-r,0.5], [2,2,0], [2,-2,0], [-2,2,0], [-2,-2,0], [r,r,0], [r,-r,0], [-r,r,0], [-r,-r,0], [2,2,-0.5], [2,-2,-0.5], [-2,2,-0.5], [-2,-2,-0.5], [r,r,-0.5], [r,-r,-0.5], [-r,r,-0.5], [-r,-r,-0.5], [2,2,-1], [2,-2,-1], [-2,2,-1], [-2,-2,-1], [r,r,-1], [r,-r,-1], [-r,r,-1], [-r,-r,-1]]
-
+        vector_list = [[0,0,1], [0,0,-1],
+                       [r,0,1], [0,r,1], [-r,0,1], [0,-r,1], [r,r,1], [r,-r,1], [-r,r,1], [-r,-r,1],
+                       [r,0,0.5], [0,r,0.5], [-r,0,0.5], [0,-r,0.5], [r,r,0.5], [r,-r,0.5], [-r,r,0.5], [-r,-r,0.5],
+                       [r,0,0], [0,r,0], [-r,0,0], [0,-r,0], [r,r,0], [r,-r,0], [-r,r,0], [-r,-r,0],
+                       [r,0,-0.5], [0,r,-0.5], [-r,0,-0.5], [0,-r,-0.5], [r,r,-0.5], [r,-r,-0.5], [-r,r,-0.5], [-r,-r,-0.5],
+                       [r,0,-1], [0,r,-1], [-r,0,-1], [0,-r,-1], [r,r,-1], [r,-r,-1], [-r,r,-1], [-r,-r,-1]]
     for index in range(len(vector_list)):
         center_T_p_x_new = vector_list[index][0] * x_w/2
         center_T_p_y_new = vector_list[index][1] * y_l/2

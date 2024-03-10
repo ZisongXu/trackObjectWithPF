@@ -183,7 +183,7 @@ class PBPFMove():
         self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs)
         
         # mark
-        self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
+        # self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
 
         self.set_particle_in_each_sim_env()
         
@@ -582,14 +582,14 @@ class PBPFMove():
                     depth_value_difference = self.compareDifferenceBtTwoDepthImgs(self.real_depth_image_transferred, rendered_depth_image_transferred)
                 
             # mark
-            if PRINT_SCORE_FLAG == True:
-                a = 1
-                if DEPTH_DIFF_VALUE_0_1_FLAG == True:
-                    print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; score_that_particle_get: ",depth_value_difference)
-                    print("==================================")
-                else:
-                    print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; depth_value_difference: ",depth_value_difference)
-                    print("==================================")
+            # if PRINT_SCORE_FLAG == True:
+            #     a = 1
+            if DEPTH_DIFF_VALUE_0_1_FLAG == True:
+                print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; score_that_particle_get: ",depth_value_difference)
+                print("==================================")
+            else:
+                print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; depth_value_difference: ",depth_value_difference)
+                print("==================================")
             
             self.depth_value_difference_list[index] = depth_value_difference
 
@@ -792,6 +792,7 @@ class PBPFMove():
             # visible_score<0.95 low, weight high
             if visible_threshold_dope_X_small_list[obj_index]<=visible_score and visible_score<=visible_threshold_dope_X_list[obj_index]: # 0.95
                 weight = visible_weight_dope_X_smaller_than_threshold_list[obj_index] * weight # 0.75/0.6
+                weight = weight * (1 - visible_score) # 0.75/0.6
             # visible_score>0.95 high, weight low
             else: 
                 weight = visible_weight_dope_X_larger_than_threshold_list[obj_index] * weight # 0.25/0.5
@@ -995,12 +996,13 @@ class PBPFMove():
             if USING_D_FLAG == True:
                 # print("weight_depth_img: ",weight_depth_img,"; each_par_weight: ", each_par_weight)
                 each_par_weight = each_par_weight * weight_depth_img_array[index]
-                figure = 5
-                depth_score_r = round(weight_depth_img_array[index], figure)
-                cracker_obs_score_r = round(particle[0].w, figure)
-                soup_obs_score_r = round(particle[1].w, figure)
-                total_score_r = round(each_par_weight, figure)
+
                 if PRINT_SCORE_FLAG == True and OBJECT_NUM == 2:
+                    figure = 5
+                    depth_score_r = round(weight_depth_img_array[index], figure)
+                    cracker_obs_score_r = round(particle[0].w, figure)
+                    soup_obs_score_r = round(particle[1].w, figure)
+                    total_score_r = round(each_par_weight, figure)
                     print("Update_Time: ",_particle_update_time,"; Index:", index, "; depth_score: ",depth_score_r, "; cracker_obs_score: ", cracker_obs_score_r, "; soup_obs_score: ", soup_obs_score_r, "; total_score: ",total_score_r) 
                     print("Cracker Error: ", self.cracker_dis_error[index], self.cracker_ang_error[index], "; Weight: ", self.cracker_weight_before_ray[index], self.cracker_weight__after_ray[index])
                     print("S o u p Error: ", self.soup_dis_error[index], self.soup_ang_error[index], "; Weight: ", self.soup_weight_before_ray[index], self.soup_weight__after_ray[index])
@@ -2123,8 +2125,8 @@ while reset_flag == True:
                 # mark
                 # boss_sigma_obs_ang = 0.0
                 # boss_sigma_obs_pos = 0.0
-                # pos_noise = 0.0
-                # ang_noise = 0.0
+                pos_noise = 0.0
+                ang_noise = 0.0
             else:
                 boss_sigma_obs_ang = 0.0216773873 * 10
                 # boss_sigma_obs_ang = 0.0216773873 * 20
@@ -2136,8 +2138,8 @@ while reset_flag == True:
                 pos_noise = 0.001 * 5.0
                 ang_noise = 0.05 * 3.0
                 # mark
-                # pos_noise = 0.0
-                # ang_noise = 0.0
+                pos_noise = 0.0
+                ang_noise = 0.0
 
         # mark
         mass_mean = 0.380 # 0.380
@@ -2309,7 +2311,7 @@ while reset_flag == True:
                     visible_threshold_dope_X_small_list[obj_index] = 0
                     # visible_threshold_outlier_XS_list[obj_index] = 0.45
                     visible_threshold_outlier_S_list[obj_index] = 0.45
-                    visible_threshold_outlier_L_list[obj_index] = 0.75
+                    visible_threshold_outlier_L_list[obj_index] = 0.6
                     # visible_threshold_outlier_XL_list[obj_index] = 0.6
                     visible_threshold_dope_is_fresh_list[obj_index] = 0.5
                     visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.75
@@ -2328,9 +2330,9 @@ while reset_flag == True:
                     visible_threshold_dope_X_small_list[obj_index] = 0
                     # visible_threshold_outlier_XS_list[obj_index] = 0.3
                     visible_threshold_outlier_S_list[obj_index] = 0.4
-                    visible_threshold_outlier_L_list[obj_index] = 0.75
+                    visible_threshold_outlier_L_list[obj_index] = 0.65
                     # visible_threshold_outlier_XL_list[obj_index] = 0.75
-                    visible_threshold_dope_is_fresh_list[obj_index] = 0.7
+                    visible_threshold_dope_is_fresh_list[obj_index] = 0.6
                     visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.75 # 0.6
                     visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.25 # 0.55
                     visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
@@ -2377,6 +2379,7 @@ while reset_flag == True:
                     # print("latest_obse_time.to_sec():")
                     # print(latest_obse_time.to_sec())
                     # print("difference:", latest_obse_time.to_sec() - old_obse_time)
+                    
                     if (latest_obse_time_list[obj_index].to_sec() > old_obse_time_list[obj_index]):
                         (trans_ob,rot_ob) = _tf_listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
                         global_objects_visual_by_DOPE_list[obj_index] = 0
@@ -2384,12 +2387,12 @@ while reset_flag == True:
                         trans_ob_list[obj_index] = trans_ob
                         rot_ob_list[obj_index] = rot_ob
                         # print(t_after - t_begin - 14)
-                        # print("obse is FRESH")
+                        # print("obse is FRESH:", obj_index)
                     else:
                         # obse has not been updating for a while
                         global_objects_visual_by_DOPE_list[obj_index] = 1
                         global_objects_outlier_by_DOPE_list[obj_index] = 1
-                        # print("obse is NOT fresh")
+                        # print("obse is NOT fresh:", obj_index)
                     old_obse_time_list[obj_index] = latest_obse_time_list[obj_index].to_sec()
                     # break
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
@@ -2550,8 +2553,8 @@ while reset_flag == True:
                     Only_update_robot_flag = False
                     if run_alg_flag == "PBPF":
                         # mark
-                        if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
-                        # if True:
+                        # if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
+                        if True:
                             print("Run ", RUNNING_MODEL)
                             simRobot_touch_par_flag = 1
                             _particle_update_time = _particle_update_time + 1

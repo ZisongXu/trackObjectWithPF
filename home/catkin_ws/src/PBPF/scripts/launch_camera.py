@@ -58,7 +58,7 @@ class LaunchCamera():
         vector_x = camera_orientation @ np.array([1, 0, 0])
         vector_y = camera_orientation @ np.array([0, 1, 0])
         vector_z = camera_orientation @ np.array([0, 0, 1])
-        camera_eye_position = camera_eye_position + 0.0225*vector_z
+        # camera_eye_position = camera_eye_position + 0.022*vector_z
         
         # Calculate camera target position based on its orientation
         camera_target_position = camera_eye_position + vector_z # Assuming Z-axis is the forward direction

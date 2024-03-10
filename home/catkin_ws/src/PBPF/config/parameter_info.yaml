@@ -3,7 +3,7 @@ convolution_size: 0
 debug_depth_img_flag: false
 depth_diff_value_0_1_alpha: 0.8
 depth_diff_value_0_1_flag: true
-depth_diff_value_0_1_threshold: 0.1
+depth_diff_value_0_1_threshold: 0.07
 depth_image_cut_flag: false
 depth_mask_flag: true
 dope_flag: true
@@ -17,7 +17,6 @@ nearVal: 0.3
 object_name_list:
 - cracker
 - soup
-- Ketchup
 object_num: 2
 obstacles_ori:
 - - 1.0
@@ -52,4 +51,3 @@ update_style_flag: time
 use_convolution_flag: false
 version: multiray
 width: 848
-

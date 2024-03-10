@@ -43,11 +43,11 @@ def create_pybullet_world():
     table_ori_1 = pybullet.getQuaternionFromEuler([0,0,0])
     table_id_1 = pybullet.loadURDF("table.urdf", table_pos_1, table_ori_1, useFixedBase = 1)
 
-    barry_pos_1 = [-1.074, 0.443, 0.895]
+    barry_pos_1 = [-0.694, 0.443, 0.895]
     barry_ori_1 = pybullet.getQuaternionFromEuler([0,math.pi/2,0])
     barry_id_1 = pybullet.loadURDF("barrier.urdf", barry_pos_1, barry_ori_1, useFixedBase = 1)
     
-    barry_pos_2 = [-1.074, -0.607, 0.895]
+    barry_pos_2 = [-0.694, -0.607, 0.895]
     barry_ori_2 = pybullet.getQuaternionFromEuler([0,math.pi/2,0])
     barry_id_2 = pybullet.loadURDF("barrier.urdf", barry_pos_2, barry_ori_2, useFixedBase = 1)
     

@@ -225,11 +225,11 @@ if ang_and_pos == "ADD":
         x_xlim = 265 # 28
         y_ylim = 0.5 # 0.5
     if sceneName == "scene2":
-        x_range_max = 6200
-        x_range_unit = 620
+        x_range_max = 6000
+        x_range_unit = 600
         y_range_max = 0.5
         y_range_unit = 0.05
-        x_xlim = 6200
+        x_xlim = 6000
         y_ylim = 0.5
     if sceneName == "scene3":
         # x_range_max = 28

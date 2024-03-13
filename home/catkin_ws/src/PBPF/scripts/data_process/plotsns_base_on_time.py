@@ -269,7 +269,7 @@ if ang_and_pos == "ADD":
     dataset_ADD = pd.read_csv(save_file_path+file_name+'.csv', header=None)
 
     print(dataset_ADD)
-    dataset_ADD.columns=["index","time","ADD Matrix Error (m)","alg","obj_scene","particle_num","ray_type","obj_name"]
+    dataset_ADD.columns=["index","time",object_name+" ADD Matrix Error (m)","alg","obj_scene","particle_num","ray_type","obj_name"]
     print(pd.__version__)
     print(sns.__version__)
     print(matplotlib.__version__)

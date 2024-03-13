@@ -774,18 +774,18 @@ class PBPFMove():
             else:
                 weight = weight
         # mark
-        elif local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==1:
-            # visible_score mid, weight high
-            if visible_threshold_outlier_S_list[obj_index]<=visible_score and visible_score<=visible_threshold_outlier_L_list[obj_index]: # 0.95
-                # weight = visible_weight_dope_X_smaller_than_threshold_list[obj_index] # 0.75/0.6
-                weight = weight * visible_weight_dope_X_smaller_than_threshold_list[obj_index] # 0.75
-                # visible_score > 0.95 high, weight low
-            elif visible_threshold_outlier_L_list[obj_index] < visible_score:
-                # weight = visible_weight_outlier_larger_than_threshold_list[obj_index] # 0.25/0.5
-                weight = weight * (1 - visible_score)
-            else: # visible_score < 
-                # weight = visible_weight_outlier_smaller_than_threshold_list[obj_index] # 0.25/0.5
-                weight = weight * visible_score
+        # elif local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==1:
+        #     # visible_score mid, weight high
+        #     if visible_threshold_outlier_S_list[obj_index]<=visible_score and visible_score<=visible_threshold_outlier_L_list[obj_index]: # 0.95
+        #         # weight = visible_weight_dope_X_smaller_than_threshold_list[obj_index] # 0.75/0.6
+        #         weight = weight * visible_weight_dope_X_smaller_than_threshold_list[obj_index] # 0.75
+        #         # visible_score > 0.95 high, weight low
+        #     elif visible_threshold_outlier_L_list[obj_index] < visible_score:
+        #         # weight = visible_weight_outlier_larger_than_threshold_list[obj_index] # 0.25/0.5
+        #         weight = weight * (1 - visible_score)
+        #     else: # visible_score < 
+        #         # weight = visible_weight_outlier_smaller_than_threshold_list[obj_index] # 0.25/0.5
+        #         weight = weight * visible_score
         
         # elif local_obj_visual_by_DOPE_val==1 and local_obj_outlier_by_DOPE_val==1:
         else:

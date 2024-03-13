@@ -100,6 +100,8 @@ class PBPFMove():
         self.rendered_depth_images_list = [1] * PARTICLE_NUM
         self.rendered_depth_image_transferred_list = [1] * PARTICLE_NUM
 
+        self.mask_position_from_segImg_list = [1] * PARTICLE_NUM
+
         self.cracker_dis_error = [1] * PARTICLE_NUM
         self.cracker_ang_error = [1] * PARTICLE_NUM
         self.cracker_weight_before_ray = [1] * PARTICLE_NUM
@@ -109,6 +111,10 @@ class PBPFMove():
         self.soup_weight_before_ray = [1] * PARTICLE_NUM
         self.soup_weight__after_ray = [1] * PARTICLE_NUM
         
+        self.x_min = 0
+        self.x_max = 1
+        self.y_min = 0
+        self.y_max = 1
 
         self.bridge = CvBridge()
 
@@ -158,15 +164,6 @@ class PBPFMove():
         self.times = []
         t1 = time.time()
 
-        if USING_D_FLAG == True:
-            depth_image_real = ros_listener.depth_image # persp
-            self.real_depth_image_transferred = self.depthImageRealTransfer(depth_image_real) # persp
-            if DEPTH_MASK_FLAG == True:
-                self.real_depth_image_transferred_jax = jnp.array(self.real_depth_image_transferred) # persp
-                if PERSP_TO_ORTHO_FLAG == True:
-                    # mark
-                    print("Begin to change from persp to ortho")
-                    self.real_depth_image_transferred_jax = _persp_to_ortho(self.real_depth_image_transferred_jax, FOV_Y, RESOLUTION)
         print("-------------------------------------")
         print("global_objects_visual_by_DOPE_list: -")
         print(global_objects_visual_by_DOPE_list)
@@ -175,14 +172,16 @@ class PBPFMove():
         print("-------------------------------------")
 
         # motion model
-        self.motion_update_PB_parallelised(pybullet_sim_envs, fake_robot_id, real_robot_joint_pos)
+        self.motion_model(pybullet_sim_envs, fake_robot_id, real_robot_joint_pos)
         t2 = time.time()
         self.times.append(t2-t1)
 
-        # observation model
-        self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs)
+        # OBSERVATION MODEL:
+        self.observation_model(pw_T_obj_obse_objects_pose_list, pybullet_sim_envs)
+        
         
         # mark
+        # resample
         # self.resample_particles_update(pw_T_obj_obse_objects_pose_list)
 
         self.set_particle_in_each_sim_env()
@@ -198,8 +197,11 @@ class PBPFMove():
                 self.pybullet_env_id_collection[index].removeAllUserDebugItems()
         
         return object_estimate_pose, dis_std_list, ang_std_list, self.particle_cloud
-    
+
     # motion model
+    def motion_model(self, pybullet_sim_envs, fake_robot_id, real_robot_joint_pos):  
+        self.motion_update_PB_parallelised(pybullet_sim_envs, fake_robot_id, real_robot_joint_pos)
+
     def motion_update_PB_parallelised(self, pybullet_sim_envs, fake_robot_id, real_robot_joint_pos):
         global simRobot_touch_par_flag
         threads = []
@@ -275,19 +277,173 @@ class PBPFMove():
             
             self.update_partcile_cloud_pose_PB(index, obj_index, normal_x, normal_y, normal_z, P_quat, linearVelocity, angularVelocity)
         pybullet_env.stepSimulation()
-        
-        
         # pipe.send()
 
-    def plot(self, depth_image):
-        # fig, axs = plt.subplots(1,3)
-        # axs[0].imshow(depth_image, cmap="gray")
-        # axs[0].set_title('Depth image')
-        # plt.plot(label='ax2')
-        # plt.show()
-        # print("I am here")
-        plt.imshow(depth_image, cmap="gray")
-        plt.savefig('test.png')
+    # observation model
+    def observation_model(self, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs):
+        # observation model (DEPTH)
+        if USING_D_FLAG == True:
+            # get real depth image
+            self.get_real_depth_image()
+
+            # get rendered depth/seg image
+            self.get_rendered_depth_image_parallelised(self.particle_cloud)
+
+            flat_mask_position_list_jax = jnp.vstack(self.mask_position_from_segImg_list)
+            # mask_position_from_segImg_list_jax = jnp.array(self.mask_position_from_segImg_list) # jax
+            # # get x_min, x_mad, y_min, y_max
+            # # flat_mask_position_list = [item for sublist in self.mask_position_from_segImg_list for item in sublist] # list
+            # flat_mask_position_list_jax = mask_position_from_segImg_list_jax.ravel() # jax
+            self.x_min, self.x_max, self.y_min, self.y_max = self.get_bounding_box(flat_mask_position_list_jax)
+
+            # compare depth image
+            self.compare_depth_image_parallelised(self.particle_cloud)
+
+        # observation model (RGB)
+        if USING_RGB_FLAG == True:
+            self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list)
+
+    def get_real_depth_image(self):
+        depth_image_real = ROS_LISTENER.depth_image # persp
+        self.real_depth_image_transferred = self.depthImageRealTransfer(depth_image_real) # persp
+        if DEPTH_MASK_FLAG == True:
+            self.real_depth_image_transferred_jax = jnp.array(self.real_depth_image_transferred) # persp
+            if PERSP_TO_ORTHO_FLAG == True:
+                # mark
+                print("Begin to change from persp to ortho")
+                self.real_depth_image_transferred_jax = _persp_to_ortho(self.real_depth_image_transferred_jax, FOV_Y, RESOLUTION)
+
+    # get rendered depth/seg image model 
+    def get_rendered_depth_image_parallelised(self, particle_cloud):
+        threads_obs = []
+        for index, particle in enumerate(particle_cloud):
+            thread_obs = threading.Thread(target=self.get_rendered_depth_image, args=(index, particle))
+            thread_obs.start()
+            threads_obs.append(thread_obs)
+        for thread_obs in threads_obs:
+            thread_obs.join()
+
+    # get rendered depth/seg image model
+    def get_rendered_depth_image(self, index, particle):
+        pybullet_env = self.pybullet_env_id_collection[index]
+        pybullet_env.stepSimulation()
+
+        # generate rendered depth/seg image in Pybullet
+        width, height, rgbImg, depth_image_render, segImg, nearVal, farVal = _launch_camera.setCameraPicAndGetPic(pybullet_env, _tf_listener, _pw_T_rob_sim_4_4)
+
+        # get target objects ID
+        mask_position_from_segImg = self.get_target_objects_ID_from_segImg(particle, segImg) # jax
+        self.mask_position_from_segImg_list[index] = mask_position_from_segImg # list
+        self.rendered_depth_images_list[index] = depth_image_render # array/list
+
+    # get target objects ID
+    def get_target_objects_ID_from_segImg(self, particle, segImg):
+        obj_id_array = jnp.array([0] * OBJECT_NUM)
+        for obj_index in range(self.obj_num):
+            obj_id = particle[obj_index].no_visual_par_id
+            obj_id_array = obj_id_array.at[obj_index].set(obj_id)
+        segImg_ID_array = segImg & ((1 << 24) - 1)
+        mask_position_from_segImg = self.findPositions(segImg_ID_array, obj_id_array) # jax
+        return mask_position_from_segImg
+
+    # get bounding box
+    def get_bounding_box(self, flat_arr):
+        x_min = flat_arr[:, 0].min()
+        x_max = flat_arr[:, 0].max()
+        y_min = flat_arr[:, 1].min()
+        y_max = flat_arr[:, 1].max()
+        return x_min, x_max, y_min, y_max
+
+    # compare depth image
+    def compare_depth_image_parallelised(self, particle_cloud):
+        threads_obs = []
+        for index, particle in enumerate(particle_cloud):
+            thread_obs = threading.Thread(target=self.compare_depth_image, args=(index, particle))
+            thread_obs.start()
+            threads_obs.append(thread_obs)
+        for thread_obs in threads_obs:
+            thread_obs.join()
+
+    # compare depth image
+    def compare_depth_image(self, index, particle):
+        if USING_D_FLAG == True:
+            
+            depth_image_render = copy.deepcopy(self.rendered_depth_images_list[index]) # array/list
+            rendered_depth_image_transferred = self.renderedDepthImageValueBufferTransfer(depth_image_render) # array/list
+            
+
+            # mark
+            # show depth image
+            if DEBUG_DEPTH_IMG_FLAG == True:
+                if COMBINE_PARTICLE_DEPTH_MASK_FLAG == True:
+                    real_depth_img_name = str(_particle_update_time) + "_real_depth_img_"+str(index)+".png"
+                    # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
+                    imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, self.real_depth_image_transferred[self.x_min:self.x_max+1, self.y_min:self.y_max+1], cmap='gray')
+
+                    rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
+                    imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred[self.x_min:self.x_max+1, self.y_min:self.y_max+1], cmap='gray')
+
+                    # rendered_seg_img_name = str(_particle_update_time)+"_rendered_seg_img_"+str(index)+".png"
+                    # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_seg_img_name, segImg)
+                else:
+                    real_depth_img_name = str(_particle_update_time) + "_real_depth_img_"+str(index)+".png"
+                    # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
+                    imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, self.real_depth_image_transferred[self.x_min:self.x_max+1, self.y_min:self.y_max+1], cmap='gray')
+
+                    rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
+                    imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred[self.x_min:self.x_max+1, self.y_min:self.y_max+1], cmap='gray')
+
+                    # rendered_seg_img_name = str(_particle_update_time)+"_rendered_seg_img_"+str(index)+".png"
+                    # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_seg_img_name, segImg)
+
+            if USE_CONVOLUTION_FLAG == True:
+                depth_value_difference = self.compute_difference_bt_2_depthImg_convolution(real_depth_image_transferred, rendered_depth_image_transferred)
+            else:
+                # use mask  
+                if DEPTH_MASK_FLAG == True:
+                    rendered_depth_image_transferred_jax = jnp.array(rendered_depth_image_transferred) # jax
+                    
+                    if ORTHO_TO_PERSP_FLAG == True:
+                        # mark
+                        rendered_depth_image_transferred_jax = _ortho_to_persp(rendered_depth_image_transferred_jax, FOV_Y, RESOLUTION)
+
+                    if COMBINE_PARTICLE_DEPTH_MASK_FLAG == True:
+                        real_depth_image_mask_values = self.real_depth_image_transferred_jax[self.x_min:self.x_max+1, self.y_min:self.y_max+1] # jax 
+                        real_depth_image_mask_values = real_depth_image_mask_values.ravel() # jax
+                        rendered_depth_image_mask_values = rendered_depth_image_transferred_jax[self.x_min:self.x_max+1, self.y_min:self.y_max+1] # jax
+                        rendered_depth_image_mask_values = rendered_depth_image_mask_values.ravel() # jax
+                    else:
+                        real_depth_image_mask_values = _extractValues(self.real_depth_image_transferred_jax, mask_position_from_segImg)
+                        rendered_depth_image_mask_values = _extractValues(rendered_depth_image_transferred_jax, mask_position_from_segImg)
+                    
+                    number_of_pixels = len(rendered_depth_image_mask_values)
+                    # mark
+                    if DEPTH_DIFF_VALUE_0_1_FLAG == True:
+                        depth_value_diff_sub_abs_jax = jnp.abs(real_depth_image_mask_values - rendered_depth_image_mask_values)
+                        depth_value_diff_sub_abs_0_1_jax, num_zeros = _threshold_array_optimized(depth_value_diff_sub_abs_jax)
+                        e_VSD_o = jnp.sum(depth_value_diff_sub_abs_0_1_jax) / number_of_pixels
+                        score = DEPTH_DIFF_VALUE_0_1_ALPHA * (1-e_VSD_o) + (1-DEPTH_DIFF_VALUE_0_1_ALPHA) * num_zeros/number_of_pixels
+                        depth_value_difference_jax = score # score_that_particle_get: high->high weight; low->low weight
+                    else:
+                        depth_value_difference_jax = jnp.linalg.norm(real_depth_image_mask_values - rendered_depth_image_mask_values)
+                        depth_value_difference_jax = depth_value_difference_jax / (math.sqrt(number_of_pixels))
+
+                    depth_value_difference = float(depth_value_difference_jax.item())
+
+                else:
+                    depth_value_difference = self.compareDifferenceBtTwoDepthImgs(self.real_depth_image_transferred, rendered_depth_image_transferred)
+                
+            # mark
+            # if PRINT_SCORE_FLAG == True:
+            #     a = 1
+            if DEPTH_DIFF_VALUE_0_1_FLAG == True:
+                print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; score_that_particle_get: ",depth_value_difference)
+                print("==================================")
+            else:
+                print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; depth_value_difference: ",depth_value_difference)
+                print("==================================")
+            
+            self.depth_value_difference_list[index] = depth_value_difference
 
     def cutImage(self, image, up=0, down=0, left=0, right=0):
         image_cutted = image[up:HEIGHT-down, left:WIDTH-right]
@@ -340,7 +496,6 @@ class PBPFMove():
         compare_root_list_array_square_sum_root = math.sqrt(compare_root_list_array_square_sum)
         return compare_root_list_array_square_sum_root
 
-
     def compareDifferenceBtTwoDepthImgs(self, real_depth_image_transferred, rendered_depth_image_transferred):
         depth_value_diff_subtraction = self.subtractionTwoDepthImgs(real_depth_image_transferred, rendered_depth_image_transferred)
         depth_value_diff_subtraction_square_root = self.depthValueDifferenceSquareRoot(depth_value_diff_subtraction)
@@ -376,10 +531,9 @@ class PBPFMove():
         else:
             return x
 
-    def renderedDepthImageValueBufferTransfer(self, depth_image_render, nearVal, farVal):
-        pybullet_depth_image_value_transferred = farVal * nearVal / (farVal - (farVal - nearVal) * depth_image_render)
+    def renderedDepthImageValueBufferTransfer(self, depth_image_render):
+        pybullet_depth_image_value_transferred = FARVAL * NEARVAL / (FARVAL - (FARVAL - NEARVAL) * depth_image_render)
         return pybullet_depth_image_value_transferred
-
 
     # judge if any particles are contact
     def isAnyParticleInContact(self):
@@ -403,197 +557,108 @@ class PBPFMove():
         return False
     
     # observation model:
-    def observation_update_PB_parallelised(self, particle_cloud, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs):
+    def observation_update_PB_parallelised(self, particle_cloud, pw_T_obj_obse_objects_pose_list):
         threads_obs = []
         for index, particle in enumerate(particle_cloud):
-            thread_obs = threading.Thread(target=self.observation_update_PB, args=(index, particle, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs))
+            thread_obs = threading.Thread(target=self.observation_update_PB, args=(index, particle, pw_T_obj_obse_objects_pose_list))
             thread_obs.start()
             threads_obs.append(thread_obs)
         for thread_obs in threads_obs:
             thread_obs.join()
     
     # observation model
-    def observation_update_PB(self, index, particle, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs):
+    def observation_update_PB(self, index, particle, pw_T_obj_obse_objects_pose_list):
 
         pybullet_env = self.pybullet_env_id_collection[index]
         weight =  1.0 / PARTICLE_NUM
         for obj_index in range(self.obj_num):
             particle[obj_index].w = weight
 
-        if USING_RGB_FLAG == True:
-            if (sum(global_objects_visual_by_DOPE_list)<OBJECT_NUM) and (sum(global_objects_outlier_by_DOPE_list)<OBJECT_NUM):       
-                for obj_index in range(self.obj_num):
-                    local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
-                    local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
-                    particle_x = particle[obj_index].pos[0]
-                    particle_y = particle[obj_index].pos[1]
-                    particle_z = particle[obj_index].pos[2]
-                    par_ori = quaternion_correction(particle[obj_index].ori)
-                    # 0 means DOPE detects the object[obj_index]
-                    # 1 means DOPE does not detect the object[obj_index] and skip this loop
-                    if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0: 
-                        obse_obj_pos = pw_T_obj_obse_objects_pose_list[obj_index].pos
-                        obse_obj_ori = pw_T_obj_obse_objects_pose_list[obj_index].ori # pybullet x,y,z,w
-                        # make sure theta between -pi and pi
-                        obse_obj_ori_corr = quaternion_correction(obse_obj_ori)
-                
-                        mean = 0
-                        # position weight
-                        dis_x = abs(particle_x - obse_obj_pos[0])
-                        dis_y = abs(particle_y - obse_obj_pos[1])
-                        dis_z = abs(particle_z - obse_obj_pos[2])
-                        dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
-                        weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
-                        # rotation weight
-                        obse_obj_quat = Quaternion(x=obse_obj_ori_corr[0], 
-                                                y=obse_obj_ori_corr[1], 
-                                                z=obse_obj_ori_corr[2], 
-                                                w=obse_obj_ori_corr[3]) # Quaternion(): w,x,y,z
-                        par_quat = Quaternion(x=par_ori[0], y=par_ori[1], z=par_ori[2], w=par_ori[3])
-                        err_bt_par_obse = par_quat * obse_obj_quat.inverse
-                        err_bt_par_obse_corr = quaternion_correction([err_bt_par_obse.x, err_bt_par_obse.y, err_bt_par_obse.z, err_bt_par_obse.w])
-                        err_bt_par_obse_corr_quat = Quaternion(x=err_bt_par_obse_corr[0], 
-                                                            y=err_bt_par_obse_corr[1], 
-                                                            z=err_bt_par_obse_corr[2], 
-                                                            w=err_bt_par_obse_corr[3])
-                        cos_theta_over_2 = err_bt_par_obse_corr_quat.w
-                        sin_theta_over_2 = math.sqrt(err_bt_par_obse_corr_quat.x ** 2 + err_bt_par_obse_corr_quat.y ** 2 + err_bt_par_obse_corr_quat.z ** 2)
-                        theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
-                        theta = theta_over_2 * 2.0
-                        weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
-                        
-                        weight = weight_xyz * weight_ang
-                        
-                        if PRINT_SCORE_FLAG == True and OBJECT_NUM == 2:
-                            if obj_index == 0:
-                                self.cracker_dis_error[index] = dis_xyz
-                                self.cracker_ang_error[index] = theta
-                                self.cracker_weight_before_ray[index] = weight
-                            elif obj_index == 1:
-                                self.soup_dis_error[index] = dis_xyz
-                                self.soup_ang_error[index] = theta
-                                self.soup_weight_before_ray[index] = weight
-                                
-                    if VERSION == "multiray":
-                        par_pos_ = copy.deepcopy([particle_x, particle_y, particle_z])
-                        par_ori_ = copy.deepcopy(par_ori)
-                        weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
-                        if obj_index == 0:
-                            self.cracker_weight__after_ray[index] = weight
-                        elif obj_index == 1:
-                            self.soup_weight__after_ray[index] = weight
-                    elif VERSION == "ray":
-                        par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
-                        weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
-                    particle[obj_index].w = weight
-                    # print("; Error:", self.cracker_par_error)
-                    # print("; Error:", self.soup_par_error)  
-            else:
-                if self.DOPE_rep_flag == 0:
-                    print("DOPE x")
-                    self.DOPE_rep_flag = self.DOPE_rep_flag + 1
-                for obj_index in range(self.obj_num):
-                    local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
-                    local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
-                    particle_x = particle[obj_index].pos[0]
-                    particle_y = particle[obj_index].pos[1]
-                    particle_z = particle[obj_index].pos[2]
-                    par_ori = quaternion_correction(particle[obj_index].ori)
-                    if VERSION == "multiray":
-                        # need to change
-                        par_pos_ = copy.deepcopy([particle_x, particle_y, particle_z])
-                        par_ori_ = copy.deepcopy(par_ori)
-                        weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
-                    elif VERSION == "ray":
-                        par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
-                        weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
-                    particle[obj_index].w = weight
-            
-        if USING_D_FLAG == True:
-            # depth_image_real = ros_listener.depth_image
-            pybullet_env.stepSimulation()
-            obj_id_array = jnp.array([0] * self.obj_num)
-            # object_id_array = jnp.array([2, 4, 89])
-
-            width, height, rgbImg, depth_image_render, segImg, nearVal, farVal = _launch_camera.setCameraPicAndGetPic(pybullet_env, _tf_listener, _pw_T_rob_sim_4_4)
-            
+        if (sum(global_objects_visual_by_DOPE_list)<OBJECT_NUM) and (sum(global_objects_outlier_by_DOPE_list)<OBJECT_NUM):       
             for obj_index in range(self.obj_num):
-                obj_id = particle[obj_index].no_visual_par_id
-                obj_id_array = obj_id_array.at[obj_index].set(obj_id)
-
-            segImg_ID_array = segImg & ((1 << 24) - 1)
-            mask_position_from_segImg = self.findPositions(segImg_ID_array, obj_id_array)
+                local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
+                local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
+                particle_x = particle[obj_index].pos[0]
+                particle_y = particle[obj_index].pos[1]
+                particle_z = particle[obj_index].pos[2]
+                par_ori = quaternion_correction(particle[obj_index].ori)
+                # 0 means DOPE detects the object[obj_index]
+                # 1 means DOPE does not detect the object[obj_index] and skip this loop
+                if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0: 
+                    obse_obj_pos = pw_T_obj_obse_objects_pose_list[obj_index].pos
+                    obse_obj_ori = pw_T_obj_obse_objects_pose_list[obj_index].ori # pybullet x,y,z,w
+                    # make sure theta between -pi and pi
+                    obse_obj_ori_corr = quaternion_correction(obse_obj_ori)
             
-            # not use for now (cut image)
-            # if DEPTH_IMAGE_CUT_FLAG == True:
-            #     depth_image_render = self.cutImage(depth_image_render, up=226, down=164, left=400, right=299) # up, down, left, right
-            
-            # not use for now (save image)
-            # self.rendered_depth_images_list[index] = depth_image_render
-
-            rendered_depth_image_transferred = self.renderedDepthImageValueBufferTransfer(depth_image_render, nearVal, farVal)
-            
-            # not use for now
-            # self.rendered_depth_image_transferred_list[index] = rendered_depth_image_transferred
-
-
-            # mark
-            if DEBUG_DEPTH_IMG_FLAG == True:
-                real_depth_img_name = str(_particle_update_time) + "_real_depth_img_"+str(index)+".png"
-                # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
-                imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, self.real_depth_image_transferred, cmap='gray')
-
-                rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
-                imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred, cmap='gray')
-
-                # rendered_seg_img_name = str(_particle_update_time)+"_rendered_seg_img_"+str(index)+".png"
-                # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_seg_img_name, segImg)
-
-            
-            if USE_CONVOLUTION_FLAG == True:
-                depth_value_difference = self.compute_difference_bt_2_depthImg_convolution(real_depth_image_transferred, rendered_depth_image_transferred)
-            else:
-                if DEPTH_MASK_FLAG == True:
-                    rendered_depth_image_transferred_jax = jnp.array(rendered_depth_image_transferred)
+                    mean = 0
+                    # position weight
+                    dis_x = abs(particle_x - obse_obj_pos[0])
+                    dis_y = abs(particle_y - obse_obj_pos[1])
+                    dis_z = abs(particle_z - obse_obj_pos[2])
+                    dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
+                    weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
+                    # rotation weight
+                    obse_obj_quat = Quaternion(x=obse_obj_ori_corr[0], 
+                                            y=obse_obj_ori_corr[1], 
+                                            z=obse_obj_ori_corr[2], 
+                                            w=obse_obj_ori_corr[3]) # Quaternion(): w,x,y,z
+                    par_quat = Quaternion(x=par_ori[0], y=par_ori[1], z=par_ori[2], w=par_ori[3])
+                    err_bt_par_obse = par_quat * obse_obj_quat.inverse
+                    err_bt_par_obse_corr = quaternion_correction([err_bt_par_obse.x, err_bt_par_obse.y, err_bt_par_obse.z, err_bt_par_obse.w])
+                    err_bt_par_obse_corr_quat = Quaternion(x=err_bt_par_obse_corr[0], 
+                                                        y=err_bt_par_obse_corr[1], 
+                                                        z=err_bt_par_obse_corr[2], 
+                                                        w=err_bt_par_obse_corr[3])
+                    cos_theta_over_2 = err_bt_par_obse_corr_quat.w
+                    sin_theta_over_2 = math.sqrt(err_bt_par_obse_corr_quat.x ** 2 + err_bt_par_obse_corr_quat.y ** 2 + err_bt_par_obse_corr_quat.z ** 2)
+                    theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
+                    theta = theta_over_2 * 2.0
+                    weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
                     
-                    if ORTHO_TO_PERSP_FLAG == True:
-                        # mark
-                        print("Begin to change from ortho to persp")
-                        rendered_depth_image_transferred_jax = _ortho_to_persp(rendered_depth_image_transferred_jax, FOV_Y, RESOLUTION)
-
-                    real_depth_image_mask_values = _extractValues(self.real_depth_image_transferred_jax, mask_position_from_segImg)
-                    rendered_depth_image_mask_values = _extractValues(rendered_depth_image_transferred_jax, mask_position_from_segImg)
+                    weight = weight_xyz * weight_ang
                     
-                    number_of_pixels = len(rendered_depth_image_mask_values)
-                    # mark
-                    if DEPTH_DIFF_VALUE_0_1_FLAG == True:
-                        depth_value_diff_sub_abs_jax = jnp.abs(real_depth_image_mask_values - rendered_depth_image_mask_values)
-                        depth_value_diff_sub_abs_0_1_jax, num_zeros = _threshold_array_optimized(depth_value_diff_sub_abs_jax)
-                        e_VSD_o = jnp.sum(depth_value_diff_sub_abs_0_1_jax) / number_of_pixels
-                        score = DEPTH_DIFF_VALUE_0_1_ALPHA * (1-e_VSD_o) + (1-DEPTH_DIFF_VALUE_0_1_ALPHA) * num_zeros/number_of_pixels
-                        depth_value_difference_jax = score # score_that_particle_get: high->high weight; low->low weight
-                    else:
-                        depth_value_difference_jax = jnp.linalg.norm(real_depth_image_mask_values - rendered_depth_image_mask_values)
-                        depth_value_difference_jax = depth_value_difference_jax / (math.sqrt(number_of_pixels))
-
-                    depth_value_difference = float(depth_value_difference_jax.item())
-
-                else:
-                    depth_value_difference = self.compareDifferenceBtTwoDepthImgs(self.real_depth_image_transferred, rendered_depth_image_transferred)
-                
-            # mark
-            # if PRINT_SCORE_FLAG == True:
-            #     a = 1
-            if DEPTH_DIFF_VALUE_0_1_FLAG == True:
-                print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; score_that_particle_get: ",depth_value_difference)
-                print("==================================")
-            else:
-                print("_particle_update_time: ",_particle_update_time,"; Index:", index, "; depth_value_difference: ",depth_value_difference)
-                print("==================================")
+                    if PRINT_SCORE_FLAG == True and OBJECT_NUM == 2:
+                        if obj_index == 0:
+                            self.cracker_dis_error[index] = dis_xyz
+                            self.cracker_ang_error[index] = theta
+                            self.cracker_weight_before_ray[index] = weight
+                        elif obj_index == 1:
+                            self.soup_dis_error[index] = dis_xyz
+                            self.soup_ang_error[index] = theta
+                            self.soup_weight_before_ray[index] = weight
+                            
+                if VERSION == "multiray":
+                    par_pos_ = copy.deepcopy([particle_x, particle_y, particle_z])
+                    par_ori_ = copy.deepcopy(par_ori)
+                    weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
+                elif VERSION == "ray":
+                    par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
+                    weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
+                particle[obj_index].w = weight
+                # print("; Error:", self.cracker_par_error)
+                # print("; Error:", self.soup_par_error)  
+        else:
+            if self.DOPE_rep_flag == 0:
+                print("DOPE x")
+                self.DOPE_rep_flag = self.DOPE_rep_flag + 1
+            for obj_index in range(self.obj_num):
+                local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
+                local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
+                particle_x = particle[obj_index].pos[0]
+                particle_y = particle[obj_index].pos[1]
+                particle_z = particle[obj_index].pos[2]
+                par_ori = quaternion_correction(particle[obj_index].ori)
+                if VERSION == "multiray":
+                    # need to change
+                    par_pos_ = copy.deepcopy([particle_x, particle_y, particle_z])
+                    par_ori_ = copy.deepcopy(par_ori)
+                    weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
+                elif VERSION == "ray":
+                    par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
+                    weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
+                particle[obj_index].w = weight
             
-            self.depth_value_difference_list[index] = depth_value_difference
-
-
+    
     def findPositions(self, matrix, targets):
         match_positions = matrix == targets[:, None, None]
         all_positions = jnp.argwhere(match_positions)
@@ -746,7 +811,7 @@ class PBPFMove():
         list_length = len(point_pos_list)
         for point_index in range(list_length):
             camera_pos_list.append(pw_T_cam_tf_pos)
-        # pybullet_sim_envs[index]
+            
         rayTestBatch_info = pybullet_env.rayTestBatch(rayFromPositions=camera_pos_list, rayToPositions=point_pos_list)
         # rayTestBatch_info = pybullet_env.rayTestBatch(rayFromPositions=camera_pos_list, rayToPositions=point_pos_list, reportHitNumber=True)
         if SHOW_RAY == True:
@@ -2030,6 +2095,9 @@ while reset_flag == True:
         WIDTH = parameter_info['width'] # 1280/848
         HEIGHT = parameter_info['height'] # 720/480
         FOV_Y = parameter_info['fov_y'] # 57.86
+        NEARVAL = parameter_info['nearVal'] # 57.86
+        FARVAL = parameter_info['farVal'] # 57.86
+
         RESOLUTION = (HEIGHT, WIDTH)
         DEPTH_IMAGE_CUT_FLAG = parameter_info['depth_image_cut_flag'] 
         PERSP_TO_ORTHO_FLAG = parameter_info['persp_to_ortho_flag'] 
@@ -2038,6 +2106,7 @@ while reset_flag == True:
         DEPTH_DIFF_VALUE_0_1_THRESHOLD = parameter_info['depth_diff_value_0_1_threshold'] 
         DEPTH_DIFF_VALUE_0_1_ALPHA = parameter_info['depth_diff_value_0_1_alpha'] 
         DEPTH_MASK_FLAG = parameter_info['depth_mask_flag'] 
+        COMBINE_PARTICLE_DEPTH_MASK_FLAG = parameter_info['combine_particle_depth_mask_flag'] 
 
         PRINT_SCORE_FLAG = parameter_info['print_score_flag'] 
         SHOW_RAY = parameter_info['show_ray']
@@ -2169,7 +2238,7 @@ while reset_flag == True:
         dis_std_list = [d_thresh_obse]
         ang_std_list = [a_thresh_obse]
         # build an object of class "Ros_Listener"
-        ros_listener = Ros_Listener()
+        ROS_LISTENER = Ros_Listener()
         create_scene = Create_Scene(OBJECT_NUM, ROBOT_NUM, other_obj_num)
         _launch_camera = LaunchCamera(WIDTH, HEIGHT)
         _tf_listener = tf.TransformListener()
@@ -2245,7 +2314,7 @@ while reset_flag == True:
         
         # get pose of the end-effector of the robot arm from joints of robot arm 
         p_sim, sim_rob_id, sim_plane_id = track_fk_sim_world()
-        track_fk_world_rob_mv(p_sim, sim_rob_id, ros_listener.current_joint_values)
+        track_fk_world_rob_mv(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
 
         rob_link_9_pose_old = p_sim.getLinkState(sim_rob_id, 9) # position = rob_link_9_pose_old[0], quaternion = rob_link_9_pose_old[1]
         # rob_T_obj_obse_pos_old = list(trans_ob)
@@ -2256,7 +2325,7 @@ while reset_flag == True:
         PBPF_alg = PBPFMove(OBJECT_NUM) # PF_alg
         CVPF_alg = CVPFMove(OBJECT_NUM) 
         # while True:
-        #     print(ros_listener.detection_flag)
+        #     print(ROS_LISTENER.detection_flag)
         t_begin = time.time()
 
         latest_obse_time_list = [0] * OBJECT_NUM
@@ -2296,7 +2365,7 @@ while reset_flag == True:
 
             #panda robot moves in the visualization window
             temp_pw_T_obj_obse_objs_list = []
-            track_fk_world_rob_mv(p_sim, sim_rob_id, ros_listener.current_joint_values)
+            track_fk_world_rob_mv(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
             for obj_index in range(OBJECT_NUM):
                 
 
@@ -2510,7 +2579,7 @@ while reset_flag == True:
                             flag_update_num_PB = flag_update_num_PB + 1
                             pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                             # execute PBPF algorithm movement
-                            estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = PBPF_alg.update_particle_filter_PB(ros_listener.current_joint_values, # joints of robot arm
+                            estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = PBPF_alg.update_particle_filter_PB(ROS_LISTENER.current_joint_values, # joints of robot arm
                                                                                     pw_T_obj_obse_objects_pose_list) # flag for judging obse work
                             rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
 
@@ -2522,13 +2591,13 @@ while reset_flag == True:
                             simRobot_touch_par_flag = 0
                         else:
                             # also update the pose of the robot arm in the simulation when particles are not touched
-                            PBPF_alg.motion_update_PB_parallelised(initial_parameter.pybullet_particle_env_collection,
+                            PBPF_alg.motion_model(initial_parameter.pybullet_particle_env_collection,
                                                                 initial_parameter.fake_robot_id_collection,
-                                                                ros_listener.current_joint_values)
+                                                                ROS_LISTENER.current_joint_values)
     #                else:
-    #                    PBPF_alg.motion_update_PB_parallelised(initial_parameter.pybullet_particle_env_collection,
+    #                    PBPF_alg.motion_model(initial_parameter.pybullet_particle_env_collection,
     #                                                             initial_parameter.fake_robot_id_collection,
-    #                                                             ros_listener.current_joint_values)
+    #                                                             ROS_LISTENER.current_joint_values)
                 # CVPF algorithm
                 if run_alg_flag == "CVPF":
                     # if (dis_betw_cur_and_old_CV > d_thresh_CV) or (ang_betw_cur_and_old_CV > a_thresh_CV) or (dis_robcur_robold_CV > d_thresh_CV):
@@ -2541,9 +2610,9 @@ while reset_flag == True:
                             estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list) # flag for judging obse work
                             rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
                         else:
-                            CVPF_alg.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm
+                            CVPF_alg.robot_arm_move_CV(ROS_LISTENER.current_joint_values) # joints of robot arm
     #                else:
-    #                    CVPF_alg.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm
+    #                    CVPF_alg.robot_arm_move_CV(ROS_LISTENER.current_joint_values) # joints of robot arm
                         
             # update according to the time
             elif update_style_flag == "time":
@@ -2562,7 +2631,7 @@ while reset_flag == True:
                             flag_update_num_PB = flag_update_num_PB + 1
                             pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                             # execute PBPF algorithm movement
-                            estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = PBPF_alg.update_particle_filter_PB(ros_listener.current_joint_values, # joints of robot arm
+                            estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = PBPF_alg.update_particle_filter_PB(ROS_LISTENER.current_joint_values, # joints of robot arm
                                                                                     pw_T_obj_obse_objects_pose_list)
                             rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
                             t_finish_PBPF = time.time()
@@ -2574,9 +2643,9 @@ while reset_flag == True:
                         else:
                             Only_update_robot_flag = True
                             print("Just Update Robot")
-                            PBPF_alg.motion_update_PB_parallelised(initial_parameter.pybullet_particle_env_collection,
+                            PBPF_alg.motion_model(initial_parameter.pybullet_particle_env_collection,
                                                                 initial_parameter.fake_robot_id_collection,
-                                                                ros_listener.current_joint_values)
+                                                                ROS_LISTENER.current_joint_values)
                     # CVPF algorithm
                     elif run_alg_flag == "CVPF":
                         # if CVPF_alg.isAnyParticleInContact():
@@ -2588,7 +2657,7 @@ while reset_flag == True:
                         estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list) # flag for judging obse work
                         rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
                         # else:
-                        #     CVPF_alg.robot_arm_move_CV(ros_listener.current_joint_values) # joints of robot arm
+                        #     CVPF_alg.robot_arm_move_CV(ROS_LISTENER.current_joint_values) # joints of robot arm
                             
                     estimated_object_set_old = copy.deepcopy(estimated_object_set)
                     estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)

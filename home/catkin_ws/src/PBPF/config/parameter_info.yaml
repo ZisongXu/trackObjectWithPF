@@ -1,9 +1,10 @@
 ADDMatrix_flag: true
 convolution_size: 0
-debug_depth_img_flag: false
+debug_depth_img_flag: true
 depth_diff_value_0_1_alpha: 0.8
 depth_diff_value_0_1_flag: true
-depth_diff_value_0_1_threshold: 0.07
+combine_particle_depth_mask_flag: true
+depth_diff_value_0_1_threshold: 0.1
 depth_image_cut_flag: false
 depth_mask_flag: true
 dope_flag: true
@@ -17,7 +18,7 @@ nearVal: 0.3
 object_name_list:
 - cracker
 - soup
-object_num: 2
+object_num: 1
 obstacles_ori:
 - - 1.0
   - 0.0
@@ -28,7 +29,7 @@ obstacles_pos:
   - 0.215
   - 0.14765408574692843
 optitrack_flag: true
-ortho_to_persp_flag: false
+ortho_to_persp_flag: true
 other_obj_num: 0
 oto_name_list:
 - base_of_cracker
@@ -36,7 +37,7 @@ oto_name_list:
 otob_name_list:
 - cracker_obstacle
 - fish_can
-particle_num: 70
+particle_num: 25
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0
 print_score_flag: false

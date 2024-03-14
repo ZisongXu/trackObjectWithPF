@@ -26,17 +26,17 @@ import tf.transformations as transformations
 import rospy
 
 class LaunchCamera():
-    def __init__(self, width, height):
+    def __init__(self, width, height, fov_v):
         self.a = 0
         self.pixelWidth = width
         self.pixelHeight = height
+        self.fov_v = fov_v
 
         with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
             self.parameter_info = yaml.safe_load(file)
         self.OPTITRACK_FLAG = self.parameter_info['optitrack_flag']
         self.GAZEBO_FLAG = self.parameter_info['gazebo_flag']
         self.LOCATE_CAMERA_FLAG = self.parameter_info['locate_camera_flag']
-        self.FOV_Y = self.parameter_info['fov_y']
         self.NEARVAL = self.parameter_info['nearVal']
         self.FARVAL = self.parameter_info['farVal']
         self.pw_T_cam_tf_4_4 = 0
@@ -77,7 +77,7 @@ class LaunchCamera():
             # aspect=16.0/9,          # width / height
             # nearVal=0.3,            # 摄像头焦距下限
             # farVal=3                # 摄像头能看上限
-            fov = self.FOV_Y,               # 摄像头的视线夹角
+            fov = self.fov_v,               # 摄像头的视线夹角
             aspect = self.pixelWidth/self.pixelHeight,          # width / height
             nearVal = self.NEARVAL,            # 摄像头焦距下限
             farVal = self.FARVAL                # 摄像头能看上限

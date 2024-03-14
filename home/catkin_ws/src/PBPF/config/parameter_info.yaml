@@ -10,7 +10,6 @@ depth_mask_flag: true
 dope_flag: true
 err_file: rayTracing
 farVal: 3
-fov_y: 57.86
 gazebo_flag: false
 height: 480
 locate_camera_flag: ar
@@ -37,7 +36,7 @@ oto_name_list:
 otob_name_list:
 - cracker_obstacle
 - fish_can
-particle_num: 25
+particle_num: 1
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0
 print_score_flag: false
@@ -52,3 +51,5 @@ update_style_flag: time
 use_convolution_flag: false
 version: multiray
 width: 848
+camera_info_topic_color: /camera/color/camera_info
+camera_info_topic_depth: /camera/depth/camera_info

@@ -40,6 +40,8 @@ apt install -y --force-yes \
 rosdep init
 rosdep update
 
+apt-get update
+
 # Installation of MoveIt! related packages
 apt install -y --force-yes \
     ros-noetic-libfranka \
@@ -56,8 +58,8 @@ apt install -y --force-yes \
     ros-noetic-rosparam-shortcuts \
     ros-noetic-joy \
     ros-noetic-moveit-resources-panda-moveit-config \
-    ros-noetic-vision-msgs
-
+    ros-noetic-vision-msgs \
+    ros-noetic-depth-image-proc
 
 # Let's have a custom PS1 to help people realise in which container they are
 # working.

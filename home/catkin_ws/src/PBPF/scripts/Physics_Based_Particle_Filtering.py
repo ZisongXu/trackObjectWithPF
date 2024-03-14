@@ -22,13 +22,14 @@ from std_msgs.msg import Float32
 from std_msgs.msg import Int8
 from std_msgs.msg import ColorRGBA, Header
 from visualization_msgs.msg import Marker
-from sensor_msgs.msg import JointState
+from sensor_msgs.msg import JointState, CameraInfo, Image, PointCloud2
 from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, TransformStamped, Vector3
 from PBPF.msg import estimated_obj_pose, object_pose, particle_list, particle_pose
 import tf
 import tf.transformations as transformations
 from cv_bridge import CvBridge
 from cv_bridge import CvBridgeError
+import message_filters
 import cv2
 #pybullet
 from pyquaternion import Quaternion
@@ -52,6 +53,7 @@ import multiprocessing
 import yaml
 import jax.numpy as jnp
 from jax import jit
+from collections import namedtuple
 
 #from sksurgerycore.algorithms.averagequaternions import average_quaternions
 from quaternion_averaging import weightedAverageQuaternions
@@ -311,7 +313,7 @@ class PBPFMove():
             if PERSP_TO_ORTHO_FLAG == True:
                 # mark
                 print("Begin to change from persp to ortho")
-                self.real_depth_image_transferred_jax = _persp_to_ortho(self.real_depth_image_transferred_jax, FOV_Y, RESOLUTION)
+                self.real_depth_image_transferred_jax = _persp_to_ortho(self.real_depth_image_transferred_jax, FY_DEPTH, CX_DEPTH, CY_DEPTH)
 
     # get rendered depth/seg image model 
     def get_rendered_depth_image_parallelised(self, particle_cloud):
@@ -405,7 +407,7 @@ class PBPFMove():
                     
                     if ORTHO_TO_PERSP_FLAG == True:
                         # mark
-                        rendered_depth_image_transferred_jax = _ortho_to_persp(rendered_depth_image_transferred_jax, FOV_Y, RESOLUTION)
+                        rendered_depth_image_transferred_jax = _ortho_to_persp(rendered_depth_image_transferred_jax, FY_DEPTH, CX_DEPTH, CY_DEPTH)
 
                     if COMBINE_PARTICLE_DEPTH_MASK_FLAG == True:
                         real_depth_image_mask_values = self.real_depth_image_transferred_jax[self.x_min:self.x_max+1, self.y_min:self.y_max+1] # jax 
@@ -446,7 +448,7 @@ class PBPFMove():
             self.depth_value_difference_list[index] = depth_value_difference
 
     def cutImage(self, image, up=0, down=0, left=0, right=0):
-        image_cutted = image[up:HEIGHT-down, left:WIDTH-right]
+        image_cutted = image[up:HEIGHT_DEPTH-down, left:WIDTH_DEPTH-right]
         return image_cutted
 
     # update particle cloud particle angle
@@ -470,18 +472,18 @@ class PBPFMove():
             for w_size in range(loop_size):
                 if h_size <= CONVOLUTION_SIZE:
                     if w_size <= CONVOLUTION_SIZE:
-                        a = test_arr1[     0:HEIGHT-h_size,      0:WIDTH-w_size]
-                        b = test_arr2[h_size:HEIGHT       , w_size:WIDTH]
+                        a = test_arr1[     0:HEIGHT_DEPTH-h_size,      0:WIDTH_DEPTH-w_size]
+                        b = test_arr2[h_size:HEIGHT_DEPTH       , w_size:WIDTH_DEPTH]
                     else:
-                        a = test_arr1[     0:HEIGHT-h_size, w_size-CONVOLUTION_SIZE:WIDTH-0]
-                        b = test_arr2[h_size:HEIGHT       ,           0:WIDTH-(w_size-CONVOLUTION_SIZE)]
+                        a = test_arr1[     0:HEIGHT_DEPTH-h_size, w_size-CONVOLUTION_SIZE:WIDTH_DEPTH-0]
+                        b = test_arr2[h_size:HEIGHT_DEPTH       ,           0:WIDTH_DEPTH-(w_size-CONVOLUTION_SIZE)]
                 else:
                     if w_size <= CONVOLUTION_SIZE:
-                        a = test_arr1[h_size-CONVOLUTION_SIZE:HEIGHT-0,                  0:WIDTH-w_size]
-                        b = test_arr2[          0:HEIGHT-(h_size-CONVOLUTION_SIZE), w_size:WIDTH]
+                        a = test_arr1[h_size-CONVOLUTION_SIZE:HEIGHT_DEPTH-0,                  0:WIDTH_DEPTH-w_size]
+                        b = test_arr2[          0:HEIGHT_DEPTH-(h_size-CONVOLUTION_SIZE), w_size:WIDTH_DEPTH]
                     else:
-                        a = test_arr1[h_size-CONVOLUTION_SIZE:HEIGHT-0,           w_size-CONVOLUTION_SIZE:WIDTH-0]
-                        b = test_arr2[          0:HEIGHT-(h_size-CONVOLUTION_SIZE),         0:WIDTH-(w_size-CONVOLUTION_SIZE)]
+                        a = test_arr1[h_size-CONVOLUTION_SIZE:HEIGHT_DEPTH-0,           w_size-CONVOLUTION_SIZE:WIDTH_DEPTH-0]
+                        b = test_arr2[          0:HEIGHT_DEPTH-(h_size-CONVOLUTION_SIZE),         0:WIDTH_DEPTH-(w_size-CONVOLUTION_SIZE)]
                 compare_array = a - b
                 dim_number = compare_array.ndim
                 compare_array_square = compare_array ** 2
@@ -511,7 +513,7 @@ class PBPFMove():
         interim_container = copy.deepcopy(depth_value_diff_subtraction_square)
         for dim_n in range(dim_number):
             interim_container = sum(interim_container)
-        interim_container = interim_container / (HEIGHT*WIDTH)
+        interim_container = interim_container / (HEIGHT_DEPTH*WIDTH_DEPTH)
         depth_value_diff_subtraction_square_root = math.sqrt(interim_container)
         return depth_value_diff_subtraction_square_root        
 
@@ -991,8 +993,6 @@ class PBPFMove():
         prob = cdf_upper - cdf_lower
         return prob
 
-
-
     def normalize_particles(self):
         flag_1 = 0
         tot_weight = sum([particle.w for particle in self.particle_cloud])
@@ -1136,7 +1136,6 @@ class PBPFMove():
 
         return weight_depth_img_array
 
-
     def array_normal_distribution(self, x, mean, sigma):
         return sigma * np.exp(-1*((x-mean)**2)/(2*(sigma**2)))/(math.sqrt(2*np.pi)* sigma)
 
@@ -1175,7 +1174,6 @@ class PBPFMove():
                                                      particle_pos,
                                                      particle_ori)
          
-
     def draw_contrast_figure(self, estimated_object_pos, observation):
         self.object_estimate_pose_x.append(estimated_object_pos[0])
         self.object_estimate_pose_y.append(estimated_object_pos[1])
@@ -1246,7 +1244,6 @@ class PBPFMove():
         dis_std = np.std(dis_list)
         ang_std = np.std(ang_list)
         return dis_std, ang_std
-
 
 
 #Class of Constant-velocity Particle Filtering
@@ -1691,30 +1688,27 @@ def _extractValues(matrix, positions):
     values = matrix[positions[:, 0], positions[:, 1]]     
     return values 
 
-@jit
-def _compute_projection_parameters(fov, resolution):
-    h, w = resolution
-    # f = 0.5 * w / jnp.tan(fov * 0.5)  # fov: horizontal
-    f = 0.5 * h / jnp.tan(fov * 0.5)  # fov: vertical
-    cx, cy = w * 0.5, h * 0.5
-    return f, cx, cy
+# @jit
+# def _compute_projection_parameters(fov, resolution):
+#     h, w = resolution
+#     # f = 0.5 * w / jnp.tan(fov * 0.5)  # fov: horizontal
+#     f = 0.5 * h / jnp.tan(fov * 0.5)  # fov: vertical
+#     return f
  
 @jit
-def _ortho_to_persp(depth_ortho, fov, resolution):
-    f, cx, cy = _compute_projection_parameters(fov, resolution)
+def _ortho_to_persp(depth_ortho, fy, cx, cy):
     y, x = jnp.indices(depth_ortho.shape)
     z = depth_ortho
-    x_persp = (x - cx) * z / f
-    y_persp = (y - cy) * z / f
+    x_persp = (x - cx) * z / fy
+    y_persp = (y - cy) * z / fy
     depth_persp = jnp.sqrt(x_persp**2 + y_persp**2 + z**2)
     return depth_persp
  
 @jit
-def _persp_to_ortho(depth_persp, fov, resolution):   
-    f, cx, cy = _compute_projection_parameters(fov, resolution)     
+def _persp_to_ortho(depth_persp, fy, cx, cy):    
     y, x = jnp.indices(depth_persp.shape)   
     z = depth_persp 
-    depth_ortho = z / jnp.sqrt(((x - cx) / f)**2 + ((y - cy) / f)**2 + 1)     
+    depth_ortho = z / jnp.sqrt(((x - cx) / fy)**2 + ((y - cy) / fy)**2 + 1)     
     return depth_ortho
 
 @jit
@@ -2004,7 +1998,31 @@ def track_fk_world_rob_mv(p_sim, sim_rob_id, position):
             p_sim.resetJointState(sim_rob_id,
                                   joint_index,
                                   targetValue=position[joint_index])
-    
+
+def __get_camera_intrinsic_params(camera_info_topic_name):
+    camera_info = None
+
+    def camera_info_callback(data):
+        nonlocal camera_info
+        camera_info = data
+
+    rospy.Subscriber(camera_info_topic_name, CameraInfo, camera_info_callback)
+
+    while camera_info is None and not rospy.is_shutdown():
+        rospy.sleep(0.1)
+
+    fx = camera_info.K[0]  # Focal length in x-axis
+    fy = camera_info.K[4]  # Focal length in y-axis
+    cx = camera_info.K[2]  # Principal point in x-axis
+    cy = camera_info.K[5]  # Principal point in y-axis
+
+    image_height = camera_info.height
+    image_width = camera_info.width
+
+    Camera = namedtuple("Camera", "fx fy cx cy image_height image_width")
+    camera_intrinsic_parameters = Camera(fx, fy, cx, cy, image_height, image_width)
+    return camera_intrinsic_parameters 
+
 # ctrl-c write down the error file
 def signal_handler(sig, frame):
     sys.exit()
@@ -2092,13 +2110,30 @@ while reset_flag == True:
         obstacles_pos = parameter_info['obstacles_pos'] # old/ray/multiray
         obstacles_ori = parameter_info['obstacles_ori'] # old/ray/multiray
 
-        WIDTH = parameter_info['width'] # 1280/848
-        HEIGHT = parameter_info['height'] # 720/480
-        FOV_Y = parameter_info['fov_y'] # 57.86
+        CAMERA_INFO_TOPIC_COLOR = parameter_info['camera_info_topic_color'] # 57.86
+        CAMERA_INFO_TOPIC_DEPTH = parameter_info['camera_info_topic_depth'] # 57.86
+
+        # get camera intrinsic info
+        # CAMERA_INFO_TOPIC_COLOR: "/camera/color/camera_info"
+        # CAMERA_INFO_TOPIC_DEPTH: "/camera/depth/camera_info"
+        camera_intrinsic_parameters_color = __get_camera_intrinsic_params(CAMERA_INFO_TOPIC_COLOR)
+        camera_intrinsic_parameters_depth = __get_camera_intrinsic_params(CAMERA_INFO_TOPIC_DEPTH)
+
+        HEIGHT_DEPTH = camera_intrinsic_parameters_depth.image_height # 1280/848
+        WIDTH_DEPTH = camera_intrinsic_parameters_depth.image_width # 720/480
+        CX_DEPTH = camera_intrinsic_parameters_depth.cx
+        CY_DEPTH = camera_intrinsic_parameters_depth.cy
+        FX_DEPTH = camera_intrinsic_parameters_depth.fx
+        FY_DEPTH = camera_intrinsic_parameters_depth.fy
+        
+        FOV_H_DEPTH = math.degrees(2 * math.atan(WIDTH_DEPTH / (2*FX_DEPTH))) # fov: horizontal / x
+        FOV_V_DEPTH = math.degrees(2 * math.atan(HEIGHT_DEPTH / (2*FY_DEPTH))) # fov: vertical / y
+        
         NEARVAL = parameter_info['nearVal'] # 57.86
         FARVAL = parameter_info['farVal'] # 57.86
+        
+        RESOLUTION_DEPTH = (HEIGHT_DEPTH, WIDTH_DEPTH)
 
-        RESOLUTION = (HEIGHT, WIDTH)
         DEPTH_IMAGE_CUT_FLAG = parameter_info['depth_image_cut_flag'] 
         PERSP_TO_ORTHO_FLAG = parameter_info['persp_to_ortho_flag'] 
         ORTHO_TO_PERSP_FLAG = parameter_info['ortho_to_persp_flag'] 
@@ -2240,7 +2275,8 @@ while reset_flag == True:
         # build an object of class "Ros_Listener"
         ROS_LISTENER = Ros_Listener()
         create_scene = Create_Scene(OBJECT_NUM, ROBOT_NUM, other_obj_num)
-        _launch_camera = LaunchCamera(WIDTH, HEIGHT)
+        _launch_camera = LaunchCamera(WIDTH_DEPTH, HEIGHT_DEPTH, FOV_V_DEPTH)
+        
         _tf_listener = tf.TransformListener()
         time.sleep(0.5)
         

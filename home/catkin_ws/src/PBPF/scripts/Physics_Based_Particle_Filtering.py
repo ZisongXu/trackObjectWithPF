@@ -76,6 +76,8 @@ from launch_camera import LaunchCamera
 #Class of Physics-based Particle Filtering
 class PBPFMove():
     def __init__(self, obj_num=0):
+        if SHOW_PARTICLE_DEPTH_IMAGE_TO_POINT_CLOUD_FLAG == True:
+            self.setup_camera_info()
         # initialize internal parameters
         self.obj_num = obj_num
         self.particle_cloud = copy.deepcopy(initial_parameter.particle_cloud)
@@ -95,7 +97,6 @@ class PBPFMove():
         self.ray_list_empty = True
         self.num = 0
 
-        self.depth_image_real = 0
         self.real_depth_image_transferred = 0
         self.real_depth_image_transferred_jax = 0
         self.depth_value_difference_list = [1] * PARTICLE_NUM
@@ -369,6 +370,14 @@ class PBPFMove():
             threads_obs.append(thread_obs)
         for thread_obs in threads_obs:
             thread_obs.join()
+    
+    def setup_camera_info(self, camera_info_topic_name="/camera/depth/camera_info"):
+        self.camera_info = None
+        self.camera_info_sub = rospy.Subscriber(camera_info_topic_name, CameraInfo, self.camera_info_callback)
+        self.camera_info_pub = rospy.Publisher('/camera/camera_info', CameraInfo)
+
+    def camera_info_callback(self, data):
+        self.camera_info = data
 
     # compare depth image
     def compare_depth_image(self, index, particle):
@@ -403,16 +412,28 @@ class PBPFMove():
             
             # mark
             if SHOW_PARTICLE_DEPTH_IMAGE_TO_POINT_CLOUD_FLAG == True:
-                par_depth_img = copy.deepcopy(rendered_depth_image_transferred)
-                cv_image = par_depth_img * 1000
+                if self.camera_info:
+                    par_depth_img = copy.deepcopy(rendered_depth_image_transferred)
+                    cv_image = par_depth_img * 1
+                    # imsave('test.png', cv_image)
+            
+                    # ros_image = self.bridge.cv2_to_imgmsg(cv_image, "32FC1")
+                    # ros_image = self.bridge.cv2_to_imgmsg(cv_image, "passthrough")
+                    ros_image = self.bridge.cv2_to_imgmsg(cv_image, "passthrough")
 
-        
-                # ros_image = self.bridge.cv2_to_imgmsg(cv_image, "32FC1")
-                # ros_image = self.bridge.cv2_to_imgmsg(cv_image, "passthrough")
-                ros_image = self.bridge.cv2_to_imgmsg(par_depth_img, "32FC1")
-                self.is_cv_depth_image(par_depth_img)
-                self.is_ros_depth_image(ros_image)
-                pub_depth_image.publish(ros_image)
+                    data = ros_image
+                    # print(f'Sim depth: {data.header} {data.height}, {data.width}, {data.encoding}, {data.is_bigendian}, {data.step}, {len(data.data)}, {data.data[0]}')
+
+                    ros_image.header.stamp = self.camera_info.header.stamp
+                    ros_image.header.frame_id = "camera_depth_optical_frame"
+
+                    # check image is a cv_img or ros_img
+                    # self.is_cv_depth_image(par_depth_img)
+                    # self.is_ros_depth_image(ros_image)
+
+                    self.camera_info_pub.publish(self.camera_info)
+                    pub_depth_image.publish(ros_image)
+                    
 
 
             if USE_CONVOLUTION_FLAG == True:

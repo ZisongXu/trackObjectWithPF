@@ -359,6 +359,7 @@ class InitialSimulationModel():
                 x_1 = pos[0]
                 y_1 = pos[1]
                 z_1 = pos[2]
+                # 7, 8, 9, 10, 11, 13, 14
                 if par_index == 0:
                     obj_obse_pos = [x_1, y_1, z_1]
                 elif par_index == 1:
@@ -374,22 +375,22 @@ class InitialSimulationModel():
                 elif par_index == 6:
                     obj_obse_pos = [x_1-offset6, y_1, z_1]
 
-                elif par_index == 7:
+                if par_index == 7:
                     obj_obse_pos = [x_1+offset1, y_1, z_1]
-                elif par_index == 8:
+                if par_index == 8:
                     obj_obse_pos = [x_1+offset2, y_1, z_1]
-                elif par_index == 9:
+                if par_index == 9:
                     obj_obse_pos = [x_1+offset3, y_1, z_1]
-                elif par_index == 10:
+                if par_index == 10:
                     obj_obse_pos = [x_1+offset4, y_1, z_1]
-                elif par_index == 11:
+                if par_index == 11:
                     obj_obse_pos = [x_1+offset5, y_1, z_1]
                 elif par_index == 12:
                     obj_obse_pos = [x_1+offset6, y_1, z_1]
 
-                elif par_index == 13:
+                if par_index == 13:
                     obj_obse_pos = [x_1, y_1+offset1, z_1]
-                elif par_index == 14:
+                if par_index == 14:
                     obj_obse_pos = [x_1, y_1+offset2, z_1]
                 elif par_index == 15:
                     obj_obse_pos = [x_1, y_1+offset3, z_1]

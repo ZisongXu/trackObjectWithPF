@@ -13,6 +13,7 @@ singularity run \
     --workdir=workdir \
     --bind=/proc \
     --bind=/sys \
+    --bind=/usr/share/vulkan \
     --bind=/dev \
     --bind=scripts:/scripts \
     --home=home:${HOME} \

@@ -38,6 +38,7 @@ import time
 import pybullet_data
 from pybullet_utils import bullet_client as bc
 import numpy as np
+import matplotlib.pyplot as plt
 import math
 from scipy.stats import norm
 import random
@@ -70,6 +71,175 @@ from Robot_Pose import Robot_Pose
 from Center_T_Point_for_Ray import Center_T_Point_for_Ray
 from launch_camera import LaunchCamera
 
+
+# parameter_filename = rospy.get_param("~parameter_filename")
+with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
+    parameter_info = yaml.safe_load(file)
+
+gazebo_flag = parameter_info['gazebo_flag']
+# scene
+task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
+# which algorithm to run
+run_alg_flag = parameter_info['run_alg_flag'] # PBPF/CVPF
+# update mode (pose/time)
+update_style_flag = parameter_info['update_style_flag'] # time/pose
+# observation model
+pick_particle_rate = parameter_info['pick_particle_rate']
+OPTITRACK_FLAG = parameter_info['optitrack_flag']
+
+VERSION = parameter_info['version'] # old/ray/multiray/
+RUNNING_MODEL = parameter_info['running_model'] # PBPF_RGB/PBPF_RGBD/PBPF_D
+
+DEBUG_DEPTH_IMG_FLAG = parameter_info['debug_depth_img_flag'] # old/ray/multiray/depth_img
+USE_CONVOLUTION_FLAG = parameter_info['use_convolution_flag'] # old/ray/multiray/depth_img
+CONVOLUTION_SIZE = parameter_info['convolution_size'] # old/ray/multiray/depth_img
+# the flag is used to determine whether the robot touches the particle in the simulation
+simRobot_touch_par_flag = 0
+OBJECT_NUM = parameter_info['object_num']
+ROBOT_NUM = parameter_info['robot_num']
+SIM_REAL_WORLD_FLAG = parameter_info['sim_real_world_flag']
+
+LOCATE_CAMERA_FLAG = parameter_info['locate_camera_flag']
+
+PARTICLE_NUM = parameter_info['particle_num']
+
+OBJECT_NAME_LIST = parameter_info['object_name_list']
+obstacles_pos = parameter_info['obstacles_pos'] # old/ray/multiray
+obstacles_ori = parameter_info['obstacles_ori'] # old/ray/multiray
+
+CAMERA_INFO_TOPIC_COLOR = parameter_info['camera_info_topic_color'] # /camera/color/camera_info
+CAMERA_INFO_TOPIC_DEPTH = parameter_info['camera_info_topic_depth'] # /camera/depth/camera_info
+
+NEARVAL = parameter_info['nearVal'] # 57.86
+FARVAL = parameter_info['farVal'] # 57.86
+
+DEPTH_IMAGE_CUT_FLAG = parameter_info['depth_image_cut_flag'] 
+PERSP_TO_ORTHO_FLAG = parameter_info['persp_to_ortho_flag'] 
+ORTHO_TO_PERSP_FLAG = parameter_info['ortho_to_persp_flag'] 
+DEPTH_DIFF_VALUE_0_1_FLAG = parameter_info['depth_diff_value_0_1_flag'] 
+DEPTH_DIFF_VALUE_0_1_THRESHOLD = parameter_info['depth_diff_value_0_1_threshold'] 
+DEPTH_DIFF_VALUE_0_1_ALPHA = parameter_info['depth_diff_value_0_1_alpha'] 
+DEPTH_MASK_FLAG = parameter_info['depth_mask_flag'] 
+COMBINE_PARTICLE_DEPTH_MASK_FLAG = parameter_info['combine_particle_depth_mask_flag'] 
+SHOW_PARTICLE_DEPTH_IMAGE_TO_POINT_CLOUD_FLAG = parameter_info['show_particle_depth_image_to_point_cloud_flag'] 
+
+PRINT_SCORE_FLAG = parameter_info['print_score_flag'] 
+SHOW_RAY = parameter_info['show_ray']
+CHANGE_SIM_TIME = 1.0/240
+
+
+
+# ==============================================================================================================================
+# vulkan
+from pathlib import Path;
+import sys;
+sys.path.insert( 1, str(Path( __file__ ).parent.parent.absolute() / "bin") );
+## Import module
+import vkdepth;
+
+## Create context
+## change the iamge
+config = vkdepth.ContextConfig();
+config.render_size( 848, 480 );
+context = vkdepth.initialize( config )
+
+## Setup camera
+camera = vkdepth.Camera();
+camera.set_near_far(0.3, 3)
+context.update_camera( camera );
+
+_vk_obj_id_list = []
+_vk_state_list = []
+
+##
+## Load meshes
+for obj_index in range(OBJECT_NUM):
+    if obj_index == 0:
+        obj_id = context.load_model( "assets/meshes/003_cracker_box.vkdepthmesh" );
+    elif obj_index == 1:
+        obj_id = context.load_model( "assets/meshes/005_tomato_soup_can.vkdepthmesh" );
+    _vk_obj_id_list.append(obj_id)
+
+##
+## Create states
+## if we have many particles we can create many "q = vkdepth.State()"
+for par_index in range(PARTICLE_NUM):
+    vk_state = vkdepth.State();
+    _vk_state_list.append(vk_state)
+
+# vk_state = vkdepth.State();
+test_obj_pos = [0.37440226698353485, 0.14675928804436228, 0.7849156098144123] # x, y, z
+test_obj_ori = [ 0.56878298,  0.42443268,  0.56580163, -0.41977535] # x, y, z, w
+for par_index in range(PARTICLE_NUM):
+    for obj_index in range(OBJECT_NUM):
+        # vk_state.add_instance( _vk_obj_id_list[obj_index],   -0.1, +0.1, -.5,   0.0, 0.0, -0.707, 0.707 );
+        _vk_state_list[par_index].add_instance(_vk_obj_id_list[obj_index], 
+                                                # test_obj_pos[0], test_obj_pos[1], test_obj_pos[2], 
+                                                # test_obj_ori[3], test_obj_ori[0], test_obj_ori[1], test_obj_ori[2]);
+                                                -0.1, +0.1, -.5, 
+                                                0.0, 0.0, -0.707, 0.707);
+
+        context.add_state(_vk_state_list[par_index]);
+
+q = vkdepth.State();
+# many objects in the same particle
+for i in range(1,2):
+    for obj_index in range(OBJECT_NUM):
+        q.add_instance( _vk_obj_id_list[obj_index], -0.1, +0.1, -0.2*(i+1),    0.0, 0.0, -0.707, 0.707 );
+        # q.add_instance( a, -0.1, +0.1, -0.2*(i+1),    0.0, 0.0, -0.707, 0.707 );
+        # q.add_instance( b, +0.1, +0.05, -0.2*(i+1),    0.0, 0.0, -0.707, 0.707 );
+# pass;
+context.add_state( q );
+
+##
+## Render+Download and then wait
+context.enqueue_render_and_download();
+
+# Do something else here
+
+context.wait();
+
+##
+## Get views
+
+pdv = context.view( 0 );
+pd = np.array( pdv, copy = False );
+qdv = context.view( 1 );
+qd = np.array( qdv, copy = False );
+
+fig, axs = plt.subplots( 1, 2 );
+axs[0].imshow( pd );
+axs[1].imshow( qd );
+plt.show();
+
+pdv.release();
+qdv.release();
+
+##
+## Update state
+pa = np.array( vk_state.view(), copy = False );
+
+pa[0,1] = +0.1;
+pa[1,1] = -0.1;
+
+context.enqueue_render_and_download();
+context.wait();
+
+pdv = context.view( 0 );
+pd = np.array( pdv, copy = False );
+qdv = context.view( 1 );
+qd = np.array( qdv, copy = False );
+
+fig, axs = plt.subplots( 1, 2 );
+axs[0].imshow( pd );
+axs[1].imshow( qd );
+plt.show();
+
+pdv.release();
+qdv.release();
+
+print("Launch Vkdepth successfully")
+# ==============================================================================================================================
 # mark
 # - gelatin
 
@@ -922,8 +1092,8 @@ class PBPFMove():
         if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0:
             # visible_score low, weight low
             if visible_score < visible_threshold_dope_is_fresh_list[obj_index]: # 0.5/0.9
-                # weight = weight / 3.0
-                weight = weight * visible_score
+                weight = weight / 3.0
+                # weight = weight * visible_score
             # visible_score high, weight high
             else:
                 weight = weight
@@ -946,7 +1116,7 @@ class PBPFMove():
             # visible_score<0.95 low, weight high
             if visible_threshold_dope_X_small_list[obj_index]<=visible_score and visible_score<=visible_threshold_dope_X_list[obj_index]: # 0.95
                 weight = visible_weight_dope_X_smaller_than_threshold_list[obj_index] * weight # 0.75/0.6
-                weight = weight * (1 - visible_score) # 0.75/0.6
+                # weight = weight * (1 - visible_score) # 0.75/0.6
             # visible_score>0.95 high, weight low
             else: 
                 weight = visible_weight_dope_X_larger_than_threshold_list[obj_index] * weight # 0.25/0.5
@@ -2160,23 +2330,7 @@ while reset_flag == True:
         # only for drawing box
         publish_DOPE_pose_flag = True
 
-        # parameter_filename = rospy.get_param("~parameter_filename")
-        with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
-            parameter_info = yaml.safe_load(file)
-        
-        gazebo_flag = parameter_info['gazebo_flag']
-        # scene
-        task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
-        # which algorithm to run
-        run_alg_flag = parameter_info['run_alg_flag'] # PBPF/CVPF
-        # update mode (pose/time)
-        update_style_flag = parameter_info['update_style_flag'] # time/pose
-        # observation model
-        pick_particle_rate = parameter_info['pick_particle_rate']
-        OPTITRACK_FLAG = parameter_info['optitrack_flag']
-        
-        VERSION = parameter_info['version'] # old/ray/multiray/
-        RUNNING_MODEL = parameter_info['running_model'] # PBPF_RGB/PBPF_RGBD/PBPF_D
+
         if RUNNING_MODEL == "PBPF_RGB":
             USING_RGB_FLAG = True
             USING_D_FLAG = False
@@ -2187,17 +2341,6 @@ while reset_flag == True:
             USING_RGB_FLAG = False
             USING_D_FLAG = True
 
-        DEBUG_DEPTH_IMG_FLAG = parameter_info['debug_depth_img_flag'] # old/ray/multiray/depth_img
-        USE_CONVOLUTION_FLAG = parameter_info['use_convolution_flag'] # old/ray/multiray/depth_img
-        CONVOLUTION_SIZE = parameter_info['convolution_size'] # old/ray/multiray/depth_img
-        # the flag is used to determine whether the robot touches the particle in the simulation
-        simRobot_touch_par_flag = 0
-        OBJECT_NUM = parameter_info['object_num']
-        ROBOT_NUM = parameter_info['robot_num']
-        SIM_REAL_WORLD_FLAG = parameter_info['sim_real_world_flag']
-
-        LOCATE_CAMERA_FLAG = parameter_info['locate_camera_flag']
-
         _particle_update_time = 0
 
         if task_flag == "4": 
@@ -2205,24 +2348,10 @@ while reset_flag == True:
         else:
             other_obj_num = 0 # parameter_info['other_obj_num']
 
-        if update_style_flag == "pose":
-            PARTICLE_NUM = parameter_info['particle_num']
-        elif update_style_flag == "time":
-            if run_alg_flag == "PBPF":
-                PARTICLE_NUM = parameter_info['particle_num']
-            elif run_alg_flag == "CVPF":
-                # PARTICLE_NUM = parameter_info['particle_num']
-                PARTICLE_NUM = 150
         if run_alg_flag == 'CVPF':
             PARTICLE_NUM = 150
-            
-        OBJECT_NAME_LIST = parameter_info['object_name_list']
-        obstacles_pos = parameter_info['obstacles_pos'] # old/ray/multiray
-        obstacles_ori = parameter_info['obstacles_ori'] # old/ray/multiray
-
-        CAMERA_INFO_TOPIC_COLOR = parameter_info['camera_info_topic_color'] # 57.86
-        CAMERA_INFO_TOPIC_DEPTH = parameter_info['camera_info_topic_depth'] # 57.86
-
+        
+        # ============================================================================
         # get camera intrinsic info
         # CAMERA_INFO_TOPIC_COLOR: "/camera/color/camera_info"
         # CAMERA_INFO_TOPIC_DEPTH: "/camera/depth/camera_info"
@@ -2239,26 +2368,8 @@ while reset_flag == True:
         FOV_H_DEPTH = math.degrees(2 * math.atan(WIDTH_DEPTH / (2*FX_DEPTH))) # fov: horizontal / x
         FOV_V_DEPTH = math.degrees(2 * math.atan(HEIGHT_DEPTH / (2*FY_DEPTH))) # fov: vertical / y
         
-        NEARVAL = parameter_info['nearVal'] # 57.86
-        FARVAL = parameter_info['farVal'] # 57.86
-        
-        RESOLUTION_DEPTH = (HEIGHT_DEPTH, WIDTH_DEPTH)
-
-        DEPTH_IMAGE_CUT_FLAG = parameter_info['depth_image_cut_flag'] 
-        PERSP_TO_ORTHO_FLAG = parameter_info['persp_to_ortho_flag'] 
-        ORTHO_TO_PERSP_FLAG = parameter_info['ortho_to_persp_flag'] 
-        DEPTH_DIFF_VALUE_0_1_FLAG = parameter_info['depth_diff_value_0_1_flag'] 
-        DEPTH_DIFF_VALUE_0_1_THRESHOLD = parameter_info['depth_diff_value_0_1_threshold'] 
-        DEPTH_DIFF_VALUE_0_1_ALPHA = parameter_info['depth_diff_value_0_1_alpha'] 
-        DEPTH_MASK_FLAG = parameter_info['depth_mask_flag'] 
-        COMBINE_PARTICLE_DEPTH_MASK_FLAG = parameter_info['combine_particle_depth_mask_flag'] 
-        SHOW_PARTICLE_DEPTH_IMAGE_TO_POINT_CLOUD_FLAG = parameter_info['show_particle_depth_image_to_point_cloud_flag'] 
-
-        PRINT_SCORE_FLAG = parameter_info['print_score_flag'] 
-        SHOW_RAY = parameter_info['show_ray']
-        CHANGE_SIM_TIME = 1.0/240
-
-
+        RESOLUTION_DEPTH = (HEIGHT_DEPTH, WIDTH_DEPTH) # 480 848
+        # ============================================================================
         # print(obstacles_pos)
         # print(type(obstacles_pos))
         pub_DOPE_list = []

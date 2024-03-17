@@ -291,13 +291,14 @@ class PBPFMove():
 
             # get rendered depth/seg image
             self.get_rendered_depth_image_parallelised(self.particle_cloud)
-
-            flat_mask_position_list_jax = jnp.vstack(self.mask_position_from_segImg_list)
-            # mask_position_from_segImg_list_jax = jnp.array(self.mask_position_from_segImg_list) # jax
-            # # get x_min, x_mad, y_min, y_max
-            # # flat_mask_position_list = [item for sublist in self.mask_position_from_segImg_list for item in sublist] # list
-            # flat_mask_position_list_jax = mask_position_from_segImg_list_jax.ravel() # jax
-            self.x_min, self.x_max, self.y_min, self.y_max = self.get_bounding_box(flat_mask_position_list_jax)
+            
+            if COMBINE_PARTICLE_DEPTH_MASK_FLAG == True:
+                flat_mask_position_list_jax = jnp.vstack(self.mask_position_from_segImg_list)
+                # mask_position_from_segImg_list_jax = jnp.array(self.mask_position_from_segImg_list) # jax
+                # # get x_min, x_mad, y_min, y_max
+                # # flat_mask_position_list = [item for sublist in self.mask_position_from_segImg_list for item in sublist] # list
+                # flat_mask_position_list_jax = mask_position_from_segImg_list_jax.ravel() # jax
+                self.x_min, self.x_max, self.y_min, self.y_max = self.get_bounding_box(flat_mask_position_list_jax)
 
             # compare depth image
             self.compare_depth_image_parallelised(self.particle_cloud)
@@ -339,12 +340,13 @@ class PBPFMove():
         width, height, rgbImg, depth_image_render, segImg, nearVal, farVal = _launch_camera.setCameraPicAndGetPic(pybullet_env, _tf_listener, _pw_T_rob_sim_4_4)
 
         # get target objects ID
-        mask_position_from_segImg = self.get_target_objects_ID_from_segImg(particle, segImg) # jax
-        self.mask_position_from_segImg_list[index] = mask_position_from_segImg # list
+        if DEPTH_MASK_FLAG == True:
+            mask_position_from_segImg = self.get_target_objects_ID_from_segImg(particle, segImg, index) # jax
+            self.mask_position_from_segImg_list[index] = mask_position_from_segImg # list
         self.rendered_depth_images_list[index] = depth_image_render # array/list
 
     # get target objects ID
-    def get_target_objects_ID_from_segImg(self, particle, segImg):
+    def get_target_objects_ID_from_segImg(self, particle, segImg, index):
         obj_id_array = jnp.array([0] * OBJECT_NUM)
         for obj_index in range(self.obj_num):
             obj_id = particle[obj_index].no_visual_par_id
@@ -394,17 +396,17 @@ class PBPFMove():
                     imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, self.real_depth_image_transferred[self.x_min:self.x_max+1, self.y_min:self.y_max+1], cmap='gray')
 
                     rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
-                    # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred[self.x_min:self.x_max+1, self.y_min:self.y_max+1], cmap='gray')
-                    imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred, cmap='gray')
+                    imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred[self.x_min:self.x_max+1, self.y_min:self.y_max+1], cmap='gray')
+                    # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred, cmap='gray')
 
                     # rendered_seg_img_name = str(_particle_update_time)+"_rendered_seg_img_"+str(index)+".png"
                     # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_seg_img_name, segImg)
                 else:
-                    real_depth_img_name = str(_particle_update_time) + "_real_depth_img_"+str(index)+".png"
+                    real_depth_img_name = "0_" + str(_particle_update_time) + "_real_depth_img_"+str(index)+".png"
                     # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
                     imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, self.real_depth_image_transferred, cmap='gray')
 
-                    rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
+                    rendered_depth_img_name = "0_" + str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
                     imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred, cmap='gray')
 
                     # rendered_seg_img_name = str(_particle_update_time)+"_rendered_seg_img_"+str(index)+".png"
@@ -416,9 +418,7 @@ class PBPFMove():
                     par_depth_img = copy.deepcopy(rendered_depth_image_transferred)
                     cv_image = par_depth_img * 1
                     # imsave('test.png', cv_image)
-            
-                    # ros_image = self.bridge.cv2_to_imgmsg(cv_image, "32FC1")
-                    # ros_image = self.bridge.cv2_to_imgmsg(cv_image, "passthrough")
+
                     ros_image = self.bridge.cv2_to_imgmsg(cv_image, "passthrough")
 
                     data = ros_image
@@ -452,15 +452,46 @@ class PBPFMove():
                         real_depth_image_mask_values = real_depth_image_mask_values.ravel() # jax
                         rendered_depth_image_mask_values = rendered_depth_image_transferred_jax[self.x_min:self.x_max+1, self.y_min:self.y_max+1] # jax
                         rendered_depth_image_mask_values = rendered_depth_image_mask_values.ravel() # jax
+                        number_of_pixels = len(rendered_depth_image_mask_values)
                     else:
+                        mask_position_from_segImg = self.mask_position_from_segImg_list[index]
+                        number_of_pixels = len(mask_position_from_segImg)
+
                         real_depth_image_mask_values = _extractValues(self.real_depth_image_transferred_jax, mask_position_from_segImg)
                         rendered_depth_image_mask_values = _extractValues(rendered_depth_image_transferred_jax, mask_position_from_segImg)
-                    
-                    number_of_pixels = len(rendered_depth_image_mask_values)
+
+                        # real_depth_image_mask_values = self.replace_values_real(self.real_depth_image_transferred_jax, mask_position_from_segImg)
+                        # rendered_depth_image_mask_values = self.replace_values_render(rendered_depth_image_transferred_jax, mask_position_from_segImg)
+
+                        # test
+                        SHOW_ONLY_MASK_IMG_FLAG = True
+                        if SHOW_ONLY_MASK_IMG_FLAG == True:
+                            a = 1
+                            # real_depth_img_name = str(_particle_update_time) + "_real_depth_img_"+str(index)+".png"
+                            # # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
+                            # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, real_depth_image_mask_values)
+
+                            # rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
+                            # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_mask_values)
+                        
+                            # real_depth_img_name = "0_" + str(_particle_update_time) + "_real_depth_img_"+str(index)+".png"
+                            # # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
+                            # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, self.real_depth_image_transferred)
+
+                            # rendered_depth_img_name = "0_" + str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
+                            # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred) # , cmap='gray'
+
+
+
                     # mark
                     if DEPTH_DIFF_VALUE_0_1_FLAG == True:
                         depth_value_diff_sub_abs_jax = jnp.abs(real_depth_image_mask_values - rendered_depth_image_mask_values)
                         depth_value_diff_sub_abs_0_1_jax, num_zeros = _threshold_array_optimized(depth_value_diff_sub_abs_jax)
+
+                        # rendered_depth_img_name = "Compared_" + str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
+                        # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, depth_value_diff_sub_abs_0_1_jax, cmap='gray') # , cmap='gray'
+
+
                         e_VSD_o = jnp.sum(depth_value_diff_sub_abs_0_1_jax) / number_of_pixels
                         score = DEPTH_DIFF_VALUE_0_1_ALPHA * (1-e_VSD_o) + (1-DEPTH_DIFF_VALUE_0_1_ALPHA) * num_zeros/number_of_pixels
                         depth_value_difference_jax = score # score_that_particle_get: high->high weight; low->low weight
@@ -488,6 +519,24 @@ class PBPFMove():
     def cutImage(self, image, up=0, down=0, left=0, right=0):
         image_cutted = image[up:HEIGHT_DEPTH-down, left:WIDTH_DEPTH-right]
         return image_cutted
+
+    def replace_values(self, a, b):
+        result = jnp.zeros_like(a)
+        x_coords, y_coords = b[:, 0], b[:, 1]
+        result = result.at[x_coords, y_coords].set(a[x_coords, y_coords])
+        return result
+
+    def replace_values_render(self, a, b):
+        result = jnp.zeros_like(a)
+        x_coords, y_coords = b[:, 0], b[:, 1]
+        result = result.at[x_coords, y_coords].set(a[x_coords, y_coords])
+        return result
+    
+    def replace_values_real(self, a, b):
+        result = jnp.full_like(a, 1000)
+        x_coords, y_coords = b[:, 0], b[:, 1]
+        result = result.at[x_coords, y_coords].set(a[x_coords, y_coords])
+        return result
 
     # update particle cloud particle angle
     def update_partcile_cloud_pose_PB(self, index, obj_index, x, y, z, ori, linearVelocity, angularVelocity):

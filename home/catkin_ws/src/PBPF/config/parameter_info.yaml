@@ -3,8 +3,8 @@ convolution_size: 0
 debug_depth_img_flag: true
 depth_diff_value_0_1_alpha: 0.8
 depth_diff_value_0_1_flag: true
-combine_particle_depth_mask_flag: true
-depth_diff_value_0_1_threshold: 0.1
+combine_particle_depth_mask_flag: false
+depth_diff_value_0_1_threshold: 0.03
 depth_image_cut_flag: false
 depth_mask_flag: true
 dope_flag: true
@@ -36,7 +36,7 @@ oto_name_list:
 otob_name_list:
 - cracker_obstacle
 - fish_can
-particle_num: 1
+particle_num: 25
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0
 print_score_flag: false

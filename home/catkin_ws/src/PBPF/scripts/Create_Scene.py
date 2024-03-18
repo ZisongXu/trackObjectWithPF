@@ -73,39 +73,39 @@ class Create_Scene():
         self.optitrack_flag = self.parameter_info['optitrack_flag']
         
     def initialize_object(self):
-#        if self.gazebo_flag == True:
-#            time.sleep(0.5)
-#            for obj_index in range(self.target_obj_num):
-#                _, model_pose_added_noise = self.ros_listener.listen_2_object_pose(self.object_name_list[obj_index])
-#                panda_pose = self.ros_listener.listen_2_robot_pose()
-#                print(model_pose_added_noise)
-#                gazebo_T_obj_pos_obse = model_pose_added_noise[0]
-#                gazebo_T_obj_ori_obse = model_pose_added_noise[1]
-#                gazebo_T_rob_pos = panda_pose[0]
-#                gazebo_T_rob_ori = panda_pose[1]
-#                
-#                pw_T_rob_sim_pos = self.pw_T_rob_sim_pose_list[0].pos
-#                pw_T_rob_sim_ori = self.pw_T_rob_sim_pose_list[0].ori
-#                pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
-#                pw_T_rob_sim_4_4 = self.rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
-#                self.pw_T_rob_sim_pose_list[0].trans_matrix = pw_T_rob_sim_4_4
-#                
-##                robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
-##                                     [0., 1., 0.,    0.],
-##                                     [0., 0., 1., -0.06],
-##                                     [0., 0., 0.,    1.]]
-##                robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)
-#                
-#                # obse object                
-#                rob_T_obj_obse_4_4 = self.compute_transformation_matrix(gazebo_T_rob_pos, gazebo_T_rob_ori, gazebo_T_obj_pos_obse, gazebo_T_obj_ori_obse)
-##                rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
-#                pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
-#                pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
-#                pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
-#                obse_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
-#                self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)
-#                
-#            return self.pw_T_target_obj_obse_pose_lsit
+    #    if self.gazebo_flag == True:
+    #        time.sleep(0.5)
+    #        for obj_index in range(self.target_obj_num):
+    #            _, model_pose_added_noise = self.ros_listener.listen_2_object_pose(self.object_name_list[obj_index])
+    #            panda_pose = self.ros_listener.listen_2_robot_pose()
+    #            print(model_pose_added_noise)
+    #            gazebo_T_obj_pos_obse = model_pose_added_noise[0]
+    #            gazebo_T_obj_ori_obse = model_pose_added_noise[1]
+    #            gazebo_T_rob_pos = panda_pose[0]
+    #            gazebo_T_rob_ori = panda_pose[1]
+               
+    #            pw_T_rob_sim_pos = self.pw_T_rob_sim_pose_list[0].pos
+    #            pw_T_rob_sim_ori = self.pw_T_rob_sim_pose_list[0].ori
+    #            pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
+    #            pw_T_rob_sim_4_4 = self.rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)
+    #            self.pw_T_rob_sim_pose_list[0].trans_matrix = pw_T_rob_sim_4_4
+               
+    #            # robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
+    #            #                      [0., 1., 0.,    0.],
+    #            #                      [0., 0., 1., -0.06],
+    #            #                      [0., 0., 0.,    1.]]
+    #            # robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)
+               
+    #            # obse object                
+    #            rob_T_obj_obse_4_4 = self.compute_transformation_matrix(gazebo_T_rob_pos, gazebo_T_rob_ori, gazebo_T_obj_pos_obse, gazebo_T_obj_ori_obse)
+    #            # rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
+    #            pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
+    #            pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
+    #            pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
+    #            obse_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
+    #            self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)
+               
+    #        return self.pw_T_target_obj_obse_pose_lsit
                 
         for obj_index in range(self.target_obj_num):
             pw_T_rob_sim_4_4 = self.pw_T_rob_sim_pose_list[0].trans_matrix
@@ -156,22 +156,6 @@ class Create_Scene():
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
 
             # mark
-            # ar1
-            # pw_T_obj_obse_pos = [0.3084858323441205, 0.09149436877842132, 0.7853899450676181]
-            # pw_T_obj_obse_ori = [ 0.59071692,  0.39490482,  0.58601579, -0.38947297]
-
-            # if obj_index == 0:
-            #     pw_T_obj_obse_pos = [0.35271769522965, 0.09816807041773479, 0.7853745826606944]
-            #     pw_T_obj_obse_ori = [-0.49780564, -0.50646338, -0.49480961,  0.50084712]
-            # else:
-            #     pw_T_obj_obse_pos = [0.314916357990211, 0.17473632228724473, 0.752469114753974]
-            #     pw_T_obj_obse_ori = [-0.53987341,  0.44534727, -0.45914695,  0.54716231]
-
-
-            # ar1 cracker
-            # pw_T_obj_obse_pos = [0.4681664555306407, 0.21128532879798734, 0.7842224385534314]
-            # pw_T_obj_obse_ori = [ 0.6615588,   0.26269033,  0.6537948,  -0.25668289]
-
             # new camera
             pw_T_obj_obse_pos = [0.37440226698353485, 0.14675928804436228, 0.7849156098144123]
             pw_T_obj_obse_ori = [ 0.56878298,  0.42443268,  0.56580163, -0.41977535]

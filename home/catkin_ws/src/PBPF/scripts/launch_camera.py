@@ -39,21 +39,21 @@ class LaunchCamera():
         self.LOCATE_CAMERA_FLAG = self.parameter_info['locate_camera_flag']
         self.NEARVAL = self.parameter_info['nearVal']
         self.FARVAL = self.parameter_info['farVal']
-        self.pw_T_cam_tf_4_4 = 0
+        self.pw_T_camD_tf_4_4 = 0
         self.compute_cam_pose_flag = 0
         
     def setCameraPicAndGetPic(self, p_world=0, tf_listener=0, pw_T_rob_sim_4_4=0):
-        # 从四元数中获取变换矩阵，从中获知指向(左乘(1,0,0)，因为在原本的坐标系内，摄像机的朝向为(1,0,0))
+        
         # width = 1
         # height = 1
         # rgbImg = 1
         # depthImg = 1
         # segImg = 1
 
-        pw_T_cam_tf_4_4 = self.getCameraInPybulletWorldPose44(tf_listener, pw_T_rob_sim_4_4)
-        camera_eye_position = pw_T_cam_tf_4_4[:3, 3]
-        camera_orientation = pw_T_cam_tf_4_4[:3, :3]
-        camera_eye_position = [pw_T_cam_tf_4_4[0][3], pw_T_cam_tf_4_4[1][3], pw_T_cam_tf_4_4[2][3]] # pw_T_cam_tf_4_4[2][3]+0.05
+        pw_T_camD_tf_4_4 = self.getCameraInPybulletWorldPose44(tf_listener, pw_T_rob_sim_4_4)
+        camera_eye_position = pw_T_camD_tf_4_4[:3, 3]
+        camera_orientation = pw_T_camD_tf_4_4[:3, :3]
+        camera_eye_position = [pw_T_camD_tf_4_4[0][3], pw_T_camD_tf_4_4[1][3], pw_T_camD_tf_4_4[2][3]] # pw_T_camD_tf_4_4[2][3]+0.05
         
         vector_x = camera_orientation @ np.array([1, 0, 0])
         vector_y = camera_orientation @ np.array([0, 1, 0])
@@ -73,14 +73,10 @@ class LaunchCamera():
         )
 
         projectionMatrix = p_world.computeProjectionMatrixFOV(
-            # fov=57.86,               # 摄像头的视线夹角
-            # aspect=16.0/9,          # width / height
-            # nearVal=0.3,            # 摄像头焦距下限
-            # farVal=3                # 摄像头能看上限
-            fov = self.fov_v,               # 摄像头的视线夹角
+            fov = self.fov_v,               # field of view
             aspect = self.pixelWidth/self.pixelHeight,          # width / height
-            nearVal = self.NEARVAL,            # 摄像头焦距下限
-            farVal = self.FARVAL                # 摄像头能看上限
+            nearVal = self.NEARVAL,            # len lower limit
+            farVal = self.FARVAL                # len upper limit
         )
         width, height, rgbImg, depthImg, segImg = p_world.getCameraImage(
             width = self.pixelWidth, 
@@ -145,7 +141,7 @@ class LaunchCamera():
             while True:
                 while_time = while_time + 1
                 if while_time > 1000:
-                    print("Can not find the pose of the camera!!!!")
+                    print("Can not find the pose of the camera!!!! You need to wait a while or try to debug")
                 try:
                     # (trans_camera, rot_camera) = tf_listener.lookupTransform('/zisong_robot', realsense_tf, rospy.Time(0))
                     (trans_camera, rot_camera) = tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
@@ -172,14 +168,14 @@ class LaunchCamera():
             rob_T_camRGB_tf_4_4 = np.r_[rob_T_camRGB_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
 
             rob_T_camD_tf_4_4 = np.dot(rob_T_camRGB_tf_4_4, camRGB_T_camD_tf_4_4)
-            self.pw_T_cam_tf_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_camD_tf_4_4)
-            # self.pw_T_cam_tf_4_4[0][3] = self.pw_T_cam_tf_4_4[0][3] - 0.02
-            # self.pw_T_cam_tf_4_4[1][3] = self.pw_T_cam_tf_4_4[1][3] - 0.02
+            self.pw_T_camD_tf_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_camD_tf_4_4)
+            # self.pw_T_camD_tf_4_4[0][3] = self.pw_T_camD_tf_4_4[0][3] - 0.02
+            # self.pw_T_camD_tf_4_4[1][3] = self.pw_T_camD_tf_4_4[1][3] - 0.02
             self.compute_cam_pose_flag = 1
         else:
-            return self.pw_T_cam_tf_4_4
+            return self.pw_T_camD_tf_4_4
 
-        return self.pw_T_cam_tf_4_4 # pw_T_camD_tf_4_4
+        return self.pw_T_camD_tf_4_4 # pw_T_camD_tf_4_4
 
     def getFocalLength(self):
         F_x = 651.248474121094

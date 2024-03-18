@@ -55,6 +55,7 @@ import yaml
 import jax.numpy as jnp
 from jax import jit
 from collections import namedtuple
+from scipy.spatial.transform import Rotation as R
 
 #from sksurgerycore.algorithms.averagequaternions import average_quaternions
 from quaternion_averaging import weightedAverageQuaternions
@@ -125,86 +126,103 @@ SHOW_PARTICLE_DEPTH_IMAGE_TO_POINT_CLOUD_FLAG = parameter_info['show_particle_de
 
 PRINT_SCORE_FLAG = parameter_info['print_score_flag'] 
 SHOW_RAY = parameter_info['show_ray']
+VK_RENDER_FLAG = parameter_info['vk_render_flag']
+PB_RENDER_FLAG = parameter_info['pb_render_flag']
+
 CHANGE_SIM_TIME = 1.0/240
-
-
 
 # ==============================================================================================================================
 # vulkan
 from pathlib import Path;
 import sys;
-sys.path.insert( 1, str(Path( __file__ ).parent.parent.absolute() / "bin") );
+sys.path.insert( 1, str(Path( __file__ ).parent.parent.absolute() / "bin") )
 ## Import module
 import vkdepth;
 
-## Create context
-## change the iamge
-config = vkdepth.ContextConfig();
-config.render_size( 848, 480 );
-context = vkdepth.initialize( config )
-
-## Setup camera
-camera = vkdepth.Camera();
-camera.set_near_far(0.3, 3)
-context.update_camera( camera );
-
 _vk_obj_id_list = []
 _vk_state_list = []
+
+## Create context
+## change the image
+_vk_config = vkdepth.ContextConfig();
+_vk_config.render_size(848, 480);
+
+## Setup vk_camera
+_vk_camera = vkdepth.Camera();
+_vk_camera.set_near_far(NEARVAL, FARVAL)
+_vk_camera.set_aspect_wh(848, 480)
+# _vk_camera.set_position() # x, y, z
+# _vk_camera.set_orientation_quat() # w, x, y, z
+_vk_context = vkdepth.initialize(_vk_config)
+_vk_context.update_camera(_vk_camera);
 
 ##
 ## Load meshes
 for obj_index in range(OBJECT_NUM):
     if obj_index == 0:
-        obj_id = context.load_model( "assets/meshes/003_cracker_box.vkdepthmesh" );
+        obj_id = _vk_context.load_model( "assets/meshes/003_cracker_box.vkdepthmesh" );
     elif obj_index == 1:
-        obj_id = context.load_model( "assets/meshes/005_tomato_soup_can.vkdepthmesh" );
+        obj_id = _vk_context.load_model( "assets/meshes/005_tomato_soup_can.vkdepthmesh" );
     _vk_obj_id_list.append(obj_id)
 
 ##
 ## Create states
-## if we have many particles we can create many "q = vkdepth.State()"
-for par_index in range(PARTICLE_NUM):
-    vk_state = vkdepth.State();
-    _vk_state_list.append(vk_state)
-
-# vk_state = vkdepth.State();
 test_obj_pos = [0.37440226698353485, 0.14675928804436228, 0.7849156098144123] # x, y, z
 test_obj_ori = [ 0.56878298,  0.42443268,  0.56580163, -0.41977535] # x, y, z, w
-for par_index in range(PARTICLE_NUM):
-    for obj_index in range(OBJECT_NUM):
-        # vk_state.add_instance( _vk_obj_id_list[obj_index],   -0.1, +0.1, -.5,   0.0, 0.0, -0.707, 0.707 );
-        _vk_state_list[par_index].add_instance(_vk_obj_id_list[obj_index], 
-                                                # test_obj_pos[0], test_obj_pos[1], test_obj_pos[2], 
-                                                # test_obj_ori[3], test_obj_ori[0], test_obj_ori[1], test_obj_ori[2]);
-                                                -0.1, +0.1, -.5, 
-                                                0.0, 0.0, -0.707, 0.707);
+## if we have many particles we can create many "q = vkdepth.State()"
+# state -> particle
+# instance -> object
+def test_add_state():
+    vk_state_list = []
+    for par_index in range(PARTICLE_NUM):
+        vk_state = vkdepth.State();
+        vk_state_list.append(vk_state)
+        for obj_index in range(OBJECT_NUM):
+            # vk_state.add_instance( _vk_obj_id_list[obj_index],   -0.1, +0.1, -.5,   0.0, 0.0, -0.707, 0.707 );
+            if par_index == 16:
+                vk_state.add_instance(_vk_obj_id_list[obj_index],
+                                  +0.1, +0.1, -.5,
+                                  0.0, 0.0, -0.707, 0.707)
+            else:
+                vk_state.add_instance(_vk_obj_id_list[obj_index],
+                                   -0.1, +0.1, -.5,
+                                    0.0, 0.0, -0.707, 0.707)
+            
+        _vk_context.add_state(vk_state);
+    return vk_state_list
+_vk_state_list = test_add_state()
+## Create two states
+# p = vkdepth.State();
+# p.add_instance( a,   -0.1, +0.1, -.5,   0.0, 0.0, -0.707, 0.707 );
+# p.add_instance( b,    0.1, +0.1, -.5,   0.0, 0.0, -0.707, 0.707 );
 
-        context.add_state(_vk_state_list[par_index]);
+# context.add_state( p );
 
-q = vkdepth.State();
-# many objects in the same particle
-for i in range(1,2):
-    for obj_index in range(OBJECT_NUM):
-        q.add_instance( _vk_obj_id_list[obj_index], -0.1, +0.1, -0.2*(i+1),    0.0, 0.0, -0.707, 0.707 );
-        # q.add_instance( a, -0.1, +0.1, -0.2*(i+1),    0.0, 0.0, -0.707, 0.707 );
-        # q.add_instance( b, +0.1, +0.05, -0.2*(i+1),    0.0, 0.0, -0.707, 0.707 );
+# q = vkdepth.State();
+# for i in range(0,100):
+#     q.add_instance( a, -0.1, +0.1, -0.2*(i+1),    0.0, 0.0, -0.707, 0.707 );
+#     q.add_instance( b, +0.1, +0.05, -0.2*(i+1),    0.0, 0.0, -0.707, 0.707 );
 # pass;
-context.add_state( q );
+
+# context.add_state( q );
+
 
 ##
 ## Render+Download and then wait
-context.enqueue_render_and_download();
+_vk_context.enqueue_render_and_download();
 
 # Do something else here
 
-context.wait();
+_vk_context.wait();
 
 ##
 ## Get views
 
-pdv = context.view( 0 );
+pdv = _vk_context.view( 0 );
 pd = np.array( pdv, copy = False );
-qdv = context.view( 1 );
+print("pd type")
+print(type(pd))
+qdv = _vk_context.view( 16 );
 qd = np.array( qdv, copy = False );
 
 fig, axs = plt.subplots( 1, 2 );
@@ -217,17 +235,19 @@ qdv.release();
 
 ##
 ## Update state
-pa = np.array( vk_state.view(), copy = False );
+# pa = np.array( _vk_state_list[16].view(), copy = False );
+pa = np.array( _vk_state_list[16].view(), copy = False );
 
-pa[0,1] = +0.1;
-pa[1,1] = -0.1;
+pa[0,1] = 0.1
+pa[0,3] = -0.4
+# pa[1,1] = -0.1;
 
-context.enqueue_render_and_download();
-context.wait();
+_vk_context.enqueue_render_and_download();
+_vk_context.wait();
 
-pdv = context.view( 0 );
+pdv = _vk_context.view( 0 );
 pd = np.array( pdv, copy = False );
-qdv = context.view( 1 );
+qdv = _vk_context.view( 16 );
 qd = np.array( qdv, copy = False );
 
 fig, axs = plt.subplots( 1, 2 );
@@ -460,14 +480,17 @@ class PBPFMove():
             self.get_real_depth_image()
 
             # get rendered depth/seg image
-            self.get_rendered_depth_image_parallelised(self.particle_cloud)
-            
-            if COMBINE_PARTICLE_DEPTH_MASK_FLAG == True:
+            if PB_RENDER_FLAG == True and VK_RENDER_FLAG == False:
+                self.pd_get_rendered_depth_image_parallelised(self.particle_cloud)
+            # if PB_RENDER_FLAG == True and VK_RENDER_FLAG == False:
+            elif VK_RENDER_FLAG == True and PB_RENDER_FLAG == False:
+                self.vk_get_rendered_depth_image_parallelised(self.particle_cloud)
+            else:
+                while True:
+                    print("Error!!! VK_RENDER_FLAG and PB_RENDER_FLAG can not be TRUE or FALSE at the same time")
+            if DEPTH_MASK_FLAG == True and COMBINE_PARTICLE_DEPTH_MASK_FLAG == True:
                 flat_mask_position_list_jax = jnp.vstack(self.mask_position_from_segImg_list)
-                # mask_position_from_segImg_list_jax = jnp.array(self.mask_position_from_segImg_list) # jax
-                # # get x_min, x_mad, y_min, y_max
-                # # flat_mask_position_list = [item for sublist in self.mask_position_from_segImg_list for item in sublist] # list
-                # flat_mask_position_list_jax = mask_position_from_segImg_list_jax.ravel() # jax
+                # get x_min, x_mad, y_min, y_max
                 self.x_min, self.x_max, self.y_min, self.y_max = self.get_bounding_box(flat_mask_position_list_jax)
 
             # compare depth image
@@ -491,8 +514,8 @@ class PBPFMove():
                 print("Begin to change from persp to ortho")
                 self.real_depth_image_transferred_jax = _persp_to_ortho(self.real_depth_image_transferred_jax, FY_DEPTH, CX_DEPTH, CY_DEPTH)
 
-    # get rendered depth/seg image model 
-    def get_rendered_depth_image_parallelised(self, particle_cloud):
+    # get rendered depth/seg image model PyBullet
+    def pd_get_rendered_depth_image_parallelised(self, particle_cloud):
         threads_obs = []
         for index, particle in enumerate(particle_cloud):
             thread_obs = threading.Thread(target=self.get_rendered_depth_image, args=(index, particle))
@@ -501,7 +524,7 @@ class PBPFMove():
         for thread_obs in threads_obs:
             thread_obs.join()
 
-    # get rendered depth/seg image model
+    # get rendered depth/seg image model PyBullet
     def get_rendered_depth_image(self, index, particle):
         pybullet_env = self.pybullet_env_id_collection[index]
         pybullet_env.stepSimulation()
@@ -514,6 +537,20 @@ class PBPFMove():
             mask_position_from_segImg = self.get_target_objects_ID_from_segImg(particle, segImg, index) # jax
             self.mask_position_from_segImg_list[index] = mask_position_from_segImg # list
         self.rendered_depth_images_list[index] = depth_image_render # array/list
+
+    # get rendered depth/seg image model PyBullet
+    def vk_get_rendered_depth_image_parallelised(sef, particle_cloud):
+        ## Update particle pose->update depth image
+        _vk_update_depth_image(_vk_state_list, particle_cloud)
+        ## Render and Download
+        _vk_context.enqueue_render_and_download()
+        ## Waiting for rendering and download
+        _vk_context.wait()
+        ## Get Depth image
+        vk_rendered_depth_image_array_list_ = _vk_depth_image_getting()
+
+        # self.mask_position_from_segImg_list[index] = mask_position_from_segImg # list
+        self.rendered_depth_images_list = vk_rendered_depth_image_array_list_ # array/list
 
     # get target objects ID
     def get_target_objects_ID_from_segImg(self, particle, segImg, index):
@@ -1528,6 +1565,7 @@ class PBPFMove():
             print("depth image encoding: 16UC1")
         else:
             print("image is not depth image")
+
 #Class of Constant-velocity Particle Filtering
 class CVPFMove():
     def __init__(self, obj_num=0):
@@ -2106,6 +2144,20 @@ def quaternion_correction(quaternion): # x,y,z,w
     #return quaternion # x,y,z,w
     return new_quaternion
 
+def _get_position_from_matrix44(a_T_b_4_4):
+    x = a_T_b_4_4[0][3]
+    y = a_T_b_4_4[1][3]
+    z = a_T_b_4_4[2][3]
+    position = [x, y, z]
+    return position
+
+# get quaternion from matrix
+def _get_quaternion_from_matrix(a_T_b_4_4):
+    rot_matrix = a_T_b_4_4[:3, :3]
+    rotation = R.from_matrix(rot_matrix)
+    quaternion = rotation.as_quat()
+    return quaternion
+
 #def publish_ray_trace_info(particle_cloud_pub):
 #    par_pose_list = list(range(PARTICLE_NUM))
 #    for par_index in range(PARTICLE_NUM):
@@ -2237,7 +2289,6 @@ def generate_point_for_ray(pw_T_c_pos, pw_T_parC_4_4, obj_index):
         point_pos_list.append(pw_T_p_pos)
     return point_list, point_pos_list
 
-
 def track_fk_sim_world():
     # if SHOW_RAY == True:
     #     p_track_fk_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT,GUI_SERVER
@@ -2278,7 +2329,8 @@ def track_fk_world_rob_mv(p_sim, sim_rob_id, position):
                                   joint_index,
                                   targetValue=position[joint_index])
 
-def __get_camera_intrinsic_params(camera_info_topic_name):
+# get camera intrinsic params
+def _get_camera_intrinsic_params(camera_info_topic_name):
     camera_info = None
 
     def camera_info_callback(data):
@@ -2301,6 +2353,107 @@ def __get_camera_intrinsic_params(camera_info_topic_name):
     Camera = namedtuple("Camera", "fx fy cx cy image_height image_width")
     camera_intrinsic_parameters = Camera(fx, fy, cx, cy, image_height, image_width)
     return camera_intrinsic_parameters 
+
+def _vk_config_setting():
+    depth_img_height = RESOLUTION_DEPTH[0] # 480
+    depth_img_width = RESOLUTION_DEPTH[1] # 848
+    ## Create context
+    vk_config = vkdepth.ContextConfig()
+    vk_config.render_size(depth_img_width, depth_img_height) # width(848), height(480)
+    return vk_config
+
+def _vk_camera_setting(pw_T_camD_tf_4_4):
+    ## Setup vk_camera
+    vk_camera = vkdepth.Camera()
+
+    pw_T_camD_tf_4_4_ = copy.deepcopy(pw_T_camD_tf_4_4)
+    pw_T_camD_pos = _get_position_from_matrix44(pw_T_camD_tf_4_4_)
+    x_pos = pw_T_camD_pos[0]
+    y_pos = pw_T_camD_pos[1]
+    z_pos = pw_T_camD_pos[2]
+    pw_T_camD_ori = _get_quaternion_from_matrix(pw_T_camD_tf_4_4_) # x, y, z, w
+    x_ori = pw_T_camD_ori[0]
+    y_ori = pw_T_camD_ori[1]
+    z_ori = pw_T_camD_ori[2]
+    w_ori = pw_T_camD_ori[3]
+
+    vk_camera.set_near_far(NEARVAL, FARVAL)
+    vk_camera.set_aspect_wh(WIDTH_DEPTH, HEIGHT_DEPTH) # width: 848, height: 480
+    vk_camera.set_position(x_pos, y_pos, z_pos) # x, y, z
+    vk_camera.set_orientation_quat(w_ori, x_ori, y_ori, z_ori) # w, x, y, z
+
+    return vk_camera
+
+def _vk_load_meshes():
+    global _vk_context
+    vk_obj_id_list = [0] * OBJECT_NUM
+    vk_other_id_list = []
+    # a, b
+    for obj_index in range(OBJECT_NUM):
+        obj_name = OBJECT_NAME_LIST[obj_index] # "cracker"/"soup"
+        if obj_index == 0:
+            obj_id = vk_context.load_model("assets/meshes/003_cracker_box.vkdepthmesh")
+        elif obj_index == 1:
+            obj_id = vk_context.load_model("assets/meshes/005_tomato_soup_can.vkdepthmesh")
+        vk_obj_id_list[obj_index] = obj_id
+    # vk mark -> table/robot...
+    # obj_id = vk_context.load_model()
+    # vk_other_id_list.append(obj_id)
+    return vk_obj_id_list, vk_other_id_list
+
+# "particle setting"
+def _vk_state_setting(vk_particle_cloud):
+    global _vk_context
+    vk_state_list = [0] * PARTICLE_NUM
+    for index, particle in enumerate(vk_particle_cloud):
+        vk_state = vkdepth.State()
+        vk_state_list[index] = vk_state
+        ## add object in particle
+        for obj_index in range(OBJECT_NUM):
+            par_pos = particle[obj_index].pos
+            x_pos = par_pos[0]
+            y_pos = par_pos[1]
+            z_pos = par_pos[2]
+            par_ori = particle[obj_index].ori
+            x_ori = par_ori[0]
+            y_ori = par_ori[1]
+            z_ori = par_ori[2]
+            w_ori = par_ori[3]
+            vk_state.add_instance(_vk_obj_id_list[obj_index],
+                                  x_pos, y_pos, z_pos,
+                                  w_ori, x_ori, y_ori, z_ori) # w, x, y, z
+        
+        # vk mark 
+        ## add table/robot... in particle
+        # vk_state.add_instance()
+        _vk_context.add_state(vk_state)
+    return vk_state_list
+
+# get vk rendered depth image
+def _vk_depth_image_getting():
+    global _vk_context
+    vk_rendered_depth_image_array_list = []
+    for par_index in range(PARTICLE_NUM):
+        vk_rendered_depth_image_vkdepth = _vk_context.view(par_index) # <class 'vkdepth.DepthView'>
+        vk_rendered_depth_image_array = np.array(vk_rendered_depth_image_vkdepth, copy = False) # <class 'numpy.ndarray'>
+        vk_rendered_depth_image_array_list.append(vk_rendered_depth_image_array)
+    return vk_rendered_depth_image_array_list
+
+# update vk rendered depth image
+def _vk_update_depth_image(vk_state_list, vk_particle_cloud):
+    for index, particle in enumerate(vk_particle_cloud):
+        objs_states = np.array(vk_state_list[index].view(), copy = False)
+        for obj_index in range(OBJECT_NUM):
+            objs_states[obj_index, 1] = particle[obj_index].pos[0] # x_pos
+            objs_states[obj_index, 2] = particle[obj_index].pos[1] # y_pos
+            objs_states[obj_index, 3] = particle[obj_index].pos[2] # z_pos
+            objs_states[obj_index, 4] = particle[obj_index].pos[6] # w_ori
+            objs_states[obj_index, 5] = particle[obj_index].pos[3] # x_ori
+            objs_states[obj_index, 6] = particle[obj_index].pos[4] # y_ori
+            objs_states[obj_index, 7] = particle[obj_index].pos[5] # z_ori
+    
+
+
 
 # ctrl-c write down the error file
 def signal_handler(sig, frame):
@@ -2352,14 +2505,15 @@ while reset_flag == True:
             PARTICLE_NUM = 150
         
         # ============================================================================
+
         # get camera intrinsic info
         # CAMERA_INFO_TOPIC_COLOR: "/camera/color/camera_info"
         # CAMERA_INFO_TOPIC_DEPTH: "/camera/depth/camera_info"
-        camera_intrinsic_parameters_color = __get_camera_intrinsic_params(CAMERA_INFO_TOPIC_COLOR)
-        camera_intrinsic_parameters_depth = __get_camera_intrinsic_params(CAMERA_INFO_TOPIC_DEPTH)
+        camera_intrinsic_parameters_color = _get_camera_intrinsic_params(CAMERA_INFO_TOPIC_COLOR)
+        camera_intrinsic_parameters_depth = _get_camera_intrinsic_params(CAMERA_INFO_TOPIC_DEPTH)
 
-        HEIGHT_DEPTH = camera_intrinsic_parameters_depth.image_height # 1280/848
-        WIDTH_DEPTH = camera_intrinsic_parameters_depth.image_width # 720/480
+        HEIGHT_DEPTH = camera_intrinsic_parameters_depth.image_height # 720/480
+        WIDTH_DEPTH = camera_intrinsic_parameters_depth.image_width # 1280/848
         CX_DEPTH = camera_intrinsic_parameters_depth.cx
         CY_DEPTH = camera_intrinsic_parameters_depth.cy
         FX_DEPTH = camera_intrinsic_parameters_depth.fx
@@ -2369,7 +2523,9 @@ while reset_flag == True:
         FOV_V_DEPTH = math.degrees(2 * math.atan(HEIGHT_DEPTH / (2*FY_DEPTH))) # fov: vertical / y
         
         RESOLUTION_DEPTH = (HEIGHT_DEPTH, WIDTH_DEPTH) # 480 848
+
         # ============================================================================
+        
         # print(obstacles_pos)
         # print(type(obstacles_pos))
         pub_DOPE_list = []
@@ -2497,18 +2653,25 @@ while reset_flag == True:
         # build an object of class "Ros_Listener"
         ROS_LISTENER = Ros_Listener()
         create_scene = Create_Scene(OBJECT_NUM, ROBOT_NUM, other_obj_num)
+        _tf_listener = tf.TransformListener()
         _launch_camera = LaunchCamera(WIDTH_DEPTH, HEIGHT_DEPTH, FOV_V_DEPTH)
         
-        _tf_listener = tf.TransformListener()
         time.sleep(0.5)
         
         pw_T_rob_sim_pose_list_alg = create_scene.initialize_robot()
-        print("After initializing robot")
+        print("Finish initializing robot")
         _pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
+        # get cameraDepth pose
+        _pw_T_camD_tf_4_4 = _launch_camera.getCameraInPybulletWorldPose44(_tf_listener, _pw_T_rob_sim_4_4)
+        print("========================")
+        print("Camera depth len pose in Pybullet world:")
+        print(_pw_T_camD_tf_4_4)
+        print("========================")
         pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object()
         print("trans_ob_list, rot_ob_list:")
         print(trans_ob_list, rot_ob_list)
-        print("After initializing scene")
+        print("========================")
+        print("Finish initializing scene")
         for obj_index in range(other_obj_num):
             pw_T_obj_obse_oto_list_alg = create_scene.initialize_base_of_cheezit()
 
@@ -2518,13 +2681,45 @@ while reset_flag == True:
                                                 pw_T_obj_obse_oto_list_alg,
                                                 update_style_flag, CHANGE_SIM_TIME)
         
+        
         # get estimated object
+        print("Begin initializing particles...")
         if run_alg_flag == "PBPF":
             estimated_object_set, particle_cloud_pub, p_par_env_list = initial_parameter.initial_and_set_simulation_env()
         if run_alg_flag == "CVPF":
             estimated_object_set, particle_cloud_pub, p_par_env_list = initial_parameter.initial_and_set_simulation_env_CV()
             boss_est_pose_CVPF.append(estimated_object_set) # [esti_obj1, esti_obj2]
-        print("After initializing particles")
+        print("Finish initializing particles")
+
+        # ============================================================================
+        # initialisation of vk configuration
+        if VK_RENDER_FLAG == True:
+            print("Begin initializing vulkon...")
+            ## Setup vk_config
+            _vk_config = _vk_config_setting()
+            ## Setup vk_camera
+            _vk_camera = _vk_camera_setting(_pw_T_camD_tf_4_4)
+            ## create context
+            _vk_context = vkdepth.initialize(_vk_config)
+            _vk_context.update_camera(_vk_camera)
+            ## Load meshes
+            _vk_obj_id_list, _vk_other_id_list = _vk_load_meshes()
+            ## Create states
+            ## state -> particle
+            ## instance -> object
+            ## if we have many particles we can create many "q = vkdepth.State()"
+            _vk_particle_cloud = copy.deepcopy(particle_cloud_pub)
+            _vk_state_list = _vk_state_setting(_vk_particle_cloud)
+            ## Render and Download
+            _vk_context.enqueue_render_and_download()
+            ## Waiting for rendering and download
+            _vk_context.wait()
+            ## Get Depth image
+            vk_rendered_depth_image_array_list = _vk_depth_image_getting()
+            
+        # ============================================================================
+
+
         # publish particles/estimated object
         publish_par_pose_info(particle_cloud_pub)
         publish_esti_pose_info(estimated_object_set)
@@ -2559,12 +2754,12 @@ while reset_flag == True:
         rob_T_cam_tf_4_4 = np.r_[rob_T_cam_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
         pw_T_cam_tf = np.dot(_pw_T_rob_sim_4_4, rob_T_cam_tf_4_4)
         pw_T_cam_tf_pos = [pw_T_cam_tf[0][3], pw_T_cam_tf[1][3], pw_T_cam_tf[2][3]]
-        print("rob_T_cam_tf_4_4")
+        print("==============================================")
+        print("Camera RGB len pose in Robot world:")
         print(rob_T_cam_tf_4_4)
-        print("==========")
-        print("pw_T_cam_tf")
+        print("Camera RGB len pose in Pybullet world:")
         print(pw_T_cam_tf)
-        
+        print("==============================================")        
 
         # run the simulation
         Flag = True

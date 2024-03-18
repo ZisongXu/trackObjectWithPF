@@ -41,6 +41,7 @@ from quaternion_averaging import weightedAverageQuaternions
 from Particle import Particle
 from Object_Pose import Object_Pose
 import yaml
+
 #Class of initialize the simulation model
 class InitialSimulationModel():
     def __init__(self, object_num, robot_num, other_obj_num, particle_num, 
@@ -92,7 +93,8 @@ class InitialSimulationModel():
         self.task_flag = self.parameter_info['task_flag']
         self.SIM_REAL_WORLD_FLAG = self.parameter_info['sim_real_world_flag']
         self.SHOW_RAY = self.parameter_info['show_ray'] 
-
+        self.VK_RENDER_FLAG = self.parameter_info['vk_render_flag'] 
+        
     def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):
         position = copy.deepcopy(pw_T_obj_obse_pos)
         quat = copy.deepcopy(pw_T_obj_obse_ori)#x,y,z,w
@@ -145,6 +147,7 @@ class InitialSimulationModel():
         shelves_id_list = []
         other_obj_id_list = []
         for par_index in range(self.particle_num):
+            
             collision_detection_obj_id = []
             if self.SHOW_RAY == True:
                 pybullet_simulation_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT,GUI_SERVER

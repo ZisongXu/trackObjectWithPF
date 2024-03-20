@@ -36,7 +36,7 @@ oto_name_list:
 otob_name_list:
 - cracker_obstacle
 - fish_can
-particle_num: 25
+particle_num: 4
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0
 print_score_flag: false
@@ -54,5 +54,5 @@ width: 848
 camera_info_topic_color: /camera/color/camera_info
 camera_info_topic_depth: /camera/depth/camera_info
 show_particle_depth_image_to_point_cloud_flag: true
-vk_render_flag: false
-pb_render_flag: true
+vk_render_flag: true
+pb_render_flag: false

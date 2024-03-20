@@ -160,7 +160,7 @@ _vk_context.update_camera(_vk_camera);
 ## Load meshes
 for obj_index in range(OBJECT_NUM):
     if obj_index == 0:
-        obj_id = _vk_context.load_model( "assets/meshes/003_cracker_box.vkdepthmesh" );
+        obj_id = _vk_context.load_model( "assets/meshes/003_cracker_box1.vkdepthmesh" );
     elif obj_index == 1:
         obj_id = _vk_context.load_model( "assets/meshes/005_tomato_soup_can.vkdepthmesh" );
     _vk_obj_id_list.append(obj_id)
@@ -179,14 +179,14 @@ def test_add_state():
         vk_state_list.append(vk_state)
         for obj_index in range(OBJECT_NUM):
             # vk_state.add_instance( _vk_obj_id_list[obj_index],   -0.1, +0.1, -.5,   0.0, 0.0, -0.707, 0.707 );
-            if par_index == 16:
+            if par_index == 3:
                 vk_state.add_instance(_vk_obj_id_list[obj_index],
-                                  +0.1, +0.1, -.5,
-                                  0.0, 0.0, -0.707, 0.707)
+                                  0, 0, -.5,
+                                  0, 0.0, -0, 1)
             else:
                 vk_state.add_instance(_vk_obj_id_list[obj_index],
-                                   -0.1, +0.1, -.5,
-                                    0.0, 0.0, -0.707, 0.707)
+                                   0, 0, -0.5,
+                                    1, 0.0, 0, 0)
             
         _vk_context.add_state(vk_state);
     return vk_state_list
@@ -222,13 +222,13 @@ pdv = _vk_context.view( 0 );
 pd = np.array( pdv, copy = False );
 print("pd type")
 print(type(pd))
-qdv = _vk_context.view( 16 );
+qdv = _vk_context.view( 3 );
 qd = np.array( qdv, copy = False );
 
 fig, axs = plt.subplots( 1, 2 );
 axs[0].imshow( pd );
 axs[1].imshow( qd );
-plt.show();
+# plt.show();
 
 pdv.release();
 qdv.release();
@@ -236,7 +236,7 @@ qdv.release();
 ##
 ## Update state
 # pa = np.array( _vk_state_list[16].view(), copy = False );
-pa = np.array( _vk_state_list[16].view(), copy = False );
+pa = np.array( _vk_state_list[3].view(), copy = False );
 
 pa[0,1] = 0.1
 pa[0,3] = -0.4
@@ -247,13 +247,13 @@ _vk_context.wait();
 
 pdv = _vk_context.view( 0 );
 pd = np.array( pdv, copy = False );
-qdv = _vk_context.view( 16 );
+qdv = _vk_context.view( 3 );
 qd = np.array( qdv, copy = False );
 
 fig, axs = plt.subplots( 1, 2 );
 axs[0].imshow( pd );
 axs[1].imshow( qd );
-plt.show();
+# plt.show();
 
 pdv.release();
 qdv.release();
@@ -348,7 +348,7 @@ class PBPFMove():
         self.rays_id_list = []
 
         pybullet_sim_envs = self.pybullet_env_id_collection
-        fake_robot_id = self.pybullet_sim_fake_robot_id_collection
+        particle_robot_id = self.pybullet_sim_fake_robot_id_collection
         
         self.rendered_depth_images_list = [1] * PARTICLE_NUM
         self.rendered_depth_image_transferred_list = [1] * PARTICLE_NUM
@@ -365,7 +365,7 @@ class PBPFMove():
         print("-------------------------------------")
 
         # motion model
-        self.motion_model(pybullet_sim_envs, fake_robot_id, real_robot_joint_pos)
+        self.motion_model(pybullet_sim_envs, particle_robot_id, real_robot_joint_pos)
         t2 = time.time()
         self.times.append(t2-t1)
 
@@ -392,18 +392,19 @@ class PBPFMove():
         return object_estimate_pose, dis_std_list, ang_std_list, self.particle_cloud
 
     # motion model
-    def motion_model(self, pybullet_sim_envs, fake_robot_id, real_robot_joint_pos):  
-        self.motion_update_PB_parallelised(pybullet_sim_envs, fake_robot_id, real_robot_joint_pos)
+    def motion_model(self, pybullet_sim_envs, particle_robot_id, real_robot_joint_pos):  
+        print("Welcome to the motion model!")
+        self.motion_update_PB_parallelised(pybullet_sim_envs, particle_robot_id, real_robot_joint_pos)
 
-    def motion_update_PB_parallelised(self, pybullet_sim_envs, fake_robot_id, real_robot_joint_pos):
+    def motion_update_PB_parallelised(self, pybullet_sim_envs, particle_robot_id, real_robot_joint_pos):
         global simRobot_touch_par_flag
         threads = []
         for index, pybullet_env in enumerate(pybullet_sim_envs):
             # execute code in parallel
             if simRobot_touch_par_flag == 1:
-                thread = threading.Thread(target=self.motion_update_PB, args=(index, pybullet_env, fake_robot_id, real_robot_joint_pos))
+                thread = threading.Thread(target=self.motion_update_PB, args=(index, pybullet_env, particle_robot_id, real_robot_joint_pos))
             else:
-                thread = threading.Thread(target=self.sim_robot_move_direct, args=(index, pybullet_env, fake_robot_id, real_robot_joint_pos))
+                thread = threading.Thread(target=self.sim_robot_move_direct, args=(index, pybullet_env, particle_robot_id, real_robot_joint_pos))
             thread.start()
             threads.append(thread)
         for thread in threads:
@@ -411,7 +412,7 @@ class PBPFMove():
         if simRobot_touch_par_flag == 0:
             return
     
-    def motion_update_PB(self, index, pybullet_env, fake_robot_id, real_robot_joint_pos):
+    def motion_update_PB(self, index, pybullet_env, particle_robot_id, real_robot_joint_pos):
         collision_detection_obj_id = []
         other_object_id_list_list = self.pybullet_sim_other_object_id_collection # now is empty
         
@@ -431,17 +432,17 @@ class PBPFMove():
             self.change_obj_parameters(pybullet_env, pw_T_par_sim_id)
         # execute the control
         if update_style_flag == "pose":
-            self.pose_sim_robot_move(index, pybullet_env, fake_robot_id, real_robot_joint_pos)
+            self.pose_sim_robot_move(index, pybullet_env, particle_robot_id, real_robot_joint_pos)
         elif update_style_flag == "time":
             # change simulation time
             pf_update_interval_in_sim = BOSS_PF_UPDATE_INTERVAL_IN_REAL / CHANGE_SIM_TIME
             # make sure all particles are updated
             for time_index in range(int(pf_update_interval_in_sim)):
-                self.set_real_robot_JointPosition(pybullet_env, fake_robot_id[index], real_robot_joint_pos)
+                self.set_real_robot_JointPosition(pybullet_env, particle_robot_id[index], real_robot_joint_pos)
                 pybullet_env.stepSimulation()
         ### ori: x,y,z,w
         # collision check: add robot
-        collision_detection_obj_id.append(fake_robot_id[index])
+        collision_detection_obj_id.append(particle_robot_id[index])
         collision_detection_obj_id.append(self.pybullet_sim_env_fix_obj_id_collection[index])
         # now is empty
         for oto_index in range(self.other_obj_num):
@@ -474,6 +475,7 @@ class PBPFMove():
 
     # observation model
     def observation_model(self, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs):
+        print("Welcome to the observation model!")
         # observation model (DEPTH)
         if USING_D_FLAG == True:
             # get real depth image
@@ -539,7 +541,14 @@ class PBPFMove():
         self.rendered_depth_images_list[index] = depth_image_render # array/list
 
     # get rendered depth/seg image model PyBullet
-    def vk_get_rendered_depth_image_parallelised(sef, particle_cloud):
+    def vk_get_rendered_depth_image_parallelised(self, particle_cloud):
+        # vk mark 
+        # get robot link state
+        # pybullet_sim_envs = self.pybullet_env_id_collection
+        # pybullet_sim_envs_0 = pybullet_sim_envs[0]
+        # particle_robot_id_collection = self.pybullet_sim_fake_robot_id_collection
+        # particle_robot_id_0 = particle_robot_id_collection[0]
+
         ## Update particle pose->update depth image
         _vk_update_depth_image(_vk_state_list, particle_cloud)
         ## Render and Download
@@ -612,10 +621,13 @@ class PBPFMove():
                     real_depth_img_name = "0_" + str(_particle_update_time) + "_real_depth_img_"+str(index)+".png"
                     # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
                     imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, self.real_depth_image_transferred, cmap='gray')
-
-                    rendered_depth_img_name = "0_" + str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
-                    imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred, cmap='gray')
-
+                    if PB_RENDER_FLAG == True:
+                        rendered_depth_img_name = "pw_0_" + str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
+                        imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred, cmap='gray')
+                    if VK_RENDER_FLAG == True:
+                        rendered_depth_img_name = "vk_0_" + str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
+                        imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred, cmap='gray')
+                    
                     # rendered_seg_img_name = str(_particle_update_time)+"_rendered_seg_img_"+str(index)+".png"
                     # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_seg_img_name, segImg)
             
@@ -974,15 +986,15 @@ class PBPFMove():
                                              joint_index,
                                              targetValue=position[joint_index])
     
-    def pose_sim_robot_move(self, index, pybullet_env, fake_robot_id, real_robot_joint_pos):
+    def pose_sim_robot_move(self, index, pybullet_env, particle_robot_id, real_robot_joint_pos):
         flag_set_sim = 1
         # ensure the robot arm in the simulation moves to the final state on each update
         while not rospy.is_shutdown():
             if flag_set_sim == 0:
                 break
-            self.set_real_robot_JointPosition(pybullet_env, fake_robot_id[index], real_robot_joint_pos)
+            self.set_real_robot_JointPosition(pybullet_env, particle_robot_id[index], real_robot_joint_pos)
             pybullet_env.stepSimulation()
-            real_rob_joint_list_cur = self.get_real_robot_joint(pybullet_env, fake_robot_id[index])
+            real_rob_joint_list_cur = self.get_real_robot_joint(pybullet_env, particle_robot_id[index])
             flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur, real_robot_joint_pos)
             
     def collision_check(self, pybullet_env, collision_detection_obj_id, sim_par_cur_pos, sim_par_cur_ori, pw_T_par_sim_id, index, obj_index, par_pose_3_1):
@@ -2362,27 +2374,30 @@ def _vk_config_setting():
     vk_config.render_size(depth_img_width, depth_img_height) # width(848), height(480)
     return vk_config
 
-def _vk_camera_setting(pw_T_camD_tf_4_4):
+def _vk_camera_setting(pw_T_camD_tf_4_4, camD_T_camVk_4_4):
     ## Setup vk_camera
     vk_camera = vkdepth.Camera()
 
     pw_T_camD_tf_4_4_ = copy.deepcopy(pw_T_camD_tf_4_4)
-    pw_T_camD_pos = _get_position_from_matrix44(pw_T_camD_tf_4_4_)
-    x_pos = pw_T_camD_pos[0]
-    y_pos = pw_T_camD_pos[1]
-    z_pos = pw_T_camD_pos[2]
-    pw_T_camD_ori = _get_quaternion_from_matrix(pw_T_camD_tf_4_4_) # x, y, z, w
-    x_ori = pw_T_camD_ori[0]
-    y_ori = pw_T_camD_ori[1]
-    z_ori = pw_T_camD_ori[2]
-    w_ori = pw_T_camD_ori[3]
+    camD_T_camVk_4_4_ = copy.deepcopy(camD_T_camVk_4_4)
+    pw_T_camVk_4_4_ = np.dot(pw_T_camD_tf_4_4_, camD_T_camVk_4_4_)
+    
+    pw_T_camVk_pos = _get_position_from_matrix44(pw_T_camVk_4_4_)
+    x_pos = pw_T_camVk_pos[0]
+    y_pos = pw_T_camVk_pos[1]
+    z_pos = pw_T_camVk_pos[2]
+    pw_T_camVk_ori = _get_quaternion_from_matrix(pw_T_camVk_4_4_) # x, y, z, w
+    x_ori = pw_T_camVk_ori[0]
+    y_ori = pw_T_camVk_ori[1]
+    z_ori = pw_T_camVk_ori[2]
+    w_ori = pw_T_camVk_ori[3]
 
     vk_camera.set_near_far(NEARVAL, FARVAL)
     vk_camera.set_aspect_wh(WIDTH_DEPTH, HEIGHT_DEPTH) # width: 848, height: 480
     vk_camera.set_position(x_pos, y_pos, z_pos) # x, y, z
     vk_camera.set_orientation_quat(w_ori, x_ori, y_ori, z_ori) # w, x, y, z
 
-    return vk_camera
+    return vk_camera, pw_T_camVk_4_4_
 
 def _vk_load_meshes():
     global _vk_context
@@ -2392,39 +2407,57 @@ def _vk_load_meshes():
     for obj_index in range(OBJECT_NUM):
         obj_name = OBJECT_NAME_LIST[obj_index] # "cracker"/"soup"
         if obj_index == 0:
-            obj_id = vk_context.load_model("assets/meshes/003_cracker_box.vkdepthmesh")
+            obj_id = _vk_context.load_model("assets/meshes/003_cracker_box2.vkdepthmesh")
         elif obj_index == 1:
-            obj_id = vk_context.load_model("assets/meshes/005_tomato_soup_can.vkdepthmesh")
+            obj_id = _vk_context.load_model("assets/meshes/005_tomato_soup_can.vkdepthmesh")
         vk_obj_id_list[obj_index] = obj_id
     # vk mark -> table/robot...
-    # obj_id = vk_context.load_model()
+    num_bodies = p_sim.getNumBodies(sim_rob_id)
+    body_info = p_sim.getBodyInfo(sim_rob_id)
+    print("num_bodies")
+    print(num_bodies)
+    print("body_info")
+    print(body_info)
+    input("stop")
+    # p_sim.getLinkState
+    # obj_id = _vk_context.load_model()
     # vk_other_id_list.append(obj_id)
     return vk_obj_id_list, vk_other_id_list
 
 # "particle setting"
-def _vk_state_setting(vk_particle_cloud):
+def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4):
     global _vk_context
     vk_state_list = [0] * PARTICLE_NUM
+    pw_T_camVk_4_4_ = copy.deepcopy(pw_T_camVk_4_4)
+    camVk_T_pw_4_4_ = np.linalg.inv(pw_T_camVk_4_4_)
     for index, particle in enumerate(vk_particle_cloud):
         vk_state = vkdepth.State()
         vk_state_list[index] = vk_state
         ## add object in particle
         for obj_index in range(OBJECT_NUM):
-            par_pos = particle[obj_index].pos
-            x_pos = par_pos[0]
-            y_pos = par_pos[1]
-            z_pos = par_pos[2]
-            par_ori = particle[obj_index].ori
-            x_ori = par_ori[0]
-            y_ori = par_ori[1]
-            z_ori = par_ori[2]
-            w_ori = par_ori[3]
+            vk_T_par_pos = copy.deepcopy(particle[obj_index].pos)
+            x_pos = vk_T_par_pos[0]
+            y_pos = vk_T_par_pos[1]
+            z_pos = vk_T_par_pos[2]
+            vk_T_par_ori = copy.deepcopy(particle[obj_index].ori)
+            x_ori = vk_T_par_ori[0]
+            y_ori = vk_T_par_ori[1]
+            z_ori = vk_T_par_ori[2]
+            w_ori = vk_T_par_ori[3]
+
             vk_state.add_instance(_vk_obj_id_list[obj_index],
                                   x_pos, y_pos, z_pos,
                                   w_ori, x_ori, y_ori, z_ori) # w, x, y, z
         
         # vk mark 
         ## add table/robot... in particle
+
+        # get robot link state
+        # pybullet_sim_envs = self.pybullet_env_id_collection
+        # pybullet_sim_envs_0 = pybullet_sim_envs[0]
+        # particle_robot_id_collection = self.pybullet_sim_fake_robot_id_collection
+        # particle_robot_id_0 = particle_robot_id_collection[0]
+
         # vk_state.add_instance()
         _vk_context.add_state(vk_state)
     return vk_state_list
@@ -2447,10 +2480,10 @@ def _vk_update_depth_image(vk_state_list, vk_particle_cloud):
             objs_states[obj_index, 1] = particle[obj_index].pos[0] # x_pos
             objs_states[obj_index, 2] = particle[obj_index].pos[1] # y_pos
             objs_states[obj_index, 3] = particle[obj_index].pos[2] # z_pos
-            objs_states[obj_index, 4] = particle[obj_index].pos[6] # w_ori
-            objs_states[obj_index, 5] = particle[obj_index].pos[3] # x_ori
-            objs_states[obj_index, 6] = particle[obj_index].pos[4] # y_ori
-            objs_states[obj_index, 7] = particle[obj_index].pos[5] # z_ori
+            objs_states[obj_index, 4] = particle[obj_index].ori[3] # w_ori
+            objs_states[obj_index, 5] = particle[obj_index].ori[0] # x_ori
+            objs_states[obj_index, 6] = particle[obj_index].ori[1] # y_ori
+            objs_states[obj_index, 7] = particle[obj_index].ori[2] # z_ori
     
 
 
@@ -2691,35 +2724,6 @@ while reset_flag == True:
             boss_est_pose_CVPF.append(estimated_object_set) # [esti_obj1, esti_obj2]
         print("Finish initializing particles")
 
-        # ============================================================================
-        # initialisation of vk configuration
-        if VK_RENDER_FLAG == True:
-            print("Begin initializing vulkon...")
-            ## Setup vk_config
-            _vk_config = _vk_config_setting()
-            ## Setup vk_camera
-            _vk_camera = _vk_camera_setting(_pw_T_camD_tf_4_4)
-            ## create context
-            _vk_context = vkdepth.initialize(_vk_config)
-            _vk_context.update_camera(_vk_camera)
-            ## Load meshes
-            _vk_obj_id_list, _vk_other_id_list = _vk_load_meshes()
-            ## Create states
-            ## state -> particle
-            ## instance -> object
-            ## if we have many particles we can create many "q = vkdepth.State()"
-            _vk_particle_cloud = copy.deepcopy(particle_cloud_pub)
-            _vk_state_list = _vk_state_setting(_vk_particle_cloud)
-            ## Render and Download
-            _vk_context.enqueue_render_and_download()
-            ## Waiting for rendering and download
-            _vk_context.wait()
-            ## Get Depth image
-            vk_rendered_depth_image_array_list = _vk_depth_image_getting()
-            
-        # ============================================================================
-
-
         # publish particles/estimated object
         publish_par_pose_info(particle_cloud_pub)
         publish_esti_pose_info(estimated_object_set)
@@ -2768,10 +2772,45 @@ while reset_flag == True:
         # get pose of the end-effector of the robot arm from joints of robot arm 
         p_sim, sim_rob_id, sim_plane_id = track_fk_sim_world()
         track_fk_world_rob_mv(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
-
         rob_link_9_pose_old = p_sim.getLinkState(sim_rob_id, 9) # position = rob_link_9_pose_old[0], quaternion = rob_link_9_pose_old[1]
         # rob_T_obj_obse_pos_old = list(trans_ob)
         # rob_T_obj_obse_ori_old = list(rot_ob)
+
+
+        # ============================================================================
+        # initialisation of vk configuration
+        if VK_RENDER_FLAG == True:
+            print("Begin initializing vulkon...")
+            _camD_T_camVk_4_4 = np.array([[1, 0, 0, 0],
+                                          [0,-1, 0, 0],
+                                          [0, 0,-1, 0],
+                                          [0, 0, 0, 1]])
+            ## Setup vk_config
+            _vk_config = _vk_config_setting()
+            ## Setup vk_camera
+            _vk_camera, _pw_T_camVk_4_4 = _vk_camera_setting(_pw_T_camD_tf_4_4, _camD_T_camVk_4_4)
+            ## create context
+            _vk_context = vkdepth.initialize(_vk_config)
+            _vk_context.update_camera(_vk_camera)
+            ## Load meshes
+            _vk_obj_id_list, _vk_other_id_list = _vk_load_meshes()
+            ## Create states
+            ## state -> particle
+            ## instance -> object
+            ## if we have many particles we can create many "q = vkdepth.State()"
+            _vk_particle_cloud = copy.deepcopy(particle_cloud_pub)
+            _vk_state_list = _vk_state_setting(_vk_particle_cloud, _pw_T_camVk_4_4)
+            ## Render and Download
+            _vk_context.enqueue_render_and_download()
+            ## Waiting for rendering and download
+            _vk_context.wait()
+            ## Get Depth image
+            vk_rendered_depth_image_array_list = _vk_depth_image_getting()
+            fig, axs = plt.subplots(1, PARTICLE_NUM)
+            for par_index in range(PARTICLE_NUM):
+                axs[par_index].imshow(vk_rendered_depth_image_array_list[par_index])
+            plt.show()
+        # ============================================================================
 
 
         print("Welcome to Our Approach ! RUNNING MODEL: ", RUNNING_MODEL)

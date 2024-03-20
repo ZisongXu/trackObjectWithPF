@@ -31,6 +31,7 @@ apt-get install gcc-11 g++-11 -y
 update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 60 --slave /usr/bin/g++ g++ /usr/bin/g++-11
 update-alternatives --config gcc
 
+apt install zstd
 
 # Installation of ROS Noetic and essential packages
 sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'

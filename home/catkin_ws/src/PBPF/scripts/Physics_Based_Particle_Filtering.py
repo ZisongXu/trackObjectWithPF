@@ -128,6 +128,7 @@ PRINT_SCORE_FLAG = parameter_info['print_score_flag']
 SHOW_RAY = parameter_info['show_ray']
 VK_RENDER_FLAG = parameter_info['vk_render_flag']
 PB_RENDER_FLAG = parameter_info['pb_render_flag']
+PANDA_ROBOT_LINK_NUMBER = parameter_info['panda_robot_link_number']
 
 CHANGE_SIM_TIME = 1.0/240
 
@@ -160,7 +161,7 @@ _vk_context.update_camera(_vk_camera);
 ## Load meshes
 for obj_index in range(OBJECT_NUM):
     if obj_index == 0:
-        obj_id = _vk_context.load_model( "assets/meshes/003_cracker_box1.vkdepthmesh" );
+        obj_id = _vk_context.load_model( "assets/meshes/cracker.vkdepthmesh" );
     elif obj_index == 1:
         obj_id = _vk_context.load_model( "assets/meshes/005_tomato_soup_can.vkdepthmesh" );
     _vk_obj_id_list.append(obj_id)
@@ -238,7 +239,7 @@ qdv.release();
 # pa = np.array( _vk_state_list[16].view(), copy = False );
 pa = np.array( _vk_state_list[3].view(), copy = False );
 
-pa[0,1] = 0.1
+# pa[0,1] = 0.1
 pa[0,3] = -0.4
 # pa[1,1] = -0.1;
 
@@ -440,6 +441,9 @@ class PBPFMove():
             for time_index in range(int(pf_update_interval_in_sim)):
                 self.set_real_robot_JointPosition(pybullet_env, particle_robot_id[index], real_robot_joint_pos)
                 pybullet_env.stepSimulation()
+        
+        
+        
         ### ori: x,y,z,w
         # collision check: add robot
         collision_detection_obj_id.append(particle_robot_id[index])
@@ -2310,14 +2314,18 @@ def track_fk_sim_world():
     p_track_fk_env.setAdditionalSearchPath(pybullet_data.getDataPath())
     track_fk_plane_id = p_track_fk_env.loadURDF("plane.urdf")
     p_track_fk_env.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=90, cameraPitch=-20, cameraTargetPosition=[0.3,0.1,0.2])
+    
     if SIM_REAL_WORLD_FLAG == True:
         table_pos_1 = [0.46, -0.01, 0.710]
+        table_ori_1 = p_track_fk_env.getQuaternionFromEuler([0,0,0])
+        table_id_1 = p_track_fk_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1, useFixedBase = 1)
     else:
         table_pos_1 = [0, 0, 0]
     track_fk_rob_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
                                               [0, 0, 0.02+table_pos_1[2]],
                                               [0, 0, 0, 1],
                                               useFixedBase=1)
+
     if task_flag == "1":
         track_fk_obst_big_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_big.urdf"),
                                                    pw_T_obst_opti_pos_big,
@@ -2327,6 +2335,7 @@ def track_fk_sim_world():
         #                                            pw_T_obst_opti_pos_small,
         #                                            pw_T_obst_opti_ori_small,
         #                                            useFixedBase=1)
+    
     return p_track_fk_env, track_fk_rob_id, track_fk_plane_id
 
 def track_fk_world_rob_mv(p_sim, sim_rob_id, position):
@@ -2407,25 +2416,34 @@ def _vk_load_meshes():
     for obj_index in range(OBJECT_NUM):
         obj_name = OBJECT_NAME_LIST[obj_index] # "cracker"/"soup"
         if obj_index == 0:
-            obj_id = _vk_context.load_model("assets/meshes/003_cracker_box2.vkdepthmesh")
+            obj_id = _vk_context.load_model("assets/meshes/cracker.vkdepthmesh")
         elif obj_index == 1:
             obj_id = _vk_context.load_model("assets/meshes/005_tomato_soup_can.vkdepthmesh")
         vk_obj_id_list[obj_index] = obj_id
     # vk mark -> table/robot...
-    num_bodies = p_sim.getNumBodies(sim_rob_id)
-    body_info = p_sim.getBodyInfo(sim_rob_id)
-    print("num_bodies")
-    print(num_bodies)
-    print("body_info")
-    print(body_info)
-    input("stop")
+    # There are actually 13 links, of which "link8" and "panda_grasptarget" have no entities.
+    ## "link0,1,2,3,4,5,6,7", "panda_hand", "panda_left_finger", "panda_right_finger"
+    # index:0,1,2,3,4,5,6,7,   9,            10,                  11
+    vk_rob_link_id_list = [0] * PANDA_ROBOT_LINK_NUMBER # 11
+    for link_index in range(PANDA_ROBOT_LINK_NUMBER):
+        if link_index < 8:
+            rob_link_id = _vk_context.load_model("assets/meshes/link"+str(link_index)+".vkdepthmesh")
+        elif link_index == 8:
+            rob_link_id = _vk_context.load_model("assets/meshes/hand.vkdepthmesh")
+        elif link_index == 9:
+            rob_link_id = _vk_context.load_model("assets/meshes/left_finger.vkdepthmesh")
+        elif link_index == 10:
+            rob_link_id = _vk_context.load_model("assets/meshes/right_finger.vkdepthmesh")
+        vk_rob_link_id_list[link_index] = rob_link_id
+
     # p_sim.getLinkState
     # obj_id = _vk_context.load_model()
     # vk_other_id_list.append(obj_id)
-    return vk_obj_id_list, vk_other_id_list
+
+    return vk_obj_id_list, vk_rob_link_id_list, vk_other_id_list
 
 # "particle setting"
-def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4):
+def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4, pybullet_env, par_robot_id):
     global _vk_context
     vk_state_list = [0] * PARTICLE_NUM
     pw_T_camVk_4_4_ = copy.deepcopy(pw_T_camVk_4_4)
@@ -2448,15 +2466,49 @@ def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4):
             vk_state.add_instance(_vk_obj_id_list[obj_index],
                                   x_pos, y_pos, z_pos,
                                   w_ori, x_ori, y_ori, z_ori) # w, x, y, z
-        
+
         # vk mark 
         ## add table/robot... in particle
-
-        # get robot link state
-        # pybullet_sim_envs = self.pybullet_env_id_collection
-        # pybullet_sim_envs_0 = pybullet_sim_envs[0]
-        # particle_robot_id_collection = self.pybullet_sim_fake_robot_id_collection
-        # particle_robot_id_0 = particle_robot_id_collection[0]
+        # There are actually 13 links, of which "link8" and "panda_grasptarget" have no entities.
+        ## "link0,1,2,3,4,5,6,7", "panda_hand", "panda_left_finger", "panda_right_finger"
+        # index:0,1,2,3,4,5,6,7,   9,            10,                  11
+        link_info = pybullet_env.getLinkStates(par_robot_id, range(PANDA_ROBOT_LINK_NUMBER + 1)) # range: [0,12)
+        for link_index in range(PANDA_ROBOT_LINK_NUMBER): # 11: [0, 11)
+            # link_info_link = pybullet_env.getLinkState(par_robot_id, link_index)
+            # if link_index < 8:
+            if link_index == 0:
+                link_info_link = link_info[link_index]
+                vk_T_link_pos = link_info_link[0]
+                print("vk_T_link_pos")
+                print(vk_T_link_pos)
+                vk_T_link_pos = [0, 0, 0.730]
+                x_pos = vk_T_link_pos[0]
+                y_pos = vk_T_link_pos[1]
+                z_pos = vk_T_link_pos[2]
+                vk_T_link_ori = link_info_link[1]
+                vk_T_link_ori = [0, 0, 0, 1]
+                x_ori = vk_T_link_ori[0]
+                y_ori = vk_T_link_ori[1]
+                z_ori = vk_T_link_ori[2]
+                w_ori = vk_T_link_ori[3]
+                vk_state.add_instance(_vk_rob_link_id_list[link_index],
+                                      x_pos, y_pos, z_pos,
+                                      w_ori, x_ori, y_ori, z_ori) # w, x, y, z
+            else:
+                break
+                link_info_link = link_info[link_index + 1]
+                vk_T_link_pos = link_info_link[0]
+                x_pos = vk_T_link_pos[0]
+                y_pos = vk_T_link_pos[1]
+                z_pos = vk_T_link_pos[2]
+                vk_T_link_ori = link_info_link[1]
+                x_ori = vk_T_link_ori[0]
+                y_ori = vk_T_link_ori[1]
+                z_ori = vk_T_link_ori[2]
+                w_ori = vk_T_link_ori[3]
+                vk_state.add_instance(_vk_rob_link_id_list[link_index],
+                                      x_pos, y_pos, z_pos,
+                                      w_ori, x_ori, y_ori, z_ori) # w, x, y, z
 
         # vk_state.add_instance()
         _vk_context.add_state(vk_state)
@@ -2485,7 +2537,11 @@ def _vk_update_depth_image(vk_state_list, vk_particle_cloud):
             objs_states[obj_index, 6] = particle[obj_index].ori[1] # y_ori
             objs_states[obj_index, 7] = particle[obj_index].ori[2] # z_ori
     
-
+        # get robot link state
+        # pybullet_sim_envs = self.pybullet_env_id_collection
+        # pybullet_sim_envs_0 = pybullet_sim_envs[0]
+        # particle_robot_id_collection = self.pybullet_sim_fake_robot_id_collection
+        # particle_robot_id_0 = particle_robot_id_collection[0]
 
 
 # ctrl-c write down the error file
@@ -2772,9 +2828,22 @@ while reset_flag == True:
         # get pose of the end-effector of the robot arm from joints of robot arm 
         p_sim, sim_rob_id, sim_plane_id = track_fk_sim_world()
         track_fk_world_rob_mv(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
+        
         rob_link_9_pose_old = p_sim.getLinkState(sim_rob_id, 9) # position = rob_link_9_pose_old[0], quaternion = rob_link_9_pose_old[1]
         # rob_T_obj_obse_pos_old = list(trans_ob)
         # rob_T_obj_obse_ori_old = list(rot_ob)
+
+
+        link0_info = p_sim.getLinkState(sim_rob_id, 0)
+        print("link0_info")
+        print(link0_info)
+        
+        obj_pose = p_sim.getBasePositionAndOrientation(sim_rob_id)
+        print("obj_pose")
+        print(obj_pose[0])
+        print(obj_pose[1])
+
+        input("press continue")
 
 
         # ============================================================================
@@ -2793,13 +2862,13 @@ while reset_flag == True:
             _vk_context = vkdepth.initialize(_vk_config)
             _vk_context.update_camera(_vk_camera)
             ## Load meshes
-            _vk_obj_id_list, _vk_other_id_list = _vk_load_meshes()
+            _vk_obj_id_list, _vk_rob_link_id_list, _vk_other_id_list = _vk_load_meshes()
             ## Create states
             ## state -> particle
             ## instance -> object
             ## if we have many particles we can create many "q = vkdepth.State()"
             _vk_particle_cloud = copy.deepcopy(particle_cloud_pub)
-            _vk_state_list = _vk_state_setting(_vk_particle_cloud, _pw_T_camVk_4_4)
+            _vk_state_list = _vk_state_setting(_vk_particle_cloud, _pw_T_camVk_4_4, p_sim, sim_rob_id)
             ## Render and Download
             _vk_context.enqueue_render_and_download()
             ## Waiting for rendering and download

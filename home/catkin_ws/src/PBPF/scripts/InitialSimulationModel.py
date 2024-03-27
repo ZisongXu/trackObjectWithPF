@@ -48,7 +48,7 @@ class InitialSimulationModel():
                  pw_T_rob_sim_pose_list_alg, 
                  pw_T_obj_obse_obj_list_alg,
                  pw_T_obj_obse_oto_list_alg,
-                 update_style_flag, change_sim_time):
+                 update_style_flag, sim_time_step):
         self.object_num = object_num
         self.robot_num = robot_num
         self.other_obj_num = other_obj_num
@@ -57,7 +57,7 @@ class InitialSimulationModel():
         self.pw_T_obj_obse_obj_list_alg = pw_T_obj_obse_obj_list_alg
         self.pw_T_obj_obse_oto_list_alg = pw_T_obj_obse_oto_list_alg
         self.update_style_flag = update_style_flag
-        self.change_sim_time = change_sim_time
+        self.sim_time_step = sim_time_step
         
         self.particle_cloud = []
         self.esti_objs_cloud = []
@@ -79,10 +79,10 @@ class InitialSimulationModel():
         self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
         
         # mark
-        self.boss_sigma_obs_x = 0
-        self.boss_sigma_obs_y = 0
-        self.boss_sigma_obs_z = 0
-        self.boss_sigma_obs_ang_init = 0
+        # self.boss_sigma_obs_x = 0
+        # self.boss_sigma_obs_y = 0
+        # self.boss_sigma_obs_z = 0
+        # self.boss_sigma_obs_ang_init = 0
 
 
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 1
@@ -156,7 +156,7 @@ class InitialSimulationModel():
             p_env_list.append(pybullet_simulation_env)
             self.pybullet_particle_env_collection.append(pybullet_simulation_env)
             if self.update_style_flag == "time":
-                pybullet_simulation_env.setTimeStep(self.change_sim_time)
+                pybullet_simulation_env.setTimeStep(self.sim_time_step)
             pybullet_simulation_env.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.5, 0.3, 0.2])
             pybullet_simulation_env.setAdditionalSearchPath(pybullet_data.getDataPath())
             pybullet_simulation_env.setGravity(0, 0, -9.81)
@@ -352,70 +352,75 @@ class InitialSimulationModel():
                 #         obj_obse_pos = [0.314916357990211, 0.09473632228724473, 0.752469114753974]
                 #     elif par_index == 24:
                 #         obj_obse_pos = [0.314916357990211, 0.07473632228724473, 0.752469114753974]
-                offset1 = 0.01
-                offset2 = 0.02
-                offset3 = 0.04
-                offset4 = 0.06
-                offset5 = 0.08
-                offset6 = 0.1
-                pos = [0.37440226698353485, 0.14675928804436228, 0.7849156098144123]
-                x_1 = pos[0]
-                y_1 = pos[1]
-                z_1 = pos[2]
-                # 7, 8, 9, 10, 11, 13, 14
-                if par_index == 0:
-                    obj_obse_pos = [x_1, y_1, z_1]
-                elif par_index == 1:
-                    obj_obse_pos = [x_1-offset1, y_1, z_1]
-                elif par_index == 2:
-                    obj_obse_pos = [x_1-offset2, y_1, z_1]
-                elif par_index == 3:
-                    obj_obse_pos = [x_1-offset3, y_1, z_1]
-                elif par_index == 4:
-                    obj_obse_pos = [x_1-offset4, y_1, z_1]
-                elif par_index == 5:
-                    obj_obse_pos = [x_1-offset5, y_1, z_1]
-                elif par_index == 6:
-                    obj_obse_pos = [x_1-offset6, y_1, z_1]
+                do_1_2_3_exp_flag = False
+                if do_1_2_3_exp_flag == True:
+                    offset1 = 0.01
+                    offset2 = 0.02
+                    offset3 = 0.04
+                    offset4 = 0.06
+                    offset5 = 0.08
+                    offset6 = 0.1
+                    # # 123_cracker_full_view.bag
+                    # pos = [0.37440226698353485, 0.14675928804436228, 0.7849156098144123]
+                    # 123_cracker_part_view2.bag
+                    pos = [0.18252391836182735, 0.33187651313019706, 0.7869973436307546]
+                    x_1 = pos[0]
+                    y_1 = pos[1]
+                    z_1 = pos[2]
+                    # 7, 8, 9, 10, 11, 13, 14
+                    if par_index == 0:
+                        obj_obse_pos = [x_1, y_1, z_1]
+                    elif par_index == 1:
+                        obj_obse_pos = [x_1+offset1, y_1, z_1]
+                    elif par_index == 2:
+                        obj_obse_pos = [x_1+offset2, y_1, z_1]
+                    if par_index == 3:
+                        obj_obse_pos = [x_1+offset3, y_1, z_1]
+                    if par_index == 4:
+                        obj_obse_pos = [x_1+offset4, y_1, z_1]
+                    elif par_index == 5:
+                        obj_obse_pos = [x_1+offset5, y_1, z_1]
+                    elif par_index == 6:
+                        obj_obse_pos = [x_1+offset6, y_1, z_1]
 
-                if par_index == 7:
-                    obj_obse_pos = [x_1+offset1, y_1, z_1]
-                if par_index == 8:
-                    obj_obse_pos = [x_1+offset2, y_1, z_1]
-                if par_index == 9:
-                    obj_obse_pos = [x_1+offset3, y_1, z_1]
-                if par_index == 10:
-                    obj_obse_pos = [x_1+offset4, y_1, z_1]
-                if par_index == 11:
-                    obj_obse_pos = [x_1+offset5, y_1, z_1]
-                elif par_index == 12:
-                    obj_obse_pos = [x_1+offset6, y_1, z_1]
+                    if par_index == 7:
+                        obj_obse_pos = [x_1-offset1, y_1, z_1]
+                    if par_index == 8:
+                        obj_obse_pos = [x_1-offset2, y_1, z_1]
+                    if par_index == 9:
+                        obj_obse_pos = [x_1-offset3, y_1, z_1]
+                    if par_index == 10:
+                        obj_obse_pos = [x_1-offset4, y_1, z_1]
+                    if par_index == 11:
+                        obj_obse_pos = [x_1-offset5, y_1, z_1]
+                    elif par_index == 12:
+                        obj_obse_pos = [x_1-offset6, y_1, z_1]
 
-                if par_index == 13:
-                    obj_obse_pos = [x_1, y_1+offset1, z_1]
-                if par_index == 14:
-                    obj_obse_pos = [x_1, y_1+offset2, z_1]
-                elif par_index == 15:
-                    obj_obse_pos = [x_1, y_1+offset3, z_1]
-                elif par_index == 16:
-                    obj_obse_pos = [x_1, y_1+offset4, z_1]
-                elif par_index == 17:
-                    obj_obse_pos = [x_1, y_1+offset5, z_1]
-                elif par_index == 18:
-                    obj_obse_pos = [x_1, y_1+offset6, z_1]
+                    if par_index == 13:
+                        obj_obse_pos = [x_1, y_1+offset1, z_1]
+                    if par_index == 14:
+                        obj_obse_pos = [x_1, y_1+offset2, z_1]
+                    if par_index == 15:
+                        obj_obse_pos = [x_1, y_1+offset3, z_1]
+                    elif par_index == 16:
+                        obj_obse_pos = [x_1, y_1+offset4, z_1]
+                    elif par_index == 17:
+                        obj_obse_pos = [x_1, y_1+offset5, z_1]
+                    elif par_index == 18:
+                        obj_obse_pos = [x_1, y_1+offset6, z_1]
 
-                elif par_index == 19:
-                    obj_obse_pos = [x_1, y_1-offset1, z_1]
-                elif par_index == 20:
-                    obj_obse_pos = [x_1, y_1-offset2, z_1]
-                elif par_index == 21:
-                    obj_obse_pos = [x_1, y_1-offset3, z_1]
-                elif par_index == 22:
-                    obj_obse_pos = [x_1, y_1-offset4, z_1]
-                elif par_index == 23:
-                    obj_obse_pos = [x_1, y_1-offset5, z_1]
-                elif par_index == 24:
-                    obj_obse_pos = [x_1, y_1-offset6, z_1]
+                    elif par_index == 19:
+                        obj_obse_pos = [x_1, y_1-offset1, z_1]
+                    elif par_index == 20:
+                        obj_obse_pos = [x_1, y_1-offset2, z_1]
+                    elif par_index == 21:
+                        obj_obse_pos = [x_1, y_1-offset3, z_1]
+                    elif par_index == 22:
+                        obj_obse_pos = [x_1, y_1-offset4, z_1]
+                    elif par_index == 23:
+                        obj_obse_pos = [x_1, y_1-offset5, z_1]
+                    elif par_index == 24:
+                        obj_obse_pos = [x_1, y_1-offset6, z_1]
                 
 
             

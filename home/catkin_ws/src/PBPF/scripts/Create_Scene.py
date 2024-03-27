@@ -156,9 +156,13 @@ class Create_Scene():
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
 
             # mark
-            # new camera
-            pw_T_obj_obse_pos = [0.37440226698353485, 0.14675928804436228, 0.7849156098144123]
-            pw_T_obj_obse_ori = [ 0.56878298,  0.42443268,  0.56580163, -0.41977535]
+            # new camera 
+            # # 123_cracker_full_view.bag
+            # pw_T_obj_obse_pos = [0.37440226698353485, 0.14675928804436228, 0.7849156098144123]
+            # pw_T_obj_obse_ori = [ 0.56878298,  0.42443268,  0.56580163, -0.41977535]
+            # # 123_cracker_part_view2.bag
+            # pw_T_obj_obse_pos = [0.18252391836182735, 0.33187651313019706, 0.7869973436307546]
+            # pw_T_obj_obse_ori = [ 0.71052522, -0.00319479,  0.70363331,  0.00662347]
 
             obse_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
             self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)

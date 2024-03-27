@@ -22,18 +22,17 @@ import yaml
 import os
 #Class of franka robot listen to info from ROS
 class Ros_Listener():
-    def __init__(self):
+    def __init__(self, model=None):
         with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
             self.parameter_info = yaml.safe_load(file)
         self.gazebo_flag = self.parameter_info['gazebo_flag']
         self.object_name_list = self.parameter_info['object_name_list']
         self.object_num = self.parameter_info['object_num']
-        
+        self.current_joint_values = [0,0,0,0,0,0,0,0,0]
         self.pos_added_noise = []
         self.ori_added_noise = []
         self.model_pose_added_noise = []
         self.rob_T_obj_obse_4_4_list = []
-        self.current_joint_values = [0,0,0,0,0,0,0,0,0]
         self.bridge = CvBridge()
 
         rospy.Subscriber('/joint_states', JointState, self.joint_values_callback, queue_size=1)

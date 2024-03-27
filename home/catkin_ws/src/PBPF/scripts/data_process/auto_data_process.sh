@@ -58,10 +58,10 @@ do
 						fi
 					fi
 					# for rosbag in {1..10}
-					for ((rosbag=1;rosbag<=2;rosbag++)); 
+					for ((rosbag=1;rosbag<=1;rosbag++)); 
 					do
 						# for repeat in {1..10}
-						for ((repeat=0;repeat<=1;repeat++));
+						for ((repeat=0;repeat<=9;repeat++));
 						do
 							for runVersion in "${runVersions[@]}"
 							do

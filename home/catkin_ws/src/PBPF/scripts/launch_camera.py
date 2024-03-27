@@ -142,6 +142,7 @@ class LaunchCamera():
                 while_time = while_time + 1
                 if while_time > 1000:
                     print("Can not find the pose of the camera!!!! You need to wait a while or try to debug")
+                    a = 1
                 try:
                     # (trans_camera, rot_camera) = tf_listener.lookupTransform('/zisong_robot', realsense_tf, rospy.Time(0))
                     (trans_camera, rot_camera) = tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))

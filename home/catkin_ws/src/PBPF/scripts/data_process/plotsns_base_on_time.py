@@ -69,7 +69,7 @@ file_name = "based_on_time_"+str(particle_num)+'_'+sceneName+'_'+update_style_fl
 
 title_ang = "Rotational errors (rad) vs Time (s)"
 title_pos = "Positional errors (m) vs Time (s)"
-title_ADD = "ADD Matrix errors (m) vs Time (s)"
+title_ADD = object_name+": ADD Matrix errors (m) vs Time (s)"
 
 if ang_and_pos == "ang":
     if sceneName == "scene1":
@@ -225,11 +225,11 @@ if ang_and_pos == "ADD":
         x_xlim = 265 # 28
         y_ylim = 0.5 # 0.5
     if sceneName == "scene2":
-        x_range_max = 6000
-        x_range_unit = 600
+        x_range_max = 260
+        x_range_unit = 26
         y_range_max = 0.5
         y_range_unit = 0.05
-        x_xlim = 6000
+        x_xlim = 260
         y_ylim = 0.5
     if sceneName == "scene3":
         # x_range_max = 28
@@ -269,7 +269,7 @@ if ang_and_pos == "ADD":
     dataset_ADD = pd.read_csv(save_file_path+file_name+'.csv', header=None)
 
     print(dataset_ADD)
-    dataset_ADD.columns=["index","time",object_name+" ADD Matrix Error (m)","alg","obj_scene","particle_num","ray_type","obj_name"]
+    dataset_ADD.columns=["index","time","ADD Matrix Error (m)","alg","obj_scene","particle_num","ray_type","obj_name"]
     print(pd.__version__)
     print(sns.__version__)
     print(matplotlib.__version__)

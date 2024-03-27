@@ -256,9 +256,9 @@ def signal_handler(sig, frame):
                 file_name_obse_ADD = update_style_flag+'_obse_err_ADD_'+RUNNING_MODEL+'.csv'
                 file_name_PBPF_ADD = update_style_flag+'_PBPFV_err_ADD_'+RUNNING_MODEL+'.csv'
                 if RUNNING_MODEL == "PBPF_RGBD":
-                    boss_obse_err_ADD_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_obse_ADD,index=0,header=0,mode='a')
+                    boss_obse_err_ADD_df_list[obj_index].to_csv('~/catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_obse_ADD,index=0,header=0,mode='a')
                     print("ADD: write "+obj_name+" obser file: "+RUNNING_MODEL)
-                boss_PBPF_err_ADD_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_PBPF_ADD,index=0,header=0,mode='a')
+                boss_PBPF_err_ADD_df_list[obj_index].to_csv('~/catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_PBPF_ADD,index=0,header=0,mode='a')
                 print("ADD: write "+obj_name+" PBPF file: "+RUNNING_MODEL)
 
             else:
@@ -267,11 +267,11 @@ def signal_handler(sig, frame):
                 file_name_obse_ang = update_style_flag+'_obse_err_ang_'+version+'.csv'
                 file_name_PBPF_ang = update_style_flag+'_PBPFV_err_ang_'+version+'.csv'
 
-                boss_obse_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_obse_pos,index=0,header=0,mode='a')
-                boss_obse_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_obse_ang,index=0,header=0,mode='a')
+                boss_obse_err_pos_df_list[obj_index].to_csv('~/catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_obse_pos,index=0,header=0,mode='a')
+                boss_obse_err_ang_df_list[obj_index].to_csv('~/catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_obse_ang,index=0,header=0,mode='a')
                 print("write "+obj_name+" obser file: "+version)
-                boss_PBPF_err_pos_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_PBPF_pos,index=0,header=0,mode='a')
-                boss_PBPF_err_ang_df_list[obj_index].to_csv('catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_PBPF_ang,index=0,header=0,mode='a')
+                boss_PBPF_err_pos_df_list[obj_index].to_csv('~/catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_PBPF_pos,index=0,header=0,mode='a')
+                boss_PBPF_err_ang_df_list[obj_index].to_csv('~/catkin_ws/src/PBPF/scripts/'+err_file+'/'+str(file_name)+obj_name+'_'+file_name_PBPF_ang,index=0,header=0,mode='a')
                 print("write "+obj_name+" PBPF file: "+version)
 
             

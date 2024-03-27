@@ -31,7 +31,7 @@ do
 				
 				# for rosbag in {1..10}
 				# for rosbag in {1..2}
-				for ((rosbag=3;rosbag<=3;rosbag++)); 
+				for ((rosbag=1;rosbag<=1;rosbag++)); 
 				do
 					for runVersion in "${runVersions[@]}"
 					do
@@ -42,11 +42,11 @@ do
 
 						# for repeat in {1..10}
 						# for repeat in "${repeats[@]}"
-						for ((repeat=0;repeat<=1;repeat++));
+						for ((repeat=0;repeat<=9;repeat++));
 						do
 							echo "I will sleep for $duration seconds"
 							# rosbag play "rosbag/latest_rosbag/${objectName}_${sceneName}/${objectName}_${sceneName}_70_${rosbag}.bag" --clock  > /dev/null 2>&1 & 
-							rosbag play "rosbag/new_depth_image_cracker_soup_barry${rosbag}.bag" --clock --rate 0.01  > /dev/null 2>&1 & 
+							rosbag play "rosbag/new_camera_cracker${rosbag}.bag" --clock --rate 0.08  > /dev/null 2>&1 & 
 							ROSBAGPID=$!
 
 							
@@ -54,7 +54,7 @@ do
 							rosrun PBPF Physics_Based_Particle_Filtering.py &
 							PBPF_PID=$!
 
-							sleep 1400
+							sleep 175
 							
 							# fileName="${particleNumber}_${objectName}_${sceneName}_rosbag${rosbag}_repeat${repeat}_"
 							fileName="${particleNumber}_${sceneName}_rosbag${rosbag}_repeat${repeat}_"

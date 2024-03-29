@@ -15,6 +15,7 @@ obstacles_pos:
   - 0.215
   - 0.14765408574692843
 optitrack_flag: true
+locate_camera_flag: ar
 other_obj_num: 1
 oto_name_list:
 - base_of_cracker

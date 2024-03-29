@@ -537,7 +537,7 @@ while reset_flag == True:
                         # latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo)
                         # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
                         # (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
-                        (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/cracker_far', rospy.Time(0))
+                        (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/cracker', rospy.Time(0))
                         
                         # (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
                         # (trans_ob_cTo, rot_ob_cTo) = listener_tf.lookupTransform('/camera_gt', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))

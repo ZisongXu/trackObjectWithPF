@@ -129,8 +129,12 @@ class PBPFMove():
         # motion model
         self.motion_update_PB_parallelised(pybullet_sim_env, fake_robot_id, real_robot_joint_pos)
         t2 = time.time()
+        print("====================================================")
+        print("Motion model time consuming:", t2 - t1)
+        print("====================================================")
         self.times.append(t2-t1)
         # observation model
+        t1 = time.time()
         if do_obs_update or sum(global_objects_visual_by_DOPE_list)<object_num:
             self.observation_update_PB(pw_T_obj_obse_objects_pose_list)
         if (version=="ray" or version=="multiray") and (do_obs_update==False or dope_detection_flag==False or sum(global_objects_visual_by_DOPE_list)==object_num):
@@ -145,6 +149,10 @@ class PBPFMove():
         
         if show_ray == True:
             p_sim.removeAllUserDebugItems()
+        t2 = time.time()
+        print("====================================================")
+        print("Observation model + Resample time consuming:", t2 - t1)
+        print("====================================================")
         
         return object_estimate_pose, dis_std_list, ang_std_list, self.particle_cloud
     
@@ -1742,6 +1750,8 @@ while reset_flag == True:
         
         optitrack_flag = parameter_info['optitrack_flag']
         
+        locate_camera_flag = parameter_info['locate_camera_flag']
+        
         # the flag is used to determine whether the robot touches the particle in the simulation
         simRobot_touch_par_flag = 0
         object_num = parameter_info['object_num']
@@ -1904,11 +1914,16 @@ while reset_flag == True:
         print("Before locating the pose of the camera")
         # if version == "ray" or version == "multiray":
         if optitrack_flag == True:
-            realsense_tf = '/RealSense' # (use Optitrack)
+            if locate_camera_flag == "opti":
+                realsense_tf = '/RealSense' # (use Optitrack to locate pose of camera)
+            else:
+                realsense_tf = '/ar_tracking_camera_frame' # (use Ar-Marker to locate pose of camera)
+                
         else:
             realsense_tf = '/ar_tracking_camera_frame' # (do not use Optitrack)
         while_loop_time = 0
-        print(realsense_tf)
+        print("Camera topic:", realsense_tf)
+        
         while not rospy.is_shutdown():
             while_loop_time =  while_loop_time + 1
             # if while_loop_time > 50:

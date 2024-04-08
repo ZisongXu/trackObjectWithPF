@@ -163,6 +163,14 @@ class Create_Scene():
             # # 123_cracker_part_view2.bag
             # pw_T_obj_obse_pos = [0.18252391836182735, 0.33187651313019706, 0.7869973436307546]
             # pw_T_obj_obse_ori = [ 0.71052522, -0.00319479,  0.70363331,  0.00662347]
+            # new_camera_CrackerSoup_forward1.bag
+            # if obj_index == 0:
+            #     pw_T_obj_obse_pos = [0.35106623337455206, 0.11037637137553352, 0.785094326764014]
+            #     pw_T_obj_obse_ori = [ 0.49906753, -0.50097175,  0.49368529,  0.50619535]
+            # else:
+            #     pw_T_obj_obse_pos = [0.3277490884717969, 0.17549837998726808, 0.7522391094604842]
+            #     pw_T_obj_obse_ori = [ 0.48764897, -0.50314893,  0.5173022,  -0.49136347]
+
 
             obse_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
             self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)

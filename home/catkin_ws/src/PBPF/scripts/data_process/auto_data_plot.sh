@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -a objectNames=("cracker")
+declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
 declare -a sceneNames=("scene2")

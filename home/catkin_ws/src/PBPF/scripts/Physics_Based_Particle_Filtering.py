@@ -428,7 +428,7 @@ class PBPFMove():
             
             # score_list_array_sub_sum_over = self.normalize_score_to_0_1(self.depth_value_difference_list)
             # for i in range(len(score_list_array_sub_sum_over)):
-            #     print("_particle_update_time: ",_particle_update_time,"; Index:", i, "; score_that_particle_get: ",score_list_array_sub_sum_over[i])
+            #     print("_particle_update_time: ",_particle_update_time,"; Index:", i, "; depth_weight_that_particle_get: ",score_list_array_sub_sum_over[i])
             #     print("==================================")
 
 
@@ -1005,7 +1005,7 @@ class PBPFMove():
                     pybullet_env.stepSimulation()
                     # will return all collision points
                     contacts = pybullet_env.getContactPoints(bodyA=collision_detection_obj_id[check_num], # robot, other object...
-                                                                bodyB=collision_detection_obj_id[-1]) # main(target) object
+                                                             bodyB=collision_detection_obj_id[-1]) # main(target) object
                     # pmin,pmax = pybullet_simulation_env.getAABB(particle_no_visual_id)
                     # collide_ids = pybullet_simulation_env.getOverlappingObjects(pmin,pmax)
                     # length = len(collide_ids)
@@ -1134,7 +1134,7 @@ class PBPFMove():
             # visible_score low, weight low
             if visible_score < visible_threshold_dope_is_fresh_list[obj_index]: # 0.5/0.9
                 weight = weight / 3.0
-                # weight = weight * visible_score
+                weight = weight * visible_score
             # visible_score high, weight high
             else:
                 weight = weight
@@ -2454,7 +2454,7 @@ def _vk_load_meshes():
         if obj_index == 0:
             obj_id = _vk_context.load_model("assets/meshes/cracker1.vkdepthmesh")
         elif obj_index == 1:
-            obj_id = _vk_context.load_model("assets/meshes/005_tomato_soup_can.vkdepthmesh")
+            obj_id = _vk_context.load_model("assets/meshes/soup.vkdepthmesh")
         vk_obj_id_list[obj_index] = obj_id
     # robot
     # There are actually 13 links, of which "link8" and "panda_grasptarget" have no entities.
@@ -3084,15 +3084,15 @@ while reset_flag == True:
                     x_w_list[obj_index] = 0.032829689025878906
                     y_l_list[obj_index] = 0.032829689025878906
                     z_h_list[obj_index] = 0.099
-                    visible_threshold_dope_X_list[obj_index] = 0.3 # 0.95
+                    visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
                     visible_threshold_dope_X_small_list[obj_index] = 0
                     # visible_threshold_outlier_XS_list[obj_index] = 0.3
                     visible_threshold_outlier_S_list[obj_index] = 0.4
                     visible_threshold_outlier_L_list[obj_index] = 0.65
                     # visible_threshold_outlier_XL_list[obj_index] = 0.75
                     visible_threshold_dope_is_fresh_list[obj_index] = 0.6
-                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.75 # 0.6
-                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.25 # 0.55
+                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
                     visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
                     visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
 

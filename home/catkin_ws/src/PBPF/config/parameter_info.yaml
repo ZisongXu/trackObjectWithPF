@@ -15,31 +15,26 @@ farVal: 3
 gazebo_flag: false
 height: 480
 locate_camera_flag: ar
-nearVal: 0.3
+nearVal: 0.03
 object_name_list:
 - cracker
 - soup
 object_num: 2
-obstacles_ori:
-- - 1.0
-  - 0.0
-  - 0.0
-  - 1.0
-obstacles_pos:
-- - 0.8315
-  - 0.215
-  - 0.14765408574692843
+objs_are_not_touching_target_objs_num: 0
+objs_touching_target_objs_num: 0
 optitrack_flag: true
 ortho_to_persp_flag: true
+other_base_obj_num: 0
 other_obj_num: 0
 oto_name_list:
 - base_of_cracker
-- fish_can
+- shelves
+- pringles
 otob_name_list:
 - cracker_obstacle
 - fish_can
 panda_robot_link_number: 11
-particle_num: 70
+particle_num: 10
 pb_render_flag: false
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0
@@ -48,13 +43,14 @@ ray_tracing_type: multiray
 remove_min_max_flag: true
 robot_num: 1
 run_alg_flag: PBPF
-running_model: PBPF_D
+running_model: PBPF_RGB
 show_particle_depth_image_to_point_cloud_flag: true
 show_ray: false
 sim_real_world_flag: true
-task_flag: '2'
+task_flag: '1'
 update_style_flag: time
 use_convolution_flag: false
 version: multiray
 vk_render_flag: true
 width: 848
+record_results_flag: true

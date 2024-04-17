@@ -63,6 +63,9 @@ class Ros_Listener():
         rospy.Subscriber('/mocap/rigid_bodies/baseofcheezit/pose', PoseStamped, self.base_of_cheezit_callback, queue_size=1)
         self.base_pose = PoseStamped()
 
+        rospy.Subscriber('/mocap/rigid_bodies/pringles_opti/pose', PoseStamped, self.other_object_pose_callback_pringles, queue_size=1)
+        self.other_object_pringles_pose = PoseStamped()
+
         rospy.Subscriber('/mocap/rigid_bodies/smallObstacle/pose', PoseStamped, self.smallObstacle_callback, queue_size=1)
         self.smallObstacle = PoseStamped()
         
@@ -199,6 +202,8 @@ class Ros_Listener():
             return self.smallObstacle_pose
         elif object_flag == "bigbstacle":
             return self.bigObstacle_pose
+        elif object_flag == "pringles":
+            return self.other_object_pringles_pose
     
     def listen_2_pars_states(self):
         return self.particles_states_list
@@ -301,6 +306,20 @@ class Ros_Listener():
         self.base_ori = [x_ori, y_ori, z_ori, w_ori]
         self.base_pose = [self.base_pos, self.base_ori]
         # print("self.base_pose:", self.base_pose)
+
+    def other_object_pose_callback_pringles(self, data):
+        # pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.other_object_pringles_pos = [x_pos, y_pos, z_pos]
+        # ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.other_object_pringles_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.other_object_pringles_pose = [self.other_object_pringles_pos, self.other_object_pringles_ori]
 
     def smallObstacle_callback(self, data):
         # pos

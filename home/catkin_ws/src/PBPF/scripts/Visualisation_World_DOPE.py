@@ -50,7 +50,7 @@ class Visualisation_World():
         self.other_obj_num = other_obj_num
         self.particle_num = particle_num
         self.p_visualisation = 0
-        self.create_scene = Create_Scene(object_num, rob_num, other_obj_num)
+        self.create_scene = Create_Scene(object_num, rob_num)
         self.ros_listener = Ros_Listener()
         self.listener = tf.TransformListener()
         self.visualisation_all = True
@@ -66,8 +66,7 @@ class Visualisation_World():
         
         self.object_name_list = self.parameter_info['object_name_list']
         self.SIM_REAL_WORLD_FLAG = self.parameter_info['sim_real_world_flag']
-        self.obstacles_pos = self.parameter_info['obstacles_pos'] # old/ray/multiray
-        self.obstacles_ori = self.parameter_info['obstacles_ori'] # old/ray/multiray
+        
         
         self.test = True 
         
@@ -90,19 +89,13 @@ class Visualisation_World():
         p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.3,0.1,0.1])    
         plane_id = p_visualisation.loadURDF("plane.urdf")
         if self.task_flag == "1":
-            # pw_T_obst_opti_pos_small = [0.852134144216095, 0.14043691336334274, 0.10014295215002848]
-            # pw_T_obst_opti_ori_small = [0.00356749, -0.00269526, 0.28837681, 0.95750657]
-            pw_T_obst_opti_pos_big = self.obstacles_pos[0]
-            pw_T_obst_opti_ori_big = self.obstacles_ori[0]
-            track_fk_obst_big_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_big.urdf"),
-                                                            pw_T_obst_opti_pos_big,
-                                                            pw_T_obst_opti_ori_big,
+            pw_T_pringles_pos = [0.6646962577067851, 0.059950902446081644, 0.8269063881730724]
+            pw_T_pringles_ori = [ 0.69423769, -0.11003228, -0.11355051,  0.70216323] # x, y, z, w
+            pringles_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/pringles.urdf"),
+                                                            pw_T_pringles_pos,
+                                                            pw_T_pringles_ori,
                                                             useFixedBase=1)
-            # track_fk_obst_small_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_small.urdf"),
-            #                                                 pw_T_obst_opti_pos_small,
-            #                                                 pw_T_obst_opti_ori_small,
-            #                                                 useFixedBase=1)
-        # Finished Setting)
+
         if self.task_flag == "5":
             pw_T_she_pos = [0.75889274, -0.24494845, 0.33818097+0.02]
             pw_T_she_ori = [0, 0, 0, 1]
@@ -161,12 +154,11 @@ class Visualisation_World():
         self.pw_T_target_obj_obse_pose_lsit = pw_T_target_obj_obse_pose_lsit
         # print("I am here")
         
-        # load other objects in the pybullet world
-        
+        # load other objects in the pybullet world  
         if self.test == False:
             if self.optitrack_flag == True:
                 print("Load Target Object from OptiTrackssssssssss")
-                pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list, trans_gt, rot_gt = self.create_scene.initialize_ground_truth_objects()
+                pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list, pw_T_objs_not_touching_targetObjs_list, trans_gt, rot_gt = self.create_scene.initialize_ground_truth_objects()
                 self.pw_T_target_obj_opti_pose_lsit = pw_T_target_obj_opti_pose_lsit
                 for obj_index in range(self.other_obj_num):
                     other_obj_name = pw_T_other_obj_opti_pose_list[obj_index].obj_name
@@ -403,6 +395,10 @@ while reset_flag == True:
         object_name_list = parameter_info['object_name_list']
         task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
         dope_flag = parameter_info['dope_flag']
+
+        OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM = parameter_info['objs_are_not_touching_target_objs_num']
+        OBJS_TOUCHING_TARGET_OBJS_NUM = parameter_info['objs_touching_target_objs_num']
+
         if task_flag == "4":
             other_obj_num = 1 # parameter_info['other_obj_num']
         else:
@@ -446,21 +442,21 @@ while reset_flag == True:
                         # display ground truth (grtu)
                         if visual_world.gazebo_flag == True:
                             # print("Hello")
-            #                model_pose, model_pose_added_noise = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])
-            #                
-            #                gazebo_T_obj_pos = model_pose[0]
-            #                gazebo_T_obj_ori = model_pose[1]
-            #                gazebo_T_obj_pos_added_noise = model_pose_added_noise[0]
-            #                gazebo_T_obj_ori_added_noise = model_pose_added_noise[1]
-            #                gazebo_T_rob_pos = panda_pose[0]
-            #                gazebo_T_rob_ori = panda_pose[1]
-            #                
-            #                opti_T_rob_opti_pos = copy.deepcopy(gazebo_T_rob_pos)
-            #                opti_T_rob_opti_ori = copy.deepcopy(gazebo_T_rob_ori)
-            #                opti_T_obj_opti_pos = copy.deepcopy(gazebo_T_obj_pos)
-            #                opti_T_obj_opti_ori = copy.deepcopy(gazebo_T_obj_ori)
-            #                opti_T_obj_obse_pos = copy.deepcopy(gazebo_T_obj_pos_added_noise)
-            #                opti_T_obj_obse_ori = copy.deepcopy(gazebo_T_obj_ori_added_noise)
+                            # model_pose, model_pose_added_noise = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])
+                           
+                            # gazebo_T_obj_pos = model_pose[0]
+                            # gazebo_T_obj_ori = model_pose[1]
+                            # gazebo_T_obj_pos_added_noise = model_pose_added_noise[0]
+                            # gazebo_T_obj_ori_added_noise = model_pose_added_noise[1]
+                            # gazebo_T_rob_pos = panda_pose[0]
+                            # gazebo_T_rob_ori = panda_pose[1]
+                           
+                            # opti_T_rob_opti_pos = copy.deepcopy(gazebo_T_rob_pos)
+                            # opti_T_rob_opti_ori = copy.deepcopy(gazebo_T_rob_ori)
+                            # opti_T_obj_opti_pos = copy.deepcopy(gazebo_T_obj_pos)
+                            # opti_T_obj_opti_ori = copy.deepcopy(gazebo_T_obj_ori)
+                            # opti_T_obj_obse_pos = copy.deepcopy(gazebo_T_obj_pos_added_noise)
+                            # opti_T_obj_obse_ori = copy.deepcopy(gazebo_T_obj_ori_added_noise)
                             gt_name = ""
                             if dope_flag == True:
                                 gt_name = "_gt"

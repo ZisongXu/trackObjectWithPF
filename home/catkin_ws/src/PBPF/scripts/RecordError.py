@@ -299,7 +299,6 @@ if __name__ == '__main__':
     object_num = parameter_info['object_num']
     robot_num = 1
     check_dope_work_flag_init = 0
-    other_obj_num = 0
     particle_num = parameter_info['particle_num']
     object_name_list = parameter_info['object_name_list']
     init_esti_flag = 0
@@ -441,7 +440,7 @@ if __name__ == '__main__':
                 old_obse_time = latest_obse_time.to_sec()
                 # break
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                print("can not find tf")
+                print("In RecordError.py: can not find "+obj_name+" tf (obse)")
             
             rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
             rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
@@ -466,7 +465,10 @@ if __name__ == '__main__':
             # bias_obse_z = 0.04
 
             pw_T_obj_obse_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
-            pw_T_obj_obse_pos = [pw_T_obj_obse_4_4[0][3], pw_T_obj_obse_4_4[1][3], pw_T_obj_obse_4_4[2][3]]
+            if obse_is_fresh == False:
+                pw_T_obj_obse_pos = [pw_T_obj_obse_4_4[0][3]+0.2, pw_T_obj_obse_4_4[1][3], pw_T_obj_obse_4_4[2][3]]
+            else:
+                pw_T_obj_obse_pos = [pw_T_obj_obse_4_4[0][3], pw_T_obj_obse_4_4[1][3], pw_T_obj_obse_4_4[2][3]]
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse_4_4)
             
             # ground truth pose information
@@ -487,7 +489,7 @@ if __name__ == '__main__':
                         print("obse is NOT fresh")
                     # break
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                    print("can not find tf")
+                    print("In RecordError.py: can not find tf (GT)")
                     
                 rob_T_obj_opti_pos = list(trans_gt_list[obj_index])
                 rob_T_obj_opti_ori = list(rot_gt_list[obj_index])                        

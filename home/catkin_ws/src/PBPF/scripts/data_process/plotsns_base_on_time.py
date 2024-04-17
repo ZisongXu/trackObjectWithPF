@@ -218,11 +218,11 @@ if ang_and_pos == "pos":
 
 if ang_and_pos == "ADD":
     if sceneName == "scene1":
-        x_range_max = 265 # 28, 129, 265
-        x_range_unit = 25 # 2, 6, 25, 125
+        x_range_max = 1300 # 28, 129, 265
+        x_range_unit = 130 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
-        y_range_unit = 0.04 # 0.04
-        x_xlim = 265 # 28
+        y_range_unit = 0.05 # 0.04
+        x_xlim = 1300 # 28
         y_ylim = 0.5 # 0.5
     if sceneName == "scene2":
         x_range_max = 950

@@ -44,13 +44,12 @@ import yaml
 
 #Class of initialize the real world model
 class Visualisation_World():
-    def __init__(self, object_num=0, rob_num=1, other_obj_num=0, particle_num=0):
+    def __init__(self, object_num=0, rob_num=1, particle_num=0):
         self.object_num = object_num
         self.rob_num = rob_num
-        self.other_obj_num = other_obj_num
         self.particle_num = particle_num
         self.p_visualisation = 0
-        self.create_scene = Create_Scene(object_num, rob_num, other_obj_num)
+        self.create_scene = Create_Scene(object_num, rob_num)
         self.ros_listener = Ros_Listener()
         self.listener = tf.TransformListener()
         self.visualisation_all = True
@@ -63,11 +62,11 @@ class Visualisation_World():
         self.pw_T_target_obj_obse_pose_lsit = []
         self.pw_T_target_obj_opti_pose_lsit = []
         self.pw_T_other_obj_opti_pose_list = []
+        self.pw_T_objs_not_touching_targetObjs_list = []
         
         self.object_name_list = self.parameter_info['object_name_list']
         self.SIM_REAL_WORLD_FLAG = self.parameter_info['sim_real_world_flag']
-        self.obstacles_pos = self.parameter_info['obstacles_pos'] # old/ray/multiray
-        self.obstacles_ori = self.parameter_info['obstacles_ori'] # old/ray/multiray
+        
         
         self.test = False
         
@@ -84,26 +83,19 @@ class Visualisation_World():
             p_visualisation = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT, GUI_SERVER
         self.p_visualisation = p_visualisation
         p_visualisation.setAdditionalSearchPath(pybullet_data.getDataPath())
-        # p_visualisation.configureDebugVisualizer(p.COV_WINDOW_TITLE, "Show PBPF")
         p_visualisation.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
         p_visualisation.setGravity(0, 0, -9.81)
         # p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=90, cameraPitch=-20, cameraTargetPosition=[0.1,0.1,0.1])      
         p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.3,0.1,0.1])    
         plane_id = p_visualisation.loadURDF("plane.urdf")
         if self.task_flag == "1":
-            # pw_T_obst_opti_pos_small = [0.852134144216095, 0.14043691336334274, 0.10014295215002848]
-            # pw_T_obst_opti_ori_small = [0.00356749, -0.00269526, 0.28837681, 0.95750657]
-            pw_T_obst_opti_pos_big = self.obstacles_pos[0]
-            pw_T_obst_opti_ori_big = self.obstacles_ori[0]
-            track_fk_obst_big_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_big.urdf"),
-                                                            pw_T_obst_opti_pos_big,
-                                                            pw_T_obst_opti_ori_big,
+            pw_T_pringles_pos = [0.6652218209791124, 0.058946644391304814, 0.8277292172960276]
+            pw_T_pringles_ori = [ 0.67280124, -0.20574896, -0.20600051, 0.68012472] # x, y, z, w
+            pringles_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/pringles.urdf"),
+                                                            pw_T_pringles_pos,
+                                                            pw_T_pringles_ori,
                                                             useFixedBase=1)
-            # track_fk_obst_small_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_small.urdf"),
-            #                                                 pw_T_obst_opti_pos_small,
-            #                                                 pw_T_obst_opti_ori_small,
-            #                                                 useFixedBase=1)
-        # Finished Setting)
+
         if self.task_flag == "5":
             pw_T_she_pos = [0.75889274, -0.24494845, 0.33818097+0.02]
             pw_T_she_ori = [0, 0, 0, 1]
@@ -129,6 +121,7 @@ class Visualisation_World():
         self.pw_T_rob_sim_pose_list = pw_T_rob_sim_pose_list
         if self.SIM_REAL_WORLD_FLAG == True:
             table_pos_1 = [0.46, -0.01, 0.710]
+            table_pos_1 = [0.46, -0.01, 0.700]
             table_ori_1 = p_visualisation.getQuaternionFromEuler([0,0,0])
             table_id_1 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1, useFixedBase = 1)
 
@@ -165,9 +158,12 @@ class Visualisation_World():
         # load other objects in the pybullet world
         if self.test == False:
             if self.optitrack_flag == True:
-                pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list, trans_gt, rot_gt = self.create_scene.initialize_ground_truth_objects()
+                print("Load Target Object from OptiTrackssssssssss")
+                pw_T_target_obj_opti_pose_lsit, pw_T_other_obj_opti_pose_list, pw_T_objs_not_touching_targetObjs_list, trans_gt, rot_gt = self.create_scene.initialize_ground_truth_objects()
+                
                 self.pw_T_target_obj_opti_pose_lsit = pw_T_target_obj_opti_pose_lsit
-                for obj_index in range(self.other_obj_num):
+                
+                for obj_index in range(len(pw_T_other_obj_opti_pose_list)):
                     other_obj_name = pw_T_other_obj_opti_pose_list[obj_index].obj_name
                     other_obj_pos = pw_T_other_obj_opti_pose_list[obj_index].pos
                     other_obj_ori = pw_T_other_obj_opti_pose_list[obj_index].ori
@@ -178,7 +174,9 @@ class Visualisation_World():
                                                                 other_obj_pos,
                                                                 other_obj_ori)
                     pw_T_other_obj_opti_pose_list[obj_index].obj_id = optitrack_base_id
+
                 self.pw_T_other_obj_opti_pose_list = pw_T_other_obj_opti_pose_list
+                self.pw_T_objs_not_touching_targetObjs_list = pw_T_objs_not_touching_targetObjs_list
 
         # load objects in the pybullet world
 #        for obj_index in range(self.object_num):
@@ -372,9 +370,9 @@ while reset_flag == True:
     reset_flag = False
     
     if __name__ == '__main__':
-    #    par_obj_id = [[]*2 for _ in range(50)]
-    #    print(par_obj_id)
-    #    input("stop")
+        # par_obj_id = [[]*2 for _ in range(50)]
+        # print(par_obj_id)
+        # input("stop")
         rospy.init_node('visualization_world_Particle') # ros node
         signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
         time.sleep(0.5)
@@ -401,17 +399,12 @@ while reset_flag == True:
         object_name_list = parameter_info['object_name_list']
         task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
         dope_flag = parameter_info['dope_flag']
-        if task_flag == "4":
-            other_obj_num = 1 # parameter_info['other_obj_num']
-        else:
-            other_obj_num = 0 # parameter_info['other_obj_num']
 
+        OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM = parameter_info['objs_are_not_touching_target_objs_num']
+        OBJS_TOUCHING_TARGET_OBJS_NUM = parameter_info['objs_touching_target_objs_num']
 
-        visual_world = Visualisation_World(object_num, robot_num, other_obj_num, particle_num)
-        
+        visual_world = Visualisation_World(object_num, robot_num, particle_num)
         trans_ob_list, rot_ob_list, trans_gt, rot_gt = visual_world.initialize_visual_world_pybullet_env(task_flag)
-        
-        
         
         # print("I am here")
         # input("stop")
@@ -421,11 +414,11 @@ while reset_flag == True:
         pw_T_target_obj_obse_pose_lsit_param = visual_world.pw_T_target_obj_obse_pose_lsit
         pw_T_target_obj_opti_pose_lsit_param = visual_world.pw_T_target_obj_opti_pose_lsit
         pw_T_other_obj_opti_pose_list_param = visual_world.pw_T_other_obj_opti_pose_list
+        pw_T_objs_not_touching_targetObjs_list_param = visual_world.pw_T_objs_not_touching_targetObjs_list
         
         par_obj_id = [[]*object_num for _ in range(particle_num)]
         esti_obj_id = [0] * object_num
         # input("stop")
-        
         while not rospy.is_shutdown():
             
             if reset_flag == False:
@@ -445,24 +438,25 @@ while reset_flag == True:
                 if display_gt_flag == True:
                     # print("display_gt_flag")
                     for obj_index in range(object_num):
+                        obj_name = object_name_list[obj_index]
                         # display ground truth (grtu)
                         if visual_world.gazebo_flag == True:
                             # print("Hello")
-            #                model_pose, model_pose_added_noise = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])
-            #                
-            #                gazebo_T_obj_pos = model_pose[0]
-            #                gazebo_T_obj_ori = model_pose[1]
-            #                gazebo_T_obj_pos_added_noise = model_pose_added_noise[0]
-            #                gazebo_T_obj_ori_added_noise = model_pose_added_noise[1]
-            #                gazebo_T_rob_pos = panda_pose[0]
-            #                gazebo_T_rob_ori = panda_pose[1]
-            #                
-            #                opti_T_rob_opti_pos = copy.deepcopy(gazebo_T_rob_pos)
-            #                opti_T_rob_opti_ori = copy.deepcopy(gazebo_T_rob_ori)
-            #                opti_T_obj_opti_pos = copy.deepcopy(gazebo_T_obj_pos)
-            #                opti_T_obj_opti_ori = copy.deepcopy(gazebo_T_obj_ori)
-            #                opti_T_obj_obse_pos = copy.deepcopy(gazebo_T_obj_pos_added_noise)
-            #                opti_T_obj_obse_ori = copy.deepcopy(gazebo_T_obj_ori_added_noise)
+                            # model_pose, model_pose_added_noise = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])
+                            
+                            # gazebo_T_obj_pos = model_pose[0]
+                            # gazebo_T_obj_ori = model_pose[1]
+                            # gazebo_T_obj_pos_added_noise = model_pose_added_noise[0]
+                            # gazebo_T_obj_ori_added_noise = model_pose_added_noise[1]
+                            # gazebo_T_rob_pos = panda_pose[0]
+                            # gazebo_T_rob_ori = panda_pose[1]
+                            
+                            # opti_T_rob_opti_pos = copy.deepcopy(gazebo_T_rob_pos)
+                            # opti_T_rob_opti_ori = copy.deepcopy(gazebo_T_rob_ori)
+                            # opti_T_obj_opti_pos = copy.deepcopy(gazebo_T_obj_pos)
+                            # opti_T_obj_opti_ori = copy.deepcopy(gazebo_T_obj_ori)
+                            # opti_T_obj_obse_pos = copy.deepcopy(gazebo_T_obj_pos_added_noise)
+                            # opti_T_obj_obse_ori = copy.deepcopy(gazebo_T_obj_ori_added_noise)
                             gt_name = ""
                             if dope_flag == True:
                                 gt_name = "_gt"
@@ -497,8 +491,7 @@ while reset_flag == True:
                             # print(pandalink0_T_obj_obse_4_4_test)
                             # print(object_name_list[obj_index]+": matrix from tf:")
                             # print(rob_T_obj_opti_4_4)
-                        else:
-                            
+                        else:    
                             # if optitrack_flag == True:
                             opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
                             opti_T_rob_opti_ori = visual_world.ros_listener.listen_2_robot_pose()[1]
@@ -514,6 +507,7 @@ while reset_flag == True:
                         if init_gt_obj_flag == 0:
                             if obj_index == object_num - 1:
                                 init_gt_obj_flag = 1
+
                             visual_world.init_display_ground_truth_object(pw_T_target_obj_opti_pose_lsit_param[obj_index])
                             
                         pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
@@ -522,6 +516,11 @@ while reset_flag == True:
                         # print("pw_T_obj_opti_pos:")
                         # print(pw_T_obj_opti_pos)
                         # display gt object update pose
+                        print("=======================================")
+                        print("obj_name:", obj_name)
+                        print("pw_T_obj_opti_pos:", pw_T_obj_opti_pos)
+                        print("pw_T_obj_opti_ori:", pw_T_obj_opti_ori)
+                        print("=======================================")
                         pw_T_target_obj_opti_pose_lsit_param[obj_index].pos = pw_T_obj_opti_pos
                         pw_T_target_obj_opti_pose_lsit_param[obj_index].ori = pw_T_obj_opti_ori
                         visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_opti_pose_lsit_param[obj_index])
@@ -567,7 +566,7 @@ while reset_flag == True:
                         # break
                     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                         print("from pbpf")
-                        print("can not find tf")
+                        print("In Visualisation_World_Particle.py: can not find "+object_name_list[obj_index]+" tf (obse)")
                     rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
                     rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
                     rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
@@ -605,13 +604,15 @@ while reset_flag == True:
                     pw_T_target_obj_obse_pose_lsit_param[obj_index].pos = pw_T_obj_obse_pos
                     pw_T_target_obj_obse_pose_lsit_param[obj_index].ori = pw_T_obj_obse_ori
                     visual_world.display_object_in_visual_model(p_visual, pw_T_target_obj_obse_pose_lsit_param[obj_index])
-                    print(pw_T_obj_obse_pos)
+                    # print(pw_T_obj_obse_pos)
+            
             # display other objects
-            for obj_index in range(other_obj_num):
+            # update other objects touching
+            for obj_index in range(OBJS_TOUCHING_TARGET_OBJS_NUM):
                 opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
                 opti_T_rob_opti_ori = visual_world.ros_listener.listen_2_robot_pose()[1]
                 base_of_cheezit_pos = visual_world.ros_listener.listen_2_object_pose("base")[0]
-                base_of_cheezit_ori = visual_world.ros_listener.listen_2_object_pose("base")[1]
+                base_of_cheezit_ori = visual_world.ros_listener.listen_2_object_pose("base")[1]                
                 robot_T_base = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, base_of_cheezit_pos, base_of_cheezit_ori)
                 pw_T_base = np.dot(pw_T_rob_sim_4_4, robot_T_base)
                 pw_T_base_pos = [pw_T_base[0][3], pw_T_base[1][3], pw_T_base[2][3]]
@@ -620,6 +621,25 @@ while reset_flag == True:
                 pw_T_other_obj_opti_pose_list_param[obj_index].pos = pw_T_base_pos
                 pw_T_other_obj_opti_pose_list_param[obj_index].ori = pw_T_base_ori
                 visual_world.display_object_in_visual_model(p_visual, pw_T_other_obj_opti_pose_list_param[obj_index])
+
+            # update other objects not touching
+            for obj_index in range(OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM):
+                opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
+                opti_T_rob_opti_ori = visual_world.ros_listener.listen_2_robot_pose()[1]
+                base_of_cheezit_pos = visual_world.ros_listener.listen_2_object_pose("pringles")[0]
+                base_of_cheezit_ori = visual_world.ros_listener.listen_2_object_pose("pringles")[1]
+                robot_T_base = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, base_of_cheezit_pos, base_of_cheezit_ori)
+                pw_T_base = np.dot(pw_T_rob_sim_4_4, robot_T_base)
+                pw_T_base_pos = [pw_T_base[0][3], pw_T_base[1][3], pw_T_base[2][3]]
+                pw_T_base_ori = transformations.quaternion_from_matrix(pw_T_base)
+                print("pringles:")
+                print(pw_T_base_pos)
+                print(pw_T_base_ori)
+                print("===============================")
+                # update pose
+                pw_T_objs_not_touching_targetObjs_list_param[obj_index].pos = pw_T_base_pos
+                pw_T_objs_not_touching_targetObjs_list_param[obj_index].ori = pw_T_base_ori
+                visual_world.display_object_in_visual_model(p_visual, pw_T_objs_not_touching_targetObjs_list_param[obj_index])
             
             # display particles
     #        if display_par_flag == True:

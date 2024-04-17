@@ -73,6 +73,11 @@ from Center_T_Point_for_Ray import Center_T_Point_for_Ray
 from launch_camera import LaunchCamera
 
 
+_record_t_begin = time.time()
+
+ROSBAG_TIME = sys.argv[1]
+REPEAT_TIME = sys.argv[2]
+
 # parameter_filename = rospy.get_param("~parameter_filename")
 with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
     parameter_info = yaml.safe_load(file)
@@ -98,6 +103,10 @@ CONVOLUTION_SIZE = parameter_info['convolution_size'] # old/ray/multiray/depth_i
 simRobot_touch_par_flag = 0
 OBJECT_NUM = parameter_info['object_num']
 ROBOT_NUM = parameter_info['robot_num']
+
+OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM = parameter_info['objs_are_not_touching_target_objs_num']
+OBJS_TOUCHING_TARGET_OBJS_NUM = parameter_info['objs_touching_target_objs_num']
+
 SIM_REAL_WORLD_FLAG = parameter_info['sim_real_world_flag']
 
 LOCATE_CAMERA_FLAG = parameter_info['locate_camera_flag']
@@ -105,8 +114,6 @@ LOCATE_CAMERA_FLAG = parameter_info['locate_camera_flag']
 PARTICLE_NUM = parameter_info['particle_num']
 
 OBJECT_NAME_LIST = parameter_info['object_name_list']
-obstacles_pos = parameter_info['obstacles_pos'] # old/ray/multiray
-obstacles_ori = parameter_info['obstacles_ori'] # old/ray/multiray
 
 CAMERA_INFO_TOPIC_COLOR = parameter_info['camera_info_topic_color'] # /camera/color/camera_info
 CAMERA_INFO_TOPIC_DEPTH = parameter_info['camera_info_topic_depth'] # /camera/depth/camera_info
@@ -124,7 +131,7 @@ DEPTH_MASK_FLAG = parameter_info['depth_mask_flag']
 COMBINE_PARTICLE_DEPTH_MASK_FLAG = parameter_info['combine_particle_depth_mask_flag'] 
 SHOW_PARTICLE_DEPTH_IMAGE_TO_POINT_CLOUD_FLAG = parameter_info['show_particle_depth_image_to_point_cloud_flag'] 
 REMOVE_MIN_MAX_FLAG = parameter_info['remove_min_max_flag'] 
-
+RECORD_RESULTS_FLAG = parameter_info['record_results_flag'] 
 
 PRINT_SCORE_FLAG = parameter_info['print_score_flag'] 
 SHOW_RAY = parameter_info['show_ray']
@@ -136,6 +143,36 @@ if VK_RENDER_FLAG == True:
 if PB_RENDER_FLAG == True: 
     print("I am using Pybullet to generate Depth Image")
 SIM_TIME_STEP = 1.0/90
+
+_record_PBPF_esti_pose_list = []
+_record_PBPF_par_pose_list = []
+_record_obse_pose_list = []
+_record_GT_pose_list = []
+_record_obse_pose_first_flag = 0
+_record_time_list = []
+_record_GT_time_list = []
+
+_boss_obse_err_ADD_df_list = []
+_obse_panda_step = 0
+_boss_PBPF_err_ADD_df_list = []
+_PBPF_panda_step = 0
+_boss_GT_err_ADD_df_list = []
+_GT_panda_step = 0
+_boss_par_err_ADD_df_list = []
+_par_panda_step = 0
+
+for obj_index in range(OBJECT_NUM):
+    _boss_obse_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+    _boss_PBPF_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+    _boss_GT_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+    _boss_obse_err_ADD_df_list.append(_boss_obse_err_ADD_df)
+    _boss_PBPF_err_ADD_df_list.append(_boss_PBPF_err_ADD_df)
+    _boss_GT_err_ADD_df_list.append(_boss_GT_err_ADD_df)
+for par_index in range(PARTICLE_NUM):
+    _boss_par_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+    _boss_par_err_ADD_df_list.append(_boss_par_err_ADD_df)
+
+
 
 # ==============================================================================================================================
 # vulkan
@@ -167,7 +204,7 @@ class PBPFMove():
         self.pybullet_sim_fake_robot_id_collection = copy.deepcopy(initial_parameter.fake_robot_id_collection)
         self.pybullet_sim_env_fix_obj_id_collection = copy.deepcopy(initial_parameter.env_fix_obj_id_collection)
         self.pybullet_sim_other_object_id_collection = copy.deepcopy(initial_parameter.other_object_id_collection)
-        self.other_obj_num = other_obj_num
+
         self.joint_num = 7
         self.object_estimate_pose_x = []
         self.object_estimate_pose_y = []
@@ -237,7 +274,7 @@ class PBPFMove():
         global flag_record_obse
         global flag_record_PBPF
         global flag_record
-        
+        global _record_time_list
         self.rays_id_list = []
 
         pybullet_sim_envs = self.pybullet_env_id_collection
@@ -258,6 +295,7 @@ class PBPFMove():
 
         # motion model
         t_before_motion_model = time.time()
+        print("Welcome to the motion model!")
         self.motion_model(pybullet_sim_envs, particle_robot_id, real_robot_joint_pos)
         t_after_motion_model = time.time()
         self.times.append(t_after_motion_model-t_before_motion_model)
@@ -282,7 +320,13 @@ class PBPFMove():
         # publish pose of particles
         publish_par_pose_info(self.particle_cloud)
         publish_esti_pose_info(object_estimate_pose)
-        
+
+        if RECORD_RESULTS_FLAG == True:
+            _record_obse_pose_list.append(pw_T_obj_obse_objects_pose_list)
+            _record_GT_pose_list.append(pw_T_obj_GT_pose)
+            _record_t_PBPF = time.time()
+            _record_time_list.append(_record_t_PBPF - _record_t_begin)
+            
         if SHOW_RAY == True:
             for index in range(len(self.pybullet_env_id_collection)):
                 self.pybullet_env_id_collection[index].removeAllUserDebugItems()
@@ -291,7 +335,6 @@ class PBPFMove():
 
     # motion model
     def motion_model(self, pybullet_sim_envs, particle_robot_id, real_robot_joint_pos):  
-        print("Welcome to the motion model!")
         self.motion_update_PB_parallelised(pybullet_sim_envs, particle_robot_id, real_robot_joint_pos)
 
     def motion_update_PB_parallelised(self, pybullet_sim_envs, particle_robot_id, real_robot_joint_pos):
@@ -344,10 +387,8 @@ class PBPFMove():
         ### ori: x,y,z,w
         # collision check: add robot
         collision_detection_obj_id.append(particle_robot_id[index])
+        # add board need to change
         collision_detection_obj_id.append(self.pybullet_sim_env_fix_obj_id_collection[index])
-        # now is empty
-        for oto_index in range(self.other_obj_num):
-            collision_detection_obj_id.append(self.pybullet_sim_other_object_id_collection[oto_index])
 
         for obj_index in range(self.obj_num):
             
@@ -426,6 +467,7 @@ class PBPFMove():
             print("Compare image cost time:", t_after_compare - t_before_compare)
             print("--------------------------------------------------------")
             
+            # mark
             # score_list_array_sub_sum_over = self.normalize_score_to_0_1(self.depth_value_difference_list)
             # for i in range(len(score_list_array_sub_sum_over)):
             #     print("_particle_update_time: ",_particle_update_time,"; Index:", i, "; depth_weight_that_particle_get: ",score_list_array_sub_sum_over[i])
@@ -1361,19 +1403,15 @@ class PBPFMove():
                 # print("weight_depth_img: ",weight_depth_img,"; each_par_weight: ", each_par_weight)
                 each_par_weight = each_par_weight * weight_depth_img_array[index]
 
-                if PRINT_SCORE_FLAG == True and OBJECT_NUM == 2:
-                    figure = 5
-                    depth_score_r = round(weight_depth_img_array[index], figure)
-                    cracker_obs_score_r = round(particle[0].w, figure)
-                    soup_obs_score_r = round(particle[1].w, figure)
-                    total_score_r = round(each_par_weight, figure)
-                    print("Update_Time: ",_particle_update_time,"; Index:", index, "; depth_score: ",depth_score_r, "; cracker_obs_score: ", cracker_obs_score_r, "; soup_obs_score: ", soup_obs_score_r, "; total_score: ",total_score_r) 
-                    print("Cracker Error: ", self.cracker_dis_error[index], self.cracker_ang_error[index], "; Weight: ", self.cracker_weight_before_ray[index], self.cracker_weight__after_ray[index])
-                    print("S o u p Error: ", self.soup_dis_error[index], self.soup_ang_error[index], "; Weight: ", self.soup_weight_before_ray[index], self.soup_weight__after_ray[index])
                     
             particles_w.append(each_par_weight) # to compute the sum
+            # print("_particle_update_time:", _particle_update_time, "; particle Index:", index, "; Weight:", each_par_weight)
             base_w = base_w + each_par_weight
             base_w_list.append(base_w) # [0, 0.02, 0.025, 0.029, 0.031, ..., sum]
+        # mark
+        # max_value = max(particles_w)
+        # max_index = particles_w.index(max_value)
+        # print("Max particle weight:", max_value, "; Max particle Index:", max_index)
         w_sum = sum(particles_w)
         r = random.uniform(0, w_sum)
         
@@ -1445,7 +1483,7 @@ class PBPFMove():
         else:
             input("Error: depth_value_difference_list_array_sub.ndim should be 1! Please check the code and press Crtl-C")
         score_list_array_sub_sum = sum(score_list_array_sub)
-        score_list_array_sub_sum_over = score_list_array_sub / score_list_array_sub_sum + 0.001
+        score_list_array_sub_sum_over = score_list_array_sub / score_list_array_sub_sum
         return score_list_array_sub_sum_over
 
     def array_normal_distribution(self, x, mean, sigma):
@@ -1612,6 +1650,7 @@ class CVPFMove():
     def update_particle_filter_CV(self, pw_T_obj_obse_objects_pose_list):
         global flag_record_CVPF
         global flag_record
+        global _record_time_list
         # motion model
         self.motion_update_CV(pw_T_obj_obse_objects_pose_list)
         # observation model
@@ -1632,6 +1671,11 @@ class CVPFMove():
         # publish pose of particles
         publish_par_pose_info(self.particle_cloud_CV)
         publish_esti_pose_info(object_estimate_pose_CV)
+        if RECORD_RESULTS_FLAG == True:
+            _record_t_PBPF = time.time()
+            _record_time_list.append(_record_t_PBPF - _record_t_begin)
+            _record_obse_pose_list.append(pw_T_obj_obse_objects_pose_list)
+
         return object_estimate_pose_CV, dis_std_list, ang_std_list, self.particle_cloud_CV
 
     def isAnyParticleInContact(self):
@@ -2200,13 +2244,16 @@ def _get_quaternion_from_matrix(a_T_b_4_4):
 #    pub_ray_trace.publish(par_list)
 
 def publish_par_pose_info(particle_cloud_pub):
+    global _par_panda_step
     par_pose_list = list(range(PARTICLE_NUM))
     for par_index in range(PARTICLE_NUM):
         par_pose = particle_pose()
+        par_pose.particles = par_index
         obj_pose_list = []
         for obj_index in range(OBJECT_NUM):
             obj_pose = object_pose()
             obj_info = particle_cloud_pub[par_index][obj_index]
+            obj_pose.id = obj_index
             obj_pose.name = obj_info.par_name
             obj_pose.pose.position.x = obj_info.pos[0]
             obj_pose.pose.position.y = obj_info.pos[1]
@@ -2216,6 +2263,15 @@ def publish_par_pose_info(particle_cloud_pub):
             obj_pose.pose.orientation.z = obj_info.ori[2]
             obj_pose.pose.orientation.w = obj_info.ori[3]
             obj_pose_list.append(obj_pose)
+            if RECORD_RESULTS_FLAG == True:
+                obj_scene = obj_info.par_name+"_scene"+str(task_flag)
+                obj_name = obj_info.par_name
+                _record_t = time.time()
+                # x, y, z ,w
+                _boss_par_err_ADD_df_list[par_index].loc[_par_panda_step] = [_par_panda_step, _record_t - _record_t_begin, obj_info.pos[0], obj_info.pos[1], obj_info.pos[2], obj_info.ori[0], obj_info.ori[1], obj_info.ori[2], obj_info.ori[3], RUNNING_MODEL, obj_scene, PARTICLE_NUM, VERSION, obj_name]
+                _par_panda_step = _par_panda_step + 1
+
+        
         par_pose.objects = obj_pose_list
         par_pose_list[par_index] = par_pose
         
@@ -2223,6 +2279,8 @@ def publish_par_pose_info(particle_cloud_pub):
     pub_par_pose.publish(par_list)
             
 def publish_esti_pose_info(estimated_object_set):
+    global _PBPF_panda_step
+    # global _boss_PBPF_err_ADD_df_list
     esti_pose_list = []
     for obj_index in range(OBJECT_NUM):
         esti_pose = object_pose()
@@ -2236,8 +2294,23 @@ def publish_esti_pose_info(estimated_object_set):
         esti_pose.pose.orientation.z = esti_obj_info.ori[2]
         esti_pose.pose.orientation.w = esti_obj_info.ori[3]
         esti_pose_list.append(esti_pose)
+
+        if RECORD_RESULTS_FLAG == True:
+            obj_scene = esti_obj_info.obj_name+"_scene"+str(task_flag)
+            obj_name = esti_obj_info.obj_name
+            _record_t = time.time()
+            # x, y, z ,w
+            _boss_PBPF_err_ADD_df_list[obj_index].loc[_PBPF_panda_step] = [_PBPF_panda_step, _record_t - _record_t_begin, esti_obj_info.pos[0], esti_obj_info.pos[1], esti_obj_info.pos[2], esti_obj_info.ori[0], esti_obj_info.ori[1], esti_obj_info.ori[2], esti_obj_info.ori[3], RUNNING_MODEL, obj_scene, PARTICLE_NUM, VERSION, obj_name]
+    
+    _PBPF_panda_step = _PBPF_panda_step + 1
+
     esti_obj_list.objects = esti_pose_list 
     pub_esti_pose.publish(esti_obj_list)
+
+
+    if RECORD_RESULTS_FLAG == True:
+        _record_PBPF_esti_pose_list.append(estimated_object_set)
+            
     for obj_index in range(OBJECT_NUM):
         pose_PBPF = PoseStamped()
         pose_PBPF.pose.position.x = estimated_object_set[obj_index].pos[0]
@@ -2311,6 +2384,7 @@ def generate_point_for_ray(pw_T_c_pos, pw_T_parC_4_4, obj_index):
         point_pos_list.append(pw_T_p_pos)
     return point_list, point_pos_list
 
+# get pose of the end-effector of the robot arm from joints of robot arm 
 def track_fk_sim_world():
     # if SHOW_RAY == True:
     #     p_track_fk_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT,GUI_SERVER
@@ -2332,15 +2406,15 @@ def track_fk_sim_world():
                                               [0, 0, 0, 1],
                                               useFixedBase=1)
 
-    if task_flag == "1":
-        track_fk_obst_big_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_big.urdf"),
-                                                   pw_T_obst_opti_pos_big,
-                                                   pw_T_obst_opti_ori_big,
-                                                   useFixedBase=1)
-        # track_fk_obst_small_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_small.urdf"),
-        #                                            pw_T_obst_opti_pos_small,
-        #                                            pw_T_obst_opti_ori_small,
-        #                                            useFixedBase=1)
+    # if task_flag == "1":
+    #     track_fk_obst_big_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/object/others/pringles.urdf"),
+    #                                                pw_T_pringles_opti_pos_big,
+    #                                                pw_T_pringles_opti_ori_big,
+    #                                                useFixedBase=1)
+    #     # track_fk_obst_small_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_small.urdf"),
+    #     #                                            pw_T_obst_opti_pos_small,
+    #     #                                            pw_T_obst_opti_ori_small,
+    #     #                                            useFixedBase=1)
     
     return p_track_fk_env, track_fk_rob_id, track_fk_plane_id
 
@@ -2397,27 +2471,34 @@ def _vk_camera_setting(pw_T_camD_tf_4_4, camD_T_camVk_4_4):
     camD_T_camVk_4_4_ = copy.deepcopy(camD_T_camVk_4_4)
     pw_T_camVk_4_4_ = np.dot(pw_T_camD_tf_4_4_, camD_T_camVk_4_4_)
     
-    # trick_matrix1 = np.array([[ math.cos(-math.pi/95.0), 0, math.sin(-math.pi/95.0),-0.025],
-    #                           [                       0, 1,                       0,-0.005],
-    #                           [-math.sin(-math.pi/95.0), 0, math.cos(-math.pi/95.0), 0.020],
-    #                           [                       0, 0,                       0,     1]])
-    
-
-
+    # # y
+    # trick_matrix1 = np.array([[ math.cos( math.pi/90.0), 0, math.sin( math.pi/90.0),-0.0],
+    #                           [                       0, 1,                       0,-0.0],
+    #                           [-math.sin( math.pi/90.0), 0, math.cos( math.pi/90.0), 0.0],
+    #                           [                       0, 0,                       0,   1]])
     # pw_T_camVk_4_4_ = np.dot(pw_T_camVk_4_4_, trick_matrix1)
-    
-    # trick_matrix2 = np.array([[ math.cos( math.pi/90.0), math.sin( math.pi/90.0), 0, -0.015],
-    #                           [-math.sin( math.pi/90.0), math.cos( math.pi/90.0), 0,     0],
-    #                           [                       0,                       0, 1, -0.017],
+
+    # # z
+    # trick_matrix2 = np.array([[ math.cos( math.pi/90.0), math.sin( math.pi/90.0), 0, 0],
+    #                           [-math.sin( math.pi/90.0), math.cos( math.pi/90.0), 0, 0],
+    #                           [                       0,                       0, 1, 0],
     #                           [                       0,                       0, 0,     1]])
     # pw_T_camVk_4_4_ = np.dot(pw_T_camVk_4_4_, trick_matrix2)
 
-    trick_matrix3 = np.array([[ 1, 0, 0,-0.015],
-                              [ 0, 1, 0, 0.000],
-                              [ 0, 0, 1,-0.017],
+    # trick_matrix3 = np.array([[ 1, 0, 0,-0.005],
+    #                           [ 0, 1, 0,-0.015],
+    #                           [ 0, 0, 1, 0.025],
+    #                           [ 0, 0, 0,     1]])
+    # pw_T_camVk_4_4_ = np.dot(pw_T_camVk_4_4_, trick_matrix3)
+    
+    trick_matrix3 = np.array([[ 1, 0, 0,-0.010],
+                              [ 0, 1, 0,-0.010],
+                              [ 0, 0, 1, 0.0],
                               [ 0, 0, 0,     1]])
     pw_T_camVk_4_4_ = np.dot(pw_T_camVk_4_4_, trick_matrix3)
 
+    
+    # # x
     # trick_matrix4 = np.array([[ 1,                        0,                         0,     0],
     #                           [ 0,  math.cos(-math.pi/100.0), math.sin(-math.pi/100.0),-0.03],
     #                           [ 0, -math.sin(-math.pi/100.0), math.cos(-math.pi/100.0),-0.06],
@@ -2470,6 +2551,7 @@ def _vk_load_meshes():
         elif link_index == 10:
             rob_link_id = _vk_context.load_model("assets/meshes/right_finger.vkdepthmesh")
         vk_rob_link_id_list[link_index] = rob_link_id
+    
     # table
     other_obj_id = _vk_context.load_model("assets/meshes/table.vkdepthmesh")
     vk_other_id_list.append(other_obj_id)
@@ -2483,6 +2565,10 @@ def _vk_load_meshes():
     vk_other_id_list.append(other_obj_id)
     other_obj_id = _vk_context.load_model("assets/meshes/barrier.vkdepthmesh")
     vk_other_id_list.append(other_obj_id)
+    # pringles
+    if task_flag == '1':
+        other_obj_id = _vk_context.load_model("assets/meshes/pringles.vkdepthmesh")
+        vk_other_id_list.append(other_obj_id)
 
     # obj_id = _vk_context.load_model()
     # vk_other_id_list.append(obj_id)
@@ -2557,9 +2643,10 @@ def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4, pybullet_env, par_robot
             #                         0, 0, 0,
             #                         1, 0, 0, 0) # w, x, y, z
         # other objects
-        other_obj_number = len(_vk_other_id_list)
+        vk_other_obj_number_ = len(_vk_other_id_list)
+        
         # table
-        table_pos_1 = [0.46, -0.01, 0.710]
+        table_pos_1 = [0.46, -0.01, 0.70]
         table_ori_1 = p.getQuaternionFromEuler([0,0,0]) # x, y, z, w
         vk_state.add_instance(_vk_other_id_list[0],
                               table_pos_1[0], table_pos_1[1], table_pos_1[2],
@@ -2586,7 +2673,13 @@ def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4, pybullet_env, par_robot
         vk_state.add_instance(_vk_other_id_list[4],
                               barrier_pos_3[0], barrier_pos_3[1], barrier_pos_3[2],
                               barrier_ori_3[3], barrier_ori_3[0], barrier_ori_3[1], barrier_ori_3[2]) # w, x, y, z
-
+        # pringles
+        if task_flag == '1':
+            pringles_pos_1 = [0.6652218209791124, 0.058946644391304814, 0.8277292172960276]
+            pringles_ori_1 = [ 0.67280124, -0.20574896, -0.20600051, 0.68012472] # x, y, z, w
+            vk_state.add_instance(_vk_other_id_list[5],
+                                pringles_pos_1[0], pringles_pos_1[1], pringles_pos_1[2],
+                                pringles_ori_1[3], pringles_ori_1[0], pringles_ori_1[1], pringles_ori_1[2]) # w, x, y, z
 
         _vk_context.add_state(vk_state)
         # vk_state: 
@@ -2611,6 +2704,32 @@ def _vk_update_depth_image(vk_state_list, vk_particle_cloud, pybullet_env, par_r
     for index, particle in enumerate(vk_particle_cloud):
         objs_states = np.array(vk_state_list[index].view(), copy = False)
         for obj_index in range(OBJECT_NUM):
+
+
+
+            # ##############################################################################
+            # obj_name = OBJECT_NAME_LIST[obj_index]
+            # opti_T_rob_opti_pos = ROS_LISTENER.listen_2_robot_pose()[0]
+            # opti_T_rob_opti_ori = ROS_LISTENER.listen_2_robot_pose()[1]
+            # # pose of objects in OptiTrack coordinate frame
+            # opti_T_obj_opti_pos = ROS_LISTENER.listen_2_object_pose(obj_name)[0]
+            # opti_T_obj_opti_ori = ROS_LISTENER.listen_2_object_pose(obj_name)[1]
+            # # pose of objects in robot coordinate frame
+            # rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
+            
+            # pw_T_obj_opti_4_4 = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
+            # pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
+            # pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
+            # objs_states[obj_index, 1] = pw_T_obj_opti_pos[0] # x_pos
+            # objs_states[obj_index, 2] = pw_T_obj_opti_pos[1] # y_pos
+            # objs_states[obj_index, 3] = pw_T_obj_opti_pos[2] # z_pos
+            # objs_states[obj_index, 4] = pw_T_obj_opti_ori[3] # w_ori
+            # objs_states[obj_index, 5] = pw_T_obj_opti_ori[0] # x_ori
+            # objs_states[obj_index, 6] = pw_T_obj_opti_ori[1] # y_ori
+            # objs_states[obj_index, 7] = pw_T_obj_opti_ori[2] # z_ori
+            # ##############################################################################
+
+
             objs_states[obj_index, 1] = particle[obj_index].pos[0] # x_pos
             objs_states[obj_index, 2] = particle[obj_index].pos[1] # y_pos
             objs_states[obj_index, 3] = particle[obj_index].pos[2] # z_pos
@@ -2618,6 +2737,8 @@ def _vk_update_depth_image(vk_state_list, vk_particle_cloud, pybullet_env, par_r
             objs_states[obj_index, 5] = particle[obj_index].ori[0] # x_ori
             objs_states[obj_index, 6] = particle[obj_index].ori[1] # y_ori
             objs_states[obj_index, 7] = particle[obj_index].ori[2] # z_ori
+
+
         all_links_info = pybullet_env.getLinkStates(par_robot_id, range(PANDA_ROBOT_LINK_NUMBER + 2), computeForwardKinematics=True) # 11+2; range: [0,13)
         for rob_link_index in range(PANDA_ROBOT_LINK_NUMBER):
             if rob_link_index == 0:
@@ -2650,10 +2771,10 @@ def _vk_update_depth_image(vk_state_list, vk_particle_cloud, pybullet_env, par_r
             objs_states[OBJECT_NUM+rob_link_index, 6] = y_ori # y_ori
             objs_states[OBJECT_NUM+rob_link_index, 7] = z_ori # z_ori
             
-        # other_obj_number = len(_vk_other_id_list)
+        # vk_other_obj_number_ = len(_vk_other_id_list)
         # table_pos_1 = [0.46, -0.01, 0.710]
         # table_ori_1 = [0, 0, 0, 1] # x, y, z, w
-        # for other_obj_index in range(other_obj_number):
+        # for other_obj_index in range(vk_other_obj_number_):
         #     objs_states[OBJECT_NUM+PANDA_ROBOT_LINK_NUMBER+other_obj_index, 1] = table_pos_1[0] # x_pos
         #     objs_states[OBJECT_NUM+PANDA_ROBOT_LINK_NUMBER+other_obj_index, 2] = table_pos_1[1] # y_pos
         #     objs_states[OBJECT_NUM+PANDA_ROBOT_LINK_NUMBER+other_obj_index, 3] = table_pos_1[2] # z_pos
@@ -2664,6 +2785,96 @@ def _vk_update_depth_image(vk_state_list, vk_particle_cloud, pybullet_env, par_r
 
 # ctrl-c write down the error file
 def signal_handler(sig, frame):
+
+    if RECORD_RESULTS_FLAG == True:
+        # # save estimation pose (PBPF)
+        # esti_pose_num = len(_record_PBPF_esti_pose_list)
+        # obse_pose_num = len(_record_obse_pose_list)
+        # GT_pose_num = len(_record_GT_pose_list)
+        # record_time_num = len(_record_time_list)
+        # print("esti_pose_num:", esti_pose_num)
+        # print("obse_pose_num:", obse_pose_num)
+        # print("GT_pose_num:", GT_pose_num)
+        # print("record_time_num:", record_time_num)
+
+        # for esti_pose_index in range(esti_pose_num):
+        #     for obj_index in range(OBJECT_NUM):
+        #         esti_obj_info = _record_PBPF_esti_pose_list[esti_pose_index][obj_index]
+        #         pos_x = esti_obj_info.pos[0]
+        #         pos_y = esti_obj_info.pos[1]
+        #         pos_z = esti_obj_info.pos[2]
+        #         pw_T_esti_PBPF_pos = [pos_x, pos_y, pos_z]
+        #         ori_x = esti_obj_info.ori[0]
+        #         ori_y = esti_obj_info.ori[1]
+        #         ori_z = esti_obj_info.ori[2]
+        #         ori_w = esti_obj_info.ori[3]
+        #         pw_T_esti_PBPF_ori = [ori_x, ori_y, ori_z, ori_w]
+        #         pw_T_esti_PBPF_3_3 = np.array(p.getMatrixFromQuaternion(pw_T_esti_PBPF_ori)).reshape(3, 3)
+        #         pw_T_esti_PBPF_3_4 = np.c_[pw_T_esti_PBPF_3_3, pw_T_esti_PBPF_pos]  # Add position to create 3x4 matrix
+        #         pw_T_esti_PBPF_4_4 = np.r_[pw_T_esti_PBPF_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+        #         time_row = np.zeros(pw_T_esti_PBPF_4_4.shape[1])
+        #         time_row[0] = _record_time_list[esti_pose_index]
+        #         pw_T_esti_PBPF_4_4_with_time = np.vstack((pw_T_esti_PBPF_4_4, time_row))
+        #         file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/'+str(REPEAT_TIME)+'/'+RUNNING_MODEL+'/')
+        #         file_name = str(esti_pose_index)+'_'+OBJECT_NAME_LIST[obj_index]+'_PBPF.txt'
+        #         np.savetxt(file_save_path + file_name, pw_T_esti_PBPF_4_4_with_time, fmt='%.6e', delimiter=' ')
+
+        # for obse_pose_index in range(obse_pose_num):
+        #     for obj_index in range(OBJECT_NUM):
+        #         obse_obj_info = _record_obse_pose_list[obse_pose_index][obj_index]
+        #         pos_x = obse_obj_info.pos[0]
+        #         pos_y = obse_obj_info.pos[1]
+        #         pos_z = obse_obj_info.pos[2]
+        #         pw_T_obj_obse_pos = [pos_x, pos_y, pos_z]
+        #         ori_x = obse_obj_info.ori[0]
+        #         ori_y = obse_obj_info.ori[1]
+        #         ori_z = obse_obj_info.ori[2]
+        #         ori_w = obse_obj_info.ori[3]
+        #         pw_T_obj_obse_ori = [ori_x, ori_y, ori_z, ori_w]
+        #         pw_T_obj_obse_3_3 = np.array(p.getMatrixFromQuaternion(pw_T_obj_obse_ori)).reshape(3, 3)
+        #         pw_T_obj_obse_3_4 = np.c_[pw_T_obj_obse_3_3, pw_T_obj_obse_pos]  # Add position to create 3x4 matrix
+        #         pw_T_obj_obse_4_4 = np.r_[pw_T_obj_obse_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+        #         time_row = np.zeros(pw_T_obj_obse_4_4.shape[1])
+        #         time_row[0] = _record_time_list[obse_pose_index]
+        #         pw_T_obj_obse_4_4_with_time = np.vstack((pw_T_obj_obse_4_4, time_row))
+        #         file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/'+str(REPEAT_TIME)+'/'+RUNNING_MODEL+'/')
+        #         file_name = str(obse_pose_index)+'_'+OBJECT_NAME_LIST[obj_index]+'_obse.txt'
+        #         np.savetxt(file_save_path + file_name, pw_T_obj_obse_4_4_with_time, fmt='%.6e', delimiter=' ')
+
+        # for GT_pose_index in range(GT_pose_num):
+        #     for obj_index in range(OBJECT_NUM):
+        #         pw_T_obj_GT_4_4 = _record_GT_pose_list[GT_pose_index][obj_index]
+        #         time_row = np.zeros(pw_T_obj_GT_4_4.shape[1])
+        #         time_row[0] = _record_time_list[GT_pose_index]
+        #         pw_T_obj_GT_4_4_with_time = np.vstack((pw_T_obj_GT_4_4, time_row))
+        #         file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/'+str(REPEAT_TIME)+'/'+RUNNING_MODEL+'/')
+        #         file_name = str(obse_pose_index)+'_'+OBJECT_NAME_LIST[obj_index]+'_GT.txt'
+        #         np.savetxt(file_save_path + file_name, pw_T_obj_GT_4_4_with_time, fmt='%.6e', delimiter=' ')
+
+        for obj_index in range(OBJECT_NUM):
+            # 70_scene1_rosbag3_repeat0_cracker_time_obse_err_ADD_PBPF_RGBD
+            file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/')
+            obj_name = OBJECT_NAME_LIST[obj_index]
+
+            file_name_PBPF_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+update_style_flag+'_PBPF_pose_'+RUNNING_MODEL+'.csv'
+            file_name_obse_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+update_style_flag+'_obse_pose_'+RUNNING_MODEL+'.csv'
+            file_name_GT_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+update_style_flag+'_GT_pose_'+RUNNING_MODEL+'.csv'
+
+            _boss_PBPF_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_PBPF_ADD,index=0,header=0,mode='w')
+            if RUNNING_MODEL == "PBPF_RGBD":
+                _boss_obse_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_obse_ADD,index=0,header=0,mode='w')
+                _boss_GT_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_GT_ADD,index=0,header=0,mode='w')
+            print("write "+obj_name+" PBPF file: "+RUNNING_MODEL)
+            print("write "+obj_name+" obse file: "+RUNNING_MODEL)
+            print("write "+obj_name+" GT file: "+RUNNING_MODEL)
+
+        for par_index in range(PARTICLE_NUM):
+            file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/')
+            file_name_par_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+update_style_flag+'_PBPF_pose_'+RUNNING_MODEL+"_"+str(par_index)+'.csv'
+            
+            _boss_par_err_ADD_df_list[par_index].to_csv(file_save_path+file_name_par_ADD,index=0,header=0,mode='w')
+        print("write Particle file (should include all objects): "+RUNNING_MODEL)
+    
     print("")
     print(" ------------------------------------------ ")
     print("|                                          |")
@@ -2719,11 +2930,6 @@ while reset_flag == True:
 
         _particle_update_time = 0
 
-        if task_flag == "4": 
-            other_obj_num = 1 # parameter_info['other_obj_num']
-        else:
-            other_obj_num = 0 # parameter_info['other_obj_num']
-
         if run_alg_flag == 'CVPF':
             PARTICLE_NUM = 150
         
@@ -2748,9 +2954,7 @@ while reset_flag == True:
         RESOLUTION_DEPTH = (HEIGHT_DEPTH, WIDTH_DEPTH) # 480 848
 
         # ============================================================================
-        
-        # print(obstacles_pos)
-        # print(type(obstacles_pos))
+
         pub_DOPE_list = []
         pub_PBPF_list = []
         for obj_index in range(OBJECT_NUM):
@@ -2831,10 +3035,8 @@ while reset_flag == True:
                 boss_sigma_obs_ang = 0.0216773873 * 30
                 boss_sigma_obs_pos = 0.10 
                 pos_noise = 0.001 * 5.0 # 5
-                ang_noise = 0.05 * 3.0
+                ang_noise = 0.05 * 10.0 # 3.0
                 # mark
-                # boss_sigma_obs_ang = 0.0
-                # boss_sigma_obs_pos = 0.0
                 # pos_noise = 0.0
                 # ang_noise = 0.0
             else:
@@ -2846,7 +3048,7 @@ while reset_flag == True:
                 boss_sigma_obs_pos = 0.10 # 0.02 need to increase
                 # boss_sigma_obs_pos = 0.10 # 0.02 need to increase
                 pos_noise = 0.001 * 5.0
-                ang_noise = 0.05 * 3.0
+                ang_noise = 0.05 * 1.0 # 3.0
                 # mark
                 # pos_noise = 0.0
                 # ang_noise = 0.0
@@ -2862,19 +3064,15 @@ while reset_flag == True:
         
         PBPF_time_cosuming_list = []
         
-        pw_T_obst_opti_pos_small = [0.852134144216095, 0.14043691336334274, 0.10014295215002848]
-        pw_T_obst_opti_ori_small = [0.00356749, -0.00269526, 0.28837681, 0.95750657]
-        pw_T_obst_opti_pos_big = [0.7575524745560446, 0.3267505178967816, 0.14765408574692843]
-        pw_T_obst_opti_ori_big = [0.70782892, 0.06771696, 0.0714355, 0.69949239]
-        
-        pw_T_obst_opti_pos_big = obstacles_pos[0]
-        pw_T_obst_opti_ori_big = obstacles_ori[0]
-        
+        # pw_T_obst_opti_pos_small = [0.852134144216095, 0.14043691336334274, 0.10014295215002848]
+        # pw_T_obst_opti_ori_small = [0.00356749, -0.00269526, 0.28837681, 0.95750657]
+        # pw_T_pringles_opti_pos_big = 
+        # pw_T_pringles_opti_ori_big = 
         
         # multi-objects/robot list
         pw_T_rob_sim_pose_list_alg = []
         pw_T_obj_obse_obj_list_alg = []
-        pw_T_obj_obse_oto_list_alg = []
+        pw_T_objs_touching_targetObjs_list = []
         # need to change
         dis_std_list = [d_thresh_obse]
         ang_std_list = [a_thresh_obse]
@@ -2884,7 +3082,7 @@ while reset_flag == True:
         # build an object of class "Ros_Listener"
         ROS_LISTENER = Ros_Listener()
         
-        create_scene = Create_Scene(OBJECT_NUM, ROBOT_NUM, other_obj_num)
+        create_scene = Create_Scene(OBJECT_NUM, ROBOT_NUM)
         _tf_listener = tf.TransformListener()
         _launch_camera = LaunchCamera(WIDTH_DEPTH, HEIGHT_DEPTH, FOV_V_DEPTH)
         
@@ -2902,14 +3100,29 @@ while reset_flag == True:
         print(trans_ob_list, rot_ob_list)
         print("========================")
         print("Finish initializing scene")
-        for obj_index in range(other_obj_num):
-            pw_T_obj_obse_oto_list_alg = create_scene.initialize_base_of_cheezit()
 
-        initial_parameter = InitialSimulationModel(OBJECT_NUM, ROBOT_NUM, other_obj_num, PARTICLE_NUM, 
-                                                pw_T_rob_sim_pose_list_alg, 
-                                                pw_T_obj_obse_obj_list_alg,
-                                                pw_T_obj_obse_oto_list_alg,
-                                                update_style_flag, SIM_TIME_STEP)
+        if task_flag == '4':
+            objs_touching_target_objs_num_ = OBJS_TOUCHING_TARGET_OBJS_NUM
+            objs_touching_target_objs_num_ = 1
+            objs_touching_target_objs_name_list = ["base"]
+            pw_T_objs_touching_targetObjs = create_scene.initialize_other_objects_touching(objs_touching_target_objs_num_, objs_touching_target_objs_name_list)
+
+            for num_index in range(len(pw_T_objs_touching_targetObjs)):
+                pw_T_objs_touching_targetObjs_list.append(pw_T_objs_touching_targetObjs[num_index])
+
+        if task_flag == '1':
+            objs_not_touching_target_objs_num_ = OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM
+            objs_not_touching_target_objs_num_ = 1
+            objs_not_touching_target_objs_name_list = ["pringles"]
+            pw_T_objs_not_touching_targetObjs = create_scene.initialize_other_objects_not_touching(objs_not_touching_target_objs_num_, objs_not_touching_target_objs_name_list)
+
+
+
+        initial_parameter = InitialSimulationModel(OBJECT_NUM, ROBOT_NUM, PARTICLE_NUM, 
+                                                   pw_T_rob_sim_pose_list_alg, 
+                                                   pw_T_obj_obse_obj_list_alg,
+                                                   pw_T_objs_touching_targetObjs_list,
+                                                   update_style_flag, SIM_TIME_STEP)
         
         
         # get estimated object
@@ -2922,8 +3135,15 @@ while reset_flag == True:
         print("Finish initializing particles")
 
         # publish particles/estimated object
+        # first publish
+
         publish_par_pose_info(particle_cloud_pub)
+        if RECORD_RESULTS_FLAG == True:
+            _record_t_PBPF = time.time()
+            _record_time_list.append(_record_t_PBPF - _record_t_begin)
         publish_esti_pose_info(estimated_object_set)
+
+
         estimated_object_set_old = copy.deepcopy(estimated_object_set)
         estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
         print("Before locating the pose of the camera")
@@ -2961,7 +3181,6 @@ while reset_flag == True:
         print("Camera RGB len pose in Pybullet world:")
         print(pw_T_cam_tf)
         print("==============================================")        
-
         # run the simulation
         Flag = True
         # compute pose of robot arm
@@ -3055,9 +3274,9 @@ while reset_flag == True:
             #panda robot moves in the visualization window
             temp_pw_T_obj_obse_objs_list = []
             track_fk_world_rob_mv(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
+            if RECORD_RESULTS_FLAG == True:
+                pw_T_obj_GT_pose = []
             for obj_index in range(OBJECT_NUM):
-                
-
                 # need to change
                 object_name = OBJECT_NAME_LIST[obj_index]
 
@@ -3073,7 +3292,7 @@ while reset_flag == True:
                     # visible_threshold_outlier_XL_list[obj_index] = 0.6
                     visible_threshold_dope_is_fresh_list[obj_index] = 0.5
                     visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.75
-                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.05 # 0.25
+                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.45 # 0.05
                     visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
                     visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.45
 
@@ -3225,14 +3444,44 @@ while reset_flag == True:
                     
                     # print('DOPE_pose_'+OBJECT_NAME_LIST[obj_index])
                     # print(pw_T_obj_obse_pos[0], pw_T_obj_obse_pos[1], pw_T_obj_obse_pos[2])
-                    
+
                 pw_T_obj_obse_name = object_name
                 pw_T_obj_obse_id = 0
                 obse_object = Object_Pose(pw_T_obj_obse_name, pw_T_obj_obse_id, pw_T_obj_obse_pos, pw_T_obj_obse_ori, index=obj_index)
                 temp_pw_T_obj_obse_objs_list.append(obse_object)
-                
+
+                if RECORD_RESULTS_FLAG == True:
+                    obj_name = OBJECT_NAME_LIST[obj_index]
+                    opti_T_rob_opti_pos = ROS_LISTENER.listen_2_robot_pose()[0]
+                    opti_T_rob_opti_ori = ROS_LISTENER.listen_2_robot_pose()[1]
+                    # pose of objects in OptiTrack coordinate frame
+                    opti_T_obj_opti_pos = ROS_LISTENER.listen_2_object_pose(obj_name)[0]
+                    opti_T_obj_opti_ori = ROS_LISTENER.listen_2_object_pose(obj_name)[1]
+                    # pose of objects in robot coordinate frame
+                    rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
+                    pw_T_obj_opti_4_4 = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
+                    pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
+                    pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
+                    pw_T_obj_GT_pose.append(pw_T_obj_opti_4_4)
+                    
+                    obj_scene = obj_name+"_scene"+str(task_flag)
+                    _record_t = time.time()
+                    # x, y, z ,w
+                    _boss_GT_err_ADD_df_list[obj_index].loc[_GT_panda_step] = [_GT_panda_step, _record_t - _record_t_begin, pw_T_obj_opti_pos[0], pw_T_obj_opti_pos[1], pw_T_obj_opti_pos[2], pw_T_obj_opti_ori[0], pw_T_obj_opti_ori[1], pw_T_obj_opti_ori[2], pw_T_obj_opti_ori[3], 'GT', obj_scene, PARTICLE_NUM, VERSION, obj_name]
+                    _boss_obse_err_ADD_df_list[obj_index].loc[_obse_panda_step] = [_obse_panda_step, _record_t - _record_t_begin, pw_T_obj_obse_pos[0], pw_T_obj_obse_pos[1], pw_T_obj_obse_pos[2], pw_T_obj_obse_ori[0], pw_T_obj_obse_ori[1], pw_T_obj_obse_ori[2], pw_T_obj_obse_ori[3], 'DOPE', obj_scene, PARTICLE_NUM, VERSION, obj_name]      
+            _GT_panda_step = _GT_panda_step + 1
+            _obse_panda_step = _obse_panda_step + 1
+
             pw_T_obj_obse_objects_list = copy.deepcopy(temp_pw_T_obj_obse_objs_list)
             
+            if RECORD_RESULTS_FLAG == True:
+                
+                # print(pw_T_obj_obse_objects_list[0].pos)
+                # print(pw_T_obj_obse_objects_list[1].pos)
+                _record_obse_pose_first_flag = 1
+                _record_obse_pose_list.append(pw_T_obj_obse_objects_list)
+                _record_GT_pose_list.append(pw_T_obj_GT_pose)
+
             # compute distance between old robot and cur robot (position and angle)
             rob_link_9_pose_cur = p_sim.getLinkState(sim_rob_id, 9)
             rob_link_9_ang_cur = p_sim.getEulerFromQuaternion(rob_link_9_pose_cur[1])
@@ -3316,6 +3565,7 @@ while reset_flag == True:
                             print("Run ", RUNNING_MODEL)
                             simRobot_touch_par_flag = 1
                             _particle_update_time = _particle_update_time + 1
+                            print("_particle_update_time:", _particle_update_time)
                             t_begin_PBPF = time.time()
                             flag_update_num_PB = flag_update_num_PB + 1
                             pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
@@ -3331,7 +3581,7 @@ while reset_flag == True:
                             simRobot_touch_par_flag = 0
                         else:
                             Only_update_robot_flag = True
-                            print("Just Update Robot")
+                            # print("Just Update Robot")
                             PBPF_alg.motion_model(initial_parameter.pybullet_particle_env_collection,
                                                                 initial_parameter.fake_robot_id_collection,
                                                                 ROS_LISTENER.current_joint_values)

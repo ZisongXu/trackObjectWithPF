@@ -3,7 +3,7 @@
 declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a sceneNames=("scene2")
+declare -a sceneNames=("scene1")
 
 declare -a particleNumbers=(70)
 # declare -a objectNames=("cracker")
@@ -14,33 +14,6 @@ declare -a Ang_and_Pos=("ADD")
 declare -a update_style_flag=("time") # "time" "pose"
 # declare -a runVersions=("depth_img" "multiray")
 declare -a runVersions=("PBPF_RGBD" "PBPF_RGB" "PBPF_D")
-# for runAlgFlag in "${runAlgFlags[@]}"
-# do
-# 	for particleNumber in "${particleNumbers[@]}"
-# 	do
-# 		for objectName in "${objectNames[@]}"
-# 		do
-			
-# 			for sceneName in "${sceneNames[@]}"
-# 			do
-# 				if [[ "$objectName" == "soup" ]]; then
-# 					if [[ "$sceneName" == "scene4" ]]; then
-# 						continue
-# 					fi
-# 				fi
-				
-# 				python3 update_yaml_file_automated.py "${objectName}" "${particleNumber}" "${sceneName}" "${runAlgFlag}"
-				
-# 				for rosbag in {1..10}
-# 				do
-
-# particle_num = sys.argv[1]
-# object_name = sys.argv[2]
-# task_flag = sys.argv[3] # "scene1"
-# rosbag_flag = sys.argv[4]
-# repeat_time = sys.argv[5]
-# run_alg_flag = sys.argv[6] # PBPF
-# ang_and_pos = sys.argv[7] # pos/ang
 
 for ang_and_pos in "${Ang_and_Pos[@]}"
 do
@@ -58,10 +31,10 @@ do
 						fi
 					fi
 					# for rosbag in {1..10}
-					for ((rosbag=1;rosbag<=2;rosbag++)); 
+					for ((rosbag=3;rosbag<=3;rosbag++)); 
 					do
 						# for repeat in {1..10}
-						for ((repeat=0;repeat<=4;repeat++));
+						for ((repeat=0;repeat<=9;repeat++));
 						do
 							for runVersion in "${runVersions[@]}"
 							do

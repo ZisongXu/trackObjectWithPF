@@ -44,18 +44,17 @@ import yaml
 
 #Class of initialize the simulation model
 class InitialSimulationModel():
-    def __init__(self, object_num, robot_num, other_obj_num, particle_num, 
+    def __init__(self, object_num, robot_num, particle_num, 
                  pw_T_rob_sim_pose_list_alg, 
                  pw_T_obj_obse_obj_list_alg,
-                 pw_T_obj_obse_oto_list_alg,
+                 pw_T_objs_touching_targetObjs_list,
                  update_style_flag, sim_time_step):
         self.object_num = object_num
         self.robot_num = robot_num
-        self.other_obj_num = other_obj_num
         self.particle_num = particle_num
         self.pw_T_rob_sim_pose_list_alg = pw_T_rob_sim_pose_list_alg
         self.pw_T_obj_obse_obj_list_alg = pw_T_obj_obse_obj_list_alg
-        self.pw_T_obj_obse_oto_list_alg = pw_T_obj_obse_oto_list_alg
+        self.pw_T_objs_touching_targetObjs_list = pw_T_objs_touching_targetObjs_list
         self.update_style_flag = update_style_flag
         self.sim_time_step = sim_time_step
         
@@ -71,7 +70,7 @@ class InitialSimulationModel():
         self.pybullet_particle_env_collection_CV = []
         self.particle_no_visual_id_collection_CV = []
         
-        self.boss_sigma_obs_pos_init = 0.10 # original value: 16cm 
+        self.boss_sigma_obs_pos_init = 0.08 # original value: 16cm/10CM 
         
         self.boss_sigma_obs_x = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
@@ -94,6 +93,10 @@ class InitialSimulationModel():
         self.SIM_REAL_WORLD_FLAG = self.parameter_info['sim_real_world_flag']
         self.SHOW_RAY = self.parameter_info['show_ray'] 
         self.VK_RENDER_FLAG = self.parameter_info['vk_render_flag'] 
+
+        self.OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_are_not_touching_target_objs_num']
+        self.OBJS_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_touching_target_objs_num']
+
         
     def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):
         position = copy.deepcopy(pw_T_obj_obse_pos)
@@ -146,6 +149,7 @@ class InitialSimulationModel():
         p_env_list = []
         shelves_id_list = []
         other_obj_id_list = []
+
         for par_index in range(self.particle_num):
             
             collision_detection_obj_id = []
@@ -162,6 +166,14 @@ class InitialSimulationModel():
             pybullet_simulation_env.setGravity(0, 0, -9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
 
+            if self.task_flag == "1":
+                pw_T_pringles_pos = [0.6652218209791124, 0.058946644391304814, 0.8277292172960276]
+                pw_T_pringles_ori = [ 0.67280124, -0.20574896, -0.20600051, 0.68012472] # x, y, z, w
+                pringles_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/pringles.urdf"),
+                                                              pw_T_pringles_pos,
+                                                              pw_T_pringles_ori,
+                                                              useFixedBase=1)
+
             if self.task_flag == "5":
                 pw_T_she_pos = [0.75889274, -0.24494845, 0.33818097+0.02]
                 pw_T_she_ori = [0, 0, 0, 1]
@@ -169,20 +181,21 @@ class InitialSimulationModel():
                                                               pw_T_she_pos,
                                                               pw_T_she_ori,
                                                               useFixedBase=1)
-                shelves_id_list.append(shelves_id)
                 collision_detection_obj_id.append(shelves_id)
+                shelves_id_list.append(shelves_id)
 
-            for obj_index in range(self.other_obj_num):
-                other_obj_name = self.pw_T_obj_obse_oto_list_alg[obj_index].obj_name
-                other_obj_pos = self.pw_T_obj_obse_oto_list_alg[obj_index].pos
-                other_obj_ori = self.pw_T_obj_obse_oto_list_alg[obj_index].ori
-                sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/"+other_obj_name+"/base_of_cracker.urdf"),
-                                                               other_obj_pos,
-                                                               other_obj_ori,
-                                                               useFixedBase=1)
-                collision_detection_obj_id.append(sim_base_id)
-                other_obj_id_list.append(sim_base_id)    
-            
+            if self.task_flag == "4":
+                for obj_index in range(self.OBJS_TOUCHING_TARGET_OBJS_NUM):
+                    other_obj_name = self.pw_T_objs_touching_targetObjs_list[obj_index].obj_name
+                    other_obj_pos = self.pw_T_objs_touching_targetObjs_list[obj_index].pos
+                    other_obj_ori = self.pw_T_objs_touching_targetObjs_list[obj_index].ori
+                    sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/base_of_cracker/base_of_cracker.urdf"),
+                                                                other_obj_pos,
+                                                                other_obj_ori,
+                                                                useFixedBase=1)
+                    collision_detection_obj_id.append(sim_base_id)   
+                    other_obj_id_list.append(sim_base_id)
+
             # mark
             for rob_index in range(self.robot_num):
                 real_robot_start_pos = self.pw_T_rob_sim_pose_list_alg[rob_index].pos
@@ -200,7 +213,7 @@ class InitialSimulationModel():
             if self.SIM_REAL_WORLD_FLAG == True:
                 table_pos_1 = [0.46, -0.01, 0.710]
                 table_ori_1 = pybullet_simulation_env.getQuaternionFromEuler([0,0,0])
-                table_id_1 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1, useFixedBase = 1)
+                table_id_1 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1)
 
                 barry_pos_1 = [-0.694, 0.443, 0.895]
                 barry_ori_1 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,0])
@@ -315,7 +328,7 @@ class InitialSimulationModel():
                 
                     if self.object_num == 2:
                         if obj_index == 0:
-                            pos = [0.35106623337455206, 0.11037637137553352, 0.785094326764014]
+                            pos = [0.3893924609074244, -0.21022350625694902, 0.785282766303468]
                             x_1 = pos[0]
                             y_1 = pos[1]
                             z_1 = pos[2]
@@ -374,7 +387,7 @@ class InitialSimulationModel():
                                 obj_obse_pos = [x_1, y_1-offset6, z_1]
 
                         else:
-                            pos = [0.3277490884717969, 0.17549837998726808, 0.7522391094604842]
+                            pos = [0.3467758914563732, -0.1388689332545438, 0.7524848334935383]
                             x_1 = pos[0]
                             y_1 = pos[1]
                             z_1 = pos[2]
@@ -492,7 +505,8 @@ class InitialSimulationModel():
         if len(other_obj_id_list) != 0:
             self.other_object_id_collection.append(other_obj_id_list)        
         print(self.other_object_id_collection)
-        
+
+
         esti_objs_cloud_temp_parameter = self.compute_estimate_pos_of_object(self.particle_cloud)
         return esti_objs_cloud_temp_parameter, self.particle_cloud, p_env_list
         
@@ -501,6 +515,7 @@ class InitialSimulationModel():
         p_env_list = []
         shelves_id_list = []
         other_obj_id_list = []
+
         for par_index in range(self.particle_num):
             collision_detection_obj_id = []
             pybullet_simulation_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
@@ -511,7 +526,14 @@ class InitialSimulationModel():
             pybullet_simulation_env.setGravity(0, 0, -9.81)
             fake_plane_id = pybullet_simulation_env.loadURDF("plane.urdf")
             
-            
+            if self.task_flag == "1":
+                pw_T_pringles_pos = [0.6646962577067851, 0.059950902446081644, 0.8269063881730724]
+                pw_T_pringles_ori = [ 0.69423769, -0.11003228, -0.11355051,  0.70216323] # x, y, z, w
+                pringles_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/pringles.urdf"),
+                                                              pw_T_pringles_pos,
+                                                              pw_T_pringles_ori,
+                                                              useFixedBase=1)
+
             if self.task_flag == "5":
                 pw_T_she_pos = [0.75889274, -0.24494845, 0.33818097+0.02]
                 pw_T_she_ori = [0, 0, 0, 1]
@@ -519,20 +541,20 @@ class InitialSimulationModel():
                                                               pw_T_she_pos,
                                                               pw_T_she_ori,
                                                               useFixedBase=1)
-                shelves_id_list.append(shelves_id)
                 collision_detection_obj_id.append(shelves_id)
-            
-            for obj_index in range(self.other_obj_num):
-                other_obj_name = self.pw_T_obj_obse_oto_list_alg[obj_index].obj_name
-                other_obj_pos = self.pw_T_obj_obse_oto_list_alg[obj_index].pos
-                other_obj_ori = self.pw_T_obj_obse_oto_list_alg[obj_index].ori
-                sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/"+other_obj_name+"/base_of_cracker.urdf"),
-                                                               other_obj_pos,
-                                                               other_obj_ori,
-                                                               useFixedBase=1)
-                collision_detection_obj_id.append(sim_base_id)
-                other_obj_id_list.append(sim_base_id)                
-            
+                shelves_id_list.append(shelves_id)
+            if self.task_flag == "4":
+                for obj_index in range(self.OBJS_TOUCHING_TARGET_OBJS_NUM):
+                    other_obj_name = self.pw_T_objs_touching_targetObjs_list[obj_index].obj_name
+                    other_obj_pos = self.pw_T_objs_touching_targetObjs_list[obj_index].pos
+                    other_obj_ori = self.pw_T_objs_touching_targetObjs_list[obj_index].ori
+                    sim_base_id = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/"+other_obj_name+"/base_of_cracker.urdf"),
+                                                                other_obj_pos,
+                                                                other_obj_ori,
+                                                                useFixedBase=1)
+                    collision_detection_obj_id.append(sim_base_id)                
+                    other_obj_id_list.append(sim_base_id)
+                
             for rob_index in range(self.robot_num):
                 real_robot_start_pos = self.pw_T_rob_sim_pose_list_alg[rob_index].pos
                 real_robot_start_ori = self.pw_T_rob_sim_pose_list_alg[rob_index].ori
@@ -544,10 +566,39 @@ class InitialSimulationModel():
                 self.set_sim_robot_JointPosition(pybullet_simulation_env, fake_robot_id, joint_of_robot)
                 self.fake_robot_id_collection.append(fake_robot_id)
 
-            # need to change
             collision_detection_obj_id.append(fake_robot_id)
-            if self.other_obj_num > 0:
-                collision_detection_obj_id.append(sim_base_id)
+
+            if self.SIM_REAL_WORLD_FLAG == True:
+                table_pos_1 = [0.46, -0.01, 0.710]
+                table_ori_1 = pybullet_simulation_env.getQuaternionFromEuler([0,0,0])
+                table_id_1 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1)
+
+                barry_pos_1 = [-0.694, 0.443, 0.895]
+                barry_ori_1 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,0])
+                barry_id_1 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_1, barry_ori_1, useFixedBase = 1)
+                
+                barry_pos_2 = [-0.694, -0.607, 0.895]
+                barry_ori_2 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,0])
+                barry_id_2 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_2, barry_ori_2, useFixedBase = 1)
+
+                barry_pos_3 = [0.459, -0.972, 0.895]
+                barry_ori_3 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
+                barry_id_3 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_3, barry_ori_3, useFixedBase = 1)
+
+                # barry_pos_4 = [-0.549, 0.61, 0.895]
+                # barry_ori_4 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
+                # barry_id_4 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_4, barry_ori_4, useFixedBase = 1)
+                
+                # barry_pos_5 = [0.499, 0.61, 0.895]
+                # barry_ori_5 = pybullet_simulation_env.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
+                # barry_id_5 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_5, barry_ori_5, useFixedBase = 1)
+
+                board_pos_1 = [0.274, 0.581, 0.87575]
+                board_ori_1 = pybullet_simulation_env.getQuaternionFromEuler([math.pi/2,math.pi/2,0])
+                board_id_1 = pybullet_simulation_env.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"), board_pos_1, board_ori_1, useFixedBase = 1)
+
+                self.env_fix_obj_id_collection.append(board_id_1)
+                collision_detection_obj_id.append(board_id_1)
 
             object_list = []
 
@@ -598,10 +649,13 @@ class InitialSimulationModel():
                 
             self.particle_cloud_CV.append(object_list)
             self.particle_no_visual_id_collection_CV = copy.deepcopy(CVPF_par_no_visual_id)
+
         if len(shelves_id_list) != 0:
             self.other_object_id_collection.append(shelves_id_list)
         if len(other_obj_id_list) != 0:
             self.other_object_id_collection.append(other_obj_id_list) 
+        
+
         esti_objs_cloud_temp_parameter = self.compute_estimate_pos_of_object(self.particle_cloud_CV)
         return esti_objs_cloud_temp_parameter, self.particle_cloud_CV, p_env_list
 

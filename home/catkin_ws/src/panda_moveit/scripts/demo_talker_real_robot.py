@@ -452,7 +452,7 @@ if __name__ == '__main__':
     #              *
     #            *****
     #            *****
-    # targetPositionsJoints_test = [-0.021860349543687967, -0.43821428636082427, 0.13770668564553845, -2.1723260837131075, 0.044060199449459714, 1.729482148355908, 0.780151212690881]
+    targetPositionsJoints_test = [-0.021860349543687967, -0.43821428636082427, 0.13770668564553845, -2.1723260837131075, 0.044060199449459714, 1.729482148355908, 0.780151212690881]
 
     #          *
     #         **
@@ -463,7 +463,10 @@ if __name__ == '__main__':
     #    *     *
     #  ***   *****
     #  * *   *****
-    targetPositionsJoints_test = [-0.41639349778717333, 0.8254077830686731, -0.07092072120488697, -2.1336947324364215, 1.0840709206509551, 1.4970466512368048, 0.9383130510987506]
+    # targetPositionsJoints_test = [-0.41639349778717333, 0.8254077830686731, -0.07092072120488697, -2.1336947324364215, 1.0840709206509551, 1.4970466512368048, 0.9383130510987506]
+    # # more far
+    # targetPositionsJoints_test = [-0.7913731907159477, 1.218461793009517, -0.21681531773952015, -1.2628496909002114, 0.8311032503506469, 1.004525441980177, 1.1173198215497862]
+    
     # targetPositionsJoints_test = [0.0,-0.08,0.0,-1.65,0.0,1.58,0.870]
 
     #           *
@@ -496,7 +499,7 @@ if __name__ == '__main__':
             panda.move_through_waypoints(waypoints)
             
     elif object_num == 2:
-        for index in range(2):
+        for index in range(4):
             wpose = panda.moveit_group.get_current_pose().pose
             waypoints = []
             wpose.position.y += 0.05
@@ -504,7 +507,23 @@ if __name__ == '__main__':
             # wpose.position.y += 0.15
             waypoints.append(copy.deepcopy(wpose))    
             panda.move_through_waypoints(waypoints)
-        for index in range(3):
+        for index in range(2):
+            wpose = panda.moveit_group.get_current_pose().pose
+            waypoints = []
+            wpose.position.x -= 0.05
+            # wpose.position.z -= 0.06
+            # wpose.position.y += 0.15
+            waypoints.append(copy.deepcopy(wpose))    
+            panda.move_through_waypoints(waypoints)
+        for index in range(4):
+            wpose = panda.moveit_group.get_current_pose().pose
+            waypoints = []
+            wpose.position.y += 0.05
+            # wpose.position.z -= 0.06
+            # wpose.position.y += 0.15
+            waypoints.append(copy.deepcopy(wpose))    
+            panda.move_through_waypoints(waypoints)
+        for index in range(1):
             wpose = panda.moveit_group.get_current_pose().pose
             waypoints = []
             wpose.position.x -= 0.05
@@ -520,7 +539,7 @@ if __name__ == '__main__':
             # wpose.position.y += 0.15
             waypoints.append(copy.deepcopy(wpose))    
             panda.move_through_waypoints(waypoints)
-        for index in range(4):
+        for index in range(3):
             wpose = panda.moveit_group.get_current_pose().pose
             waypoints = []
             wpose.position.x += 0.05
@@ -528,7 +547,23 @@ if __name__ == '__main__':
             # wpose.position.y += 0.15
             waypoints.append(copy.deepcopy(wpose))    
             panda.move_through_waypoints(waypoints)
-        for index in range(6):
+        for index in range(2):
+            wpose = panda.moveit_group.get_current_pose().pose
+            waypoints = []
+            wpose.position.y += 0.05
+            # wpose.position.z -= 0.06
+            # wpose.position.y += 0.15
+            waypoints.append(copy.deepcopy(wpose))    
+            panda.move_through_waypoints(waypoints)
+        for index in range(1):
+            wpose = panda.moveit_group.get_current_pose().pose
+            waypoints = []
+            wpose.position.x += 0.05
+            # wpose.position.z -= 0.06
+            # wpose.position.y += 0.15
+            waypoints.append(copy.deepcopy(wpose))    
+            panda.move_through_waypoints(waypoints)
+        for index in range(4):
             wpose = panda.moveit_group.get_current_pose().pose
             waypoints = []
             wpose.position.y += 0.05

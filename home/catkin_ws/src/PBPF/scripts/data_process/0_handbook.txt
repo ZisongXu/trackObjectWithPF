@@ -1,0 +1,4 @@
+./align_time_data_process.sh
+./compute_err_after_align.sh
+python3 FoudationPose_process.py cracker 1 0
+./plotsns_new

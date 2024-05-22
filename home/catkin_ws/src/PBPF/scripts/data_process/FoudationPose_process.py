@@ -41,11 +41,8 @@ task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
 err_file = parameter_info['err_file']
 RUNNING_MODEL = parameter_info['running_model']
 VERSION = parameter_info['version']
-OBJECT_NAME_LIST = parameter_info['object_name_list']
 
-OBJ_NAME = sys.argv[1]
-ROSBAG_TIME = sys.argv[2]
-REPEAT_TIME = sys.argv[3]
+
 
 class ImageCreator():
     def __init__(self, bagfile, rgbpath, depthpath, rgbstamp, depthstamp, all_data_list):
@@ -62,14 +59,35 @@ class ImageCreator():
                         timestr_first = "%.6f" %  msg.header.stamp.to_sec()
                     timestr = "%.6f" %  msg.header.stamp.to_sec()
                     time_d = float(timestr) - float(timestr_first)
+                    time_d = time_d * 20
+                    print(FOUN_panda_step)
                     pw_T_obj_foudation_pose_4_4 = all_data_list[FOUN_panda_step]
                     pos_x = pw_T_obj_foudation_pose_4_4[0][3]
                     pos_y = pw_T_obj_foudation_pose_4_4[1][3]
                     pos_z = pw_T_obj_foudation_pose_4_4[2][3]
                     ori = transformations.quaternion_from_matrix(pw_T_obj_foudation_pose_4_4) # x, y, z, w
-
+                    # if OBJ_NAME == "Parmesan" and SCENE_NAMES == "scene2":
+                    #     if ori[3] > 0:
+                    #         ori[0] = -ori[0]
+                    #         ori[1] = -ori[1]
+                    #         ori[2] = -ori[2]
+                            # ori[3] = -ori[3]
+                    # if OBJ_NAME == "soup" and SCENE_NAMES == "scene2":
+                    #     if ori[3] > 0:
+                    #         ori[0] = -ori[0]
+                    #         ori[1] = -ori[1]
+                    #         ori[2] = -ori[2]
+                    #         ori[3] = -ori[3]
+                    # if OBJ_NAME == "SaladDressing" and SCENE_NAMES == "scene1":
+                    #     if ori[3] < 0:
+                    #         ori[0] = -ori[0]
+                    #         ori[1] = -ori[1]
+                    #         ori[2] = -ori[2]
+                    #         ori[3] = -ori[3]
+                    obj = OBJ_NAME
+                    scene = "scene"+task_flag
                     obj_scene = OBJ_NAME+"_scene"+task_flag
-                    boss_FOUD_err_ADD_df.loc[FOUN_panda_step] = [FOUN_panda_step, time_d, pos_x, pos_y, pos_z, ori[0], ori[1], ori[2], ori[3], "FOUD", obj_scene, PARTICLE_NUM, VERSION, OBJ_NAME]
+                    boss_FOUD_err_ADD_df.loc[FOUN_panda_step] = [FOUN_panda_step, time_d, pos_x, pos_y, pos_z, ori[0], ori[1], ori[2], ori[3], "FOUD", obj, scene, PARTICLE_NUM, VERSION, OBJ_NAME]
                     FOUN_panda_step = FOUN_panda_step + 1
                     # print(time_d)
 
@@ -83,36 +101,71 @@ class ImageCreator():
 
 if __name__ == '__main__':
 
-    
+    OBJ_NAME = sys.argv[1]
+    SCENE_NAMES = sys.argv[2]
+    ROSBAG_TIME = sys.argv[3]
+    REPEAT_TIME = sys.argv[4]
+
     SIM_REAL_WORLD_FLAG = True
-    OBJECT_NUM = 2
-    OBJECT_NAME_LIST = ["cracker", "soup"]
     boss_FOUD_err_ADD_df_list = []
-    boss_FOUD_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+    boss_FOUD_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name'],index=[])
     
     # rospy.init_node('record_FOUD_error') # ros node
 
     time.sleep(0.5)
     
 
-    pw_T_cam_pose = np.array([[-0.05090748, 0.27306657,-0.96064722, 0.98427103],
-                              [ 0.99835346, 0.03937482,-0.04171324, 0.06905193],
-                              [ 0.02643482,-0.96118899,-0.27462143, 0.93720667],
-                              [ 0.        , 0.        , 0.        , 1.        ]])
+    # pw_T_cam_pose = np.array([[-0.05090748, 0.27306657,-0.96064722, 0.98427103],
+    #                           [ 0.99835346, 0.03937482,-0.04171324, 0.06905193],
+    #                           [ 0.02643482,-0.96118899,-0.27462143, 0.93720667],
+    #                           [ 0.        , 0.        , 0.        , 1.        ]])
+    # pw_T_cam_pose = np.array([[-0.17022463,  0.22072718, -0.96036612,  1.01227219],
+    #                           [ 0.98534948,  0.02775525, -0.16827375,  0.09076827],
+    #                           [-0.01048739, -0.97494059, -0.22221804,  0.93997983],
+    #                           [ 0.        ,  0.        ,  0.        ,  1.        ]])
+    pw_T_cam_pose = np.array([[-0.17918636,  0.25586377, -0.94996104,  0.90326861],
+                              [ 0.98368681,  0.0309992 , -0.17719851,  0.11457851],
+                              [-0.01589065, -0.9662157 , -0.25724445,  0.9368285 ],
+                              [ 0.        ,  0.        ,  0.        ,  1.        ]])
+    
+
+
     _all_data_list = []
-    file_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/ob_in_cam/')
+    file_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/ob_in_cam_'+OBJ_NAME+'/')
     txt_file_count = len([file for file in os.listdir(file_path) if file.endswith('.txt')])
 
     for i in range(1, txt_file_count+1):
         filename = f"{i:04}.txt"
         cam_T_obj_foudation_pose = np.loadtxt(file_path+filename)
         pw_T_obj_foudation_pose = np.dot(pw_T_cam_pose, cam_T_obj_foudation_pose)
+
+        if OBJ_NAME == "cracker":
+            rotation_matrix = np.array([[ 1, 0, 0, 0],
+                                        [ 0,-1, 0, 0],
+                                        [ 0, 0,-1, 0],
+                                        [ 0, 0, 0, 1]])
+            pw_T_obj_foudation_pose = np.dot(pw_T_obj_foudation_pose, rotation_matrix)
+        
+        #     pw_T_obj_foudation_pose = np.dot(pw_T_obj_foudation_pose, objF_T_objP_z)
+        #     pw_T_obj_foudation_pose = np.dot(pw_T_obj_foudation_pose, objF_T_objP__x)
+        # elif OBJ_NAME == "soup":
+        #     objF_T_objP_x = np.array([[ 1, 0, 0, 0],
+        #                               [ 0, 0,-1, 0],
+        #                               [ 0, 1, 0, 0],
+        #                               [ 0, 0, 0, 1]])
+        #     objF_T_objP_y = np.array([[-1, 0, 0, 0],
+        #                               [ 0, 1, 0, 0],
+        #                               [ 0, 0,-1, 0],
+        #                               [ 0, 0, 0, 1]])
+        #     pw_T_obj_foudation_pose = np.dot(pw_T_obj_foudation_pose, objF_T_objP_x)
+        #     pw_T_obj_foudation_pose = np.dot(pw_T_obj_foudation_pose, objF_T_objP_y)
+
         _all_data_list.append(pw_T_obj_foudation_pose)
-    # print(_all_data_list)
+    print(len(_all_data_list))
     _all_time_list = []
 
     rosbag_file_path = os.path.expanduser('~/pyvkdepth/rosbag/')
-    ImageCreator(rosbag_file_path+'scene1_new_camera_CrackerSoup_forward3.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
+    ImageCreator(rosbag_file_path+'3_scene2_crackersoupParmesan2.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
     
 
 

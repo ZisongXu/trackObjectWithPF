@@ -54,6 +54,7 @@ runVersion = sys.argv[8] # multiray/ang
 # 10_scene1_rosbag1_repeat0_cracker_time_GT_pose_PBPF_RGBD
 # 10_scene1_rosbag1_repeat0_cracker_time_obse_pose_PBPF_RGBD
 # 10_scene1_rosbag1_repeat0_cracker_time_PBPF_pose_PBPF_RGBD
+# 70_scene1_rosbag1_repeat0_cracker_time_FOUD_pose_PBPF_RGBD
 file_name = str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_'+run_alg_flag+'_pose_'+runVersion
 
 
@@ -67,8 +68,9 @@ prepare_time = 28 * 100
 prepare_time = 129 * 100
 prepare_time = 265 * 100
 prepare_time = 1730 * 100
-prepare_time = 80 * 100
-
+prepare_time = 3000 * 100
+rosbag_slowdown_rate = 20
+# 80-1/1600-20
 # prepare_time = 134000
 
 
@@ -102,20 +104,21 @@ def angle_correction(angle):
 # print("Ready to integrate the data of "+ang_and_pos)
 dataset = pd.read_csv(save_file_path+file_name+'.csv', header=None)
 # dataset.columns=["index","time","error","alg","obj_scene","particle_num","ray_type"]
-dataset.columns=['index','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj_scene','particle_num','ray_type', 'obj_name']
+dataset.columns=['index','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type', 'obj_name']
 # dataset.time = dataset.time - 4.3
 datasetcopy = copy.deepcopy(dataset)
-newdataset = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj_scene','particle_num','ray_type', 'obj_name'],index=[])
+newdataset = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type', 'obj_name'],index=[])
 timestep_list = []
-for timestep in range(prepare_time):
-    timestep_list.append(timestep/100.0)
+# for timestep in range(prepare_time):
+for timestep in range(int(prepare_time/rosbag_slowdown_rate)):
+    timestep_list.append(timestep/100.0 * rosbag_slowdown_rate)
 if update_style_flag == "time" and task_flag == "2" and correct_time_flag == True:
     correct_time(datasetcopy)
 timedf = datasetcopy['time']
 # print(datasetcopy)
 # datasetcopy.to_csv("test",index=0,header=0,mode='a')
-for i in range(prepare_time):
-    print(file_name+" processing... ", i)
+for i in range(int(prepare_time/rosbag_slowdown_rate)):
+    print("Align time: "+file_name+" processing... ", i)
     newdata = (timedf - timestep_list[int(i)]).abs()
     #print(newdata)
     #print(newdata.idxmin())
@@ -141,7 +144,8 @@ for i in range(prepare_time):
                              datasetcopy.loc[newdata.idxmin(),'ori_z'],
                              datasetcopy.loc[newdata.idxmin(),'ori_w'],
                              datasetcopy.loc[newdata.idxmin(),'alg'],
-                             datasetcopy.loc[newdata.idxmin(),'obj_scene'],
+                             datasetcopy.loc[newdata.idxmin(),'obj'],
+                             datasetcopy.loc[newdata.idxmin(),'scene'],
                              datasetcopy.loc[newdata.idxmin(),'particle_num'],
                              datasetcopy.loc[newdata.idxmin(),'ray_type'],
                              datasetcopy.loc[newdata.idxmin(),'obj_name']]

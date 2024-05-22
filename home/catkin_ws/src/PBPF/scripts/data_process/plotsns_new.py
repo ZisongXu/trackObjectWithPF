@@ -50,7 +50,7 @@ object_name = sys.argv[2]
 sceneName = sys.argv[3] # "scene1"
 rosbag_flag = sys.argv[4] # 8
 update_style_flag = sys.argv[5] # time/pose
-ang_and_pos = sys.argv[6] # pos/ang
+ang_and_pos = sys.argv[6] # pos/ang/ADD/ADDS
 # tem_name = sys.argv[6]
 
 update_style_flag = "time"
@@ -65,7 +65,7 @@ file_name = "based_on_time_"+str(particle_num)+'_'+sceneName+'_'+update_style_fl
 
 title_ang = "Rotational errors (rad) vs Time (s)"
 title_pos = "Positional errors (m) vs Time (s)"
-title_ADD = object_name+": ADD Matrix errors (m) vs Time (s)"
+title_ADD = object_name+": "+ang_and_pos+" errors (m) vs Time (s)"
 
 if ang_and_pos == "ang":
     if sceneName == "scene1":
@@ -212,20 +212,20 @@ if ang_and_pos == "pos":
     svg_fig_pos = figure_pos.get_figure()
     svg_fig_pos.savefig(save_file_path+file_name+".png",format="png")
 
-if ang_and_pos == "ADD":
+if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
     if sceneName == "scene1":
-        x_range_max = 80 # 28, 129, 265
-        x_range_unit = 8 # 2, 6, 25, 125
+        x_range_max = 3000 # 28, 129, 265
+        x_range_unit = 300 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 80 # 28
+        x_xlim = 3000 # 28
         y_ylim = 0.5 # 0.5
     if sceneName == "scene2":
-        x_range_max = 950
-        x_range_unit = 95
+        x_range_max = 2550
+        x_range_unit = 300
         y_range_max = 0.5
         y_range_unit = 0.05
-        x_xlim = 950
+        x_xlim = 2550
         y_ylim = 0.5
     if sceneName == "scene3":
         # x_range_max = 28
@@ -234,11 +234,11 @@ if ang_and_pos == "ADD":
         # y_range_unit = 0.04
         # x_xlim = 28
         # y_ylim = 0.5
-        x_range_max = 265 # 28, 129, 265, 1
-        x_range_unit = 25 # 2, 6, 25, 125
+        x_range_max = 3000 # 28, 129, 265, 1
+        x_range_unit = 300 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
-        y_range_unit = 0.04 # 0.04
-        x_xlim = 265 # 28
+        y_range_unit = 0.05 # 0.04
+        x_xlim = 3000 # 28
         y_ylim = 0.5 # 0.5
     if sceneName == "scene4":
         x_range_max = 28
@@ -260,12 +260,15 @@ if ang_and_pos == "ADD":
         y_range_unit = 0.04 # 0.04
         x_xlim = 3480 # 28
         y_ylim = 0.5 # 0.5
-    print("Ready to plot the figure of ADD")
+    print("Ready to plot the figure of "+ang_and_pos+" ("+object_name+")")
     ymax = 0.12
     dataset_ADD = pd.read_csv(save_file_path+file_name+'.csv', header=None)
 
     print(dataset_ADD)
-    dataset_ADD.columns=["index","time","alg","obj_scene","particle_num","ray_type","obj_name","ADD Matrix Error (m)"]
+    if ang_and_pos == "ADD":
+        dataset_ADD.columns=["index","time","alg","obj","scene","particle_num","ray_type","obj_name","ADD Error (m)"]
+    if ang_and_pos == "ADDS":
+        dataset_ADD.columns=["index","time","alg","obj","scene","particle_num","ray_type","obj_name","ADDS Error (m)"]
     print(pd.__version__)
     print(sns.__version__)
     print(matplotlib.__version__)
@@ -274,8 +277,18 @@ if ang_and_pos == "ADD":
     # dataset_ADD = dataset_ADD.to_numpy()[:,np.newaxis]
     # print("After")
     # print(dataset_ADD)
-
-    figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADD Matrix Error (m)", hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5)
+    color_map = {
+        "FOUD": "#FC8002",
+        "DOPE": "#4995C6",
+        "PBPF_RGBD": "#614099",
+        "PBPF_RGB": "#EE4431",
+        "PBPF_D": "#369F2D",
+        "Diff-DOPE": "#EDB11A",
+    }
+    if ang_and_pos == "ADD":
+        figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADD Error (m)", hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
+    if ang_and_pos == "ADDS":
+        figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADDS Error (m)", hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
     # figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADD Matrix Error (m)", palette=['y', 'g', 'r'], hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5)
     # figure_ADD = sns.lineplot(data=dataset_ADD, x=1, y=2, hue=3, errorbar=('ci', 95), legend=False, linewidth = 0.5)
     figure_ADD.set(xlabel = None, ylabel = None)

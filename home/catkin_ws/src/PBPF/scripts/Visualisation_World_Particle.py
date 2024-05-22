@@ -86,7 +86,8 @@ class Visualisation_World():
         p_visualisation.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
         p_visualisation.setGravity(0, 0, -9.81)
         # p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=90, cameraPitch=-20, cameraTargetPosition=[0.1,0.1,0.1])      
-        p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.3,0.1,0.1])    
+        # p_visualisation.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=180, cameraPitch=-85, cameraTargetPosition=[0.3,0.1,0.1])    
+        p_visualisation.resetDebugVisualizerCamera(cameraDistance=1., cameraYaw=90, cameraPitch=-50, cameraTargetPosition=[0.1,0.15,0.35])    
         plane_id = p_visualisation.loadURDF("plane.urdf")
         if self.task_flag == "1":
             pw_T_pringles_pos = [0.6652218209791124, 0.058946644391304814, 0.8277292172960276]

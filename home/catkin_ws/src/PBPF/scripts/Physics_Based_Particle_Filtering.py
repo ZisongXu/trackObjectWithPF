@@ -54,6 +54,7 @@ import multiprocessing
 import yaml
 import jax.numpy as jnp
 from jax import jit
+import heapq
 from collections import namedtuple
 from scipy.spatial.transform import Rotation as R
 
@@ -162,14 +163,14 @@ _boss_par_err_ADD_df_list = []
 _par_panda_step = 0
 
 for obj_index in range(OBJECT_NUM):
-    _boss_obse_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
-    _boss_PBPF_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
-    _boss_GT_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+    _boss_obse_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name'],index=[])
+    _boss_PBPF_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name'],index=[])
+    _boss_GT_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name'],index=[])
     _boss_obse_err_ADD_df_list.append(_boss_obse_err_ADD_df)
     _boss_PBPF_err_ADD_df_list.append(_boss_PBPF_err_ADD_df)
     _boss_GT_err_ADD_df_list.append(_boss_GT_err_ADD_df)
 for par_index in range(PARTICLE_NUM):
-    _boss_par_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj_scene','particle_num','ray_type','obj_name'],index=[])
+    _boss_par_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name'],index=[])
     _boss_par_err_ADD_df_list.append(_boss_par_err_ADD_df)
 
 
@@ -222,15 +223,6 @@ class PBPFMove():
         self.rendered_depth_image_transferred_list = [1] * PARTICLE_NUM
 
         self.mask_position_from_segImg_list = [1] * PARTICLE_NUM
-
-        self.cracker_dis_error = [1] * PARTICLE_NUM
-        self.cracker_ang_error = [1] * PARTICLE_NUM
-        self.cracker_weight_before_ray = [1] * PARTICLE_NUM
-        self.cracker_weight__after_ray = [1] * PARTICLE_NUM
-        self.soup_dis_error = [1] * PARTICLE_NUM
-        self.soup_ang_error = [1] * PARTICLE_NUM
-        self.soup_weight_before_ray = [1] * PARTICLE_NUM
-        self.soup_weight__after_ray = [1] * PARTICLE_NUM
         
         self.x_min = 0
         self.x_max = 1
@@ -443,9 +435,9 @@ class PBPFMove():
             # get bounding box of the whole mask (x_min, x_mad, y_min, y_max)
             if DEPTH_MASK_FLAG == True and COMBINE_PARTICLE_DEPTH_MASK_FLAG == True:
 
-                # flat_mask_position_list_jax = jnp.vstack(self.mask_position_from_segImg_list)
-                # # get x_min, x_mad, y_min, y_max
-                # self.x_min, self.x_max, self.y_min, self.y_max = self.get_bounding_box(flat_mask_position_list_jax)
+                flat_mask_position_list_jax = jnp.vstack(self.mask_position_from_segImg_list)
+                # get x_min, x_mad, y_min, y_max
+                self.x_min, self.x_max, self.y_min, self.y_max = self.get_bounding_box(flat_mask_position_list_jax)
                 # # 123_cracker_full_view.bag
                 # # 190 399 348 549
                 # self.x_min = 190
@@ -454,12 +446,12 @@ class PBPFMove():
                 # self.y_max = 549
                 # 123_cracker_part_view2.bag
                 # 181 284 442 666
-                self.x_min = 181
-                self.x_max = 284
-                self.y_min = 442
-                self.y_max = 666
+                # self.x_min = 181
+                # self.x_max = 284
+                # self.y_min = 442
+                # self.y_max = 666
                 
-                print(self.x_min, self.x_max, self.y_min, self.y_max)
+                # print(self.x_min, self.x_max, self.y_min, self.y_max)
             # compare depth image
             self.compare_depth_image_parallelised(self.particle_cloud)
             t_after_compare = time.time()
@@ -958,16 +950,6 @@ class PBPFMove():
                     weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
                     
                     weight = weight_xyz * weight_ang
-                    
-                    if PRINT_SCORE_FLAG == True and OBJECT_NUM == 2:
-                        if obj_index == 0:
-                            self.cracker_dis_error[index] = dis_xyz
-                            self.cracker_ang_error[index] = theta
-                            self.cracker_weight_before_ray[index] = weight
-                        elif obj_index == 1:
-                            self.soup_dis_error[index] = dis_xyz
-                            self.soup_ang_error[index] = theta
-                            self.soup_weight_before_ray[index] = weight
                             
                 if VERSION == "multiray":
                     par_pos_ = copy.deepcopy([particle_x, particle_y, particle_z])
@@ -977,8 +959,7 @@ class PBPFMove():
                     par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
                     weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
                 particle[obj_index].w = weight
-                # print("; Error:", self.cracker_par_error)
-                # print("; Error:", self.soup_par_error)  
+
         else:
             if self.DOPE_rep_flag == 0:
                 print("DOPE x")
@@ -1483,7 +1464,7 @@ class PBPFMove():
         else:
             input("Error: depth_value_difference_list_array_sub.ndim should be 1! Please check the code and press Crtl-C")
         score_list_array_sub_sum = sum(score_list_array_sub)
-        score_list_array_sub_sum_over = score_list_array_sub / score_list_array_sub_sum
+        score_list_array_sub_sum_over = score_list_array_sub / score_list_array_sub_sum * 1 # 20
         return score_list_array_sub_sum_over
 
     def array_normal_distribution(self, x, mean, sigma):
@@ -2151,8 +2132,18 @@ def compute_diff_bt_two_pose(obj_index, particle_cloud_pub, pw_T_obj_obse_pose_n
         par_dis_list.append(dis_obseCur_parOld)
         par_ang_list.append(ang_obseCur_parOld)
 
-    minDis_obseCur_parOld = min(par_dis_list)
-    minAng_obseCur_parOld = min(par_ang_list)
+    def find_smallest_value(number_list):
+        num = int(PARTICLE_NUM / 20.0)
+        if num == 0 :
+            num = num + 1
+        return heapq.nsmallest(num, number_list)
+
+    new_dis_list = find_smallest_value(par_dis_list)
+    new_ang_list = find_smallest_value(par_ang_list)
+
+    minDis_obseCur_parOld = new_dis_list[-1]
+    minAng_obseCur_parOld = new_ang_list[-1]
+
     return minDis_obseCur_parOld, minAng_obseCur_parOld
 
 # compute the transformation matrix represent that the pose of object in the robot world
@@ -2264,11 +2255,13 @@ def publish_par_pose_info(particle_cloud_pub):
             obj_pose.pose.orientation.w = obj_info.ori[3]
             obj_pose_list.append(obj_pose)
             if RECORD_RESULTS_FLAG == True:
+                obj = obj_info.par_name
+                scene = "scene"+str(task_flag)
                 obj_scene = obj_info.par_name+"_scene"+str(task_flag)
                 obj_name = obj_info.par_name
                 _record_t = time.time()
                 # x, y, z ,w
-                _boss_par_err_ADD_df_list[par_index].loc[_par_panda_step] = [_par_panda_step, _record_t - _record_t_begin, obj_info.pos[0], obj_info.pos[1], obj_info.pos[2], obj_info.ori[0], obj_info.ori[1], obj_info.ori[2], obj_info.ori[3], RUNNING_MODEL, obj_scene, PARTICLE_NUM, VERSION, obj_name]
+                _boss_par_err_ADD_df_list[par_index].loc[_par_panda_step] = [_par_panda_step, _record_t - _record_t_begin, obj_info.pos[0], obj_info.pos[1], obj_info.pos[2], obj_info.ori[0], obj_info.ori[1], obj_info.ori[2], obj_info.ori[3], RUNNING_MODEL, obj, scene, PARTICLE_NUM, VERSION, obj_name]
                 _par_panda_step = _par_panda_step + 1
 
         
@@ -2296,11 +2289,13 @@ def publish_esti_pose_info(estimated_object_set):
         esti_pose_list.append(esti_pose)
 
         if RECORD_RESULTS_FLAG == True:
+            obj = esti_obj_info.obj_name
+            scene = "scene"+str(task_flag)
             obj_scene = esti_obj_info.obj_name+"_scene"+str(task_flag)
             obj_name = esti_obj_info.obj_name
             _record_t = time.time()
             # x, y, z ,w
-            _boss_PBPF_err_ADD_df_list[obj_index].loc[_PBPF_panda_step] = [_PBPF_panda_step, _record_t - _record_t_begin, esti_obj_info.pos[0], esti_obj_info.pos[1], esti_obj_info.pos[2], esti_obj_info.ori[0], esti_obj_info.ori[1], esti_obj_info.ori[2], esti_obj_info.ori[3], RUNNING_MODEL, obj_scene, PARTICLE_NUM, VERSION, obj_name]
+            _boss_PBPF_err_ADD_df_list[obj_index].loc[_PBPF_panda_step] = [_PBPF_panda_step, _record_t - _record_t_begin, esti_obj_info.pos[0], esti_obj_info.pos[1], esti_obj_info.pos[2], esti_obj_info.ori[0], esti_obj_info.ori[1], esti_obj_info.ori[2], esti_obj_info.ori[3], RUNNING_MODEL, obj, scene, PARTICLE_NUM, VERSION, obj_name]
     
     _PBPF_panda_step = _PBPF_panda_step + 1
 
@@ -2366,9 +2361,9 @@ def generate_point_for_ray(pw_T_c_pos, pw_T_parC_4_4, obj_index):
     point_list = []
     point_pos_list = []
     for index in range(len(vector_list)):
-        parC_T_p_x_new = vector_list[index][0] * x_w_list[obj_index]/2
-        parC_T_p_y_new = vector_list[index][1] * y_l_list[obj_index]/2
-        parC_T_p_z_new = vector_list[index][2] * z_h_list[obj_index]/2
+        parC_T_p_x_new = vector_list[index][0] * x_w_list[obj_index]/2 # 0.042
+        parC_T_p_y_new = vector_list[index][1] * y_l_list[obj_index]/2 # 0.061
+        parC_T_p_z_new = vector_list[index][2] * z_h_list[obj_index]/2 # 0.145
         parC_T_p_pos = [parC_T_p_x_new, parC_T_p_y_new, parC_T_p_z_new]
         parC_T_p_ori = [0, 0, 0, 1] # x, y, z, w
         # parC_T_p_3_3 = transformations.quaternion_matrix(parC_T_p_ori)
@@ -2494,7 +2489,7 @@ def _vk_camera_setting(pw_T_camD_tf_4_4, camD_T_camVk_4_4):
     trick_matrix3 = np.array([[ 1, 0, 0,-0.010],
                               [ 0, 1, 0,-0.010],
                               [ 0, 0, 1, 0.0],
-                              [ 0, 0, 0,     1]])
+                              [ 0, 0, 0, 1]])
     pw_T_camVk_4_4_ = np.dot(pw_T_camVk_4_4_, trick_matrix3)
 
     
@@ -2531,11 +2526,15 @@ def _vk_load_meshes():
     # object
     # a, b
     for obj_index in range(OBJECT_NUM):
-        obj_name = OBJECT_NAME_LIST[obj_index] # "cracker"/"soup"
-        if obj_index == 0:
-            obj_id = _vk_context.load_model("assets/meshes/cracker1.vkdepthmesh")
-        elif obj_index == 1:
-            obj_id = _vk_context.load_model("assets/meshes/soup.vkdepthmesh")
+        obj_name = OBJECT_NAME_LIST[obj_index] # "cracker"/"soup"/"Ketchup"
+        
+        obj_id = _vk_context.load_model("assets/meshes/"+obj_name+".vkdepthmesh")
+        
+        # if obj_index == 0:
+        #     obj_id = _vk_context.load_model("assets/meshes/cracker1.vkdepthmesh")
+        # elif obj_index == 1:
+        #     obj_id = _vk_context.load_model("assets/meshes/soup.vkdepthmesh")
+        
         vk_obj_id_list[obj_index] = obj_id
     # robot
     # There are actually 13 links, of which "link8" and "panda_grasptarget" have no entities.
@@ -2861,9 +2860,9 @@ def signal_handler(sig, frame):
             file_name_GT_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+update_style_flag+'_GT_pose_'+RUNNING_MODEL+'.csv'
 
             _boss_PBPF_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_PBPF_ADD,index=0,header=0,mode='w')
-            if RUNNING_MODEL == "PBPF_RGBD":
-                _boss_obse_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_obse_ADD,index=0,header=0,mode='w')
-                _boss_GT_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_GT_ADD,index=0,header=0,mode='w')
+            
+            _boss_obse_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_obse_ADD,index=0,header=0,mode='w')
+            _boss_GT_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_GT_ADD,index=0,header=0,mode='w')
             print("write "+obj_name+" PBPF file: "+RUNNING_MODEL)
             print("write "+obj_name+" obse file: "+RUNNING_MODEL)
             print("write "+obj_name+" GT file: "+RUNNING_MODEL)
@@ -2873,7 +2872,7 @@ def signal_handler(sig, frame):
             file_name_par_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+update_style_flag+'_PBPF_pose_'+RUNNING_MODEL+"_"+str(par_index)+'.csv'
             
             _boss_par_err_ADD_df_list[par_index].to_csv(file_save_path+file_name_par_ADD,index=0,header=0,mode='w')
-        print("write Particle file (should include all objects): "+RUNNING_MODEL)
+            print("write Particle file (should include all objects): "+RUNNING_MODEL)
     
     print("")
     print(" ------------------------------------------ ")
@@ -3030,31 +3029,31 @@ while reset_flag == True:
         for obj_index in range(OBJECT_NUM):
             object_name = OBJECT_NAME_LIST[obj_index]
             if object_name == "cracker":
-                # boss_sigma_obs_ang = 0.0216773873 * 30
-                # boss_sigma_obs_pos = 0.25 # 0.02 need to increase
-                boss_sigma_obs_ang = 0.0216773873 * 30
                 boss_sigma_obs_pos = 0.10 
+                boss_sigma_obs_ang = 0.0216773873 * 30
                 pos_noise = 0.001 * 5.0 # 5
                 ang_noise = 0.05 * 10.0 # 3.0
+                # boss_sigma_obs_ang = 0.0216773873 * 30
+                # boss_sigma_obs_pos = 0.25 # 0.02 need to increase
                 # mark
                 # pos_noise = 0.0
                 # ang_noise = 0.0
             else:
+                boss_sigma_obs_pos = 0.10 # 0.02 need to increase
                 boss_sigma_obs_ang = 0.0216773873 * 10
+                pos_noise = 0.001 * 5.0
+                ang_noise = 0.05 * 1.0 # 3.0
                 # boss_sigma_obs_ang = 0.0216773873 * 20
                 # boss_sigma_obs_ang = 0.0216773873 * 60
                 # boss_sigma_obs_pos = 0.038226405
                 # boss_sigma_obs_pos = 0.004
-                boss_sigma_obs_pos = 0.10 # 0.02 need to increase
                 # boss_sigma_obs_pos = 0.10 # 0.02 need to increase
-                pos_noise = 0.001 * 5.0
-                ang_noise = 0.05 * 1.0 # 3.0
                 # mark
                 # pos_noise = 0.0
                 # ang_noise = 0.0
 
         # mark
-        mass_mean = 0.380 # 0.380
+        mass_mean = 1.750 # 0.380
         mass_sigma = 0.5
         friction_mean = 0.1
         friction_sigma = 0.3
@@ -3112,7 +3111,7 @@ while reset_flag == True:
 
         if task_flag == '1':
             objs_not_touching_target_objs_num_ = OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM
-            objs_not_touching_target_objs_num_ = 1
+            objs_not_touching_target_objs_num_ = 0
             objs_not_touching_target_objs_name_list = ["pringles"]
             pw_T_objs_not_touching_targetObjs = create_scene.initialize_other_objects_not_touching(objs_not_touching_target_objs_num_, objs_not_touching_target_objs_name_list)
 
@@ -3296,7 +3295,7 @@ while reset_flag == True:
                     visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
                     visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.45
 
-                    outlier_dis_list[obj_index] = 0.1
+                    outlier_dis_list[obj_index] = 0.07
                     outlier_ang_list[obj_index] = math.pi * 1 / 4.0
 
                 elif object_name == "soup":
@@ -3317,6 +3316,121 @@ while reset_flag == True:
 
                     outlier_dis_list[obj_index] = 0.07
                     outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+
+                elif object_name == "Ketchup":
+                    x_w_list[obj_index] = 0.145
+                    y_l_list[obj_index] = 0.042
+                    z_h_list[obj_index] = 0.061
+                    visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+                    visible_threshold_dope_X_small_list[obj_index] = 0
+                    # visible_threshold_outlier_XS_list[obj_index] = 0.3
+                    visible_threshold_outlier_S_list[obj_index] = 0.4
+                    visible_threshold_outlier_L_list[obj_index] = 0.65
+                    # visible_threshold_outlier_XL_list[obj_index] = 0.75
+                    visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
+                    visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+                    visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+
+                    outlier_dis_list[obj_index] = 0.07
+                    outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+
+                elif object_name == "Milk":
+                    x_w_list[obj_index] = 0.179934
+                    y_l_list[obj_index] = 0.0613
+                    z_h_list[obj_index] = 0.0613
+                    visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+                    visible_threshold_dope_X_small_list[obj_index] = 0
+                    # visible_threshold_outlier_XS_list[obj_index] = 0.3
+                    visible_threshold_outlier_S_list[obj_index] = 0.4
+                    visible_threshold_outlier_L_list[obj_index] = 0.65
+                    # visible_threshold_outlier_XL_list[obj_index] = 0.75
+                    visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
+                    visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+                    visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+
+                    outlier_dis_list[obj_index] = 0.07
+                    outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+
+                elif object_name == "Mustard":
+                    x_w_list[obj_index] = 0.14
+                    y_l_list[obj_index] = 0.038
+                    z_h_list[obj_index] = 0.055
+                    visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+                    visible_threshold_dope_X_small_list[obj_index] = 0
+                    # visible_threshold_outlier_XS_list[obj_index] = 0.3
+                    visible_threshold_outlier_S_list[obj_index] = 0.4
+                    visible_threshold_outlier_L_list[obj_index] = 0.65
+                    # visible_threshold_outlier_XL_list[obj_index] = 0.75
+                    visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.50 # 0.55/0.25
+                    visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+                    visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+
+                    outlier_dis_list[obj_index] = 0.07
+                    outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+
+                elif object_name == "Mayo":
+                    x_w_list[obj_index] = 0.1377716
+                    y_l_list[obj_index] = 0.0310130
+                    z_h_list[obj_index] = 0.054478
+                    visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+                    visible_threshold_dope_X_small_list[obj_index] = 0
+                    # visible_threshold_outlier_XS_list[obj_index] = 0.3
+                    visible_threshold_outlier_S_list[obj_index] = 0.4
+                    visible_threshold_outlier_L_list[obj_index] = 0.65
+                    # visible_threshold_outlier_XL_list[obj_index] = 0.75
+                    visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
+                    visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+                    visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+
+                    outlier_dis_list[obj_index] = 0.07
+                    outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+
+                elif object_name == "Parmesan":
+                    x_w_list[obj_index] = 0.0929022
+                    y_l_list[obj_index] = 0.0592842
+                    z_h_list[obj_index] = 0.0592842
+                    visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+                    visible_threshold_dope_X_small_list[obj_index] = 0
+                    # visible_threshold_outlier_XS_list[obj_index] = 0.3
+                    visible_threshold_outlier_S_list[obj_index] = 0.4
+                    visible_threshold_outlier_L_list[obj_index] = 0.65
+                    # visible_threshold_outlier_XL_list[obj_index] = 0.75
+                    visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.45 # 0.55/0.25
+                    visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+                    visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+
+                    outlier_dis_list[obj_index] = 0.07
+                    outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+
+                elif object_name == "SaladDressing":
+                    x_w_list[obj_index] = 0.1375274
+                    y_l_list[obj_index] = 0.036266
+                    z_h_list[obj_index] = 0.052722
+                    visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+                    visible_threshold_dope_X_small_list[obj_index] = 0
+                    # visible_threshold_outlier_XS_list[obj_index] = 0.3
+                    visible_threshold_outlier_S_list[obj_index] = 0.4
+                    visible_threshold_outlier_L_list[obj_index] = 0.65
+                    # visible_threshold_outlier_XL_list[obj_index] = 0.75
+                    visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
+                    visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+                    visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+
+                    outlier_dis_list[obj_index] = 0.07
+                    outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+
 
                 # mark
                 # elif object_name == "gelatin":
@@ -3464,11 +3578,13 @@ while reset_flag == True:
                     pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
                     pw_T_obj_GT_pose.append(pw_T_obj_opti_4_4)
                     
+                    obj = obj_name
+                    scene = "scene"+str(task_flag)
                     obj_scene = obj_name+"_scene"+str(task_flag)
                     _record_t = time.time()
                     # x, y, z ,w
-                    _boss_GT_err_ADD_df_list[obj_index].loc[_GT_panda_step] = [_GT_panda_step, _record_t - _record_t_begin, pw_T_obj_opti_pos[0], pw_T_obj_opti_pos[1], pw_T_obj_opti_pos[2], pw_T_obj_opti_ori[0], pw_T_obj_opti_ori[1], pw_T_obj_opti_ori[2], pw_T_obj_opti_ori[3], 'GT', obj_scene, PARTICLE_NUM, VERSION, obj_name]
-                    _boss_obse_err_ADD_df_list[obj_index].loc[_obse_panda_step] = [_obse_panda_step, _record_t - _record_t_begin, pw_T_obj_obse_pos[0], pw_T_obj_obse_pos[1], pw_T_obj_obse_pos[2], pw_T_obj_obse_ori[0], pw_T_obj_obse_ori[1], pw_T_obj_obse_ori[2], pw_T_obj_obse_ori[3], 'DOPE', obj_scene, PARTICLE_NUM, VERSION, obj_name]      
+                    _boss_GT_err_ADD_df_list[obj_index].loc[_GT_panda_step] = [_GT_panda_step, _record_t - _record_t_begin, pw_T_obj_opti_pos[0], pw_T_obj_opti_pos[1], pw_T_obj_opti_pos[2], pw_T_obj_opti_ori[0], pw_T_obj_opti_ori[1], pw_T_obj_opti_ori[2], pw_T_obj_opti_ori[3], 'GT', obj, scene, PARTICLE_NUM, VERSION, obj_name]
+                    _boss_obse_err_ADD_df_list[obj_index].loc[_obse_panda_step] = [_obse_panda_step, _record_t - _record_t_begin, pw_T_obj_obse_pos[0], pw_T_obj_obse_pos[1], pw_T_obj_obse_pos[2], pw_T_obj_obse_ori[0], pw_T_obj_obse_ori[1], pw_T_obj_obse_ori[2], pw_T_obj_obse_ori[3], 'DOPE', obj, scene, PARTICLE_NUM, VERSION, obj_name]      
             _GT_panda_step = _GT_panda_step + 1
             _obse_panda_step = _obse_panda_step + 1
 

@@ -56,6 +56,21 @@ class Ros_Listener():
 
         rospy.Subscriber('/mocap/rigid_bodies/Ketchup_opti/pose', PoseStamped, self.object_pose_callback_Ketchup, queue_size=1)
         self.object_Ketchup_pose = PoseStamped()
+
+        rospy.Subscriber('/mocap/rigid_bodies/Milk_opti/pose', PoseStamped, self.object_pose_callback_Milk, queue_size=1)
+        self.object_Milk_pose = PoseStamped()
+
+        rospy.Subscriber('/mocap/rigid_bodies/Mustard_opti/pose', PoseStamped, self.object_pose_callback_Mustard, queue_size=1)
+        self.object_Mustard_pose = PoseStamped()
+
+        rospy.Subscriber('/mocap/rigid_bodies/Mayo_opti/pose', PoseStamped, self.object_pose_callback_Mayo, queue_size=1)
+        self.object_Mayo_pose = PoseStamped()
+
+        rospy.Subscriber('/mocap/rigid_bodies/Parmesan_opti/pose', PoseStamped, self.object_pose_callback_Parmesan, queue_size=1)
+        self.object_Parmesan_pose = PoseStamped()
+
+        rospy.Subscriber('/mocap/rigid_bodies/SaDressing_opti/pose', PoseStamped, self.object_pose_callback_SaladDressing, queue_size=1)
+        self.object_SaladDressing_pose = PoseStamped()
         
         rospy.Subscriber('/mocap/rigid_bodies/gelation_opti/pose', PoseStamped, self.object_pose_callback_gelation, queue_size=1)
         self.object_gelation_pose = PoseStamped()
@@ -196,6 +211,36 @@ class Ros_Listener():
             # print(self.object_Ketchup_pose)
             # print("==============")
             return self.object_Ketchup_pose
+        elif object_flag == "Milk":
+            # print("==============")
+            # print("Milk: In the Ros_Listener")
+            # print(self.object_Milk_pose)
+            # print("==============")
+            return self.object_Milk_pose
+        elif object_flag == "Mustard":
+            # print("==============")
+            # print("Mustard: In the Ros_Listener")
+            # print(self.object_Mustard_pose)
+            # print("==============")
+            return self.object_Mustard_pose
+        elif object_flag == "Mayo":
+            # print("==============")
+            # print("Mayo: In the Ros_Listener")
+            # print(self.object_Mayo_pose)
+            # print("==============")
+            return self.object_Mayo_pose
+        elif object_flag == "Parmesan":
+            # print("==============")
+            # print("Parmesan: In the Ros_Listener")
+            # print(self.object_Parmesan_pose)
+            # print("==============")
+            return self.object_Parmesan_pose
+        elif object_flag == "SaladDressing":
+            # print("==============")
+            # print("SaladDressing: In the Ros_Listener")
+            # print(self.object_SaladDressing_pose)
+            # print("==============")
+            return self.object_SaladDressing_pose
         elif object_flag == "base":
             return self.base_pose
         elif object_flag == "smallobstacle":
@@ -291,6 +336,76 @@ class Ros_Listener():
         w_ori = data.pose.orientation.w
         self.object_ori = [x_ori, y_ori, z_ori, w_ori]
         self.object_Ketchup_pose = [self.object_pos, self.object_ori]
+    
+    def object_pose_callback_Milk(self, data):
+        #pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.object_pos = [x_pos, y_pos, z_pos]
+        #ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.object_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.object_Milk_pose = [self.object_pos, self.object_ori]
+    
+    def object_pose_callback_Mustard(self, data):
+        #pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.object_pos = [x_pos, y_pos, z_pos]
+        #ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.object_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.object_Mustard_pose = [self.object_pos, self.object_ori]
+    
+    def object_pose_callback_Mayo(self, data):
+        #pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.object_pos = [x_pos, y_pos, z_pos]
+        #ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.object_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.object_Mayo_pose = [self.object_pos, self.object_ori]
+    
+    def object_pose_callback_Parmesan(self, data):
+        #pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.object_pos = [x_pos, y_pos, z_pos]
+        #ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.object_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.object_Parmesan_pose = [self.object_pos, self.object_ori]
+
+    def object_pose_callback_SaladDressing(self, data):
+        #pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.object_pos = [x_pos, y_pos, z_pos]
+        #ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.object_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.object_SaladDressing_pose = [self.object_pos, self.object_ori]
         
     def base_of_cheezit_callback(self, data):
         # pos

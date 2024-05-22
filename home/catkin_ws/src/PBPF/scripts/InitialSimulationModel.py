@@ -275,17 +275,32 @@ class InitialSimulationModel():
                         if par_index == 0:
                             obj_obse_pos = [x_1, y_1, z_1]
                         elif par_index == 1:
-                            obj_obse_pos = [x_1+offset1, y_1, z_1]
-                        elif par_index == 2:
                             obj_obse_pos = [x_1+offset2, y_1, z_1]
-                        if par_index == 3:
+                        elif par_index == 2:
                             obj_obse_pos = [x_1+offset3, y_1, z_1]
-                        if par_index == 4:
+                        if par_index == 3:
                             obj_obse_pos = [x_1+offset4, y_1, z_1]
+                        if par_index == 4:
+                            obj_obse_pos = [x_1-offset2, y_1, z_1]
                         elif par_index == 5:
-                            obj_obse_pos = [x_1+offset5, y_1, z_1]
+                            obj_obse_pos = [x_1-offset3, y_1, z_1]
                         elif par_index == 6:
-                            obj_obse_pos = [x_1+offset6, y_1, z_1]
+                            obj_obse_pos = [x_1-offset4, y_1, z_1]
+
+                        # if par_index == 0:
+                        #     obj_obse_pos = [x_1, y_1, z_1]
+                        # elif par_index == 1:
+                        #     obj_obse_pos = [x_1+offset1, y_1, z_1]
+                        # elif par_index == 2:
+                        #     obj_obse_pos = [x_1+offset2, y_1, z_1]
+                        # if par_index == 3:
+                        #     obj_obse_pos = [x_1+offset3, y_1, z_1]
+                        # if par_index == 4:
+                        #     obj_obse_pos = [x_1+offset4, y_1, z_1]
+                        # elif par_index == 5:
+                        #     obj_obse_pos = [x_1+offset5, y_1, z_1]
+                        # elif par_index == 6:
+                        #     obj_obse_pos = [x_1+offset6, y_1, z_1]
 
                         if par_index == 7:
                             obj_obse_pos = [x_1-offset1, y_1, z_1]
@@ -328,24 +343,40 @@ class InitialSimulationModel():
                 
                     if self.object_num == 2:
                         if obj_index == 0:
-                            pos = [0.3893924609074244, -0.21022350625694902, 0.785282766303468]
+                            pos = [0.35108837862799647, 0.11018339461147109, 0.7849158766269709]
                             x_1 = pos[0]
                             y_1 = pos[1]
                             z_1 = pos[2]
                             if par_index == 0:
                                 obj_obse_pos = [x_1, y_1, z_1]
-                            elif par_index == 1:
-                                obj_obse_pos = [x_1+offset1, y_1, z_1]
-                            elif par_index == 2:
-                                obj_obse_pos = [x_1+offset2, y_1, z_1]
-                            if par_index == 3:
-                                obj_obse_pos = [x_1+offset3, y_1, z_1]
-                            if par_index == 4:
-                                obj_obse_pos = [x_1+offset4, y_1, z_1]
-                            elif par_index == 5:
-                                obj_obse_pos = [x_1+offset5, y_1, z_1]
-                            elif par_index == 6:
-                                obj_obse_pos = [x_1+offset6, y_1, z_1]
+                            if par_index == 0:
+                                obj_obse_pos = [x_1, y_1+offset2, z_1]
+                            if par_index == 0:
+                                obj_obse_pos = [x_1, y_1+offset3, z_1]
+                            if par_index == 0:
+                                obj_obse_pos = [x_1, y_1+offset4, z_1]
+                            if par_index == 1:
+                                obj_obse_pos = [x_1, y_1-offset2, z_1]
+                            if par_index == 1:
+                                obj_obse_pos = [x_1, y_1-offset3, z_1]
+                            if par_index == 1:
+                                obj_obse_pos = [x_1, y_1-offset4, z_1]
+
+                            
+                            # if par_index == 0:
+                            #     obj_obse_pos = [x_1, y_1, z_1]
+                            # elif par_index == 1:
+                            #     obj_obse_pos = [x_1+offset1, y_1, z_1]
+                            # elif par_index == 2:
+                            #     obj_obse_pos = [x_1+offset2, y_1, z_1]
+                            # if par_index == 3:
+                            #     obj_obse_pos = [x_1+offset3, y_1, z_1]
+                            # if par_index == 4:
+                            #     obj_obse_pos = [x_1+offset4, y_1, z_1]
+                            # elif par_index == 5:
+                            #     obj_obse_pos = [x_1+offset5, y_1, z_1]
+                            # elif par_index == 6:
+                            #     obj_obse_pos = [x_1+offset6, y_1, z_1]
 
                             if par_index == 7:
                                 obj_obse_pos = [x_1-offset1, y_1, z_1]
@@ -386,25 +417,41 @@ class InitialSimulationModel():
                             elif par_index == 24:
                                 obj_obse_pos = [x_1, y_1-offset6, z_1]
 
-                        else:
-                            pos = [0.3467758914563732, -0.1388689332545438, 0.7524848334935383]
+                        elif obj_index == 1:
+                            pos = [0.3277494122064969, 0.17539807438080324, 0.7521003072520422]
                             x_1 = pos[0]
                             y_1 = pos[1]
                             z_1 = pos[2]
                             if par_index == 0:
                                 obj_obse_pos = [x_1, y_1, z_1]
-                            elif par_index == 1:
-                                obj_obse_pos = [x_1+offset1, y_1, z_1]
-                            elif par_index == 2:
-                                obj_obse_pos = [x_1+offset2, y_1, z_1]
-                            if par_index == 3:
-                                obj_obse_pos = [x_1+offset3, y_1, z_1]
-                            if par_index == 4:
-                                obj_obse_pos = [x_1+offset4, y_1, z_1]
-                            elif par_index == 5:
-                                obj_obse_pos = [x_1+offset5, y_1, z_1]
-                            elif par_index == 6:
-                                obj_obse_pos = [x_1+offset6, y_1, z_1]
+                            if par_index == 0:
+                                obj_obse_pos = [x_1, y_1+offset2, z_1]
+                            if par_index == 0:
+                                obj_obse_pos = [x_1, y_1+offset3, z_1]
+                            if par_index == 0:
+                                obj_obse_pos = [x_1, y_1+offset4, z_1]
+                            if par_index == 1:
+                                obj_obse_pos = [x_1, y_1-offset2, z_1]
+                            if par_index == 1:
+                                obj_obse_pos = [x_1, y_1-offset3, z_1]
+                            if par_index == 1:
+                                obj_obse_pos = [x_1, y_1-offset4, z_1]
+
+
+                            # if par_index == 0:
+                            #     obj_obse_pos = [x_1, y_1, z_1]
+                            # elif par_index == 1:
+                            #     obj_obse_pos = [x_1+offset1, y_1, z_1]
+                            # elif par_index == 2:
+                            #     obj_obse_pos = [x_1+offset2, y_1, z_1]
+                            # if par_index == 3:
+                            #     obj_obse_pos = [x_1+offset3, y_1, z_1]
+                            # if par_index == 4:
+                            #     obj_obse_pos = [x_1+offset4, y_1, z_1]
+                            # elif par_index == 5:
+                            #     obj_obse_pos = [x_1+offset5, y_1, z_1]
+                            # elif par_index == 6:
+                            #     obj_obse_pos = [x_1+offset6, y_1, z_1]
 
                             if par_index == 7:
                                 obj_obse_pos = [x_1-offset1, y_1, z_1]

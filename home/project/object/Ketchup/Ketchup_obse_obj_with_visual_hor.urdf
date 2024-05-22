@@ -10,13 +10,13 @@
      <visual>
        <geometry>
          <!-- <box size="0.16 0.21343700408935547 0.061"/> -->
-         <mesh filename="textured_simple.obj" scale="0.01 0.01 0.01"/>
+         <mesh filename="Ketchup_sim.obj" scale="1 1 1"/>
        </geometry>
        <!-- <material name="light_green"/> -->
        <material name="white">
          <color rgba="1. 1. 1. 1."/>
        </material>
-       <origin xyz="0 0 0" rpy="0 -1.5707963 1.5707963"/>
+       <origin xyz="0 0 0" rpy="0 0 0"/>
      </visual>
      <inertial>
        <mass value="0.5"/>

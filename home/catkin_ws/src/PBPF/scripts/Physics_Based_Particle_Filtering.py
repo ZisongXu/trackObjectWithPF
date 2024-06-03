@@ -129,6 +129,7 @@ DEPTH_DIFF_VALUE_0_1_FLAG = parameter_info['depth_diff_value_0_1_flag']
 DEPTH_DIFF_VALUE_0_1_THRESHOLD = parameter_info['depth_diff_value_0_1_threshold'] 
 DEPTH_DIFF_VALUE_0_1_ALPHA = parameter_info['depth_diff_value_0_1_alpha'] 
 DEPTH_MASK_FLAG = parameter_info['depth_mask_flag'] 
+DEPTH_MASK_VK_FLAG = parameter_info['depth_mask_vk_flag'] 
 COMBINE_PARTICLE_DEPTH_MASK_FLAG = parameter_info['combine_particle_depth_mask_flag'] 
 SHOW_PARTICLE_DEPTH_IMAGE_TO_POINT_CLOUD_FLAG = parameter_info['show_particle_depth_image_to_point_cloud_flag'] 
 REMOVE_MIN_MAX_FLAG = parameter_info['remove_min_max_flag'] 
@@ -220,6 +221,8 @@ class PBPFMove():
         self.real_depth_image_transferred_jax = 0
         self.depth_value_difference_list = [1] * PARTICLE_NUM
         self.rendered_depth_images_list = [1] * PARTICLE_NUM
+        self.rendered__mask_images_list = [1] * PARTICLE_NUM
+        self.single_obj_rendered__mask_images_list = [1] * (PARTICLE_NUM*OBJECT_NUM)
         self.rendered_depth_image_transferred_list = [1] * PARTICLE_NUM
 
         self.mask_position_from_segImg_list = [1] * PARTICLE_NUM
@@ -273,6 +276,8 @@ class PBPFMove():
         particle_robot_id = self.pybullet_sim_fake_robot_id_collection
         
         self.rendered_depth_images_list = [1] * PARTICLE_NUM
+        self.rendered__mask_images_list = [1] * PARTICLE_NUM
+        self.single_obj_rendered__mask_images_list = [1] * (PARTICLE_NUM*OBJECT_NUM)
         self.rendered_depth_image_transferred_list = [1] * PARTICLE_NUM
 
         self.DOPE_rep_flag = 0
@@ -410,6 +415,7 @@ class PBPFMove():
     # observation model
     def observation_model(self, pw_T_obj_obse_objects_pose_list, pybullet_sim_envs):
         print("Welcome to the observation model!")
+        
         # observation model (DEPTH)
         if USING_D_FLAG == True:
             # get real depth image
@@ -417,6 +423,7 @@ class PBPFMove():
 
             # get rendered depth/seg image
             t_before_render = time.time()
+            render_whole1 = time.time()
             if PB_RENDER_FLAG == True and VK_RENDER_FLAG == False:
                 print("I am using Pybullet to generate Depth Image")
                 self.pb_get_rendered_depth_image_parallelised(self.particle_cloud)
@@ -430,28 +437,28 @@ class PBPFMove():
             print("--------------------------------------------------------")
             print("Render cost time:", t_after_render - t_before_render)
             print("--------------------------------------------------------")
+            
             # mark
             t_before_compare = time.time()
             # get bounding box of the whole mask (x_min, x_mad, y_min, y_max)
-            if DEPTH_MASK_FLAG == True and COMBINE_PARTICLE_DEPTH_MASK_FLAG == True:
-
+            if PB_RENDER_FLAG == True and DEPTH_MASK_FLAG == True and COMBINE_PARTICLE_DEPTH_MASK_FLAG == True:
                 flat_mask_position_list_jax = jnp.vstack(self.mask_position_from_segImg_list)
                 # get x_min, x_mad, y_min, y_max
                 self.x_min, self.x_max, self.y_min, self.y_max = self.get_bounding_box(flat_mask_position_list_jax)
-                # # 123_cracker_full_view.bag
-                # # 190 399 348 549
-                # self.x_min = 190
-                # self.x_max = 399
-                # self.y_min = 348
-                # self.y_max = 549
-                # 123_cracker_part_view2.bag
-                # 181 284 442 666
-                # self.x_min = 181
-                # self.x_max = 284
-                # self.y_min = 442
-                # self.y_max = 666
-                
-                # print(self.x_min, self.x_max, self.y_min, self.y_max)
+            
+            t_before_Find = time.time()
+            if VK_RENDER_FLAG == True and DEPTH_MASK_VK_FLAG == True and COMBINE_PARTICLE_DEPTH_MASK_FLAG == True:
+                length = len(self.single_obj_rendered__mask_images_list)
+                length_test = PARTICLE_NUM*OBJECT_NUM
+                if length != length_test:
+                    while True:
+                        print("Error: self.single_obj_rendered__mask_images_list != PARTICLE_NUM*OBJECT_NUM")
+                combining_array = copy.deepcopy(self.single_obj_rendered__mask_images_list)
+                self.x_min, self.x_max, self.y_min, self.y_max = self.get_bounding_box_vk(combining_array)
+            t_after_Find = time.time()
+            print("--------------------------------------------------------")
+            print("Find bounding box cost time:", t_after_Find - t_before_Find)
+            print("--------------------------------------------------------")
             # compare depth image
             self.compare_depth_image_parallelised(self.particle_cloud)
             t_after_compare = time.time()
@@ -474,7 +481,10 @@ class PBPFMove():
         # observation model (RGB)
         t_before_RGB = time.time()
         if USING_RGB_FLAG == True:
+            if USING_D_FLAG != True:
+                self.vk_get_rendered_depth_image_parallelised(self.particle_cloud)
             self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list)
+            
         t_after_RGB = time.time()
         print("--------------------------------------------------------")
         print("RGB/ray weight cost time:", t_after_RGB - t_before_RGB)
@@ -522,19 +532,23 @@ class PBPFMove():
     def vk_get_rendered_depth_image_parallelised(self, particle_cloud):
         # vk mark 
         # get robot link state
+        render1 = time.time()
         pybullet_sim_envs = self.pybullet_env_id_collection
         pybullet_sim_envs_0 = pybullet_sim_envs[0]
         particle_robot_id_collection = self.pybullet_sim_fake_robot_id_collection
         particle_robot_id_0 = particle_robot_id_collection[0]
-
+        render2 = time.time()
         ## Update particle pose->update depth image
-        _vk_update_depth_image(_vk_state_list, particle_cloud, pybullet_sim_envs_0, particle_robot_id_0)
+        _vk_update_depth_image(_vk_state_list, _vk_single_obj_state_list, particle_cloud, pybullet_sim_envs_0, particle_robot_id_0)
+        render3 = time.time()
         ## Render and Download
-        _vk_context.enqueue_render_and_download()
+        _vk_context.enqueue_render_and_download(vkdepth.DEPTH | vkdepth.MASK)
         ## Waiting for rendering and download
         _vk_context.wait()
+        render4 = time.time()
         ## Get Depth image
-        vk_rendered_depth_image_array_list_ = _vk_depth_image_getting()
+        vk_rendered_depth_image_array_list_, vk_rendered__mask_image_array_list_, vk_single_obj_rendered__mask_image_array_list_ = _vk_depth_image_getting()
+        render5 = time.time()
 
         # fig, axs = plt.subplots(1, PARTICLE_NUM)
         # for par_index in range(PARTICLE_NUM):
@@ -546,6 +560,24 @@ class PBPFMove():
         
         
         self.rendered_depth_images_list = copy.deepcopy(vk_rendered_depth_image_array_list_) # array/list
+        render6 = time.time()
+        self.rendered__mask_images_list = copy.deepcopy(vk_rendered__mask_image_array_list_) # array/list
+        render7 = time.time()
+        self.single_obj_rendered__mask_images_list = copy.deepcopy(vk_single_obj_rendered__mask_image_array_list_) # array/list
+        render8 = time.time()
+        print("render2 - render1:", render2 - render1)
+        print("render3 - render2:", render3 - render2)
+        print("render4 - render3:", render4 - render3)
+        print("render5 - render4:", render5 - render4)
+        print("render6 - render5:", render6 - render5)
+        print("render7 - render6:", render6 - render5)
+        print("render8 - render7:", render6 - render5)
+
+        # for index in range(len(vk_single_obj_rendered__mask_image_array_list_)):
+        #     img_name = "single_obj_Maskimg_"+str(index)+".png"
+        #     # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
+        #     imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+img_name, vk_single_obj_rendered__mask_image_array_list_[index], cmap='gray')
+        #     # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, self.real_depth_image_transferred, cmap='gray')
 
     # get target objects ID
     def get_target_objects_ID_from_segImg(self, particle, segImg, index):
@@ -565,6 +597,18 @@ class PBPFMove():
         y_max = flat_arr[:, 1].max()
         return x_min, x_max, y_min, y_max
 
+    # get bounding box (vk)
+    def get_bounding_box_vk(self, single_obj_rendered__mask_images_list):
+        # Initialise combined_array as an all 1 array
+        combined_array = jnp.ones_like(single_obj_rendered__mask_images_list[0])
+        for array in single_obj_rendered__mask_images_list:
+            combined_array = jnp.where(array == 0, 0, combined_array)
+        # Find the position of 0
+        zero_positions = jnp.argwhere(combined_array == 0)
+        # Get the maximum and minimum coordinates in the x and y directions
+        x_min, y_min = jnp.min(zero_positions, axis=0)
+        x_max, y_max = jnp.max(zero_positions, axis=0)
+        return x_min, x_max, y_min, y_max
     # compare depth image
     def compare_depth_image_parallelised(self, particle_cloud):
         threads_obs = []
@@ -585,23 +629,23 @@ class PBPFMove():
 
     # compare depth image
     def compare_depth_image(self, index, particle):
-
+        compared_time1 = time.time()
         # # get rendered depth image    
         depth_image_render = copy.deepcopy(self.rendered_depth_images_list[index]) # array/list
         if PB_RENDER_FLAG == True:
             rendered_depth_image_transferred = self.renderedDepthImageValueBufferTransfer(depth_image_render) # array
         if VK_RENDER_FLAG == True:
             rendered_depth_image_transferred = copy.deepcopy(depth_image_render)
-        
+        compared_time2 = time.time()
         # show depth image
         if DEBUG_DEPTH_IMG_FLAG == True:
             if COMBINE_PARTICLE_DEPTH_MASK_FLAG == True:
-                real_depth_img_name = str(_particle_update_time) + "_real_depth_img_"+str(index)+".png"
+                real_depth_img_name = str(_particle_update_time) + "_real_depth_img_combinedMask_"+str(index)+".png"
                 # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
                 imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, self.real_depth_image_transferred[self.x_min:self.x_max+1, self.y_min:self.y_max+1], cmap='gray')
                 # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, self.real_depth_image_transferred, cmap='gray')
 
-                rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
+                rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_combinedMask_"+str(index)+".png"
                 imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred[self.x_min:self.x_max+1, self.y_min:self.y_max+1], cmap='gray')
                 # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred, cmap='gray')
 
@@ -620,7 +664,7 @@ class PBPFMove():
                 
                 # rendered_seg_img_name = str(_particle_update_time)+"_rendered_seg_img_"+str(index)+".png"
                 # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_seg_img_name, segImg)
-        
+        compared_time3 = time.time()
         # mark
         # convert depth image to point cloud
         if SHOW_PARTICLE_DEPTH_IMAGE_TO_POINT_CLOUD_FLAG == True:
@@ -647,11 +691,11 @@ class PBPFMove():
                 pub_depth_image.publish(ros_image)
                 # pub_depth_image.publish(self.___________depth_image_real)
                 # pub_depth_image_list[index].publish(ros_image)
-        
+        compared_time4 = time.time()
         # # compare depth image
         real_depth_image_transferred_jax = copy.deepcopy(self.real_depth_image_transferred_jax) # jax, 2D 
         rendered_depth_image_transferred_jax = jnp.array(rendered_depth_image_transferred) # jax, 2D  
-
+        compared_time5 = time.time()
         # ignore edge pixels
         if REMOVE_MIN_MAX_FLAG == True:
             real_depth_image_transferred_jax = _modify_array(real_depth_image_transferred_jax)
@@ -662,9 +706,9 @@ class PBPFMove():
             
             # rendered_depth_img_name = "Modify_" + str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
             # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_mask_values_2D, cmap='gray') # , cmap='gray'
-
+        compared_time6 = time.time()
         # use mask  
-        if DEPTH_MASK_FLAG == True:
+        if DEPTH_MASK_FLAG == True or DEPTH_MASK_VK_FLAG == True:
             if PB_RENDER_FLAG == True and ORTHO_TO_PERSP_FLAG == True:
                 # mark
                 rendered_depth_image_transferred_jax = _ortho_to_persp(rendered_depth_image_transferred_jax, FY_DEPTH, CX_DEPTH, CY_DEPTH)
@@ -716,10 +760,8 @@ class PBPFMove():
             rendered_depth_image_mask_values_2D = copy.deepcopy(rendered_depth_image_transferred_jax) # jax
             rendered_depth_image_mask_values_1D = rendered_depth_image_mask_values_2D.ravel() # jax
             number_of_pixels = len(rendered_depth_image_mask_values_1D)
-
+        compared_time7 = time.time()
         
-
-
         # use 0 1 method mark
         if DEPTH_DIFF_VALUE_0_1_FLAG == True:
             depth_value_diff_sub_abs_jax_1D = jnp.abs(real_depth_image_mask_values_1D - rendered_depth_image_mask_values_1D)
@@ -738,17 +780,18 @@ class PBPFMove():
                 
                 self.depth_image_show[index] = depth_value_diff_sub_abs_0_1_jax_2D
 
-            e_VSD_o = jnp.sum(depth_value_diff_sub_abs_0_1_jax_1D) / number_of_pixels
-            score = DEPTH_DIFF_VALUE_0_1_ALPHA * (1-e_VSD_o) + (1-DEPTH_DIFF_VALUE_0_1_ALPHA) * num_zeros/number_of_pixels
+            # e_VSD_o = jnp.sum(depth_value_diff_sub_abs_0_1_jax_1D) / number_of_pixels
+            # score = DEPTH_DIFF_VALUE_0_1_ALPHA * (1-e_VSD_o) + (1-DEPTH_DIFF_VALUE_0_1_ALPHA) * num_zeros/number_of_pixels
+            score = num_zeros/number_of_pixels
             depth_value_difference_jax = score # score_that_particle_get: high->high weight; low->low weight
         
         # direct comparison of corresponding position pixels
         else:
             depth_value_difference_jax = jnp.linalg.norm(real_depth_image_mask_values_1D - rendered_depth_image_mask_values_1D)
             depth_value_difference_jax = depth_value_difference_jax / (math.sqrt(number_of_pixels))
-
+        compared_time8 = time.time()
         depth_value_difference = float(depth_value_difference_jax.item())
-        
+        print("index:", index, compared_time8-compared_time7, compared_time7-compared_time6, compared_time6-compared_time5, compared_time5-compared_time4, compared_time4-compared_time3, compared_time3-compared_time2, compared_time2-compared_time1)
         # mark
         # if PRINT_SCORE_FLAG == True:
         #     a = 1
@@ -908,6 +951,7 @@ class PBPFMove():
         for obj_index in range(self.obj_num):
             particle[obj_index].w = weight
 
+        # at least one object is detected by camera
         if (sum(global_objects_visual_by_DOPE_list)<OBJECT_NUM) and (sum(global_objects_outlier_by_DOPE_list)<OBJECT_NUM):       
             for obj_index in range(self.obj_num):
                 local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
@@ -954,7 +998,10 @@ class PBPFMove():
                 if VERSION == "multiray":
                     par_pos_ = copy.deepcopy([particle_x, particle_y, particle_z])
                     par_ori_ = copy.deepcopy(par_ori)
-                    weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
+                    if VK_RENDER_FLAG == True:
+                        weight = self.pixel_visibility_tracing(index, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val)
+                    if PB_RENDER_FLAG == True:
+                        weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
                 elif VERSION == "ray":
                     par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
                     weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
@@ -975,7 +1022,10 @@ class PBPFMove():
                     # need to change
                     par_pos_ = copy.deepcopy([particle_x, particle_y, particle_z])
                     par_ori_ = copy.deepcopy(par_ori)
-                    weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
+                    if VK_RENDER_FLAG == True:
+                        weight = self.pixel_visibility_tracing(index, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val)
+                    if PB_RENDER_FLAG == True:
+                        weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
                 elif VERSION == "ray":
                     par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
                     weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
@@ -1106,6 +1156,29 @@ class PBPFMove():
                 weight = weight
             else:
                 weight = weight / 2.0
+        return weight
+    
+    def pixel_visibility_tracing(self, index, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val):
+        obj_pixel_num = np.sum(self.rendered__mask_images_list[index] == _vk_obj_id_list[obj_index])
+        single_obj_index = index * OBJECT_NUM + obj_index
+        single_obj_num_zeros = np.sum(self.single_obj_rendered__mask_images_list[single_obj_index] == 0)                    
+        visible_score = 1.0 * obj_pixel_num / single_obj_num_zeros
+        if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0:
+            # visible_score low, weight low
+            if visible_score < visible_threshold_dope_is_fresh_list[obj_index]: # 0.5/0.9
+                weight = weight / 3.0
+                weight = weight * visible_score
+            # visible_score high, weight high
+            else:
+                weight = weight
+        else:
+            # visible_score<0.95 low, weight high
+            if visible_threshold_dope_X_small_list[obj_index]<=visible_score and visible_score<=visible_threshold_dope_X_list[obj_index]: # 0.95
+                weight = visible_weight_dope_X_smaller_than_threshold_list[obj_index] * weight # 0.75/0.6
+                # weight = weight * (1 - visible_score) # 0.75/0.6
+            # visible_score>0.95 high, weight low
+            else: 
+                weight = visible_weight_dope_X_larger_than_threshold_list[obj_index] * weight # 0.25/0.5
         return weight
 
     def multi_ray_tracing(self, par_pos, par_ori, pybullet_env, obj_index, weight=1, local_obj_visual_by_DOPE_val=0, local_obj_outlier_by_DOPE_val=0, particle=0):
@@ -2578,6 +2651,8 @@ def _vk_load_meshes():
 def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4, pybullet_env, par_robot_id):
     global _vk_context
     vk_state_list = [0] * PARTICLE_NUM
+    parNum_times_objNum = PARTICLE_NUM * OBJECT_NUM
+    vk_single_obj_state_list = [0] * parNum_times_objNum
     pw_T_camVk_4_4_ = copy.deepcopy(pw_T_camVk_4_4)
     camVk_T_pw_4_4_ = np.linalg.inv(pw_T_camVk_4_4_)
     for index, particle in enumerate(vk_particle_cloud):
@@ -2585,6 +2660,10 @@ def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4, pybullet_env, par_robot
         vk_state_list[index] = vk_state
         ## add object in particle
         for obj_index in range(OBJECT_NUM):
+            single_obj_index = index * OBJECT_NUM + obj_index
+            vk_single_obj_state = vkdepth.State()
+            vk_single_obj_state_list[single_obj_index] = vk_single_obj_state
+
             vk_T_par_pos = copy.deepcopy(particle[obj_index].pos)
             x_pos = vk_T_par_pos[0]
             y_pos = vk_T_par_pos[1]
@@ -2598,6 +2677,11 @@ def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4, pybullet_env, par_robot
             vk_state.add_instance(_vk_obj_id_list[obj_index],
                                   x_pos, y_pos, z_pos,
                                   w_ori, x_ori, y_ori, z_ori) # w, x, y, z
+                                  
+            vk_single_obj_state.add_instance(_vk_obj_id_list[obj_index],
+                                             x_pos, y_pos, z_pos,
+                                             w_ori, x_ori, y_ori, z_ori) # w, x, y, z
+            _vk_context.add_state(vk_single_obj_state)
             # vk_state.add_instance(_vk_obj_id_list[obj_index],
             #                       0, 0, 0,
             #                       1, 0, 0, 0) # w, x, y, z
@@ -2685,27 +2769,46 @@ def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4, pybullet_env, par_robot
         # 70
         # vk_state->add_instance: 
         # object1, object2, ..., link0, link1, ..., link7, panda_hand, "panda_left_finger, panda_right_finger, table, barrier, ...
-        
-    return vk_state_list
+
+    return vk_state_list, vk_single_obj_state_list
+
+# begine to change code 2024.05.31
 
 # get vk rendered depth image
 def _vk_depth_image_getting():
     global _vk_context
     vk_rendered_depth_image_array_list = []
+    vk_rendered__mask_image_array_list = []
+    vk_single_obj_rendered__mask_image_array_list = []
     for par_index in range(PARTICLE_NUM):
-        vk_rendered_depth_image_vkdepth = _vk_context.view(par_index) # <class 'vkdepth.DepthView'>
+        whole_img_index = par_index * (OBJECT_NUM + 1) + OBJECT_NUM
+
+        vk_rendered_depth_image_vkdepth = _vk_context.view(whole_img_index, vkdepth.DEPTH) # <class 'vkdepth.DepthView'>
+        vk_rendered__mask_image_vkdepth = _vk_context.view(whole_img_index, vkdepth.MASK) # <class 'vkdepth.DepthView'>
+
         vk_rendered_depth_image_array = np.array(vk_rendered_depth_image_vkdepth, copy = False) # <class 'numpy.ndarray'>
+        vk_rendered__mask_image_array = np.array(vk_rendered__mask_image_vkdepth, copy = False) # <class 'numpy.ndarray'>
+        
         vk_rendered_depth_image_array_list.append(vk_rendered_depth_image_array)
-    return vk_rendered_depth_image_array_list
+        vk_rendered__mask_image_array_list.append(vk_rendered__mask_image_array)
+
+        for obj_index in range(OBJECT_NUM):
+            single_img_index = par_index * (OBJECT_NUM + 1) + obj_index
+
+            vk_single_obj_rendered__mask_image_vkdepth = _vk_context.view(single_img_index, vkdepth.MASK) # <class 'vkdepth.DepthView'>
+            vk_single_obj_rendered__mask_image_array = np.array(vk_single_obj_rendered__mask_image_vkdepth, copy = False) # <class 'numpy.ndarray'>
+            vk_single_obj_rendered__mask_image_array_list.append(vk_single_obj_rendered__mask_image_array)
+
+
+    return vk_rendered_depth_image_array_list, vk_rendered__mask_image_array_list, vk_single_obj_rendered__mask_image_array_list
 
 # update vk rendered depth image
-def _vk_update_depth_image(vk_state_list, vk_particle_cloud, pybullet_env, par_robot_id):
+def _vk_update_depth_image(vk_state_list, vk_single_obj_state_list, vk_particle_cloud, pybullet_env, par_robot_id):
     for index, particle in enumerate(vk_particle_cloud):
         objs_states = np.array(vk_state_list[index].view(), copy = False)
         for obj_index in range(OBJECT_NUM):
-
-
-
+            single_obj_index = index * OBJECT_NUM + obj_index
+            single_obj_states = np.array(vk_single_obj_state_list[single_obj_index].view(), copy = False)
             # ##############################################################################
             # obj_name = OBJECT_NAME_LIST[obj_index]
             # opti_T_rob_opti_pos = ROS_LISTENER.listen_2_robot_pose()[0]
@@ -2728,7 +2831,6 @@ def _vk_update_depth_image(vk_state_list, vk_particle_cloud, pybullet_env, par_r
             # objs_states[obj_index, 7] = pw_T_obj_opti_ori[2] # z_ori
             # ##############################################################################
 
-
             objs_states[obj_index, 1] = particle[obj_index].pos[0] # x_pos
             objs_states[obj_index, 2] = particle[obj_index].pos[1] # y_pos
             objs_states[obj_index, 3] = particle[obj_index].pos[2] # z_pos
@@ -2736,6 +2838,22 @@ def _vk_update_depth_image(vk_state_list, vk_particle_cloud, pybullet_env, par_r
             objs_states[obj_index, 5] = particle[obj_index].ori[0] # x_ori
             objs_states[obj_index, 6] = particle[obj_index].ori[1] # y_ori
             objs_states[obj_index, 7] = particle[obj_index].ori[2] # z_ori
+            
+            single_obj_states[0, 1] = particle[obj_index].pos[0] # x_pos
+            single_obj_states[0, 2] = particle[obj_index].pos[1] # y_pos
+            single_obj_states[0, 3] = particle[obj_index].pos[2] # z_pos
+            single_obj_states[0, 4] = particle[obj_index].ori[3] # w_ori
+            single_obj_states[0, 5] = particle[obj_index].ori[0] # x_ori
+            single_obj_states[0, 6] = particle[obj_index].ori[1] # y_ori
+            single_obj_states[0, 7] = particle[obj_index].ori[2] # z_ori
+
+            # single_obj_states[obj_index, 1] = particle[obj_index].pos[0] # x_pos
+            # single_obj_states[obj_index, 2] = particle[obj_index].pos[1] # y_pos
+            # single_obj_states[obj_index, 3] = particle[obj_index].pos[2] # z_pos
+            # single_obj_states[obj_index, 4] = particle[obj_index].ori[3] # w_ori
+            # single_obj_states[obj_index, 5] = particle[obj_index].ori[0] # x_ori
+            # single_obj_states[obj_index, 6] = particle[obj_index].ori[1] # y_ori
+            # single_obj_states[obj_index, 7] = particle[obj_index].ori[2] # z_ori
 
 
         all_links_info = pybullet_env.getLinkStates(par_robot_id, range(PANDA_ROBOT_LINK_NUMBER + 2), computeForwardKinematics=True) # 11+2; range: [0,13)
@@ -2868,7 +2986,7 @@ def signal_handler(sig, frame):
             print("write "+obj_name+" GT file: "+RUNNING_MODEL)
 
         for par_index in range(PARTICLE_NUM):
-            file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/')
+            file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/'+OBJECT_NAME_LIST[0]+'/')
             file_name_par_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+update_style_flag+'_PBPF_pose_'+RUNNING_MODEL+"_"+str(par_index)+'.csv'
             
             _boss_par_err_ADD_df_list[par_index].to_csv(file_save_path+file_name_par_ADD,index=0,header=0,mode='w')
@@ -3032,7 +3150,7 @@ while reset_flag == True:
                 boss_sigma_obs_pos = 0.10 
                 boss_sigma_obs_ang = 0.0216773873 * 30
                 pos_noise = 0.001 * 5.0 # 5
-                ang_noise = 0.05 * 10.0 # 3.0
+                ang_noise = 0.05 * 3.0 # 3.0
                 # boss_sigma_obs_ang = 0.0216773873 * 30
                 # boss_sigma_obs_pos = 0.25 # 0.02 need to increase
                 # mark
@@ -3213,18 +3331,34 @@ while reset_flag == True:
             ## instance -> object
             ## if we have many particles we can create many "q = vkdepth.State()"
             _vk_particle_cloud = copy.deepcopy(particle_cloud_pub)
-            _vk_state_list = _vk_state_setting(_vk_particle_cloud, _pw_T_camVk_4_4, p_sim, sim_rob_id)
+            _vk_state_list, _vk_single_obj_state_list = _vk_state_setting(_vk_particle_cloud, _pw_T_camVk_4_4, p_sim, sim_rob_id)
             ## Render and Download
-            _vk_context.enqueue_render_and_download()
+            _vk_context.enqueue_render_and_download(vkdepth.DEPTH | vkdepth.MASK)
             ## Waiting for rendering and download
             _vk_context.wait()
             ## Get Depth image
-            vk_rendered_depth_image_array_list = _vk_depth_image_getting()
-            # fig, axs = plt.subplots(1, PARTICLE_NUM)
+            vk_rendered_depth_image_array_list, vk_rendered__mask_image_array_list, vk_single_obj_rendered__mask_image_array_list = _vk_depth_image_getting()
+
             # for par_index in range(PARTICLE_NUM):
-            #     axs[par_index].imshow(vk_rendered_depth_image_array_list[par_index])
+            #     total_elements = vk_rendered__mask_image_array_list[par_index].size
+            #     for obj_index in range(OBJECT_NUM):
+            #         obj_pixel_num = np.sum(vk_rendered__mask_image_array_list[par_index] == _vk_obj_id_list[obj_index])
+            #         single_obj_index = par_index * OBJECT_NUM + obj_index
+            #         single_obj_num_zeros = np.sum(vk_single_obj_rendered__mask_image_array_list[single_obj_index] == 0)                    
+            #         print(obj_pixel_num, total_elements)
+            #         print(single_obj_num_zeros)
+
+            # fig, axs = plt.subplots(2+OBJECT_NUM, PARTICLE_NUM)
+            # for par_index in range(PARTICLE_NUM):
+            #     axs[0, par_index].imshow(vk_rendered_depth_image_array_list[par_index], cmap="gray")
+            #     axs[1, par_index].imshow(vk_rendered__mask_image_array_list[par_index], cmap="gray")
+            #     for obj_index in range(OBJECT_NUM):
+            #         single_obj_index = par_index * OBJECT_NUM + obj_index
+            #         axs[2+obj_index, par_index].imshow(vk_single_obj_rendered__mask_image_array_list[single_obj_index], cmap="gray")
+
             # plt.show()
-            
+            # debug_depth
+            # input("stop")
         # ============================================================================
 
 
@@ -3678,7 +3812,7 @@ while reset_flag == True:
                         # mark
                         if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
                         # if True:
-                            print("Run ", RUNNING_MODEL)
+                            print("Run ", RUNNING_MODEL, "; Repeat time:", REPEAT_TIME)
                             simRobot_touch_par_flag = 1
                             _particle_update_time = _particle_update_time + 1
                             print("_particle_update_time:", _particle_update_time)

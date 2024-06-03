@@ -123,11 +123,24 @@ if __name__ == '__main__':
     #                           [ 0.98534948,  0.02775525, -0.16827375,  0.09076827],
     #                           [-0.01048739, -0.97494059, -0.22221804,  0.93997983],
     #                           [ 0.        ,  0.        ,  0.        ,  1.        ]])
-    pw_T_cam_pose = np.array([[-0.17918636,  0.25586377, -0.94996104,  0.90326861],
-                              [ 0.98368681,  0.0309992 , -0.17719851,  0.11457851],
-                              [-0.01589065, -0.9662157 , -0.25724445,  0.9368285 ],
-                              [ 0.        ,  0.        ,  0.        ,  1.        ]])
-    
+
+
+
+    # pw_T_cam_pose = np.array([[-0.17256843,  0.21958502, -0.96020964,  1.0094713 ],
+    #                           [ 0.98494236,  0.02815054, -0.17057579,  0.09233854],
+    #                           [-0.01042547, -0.97518714, -0.22113648,  0.93911341],
+    #                           [ 0.        ,  0.        ,  0.        ,  1.        ]])
+    # pw_T_cam_pose = np.array([[-0.11932691,  0.22814166, -0.96628798,  0.9232672 ],
+    #                           [ 0.99279037,  0.01631176, -0.11874847,  0.10087403],
+    #                           [-0.01132961, -0.9734913 , -0.22844328,  0.92533336],
+    #                           [ 0.        ,  0.        ,  0.        ,  1.        ]])
+
+
+    pw_T_cam_pose = np.array([[ 3.96235287e-04,  2.53526658e-01, -9.67328319e-01,  9.51147287e-01],
+                              [ 9.99988399e-01, -4.74415418e-03, -8.33779851e-04,  6.27580045e-02],
+                              [-4.80054010e-03, -9.67316767e-01, -2.53525596e-01,  9.49659315e-01],
+                              [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+
 
 
     _all_data_list = []
@@ -145,7 +158,12 @@ if __name__ == '__main__':
                                         [ 0, 0,-1, 0],
                                         [ 0, 0, 0, 1]])
             pw_T_obj_foudation_pose = np.dot(pw_T_obj_foudation_pose, rotation_matrix)
-        
+        # if OBJ_NAME == "Milk":
+        #     rotation_matrix = np.array([[ 1, 0, 0, 0],
+        #                                 [ 0,-1, 0, 0],
+        #                                 [ 0, 0,-1, 0],
+        #                                 [ 0, 0, 0, 1]])
+        #     pw_T_obj_foudation_pose = np.dot(pw_T_obj_foudation_pose, rotation_matrix)
         #     pw_T_obj_foudation_pose = np.dot(pw_T_obj_foudation_pose, objF_T_objP_z)
         #     pw_T_obj_foudation_pose = np.dot(pw_T_obj_foudation_pose, objF_T_objP__x)
         # elif OBJ_NAME == "soup":
@@ -163,9 +181,9 @@ if __name__ == '__main__':
         _all_data_list.append(pw_T_obj_foudation_pose)
     print(len(_all_data_list))
     _all_time_list = []
-
+    # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
     rosbag_file_path = os.path.expanduser('~/pyvkdepth/rosbag/')
-    ImageCreator(rosbag_file_path+'3_scene2_crackersoupParmesan2.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
+    ImageCreator(rosbag_file_path+'1_scene1_Milk1.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
     
 
 

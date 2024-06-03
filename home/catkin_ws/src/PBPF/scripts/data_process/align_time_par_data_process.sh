@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # declare -a objectNames=("cracker" "soup")
-# declare -a objectNames=("cracker" "Ketchup")
+declare -a objectNames=("Milk")
 # declare -a objectNames=("soup" "Parmesan")
+# declare -a objectNames=("Mustard" "Parmesan")
 # declare -a objectNames=("SaladDressing" "Mustard")
 # declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
@@ -11,18 +12,18 @@
 # declare -a objectNames=("Mayo" "Milk")
 # declare -a sceneNames=("scene1" "scene2")
 
-
-declare -a sceneNames=("scene2")
 # declare -a objectNames=("cracker" "soup" "Parmesan")
-declare -a objectNames=("cracker" "Mayo" "Milk")
+# declare -a objectNames=("cracker" "Mayo" "Milk")
+# declare -a objectNames=("cracker")
+# declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
+# declare -a objectNames=("Ketchup" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
+declare -a sceneNames=("scene1")
 
 
-declare -a particleNumbers=(40)
+declare -a particleNumbers=(70)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
-# declare -a runAlgFlags=("obse" "PBPF" "GT" "FOUD")
 declare -a runAlgFlags=("PBPF")
-# declare -a runAlgFlags=("FOUD")
 # declare -a Ang_and_Pos=("ang" "pos")
 declare -a Ang_and_Pos=("ADD")
 declare -a update_style_flag=("time") # "time" "pose"
@@ -49,11 +50,11 @@ do
 					for ((rosbag=1;rosbag<=1;rosbag++)); 
 					do
 						# for repeat in {1..10}
-						for ((repeat=0;repeat<=4;repeat++));
+						for ((repeat=0;repeat<=0;repeat++));
 						do
 							for runVersion in "${runVersions[@]}"
 							do
-								for ((par_index=0;par_index<40;par_index++)); 
+								for ((par_index=0;par_index<${particleNumber};par_index++)); 
 								do
 									python3 align_time_par_data_process.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" "${par_index}"&
 									DATA_PRO_PID=$!

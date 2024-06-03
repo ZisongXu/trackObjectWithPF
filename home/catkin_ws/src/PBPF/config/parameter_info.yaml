@@ -1,7 +1,7 @@
 ADDMatrix_flag: true
 camera_info_topic_color: /camera/color/camera_info
 camera_info_topic_depth: /camera/depth/camera_info
-combine_particle_depth_mask_flag: false
+combine_particle_depth_mask_flag: true
 convolution_size: 0
 debug_depth_img_flag: false
 depth_diff_value_0_1_alpha: 0.8
@@ -9,6 +9,7 @@ depth_diff_value_0_1_flag: true
 depth_diff_value_0_1_threshold: 0.03
 depth_image_cut_flag: false
 depth_mask_flag: false
+depth_mask_vk_flag: true
 dope_flag: true
 err_file: rayTracing
 farVal: 3
@@ -17,10 +18,9 @@ height: 480
 locate_camera_flag: ar
 nearVal: 0.03
 object_name_list:
-- cracker
+- Mustard
 - Mayo
-- Milk
-object_num: 3
+object_num: 1
 objs_are_not_touching_target_objs_num: 0
 objs_touching_target_objs_num: 0
 optitrack_flag: true
@@ -35,21 +35,21 @@ otob_name_list:
 - cracker_obstacle
 - fish_can
 panda_robot_link_number: 11
-particle_num: 40
+particle_num: 70
 pb_render_flag: false
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0
 print_score_flag: false
 ray_tracing_type: multiray
-record_results_flag: true
-remove_min_max_flag: true
+record_results_flag: false
+remove_min_max_flag: false
 robot_num: 1
 run_alg_flag: PBPF
-running_model: PBPF_D
+running_model: PBPF_RGBD
 show_particle_depth_image_to_point_cloud_flag: true
 show_ray: false
 sim_real_world_flag: true
-task_flag: '2'
+task_flag: '1'
 update_style_flag: time
 use_convolution_flag: false
 version: multiray

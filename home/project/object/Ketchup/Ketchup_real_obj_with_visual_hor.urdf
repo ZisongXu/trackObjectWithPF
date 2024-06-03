@@ -13,8 +13,8 @@
          <mesh filename="Ketchup_sim.obj" scale="1 1 1"/>
        </geometry>
        <!-- <material name="light_green"/> -->
-       <material name="white">
-         <color rgba="1. 1. 1. 1."/>
+       <material name="blue">
+         <color rgba="0.2 0.63137 0.788 1"/>
        </material>
        <origin xyz="0 0 0" rpy="0 0 0"/>
      </visual>

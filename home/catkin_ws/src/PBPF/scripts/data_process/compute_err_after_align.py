@@ -30,32 +30,32 @@ from tf2_geometry_msgs import tf2_geometry_msgs
 
 def ADDMatrixBtTwoObjects(obj_name, pos1, ori1, pos2, ori2, task_flag):
     center_T_points_pose_4_4_list = getCenterTPointsList(obj_name)
-    if obj_name == "Ketchup":
-        if pos2[2] > 0.85:
-            pos_ = [0,0,0]
-            ori_ = copy.deepcopy(ori2)
-            m_3_3 = np.array(p.getMatrixFromQuaternion(ori_)).reshape(3, 3)
-            m_3_4 = np.c_[m_3_3, pos_]  # Add position to create 3x4 matrix
-            m_4_4 = np.r_[m_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
-            rotation_matrix = [[-1, 0, 0, 0],
-                               [ 0,-1, 0, 0],
-                               [ 0, 0, 1, 0],
-                               [ 0, 0, 0, 1]]
-            new = np.dot(m_4_4, rotation_matrix)
-            new_ori = transformations.quaternion_from_matrix(new)
-            ori2 = new_ori
-            pos2[2] = pos2[2] - 0.145
-        if ori2[3] < 0:
-            ori2[0] = -ori2[0]
-            ori2[1] = -ori2[1]
-            ori2[2] = -ori2[2]
-            ori2[3] = -ori2[3]
-    if obj_name == "soup" and task_flag == "scene2" and run_alg_flag == "PBPF":
-        if ori1[3] < 0:
-            ori1[0] = -ori1[0]
-            ori1[1] = -ori1[1]
-            ori1[2] = -ori1[2]
-            ori1[3] = -ori1[3]
+    # if obj_name == "Ketchup":
+    #     if pos2[2] > 0.85:
+    #         pos_ = [0,0,0]
+    #         ori_ = copy.deepcopy(ori2)
+    #         m_3_3 = np.array(p.getMatrixFromQuaternion(ori_)).reshape(3, 3)
+    #         m_3_4 = np.c_[m_3_3, pos_]  # Add position to create 3x4 matrix
+    #         m_4_4 = np.r_[m_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+    #         rotation_matrix = [[-1, 0, 0, 0],
+    #                            [ 0,-1, 0, 0],
+    #                            [ 0, 0, 1, 0],
+    #                            [ 0, 0, 0, 1]]
+    #         new = np.dot(m_4_4, rotation_matrix)
+    #         new_ori = transformations.quaternion_from_matrix(new)
+    #         ori2 = new_ori
+    #         pos2[2] = pos2[2] - 0.145
+    #     if ori2[3] < 0:
+    #         ori2[0] = -ori2[0]
+    #         ori2[1] = -ori2[1]
+    #         ori2[2] = -ori2[2]
+    #         ori2[3] = -ori2[3]
+    # if obj_name == "soup" and task_flag == "scene2" and run_alg_flag == "PBPF":
+    #     if ori1[3] < 0:
+    #         ori1[0] = -ori1[0]
+    #         ori1[1] = -ori1[1]
+    #         ori1[2] = -ori1[2]
+    #         ori1[3] = -ori1[3]
     # if obj_name == "Parmesan" and task_flag == "scene2":
     #     if ori2[3] > 0:
     #         ori2[0] = -ori2[0]

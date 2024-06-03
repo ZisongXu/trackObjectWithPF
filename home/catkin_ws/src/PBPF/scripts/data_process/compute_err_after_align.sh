@@ -3,23 +3,27 @@
 # declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("cracker" "Ketchup")
 # declare -a objectNames=("cracker" "Ketchup")
-# declare -a objectNames=("Mayo" "Milk")
+declare -a objectNames=("Milk")
+# declare -a objectNames=("Mustard" "Parmesan")
+# declare -a objectNames=("Milk")
 # declare -a objectNames=("soup" "Parmesan")
 # declare -a objectNames=("SaladDressing" "Mustard")
 # declare -a objectNames=("cracker" "soup" "Parmesan")
-declare -a objectNames=("cracker" "Mayo" "Milk")
+# declare -a objectNames=("cracker" "Mayo" "Milk")
+# declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
+# declare -a objectNames=("cracker" "Ketchup")
 # declare -a objectNames=("Ketchup")
 # declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a sceneNames=("scene2")
+declare -a sceneNames=("scene1")
 
-declare -a particleNumbers=(40)
+declare -a particleNumbers=(70)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
-declare -a runAlgFlags=("PBPF" "obse" "FOUD")
+# declare -a runAlgFlags=("PBPF" "obse" "FOUD")
+declare -a runAlgFlags=("FOUD")
 # declare -a runAlgFlags=("PBPF" "obse")
 # declare -a runAlgFlags=("FOUD" "DiffDOPE")
-# declare -a runAlgFlags=("FOUD")
 # declare -a runobseFlags=("obse" "FOUD")
 # declare -a Ang_and_Pos=("ang" "pos")
 declare -a Ang_and_Pos=("ADD" "ADDS")
@@ -51,7 +55,7 @@ do
 						# 	DATA_PRO_PID=$!
 						# 	sleep 2
 						# 	# for repeat in {1..10}
-						for ((repeat=0;repeat<=4;repeat++));
+						for ((repeat=0;repeat<=0;repeat++));
 						do
 							for runVersion in "${runVersions[@]}"
 							do

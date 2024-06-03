@@ -212,54 +212,115 @@ if ang_and_pos == "pos":
     svg_fig_pos = figure_pos.get_figure()
     svg_fig_pos.savefig(save_file_path+file_name+".png",format="png")
 
+
+
+
 if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
-    if sceneName == "scene1":
-        x_range_max = 3000 # 28, 129, 265
-        x_range_unit = 300 # 2, 6, 25, 125
+    if object_name == "cracker":
+        x_range_max = 1500 # 28, 129, 265
+        x_range_unit = 150 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 3000 # 28
+        x_xlim = 1500 # 28
         y_ylim = 0.5 # 0.5
-    if sceneName == "scene2":
-        x_range_max = 2550
-        x_range_unit = 300
-        y_range_max = 0.5
-        y_range_unit = 0.05
-        x_xlim = 2550
-        y_ylim = 0.5
-    if sceneName == "scene3":
-        # x_range_max = 28
-        # x_range_unit = 2
-        # y_range_max = 0.5
-        # y_range_unit = 0.04
-        # x_xlim = 28
-        # y_ylim = 0.5
-        x_range_max = 3000 # 28, 129, 265, 1
-        x_range_unit = 300 # 2, 6, 25, 125
+    if object_name == "Ketchup":
+        x_range_max = 2000 # 28, 129, 265
+        x_range_unit = 200 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 3000 # 28
+        x_xlim = 2000 # 28
         y_ylim = 0.5 # 0.5
-    if sceneName == "scene4":
-        x_range_max = 28
-        x_range_unit = 2
-        y_range_max = 0.5
-        y_range_unit = 0.04
-        x_xlim = 28
-        y_ylim = 0.5
-    if sceneName == "scene5":
-        # x_range_max = 28
-        # x_range_unit = 2
-        # y_range_max = 0.5
-        # y_range_unit = 0.04
-        # x_xlim = 28
-        # y_ylim = 0.5
-        x_range_max = 3480 # 28, 129, 265, 1
-        x_range_unit = 300 # 2, 6, 25, 125
+    if object_name == "Mayo":
+        x_range_max = 1700 # 28, 129, 265
+        x_range_unit = 170 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
-        y_range_unit = 0.04 # 0.04
-        x_xlim = 3480 # 28
+        y_range_unit = 0.05 # 0.04
+        x_xlim = 1700 # 28
         y_ylim = 0.5 # 0.5
+    if object_name == "Milk":
+        x_range_max = 1700 # 28, 129, 265
+        x_range_unit = 170 # 2, 6, 25, 125
+        y_range_max = 0.5 # 0.5
+        y_range_unit = 0.05 # 0.04
+        x_xlim = 1700 # 28
+        y_ylim = 0.5 # 0.5
+    if object_name == "Mustard":
+        x_range_max = 1800 # 28, 129, 265
+        x_range_unit = 180 # 2, 6, 25, 125
+        y_range_max = 0.5 # 0.5
+        y_range_unit = 0.05 # 0.04
+        x_xlim = 1800 # 28
+        y_ylim = 0.5 # 0.5
+    if object_name == "Parmesan":
+        x_range_max = 1300 # 28, 129, 265
+        x_range_unit = 130 # 2, 6, 25, 125
+        y_range_max = 0.5 # 0.5
+        y_range_unit = 0.05 # 0.04
+        x_xlim = 1300 # 28
+        y_ylim = 0.5 # 0.5
+    if object_name == "SaladDressing":
+        x_range_max = 1800 # 28, 129, 265
+        x_range_unit = 180 # 2, 6, 25, 125
+        y_range_max = 0.5 # 0.5
+        y_range_unit = 0.05 # 0.04
+        x_xlim = 1800 # 28
+        y_ylim = 0.5 # 0.5
+    if object_name == "soup":
+        x_range_max = 1900 # 28, 129, 265
+        x_range_unit = 190 # 2, 6, 25, 125
+        y_range_max = 0.5 # 0.5
+        y_range_unit = 0.05 # 0.04
+        x_xlim = 1900 # 28
+        y_ylim = 0.5 # 0.5
+
+
+    # if sceneName == "scene1":
+    #     x_range_max = 1600 # 28, 129, 265
+    #     x_range_unit = 160 # 2, 6, 25, 125
+    #     y_range_max = 0.5 # 0.5
+    #     y_range_unit = 0.05 # 0.04
+    #     x_xlim = 1600 # 28
+    #     y_ylim = 0.5 # 0.5
+    # if sceneName == "scene2":
+    #     x_range_max = 2550
+    #     x_range_unit = 300
+    #     y_range_max = 0.5
+    #     y_range_unit = 0.05
+    #     x_xlim = 2550
+    #     y_ylim = 0.5
+    # if sceneName == "scene3":
+    #     # x_range_max = 28
+    #     # x_range_unit = 2
+    #     # y_range_max = 0.5
+    #     # y_range_unit = 0.04
+    #     # x_xlim = 28
+    #     # y_ylim = 0.5
+    #     x_range_max = 2000 # 28, 129, 265, 1
+    #     x_range_unit = 200 # 2, 6, 25, 125
+    #     y_range_max = 0.5 # 0.5
+    #     y_range_unit = 0.05 # 0.04
+    #     x_xlim = 2000 # 28
+    #     y_ylim = 0.5 # 0.5
+    # if sceneName == "scene4":
+    #     x_range_max = 28
+    #     x_range_unit = 2
+    #     y_range_max = 0.5
+    #     y_range_unit = 0.04
+    #     x_xlim = 28
+    #     y_ylim = 0.5
+    # if sceneName == "scene5":
+    #     # x_range_max = 28
+    #     # x_range_unit = 2
+    #     # y_range_max = 0.5
+    #     # y_range_unit = 0.04
+    #     # x_xlim = 28
+    #     # y_ylim = 0.5
+    #     x_range_max = 3480 # 28, 129, 265, 1
+    #     x_range_unit = 300 # 2, 6, 25, 125
+    #     y_range_max = 0.5 # 0.5
+    #     y_range_unit = 0.04 # 0.04
+    #     x_xlim = 3480 # 28
+    #     y_ylim = 0.5 # 0.5
     print("Ready to plot the figure of "+ang_and_pos+" ("+object_name+")")
     ymax = 0.12
     dataset_ADD = pd.read_csv(save_file_path+file_name+'.csv', header=None)

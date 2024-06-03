@@ -68,8 +68,52 @@ prepare_time = 28 * 100
 prepare_time = 129 * 100
 prepare_time = 265 * 100
 prepare_time = 1730 * 100
-prepare_time = 3000 * 100
+prepare_time = 1600 * 100
 rosbag_slowdown_rate = 20
+if object_name == "Mustard" and rosbag_flag == "1":
+    prepare_time = 1100 * 100
+    rosbag_slowdown_rate = 20
+if object_name == "Mustard" and rosbag_flag == "2":
+    prepare_time = 1800 * 100
+    rosbag_slowdown_rate = 20
+if object_name == "Parmesan" and rosbag_flag == "1":
+    prepare_time = 1500 * 100
+    rosbag_slowdown_rate = 20
+if object_name == "Parmesan" and rosbag_flag == "2":
+    prepare_time = 1300 * 100
+    rosbag_slowdown_rate = 20
+if object_name == "Mayo" and rosbag_flag == "1":
+    prepare_time = 1700 * 100
+    rosbag_slowdown_rate = 20
+
+if object_name == "Milk":
+    prepare_time = 1700 * 100
+    rosbag_slowdown_rate = 20
+# if object_name == "Ketchup":
+#     prepare_time = 1500 * 100
+#     rosbag_slowdown_rate = 20
+# if object_name == "Mayo":
+#     prepare_time = 2000 * 100
+#     rosbag_slowdown_rate = 20
+# if object_name == "Milk":
+#     prepare_time = 1600 * 100
+#     rosbag_slowdown_rate = 20
+# if object_name == "Mustard":
+#     prepare_time = 2400 * 100
+#     rosbag_slowdown_rate = 20
+# if object_name == "Parmesan":
+#     prepare_time = 1700 * 100
+#     rosbag_slowdown_rate = 20
+# if object_name == "SaladDressing":
+#     prepare_time = 1800 * 100
+#     rosbag_slowdown_rate = 20
+# if object_name == "soup":
+#     prepare_time = 1900 * 100
+#     rosbag_slowdown_rate = 20
+
+if task_flag == "scene3":
+    prepare_time = 2000 * 100
+    rosbag_slowdown_rate = 20
 # prepare_time = 134000
 
 

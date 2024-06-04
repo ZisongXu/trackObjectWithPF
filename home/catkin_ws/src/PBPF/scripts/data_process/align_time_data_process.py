@@ -87,14 +87,21 @@ if object_name == "Mayo":
     prepare_time = 1700 * 100
     rosbag_slowdown_rate = 20
 if object_name == "Milk":
-    prepare_time = 1700 * 100
+    prepare_time = 2000 * 100
     rosbag_slowdown_rate = 20
 if object_name == "SaladDressing":
     prepare_time = 1800 * 100
     rosbag_slowdown_rate = 20
 if object_name == "soup":
-    prepare_time = 1900 * 100
+    prepare_time = 2000 * 100
     rosbag_slowdown_rate = 20
+if object_name == "Ketchup":
+    prepare_time = 2000 * 100
+    rosbag_slowdown_rate = 20
+if object_name == "cracker":
+    prepare_time = 2000 * 100
+    rosbag_slowdown_rate = 20
+
 
 if task_flag == "scene3":
     prepare_time = 2000 * 100

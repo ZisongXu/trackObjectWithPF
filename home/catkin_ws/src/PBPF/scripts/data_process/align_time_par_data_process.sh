@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # declare -a objectNames=("cracker" "soup")
-declare -a objectNames=("Milk")
-# declare -a objectNames=("soup" "Parmesan")
+# declare -a objectNames=("cracker" "Ketchup" "Milk")
+# declare -a objectNames=("Milk")
+declare -a objectNames=("SaladDressing" "soup")
 # declare -a objectNames=("Mustard" "Parmesan")
 # declare -a objectNames=("SaladDressing" "Mustard")
 # declare -a objectNames=("cracker" "gelatin" "soup")

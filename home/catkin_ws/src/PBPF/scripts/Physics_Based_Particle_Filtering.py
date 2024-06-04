@@ -532,23 +532,23 @@ class PBPFMove():
     def vk_get_rendered_depth_image_parallelised(self, particle_cloud):
         # vk mark 
         # get robot link state
-        render1 = time.time()
+        # render1 = time.time()
         pybullet_sim_envs = self.pybullet_env_id_collection
         pybullet_sim_envs_0 = pybullet_sim_envs[0]
         particle_robot_id_collection = self.pybullet_sim_fake_robot_id_collection
         particle_robot_id_0 = particle_robot_id_collection[0]
-        render2 = time.time()
+        # render2 = time.time()
         ## Update particle pose->update depth image
         _vk_update_depth_image(_vk_state_list, _vk_single_obj_state_list, particle_cloud, pybullet_sim_envs_0, particle_robot_id_0)
-        render3 = time.time()
+        # render3 = time.time()
         ## Render and Download
         _vk_context.enqueue_render_and_download(vkdepth.DEPTH | vkdepth.MASK)
         ## Waiting for rendering and download
         _vk_context.wait()
-        render4 = time.time()
+        # render4 = time.time()
         ## Get Depth image
         vk_rendered_depth_image_array_list_, vk_rendered__mask_image_array_list_, vk_single_obj_rendered__mask_image_array_list_ = _vk_depth_image_getting()
-        render5 = time.time()
+        # render5 = time.time()
 
         # fig, axs = plt.subplots(1, PARTICLE_NUM)
         # for par_index in range(PARTICLE_NUM):
@@ -560,18 +560,18 @@ class PBPFMove():
         
         
         self.rendered_depth_images_list = copy.deepcopy(vk_rendered_depth_image_array_list_) # array/list
-        render6 = time.time()
+        # render6 = time.time()
         self.rendered__mask_images_list = copy.deepcopy(vk_rendered__mask_image_array_list_) # array/list
-        render7 = time.time()
+        # render7 = time.time()
         self.single_obj_rendered__mask_images_list = copy.deepcopy(vk_single_obj_rendered__mask_image_array_list_) # array/list
-        render8 = time.time()
-        print("render2 - render1:", render2 - render1)
-        print("render3 - render2:", render3 - render2)
-        print("render4 - render3:", render4 - render3)
-        print("render5 - render4:", render5 - render4)
-        print("render6 - render5:", render6 - render5)
-        print("render7 - render6:", render6 - render5)
-        print("render8 - render7:", render6 - render5)
+        # render8 = time.time()
+        # print("render2 - render1:", render2 - render1)
+        # print("render3 - render2:", render3 - render2)
+        # print("render4 - render3:", render4 - render3)
+        # print("render5 - render4:", render5 - render4)
+        # print("render6 - render5:", render6 - render5)
+        # print("render7 - render6:", render6 - render5)
+        # print("render8 - render7:", render6 - render5)
 
         # for index in range(len(vk_single_obj_rendered__mask_image_array_list_)):
         #     img_name = "single_obj_Maskimg_"+str(index)+".png"
@@ -791,7 +791,7 @@ class PBPFMove():
             depth_value_difference_jax = depth_value_difference_jax / (math.sqrt(number_of_pixels))
         compared_time8 = time.time()
         depth_value_difference = float(depth_value_difference_jax.item())
-        print("index:", index, compared_time8-compared_time7, compared_time7-compared_time6, compared_time6-compared_time5, compared_time5-compared_time4, compared_time4-compared_time3, compared_time3-compared_time2, compared_time2-compared_time1)
+        # print("index:", index, compared_time2-compared_time1, compared_time3-compared_time2, compared_time4-compared_time3, compared_time5-compared_time4, compared_time6-compared_time5, compared_time7-compared_time6, compared_time8-compared_time7)
         # mark
         # if PRINT_SCORE_FLAG == True:
         #     a = 1
@@ -2987,6 +2987,7 @@ def signal_handler(sig, frame):
 
         for par_index in range(PARTICLE_NUM):
             file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/'+OBJECT_NAME_LIST[0]+'/')
+            # file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/')
             file_name_par_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+update_style_flag+'_PBPF_pose_'+RUNNING_MODEL+"_"+str(par_index)+'.csv'
             
             _boss_par_err_ADD_df_list[par_index].to_csv(file_save_path+file_name_par_ADD,index=0,header=0,mode='w')

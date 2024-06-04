@@ -287,7 +287,7 @@ for row_index in range(num_rows_data):
     print("Compute "+ang_and_pos+" error: "+file_name+" processing... ", row_index)
 
 new_err_data.to_csv(file_path+file_name_error+".csv",index=0,header=0,mode='a')
-if run_alg_flag == "FOUD" or run_alg_flag == "obse":
+if run_alg_flag == "FOUD" or run_alg_flag == "obse" or run_alg_flag == "DiffDOPE":
     new_err_data.to_csv(file_path+"particles/"+file_name_error+"_par_min.csv",index=0,header=0,mode='a')
     new_err_data.to_csv(file_path+"particles/"+file_name_error+"_par_avg.csv",index=0,header=0,mode='a')
 print("Done")  

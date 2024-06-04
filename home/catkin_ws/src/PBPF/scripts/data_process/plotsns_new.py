@@ -217,11 +217,11 @@ if ang_and_pos == "pos":
 
 if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
     if object_name == "cracker":
-        x_range_max = 1500 # 28, 129, 265
-        x_range_unit = 150 # 2, 6, 25, 125
+        x_range_max = 2000 # 28, 129, 265
+        x_range_unit = 200 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 1500 # 28
+        x_xlim = 2000 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Ketchup":
         x_range_max = 2000 # 28, 129, 265
@@ -238,11 +238,11 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
         x_xlim = 1700 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Milk":
-        x_range_max = 1700 # 28, 129, 265
-        x_range_unit = 170 # 2, 6, 25, 125
+        x_range_max = 2000 # 28, 129, 265
+        x_range_unit = 200 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 1700 # 28
+        x_xlim = 2000 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Mustard":
         x_range_max = 1800 # 28, 129, 265
@@ -266,11 +266,11 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
         x_xlim = 1800 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "soup":
-        x_range_max = 1900 # 28, 129, 265
-        x_range_unit = 190 # 2, 6, 25, 125
+        x_range_max = 2000 # 28, 129, 265
+        x_range_unit = 200 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 1900 # 28
+        x_xlim = 2000 # 28
         y_ylim = 0.5 # 0.5
 
 

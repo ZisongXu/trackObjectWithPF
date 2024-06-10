@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+ <robot name="myfirst">
+   <material name="green">
+     <color rgba="0 1 0.498 1"/>
+   </material>
+   <link name="right_leg">
+     <visual>
+       <geometry>
+         <cylinder length="0.257" radius="0.0395"/>
+       </geometry>
+       <material name="green"/>
+       <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
+     </visual>
+     <collision>
+       <geometry>
+         <cylinder length="0.257" radius="0.0395"/>
+       </geometry>
+       <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
+     </collision>
+     <inertial>
+       <mass value="1"/>
+       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+     </inertial>
+   </link>
+ </robot>

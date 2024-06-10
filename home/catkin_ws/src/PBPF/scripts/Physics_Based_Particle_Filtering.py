@@ -721,34 +721,48 @@ class PBPFMove():
                 rendered_depth_image_mask_values_2D = rendered_depth_image_transferred_jax[self.x_min:self.x_max+1, self.y_min:self.y_max+1] # jax
                 rendered_depth_image_mask_values_1D = rendered_depth_image_mask_values_2D.ravel() # jax
                 number_of_pixels = len(rendered_depth_image_mask_values_1D)
-
+            
+            
             else:
-                mask_position_from_segImg = self.mask_position_from_segImg_list[index]
-                number_of_pixels = len(mask_position_from_segImg)
+                if VK_RENDER_FLAG == True: # vk thing
+                    DEBUG_DEPTH_IMG_SHOW_MASK_IMG_FLAG = False
+                    if DEBUG_DEPTH_IMG_SHOW_MASK_IMG_FLAG == True:
+                        rendered__mask_image_all = copy.deepcopy(self.rendered__mask_images_list[index])
+                        rendered__mask_image_all[rendered__mask_image_all > 100] = 10
+                        rendered_mask_img_all_name = str(_particle_update_time)+"_rendered_mask_img_all_"+str(index)+".png"
+                        imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_mask_img_all_name, rendered__mask_image_all)
+                        for obj_index in range(OBJECT_NUM):
+                            rendered__mask_image_single = self.single_obj_rendered__mask_images_list[index+obj_index]
+                            rendered_mask_img_single_name = str(_particle_update_time)+"_rendered_mask_img_single_"+str(3*index+obj_index)+".png"
+                            imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_mask_img_single_name, rendered__mask_image_single)
 
-                real_depth_image_mask_values_1D = _extractValues(real_depth_image_transferred_jax, mask_position_from_segImg)
-                rendered_depth_image_mask_values_1D = _extractValues(rendered_depth_image_transferred_jax, mask_position_from_segImg)
+                else: # pybullet thing
+                    mask_position_from_segImg = self.mask_position_from_segImg_list[index]
+                    number_of_pixels = len(mask_position_from_segImg)
 
-                # real_depth_image_mask_values_1D = self.replace_values_real(real_depth_image_transferred_jax, mask_position_from_segImg)
-                # rendered_depth_image_mask_values_1D = self.replace_values_render(rendered_depth_image_transferred_jax, mask_position_from_segImg)
+                    real_depth_image_mask_values_1D = _extractValues(real_depth_image_transferred_jax, mask_position_from_segImg)
+                    rendered_depth_image_mask_values_1D = _extractValues(rendered_depth_image_transferred_jax, mask_position_from_segImg)
 
-                # test
-                DEBUG_DEPTH_IMG_SHOW_ONLY_MASK_IMG_FLAG = False
-                if DEBUG_DEPTH_IMG_SHOW_ONLY_MASK_IMG_FLAG == True:
-                    a = 1
-                    # real_depth_img_name = str(_particle_update_time) + "_real_depth_img_"+str(index)+".png"
-                    # # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
-                    # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, real_depth_image_mask_values)
+                    # real_depth_image_mask_values_1D = self.replace_values_real(real_depth_image_transferred_jax, mask_position_from_segImg)
+                    # rendered_depth_image_mask_values_1D = self.replace_values_render(rendered_depth_image_transferred_jax, mask_position_from_segImg)
 
-                    # rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
-                    # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_mask_values)
-                
-                    # real_depth_img_name = "0_" + str(_particle_update_time) + "_real_depth_img_"+str(index)+".png"
-                    # # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
-                    # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, self.real_depth_image_transferred)
+                    # test
+                    DEBUG_DEPTH_IMG_SHOW_ONLY_MASK_IMG_FLAG = False
+                    if DEBUG_DEPTH_IMG_SHOW_ONLY_MASK_IMG_FLAG == True:
+                        a = 1
+                        # real_depth_img_name = str(_particle_update_time) + "_real_depth_img_"+str(index)+".png"
+                        # # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
+                        # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, real_depth_image_mask_values)
 
-                    # rendered_depth_img_name = "0_" + str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
-                    # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred) # , cmap='gray'
+                        # rendered_depth_img_name = str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
+                        # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_mask_values)
+                    
+                        # real_depth_img_name = "0_" + str(_particle_update_time) + "_real_depth_img_"+str(index)+".png"
+                        # # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
+                        # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, self.real_depth_image_transferred)
+
+                        # rendered_depth_img_name = "0_" + str(_particle_update_time)+"_rendered_depth_img_"+str(index)+".png"
+                        # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_depth_img_name, rendered_depth_image_transferred) # , cmap='gray'
         
         # using convolution method  
         elif USE_CONVOLUTION_FLAG == True:
@@ -2334,22 +2348,17 @@ def publish_par_pose_info(particle_cloud_pub):
                 _boss_par_err_ADD_df_list[par_index].loc[_par_panda_step] = [_par_panda_step, _record_t - _record_t_begin, obj_info.pos[0], obj_info.pos[1], obj_info.pos[2], obj_info.ori[0], obj_info.ori[1], obj_info.ori[2], obj_info.ori[3], RUNNING_MODEL, obj, scene, PARTICLE_NUM, VERSION, obj_name]
                 _par_panda_step = _par_panda_step + 1
     
-            print("---------------------------------------")
             pw_T_par_pos = [obj_info.pos[0], obj_info.pos[1], obj_info.pos[2]]
             pw_T_par_ori = [obj_info.ori[0], obj_info.ori[1], obj_info.ori[2], obj_info.ori[3]]
             pw_T_par_3_3 = np.array(p.getMatrixFromQuaternion(pw_T_par_ori)).reshape(3, 3)
             pw_T_par_3_4 = np.c_[pw_T_par_3_3, pw_T_par_pos]  # Add position to create 3x4 matrix
             pw_T_par_4_4 = np.r_[pw_T_par_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
-            
-            print("_pw_T_rob_sim_4_4:")
-            print(_pw_T_rob_sim_4_4)
             rob_T_pw_4_4 = np.linalg.inv(_pw_T_rob_sim_4_4)
-            print("rob_T_pw_4_4:", rob_T_pw_4_4)
             rob_T_par_4_4 = rob_T_pw_4_4 @ pw_T_par_4_4
-            print("pw_T_par_pos:", pw_T_par_pos)
+
             rob_T_par_pos = [rob_T_par_4_4[0][3], rob_T_par_4_4[1][3], rob_T_par_4_4[2][3]]
             rob_T_par_ori = transformations.quaternion_from_matrix(rob_T_par_4_4)
-            print("rob_T_par_pos:", rob_T_par_pos)
+
             obj_pose = object_pose()
             obj_pose.id = obj_index
             obj_pose.name = obj_info.par_name

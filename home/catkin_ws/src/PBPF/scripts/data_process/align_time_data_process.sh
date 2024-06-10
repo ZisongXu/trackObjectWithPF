@@ -2,7 +2,8 @@
 # cracker soup Ketchup Mayo Milk
 # declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("Mustard" "Parmesan")
-declare -a objectNames=("SaladDressing" "soup")
+declare -a objectNames=("SaladDressing" "cracker")
+# declare -a objectNames=("SaladDressing" "soup")
 # declare -a objectNames=("soup" "Parmesan")
 # declare -a objectNames=("SaladDressing" "Mustard")
 # declare -a objectNames=("cracker" "soup" "Parmesan")

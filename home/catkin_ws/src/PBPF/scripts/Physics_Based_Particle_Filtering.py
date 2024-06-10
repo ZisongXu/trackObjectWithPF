@@ -559,11 +559,14 @@ class PBPFMove():
         # self.mask_position_from_segImg_list[index] = mask_position_from_segImg # list
         
         
-        self.rendered_depth_images_list = copy.deepcopy(vk_rendered_depth_image_array_list_) # array/list
+        # self.rendered_depth_images_list = copy.deepcopy(vk_rendered_depth_image_array_list_) # array/list
+        self.rendered_depth_images_list = vk_rendered_depth_image_array_list_ # array/list
         # render6 = time.time()
-        self.rendered__mask_images_list = copy.deepcopy(vk_rendered__mask_image_array_list_) # array/list
+        # self.rendered__mask_images_list = copy.deepcopy(vk_rendered__mask_image_array_list_) # array/list
+        self.rendered__mask_images_list = vk_rendered__mask_image_array_list_ # array/list
         # render7 = time.time()
-        self.single_obj_rendered__mask_images_list = copy.deepcopy(vk_single_obj_rendered__mask_image_array_list_) # array/list
+        # self.single_obj_rendered__mask_images_list = copy.deepcopy(vk_single_obj_rendered__mask_image_array_list_) # array/list
+        self.single_obj_rendered__mask_images_list = vk_single_obj_rendered__mask_image_array_list_ # array/list
         # render8 = time.time()
         # print("render2 - render1:", render2 - render1)
         # print("render3 - render2:", render3 - render2)
@@ -630,12 +633,12 @@ class PBPFMove():
     # compare depth image
     def compare_depth_image(self, index, particle):
         compared_time1 = time.time()
-        # # get rendered depth image    
-        depth_image_render = copy.deepcopy(self.rendered_depth_images_list[index]) # array/list
+        # # get rendered depth image
+        # VK_RENDER_FLAG == True:
+        rendered_depth_image_transferred = self.rendered_depth_images_list[index]
         if PB_RENDER_FLAG == True:
             rendered_depth_image_transferred = self.renderedDepthImageValueBufferTransfer(depth_image_render) # array
-        if VK_RENDER_FLAG == True:
-            rendered_depth_image_transferred = copy.deepcopy(depth_image_render)
+
         compared_time2 = time.time()
         # show depth image
         if DEBUG_DEPTH_IMG_FLAG == True:
@@ -670,8 +673,7 @@ class PBPFMove():
         if SHOW_PARTICLE_DEPTH_IMAGE_TO_POINT_CLOUD_FLAG == True:
             if self.camera_info:
 
-                par_depth_img = copy.deepcopy(rendered_depth_image_transferred)
-                cv_image = par_depth_img * 1
+                cv_image = rendered_depth_image_transferred * 1
                 # imsave('test.png', cv_image)
                 
                 ros_image = self.bridge.cv2_to_imgmsg(cv_image, "passthrough")
@@ -684,7 +686,7 @@ class PBPFMove():
                 ros_image.header.frame_id = "camera_depth_optical_frame"
 
                 # check image is a cv_img or ros_img
-                # self.is_cv_depth_image(par_depth_img)
+                # self.is_cv_depth_image(rendered_depth_image_transferred)
                 # self.is_ros_depth_image(ros_image)
 
                 self.camera_info_pub.publish(self.camera_info)
@@ -693,7 +695,7 @@ class PBPFMove():
                 # pub_depth_image_list[index].publish(ros_image)
         compared_time4 = time.time()
         # # compare depth image
-        real_depth_image_transferred_jax = copy.deepcopy(self.real_depth_image_transferred_jax) # jax, 2D 
+        real_depth_image_transferred_jax = self.real_depth_image_transferred_jax # jax, 2D 
         rendered_depth_image_transferred_jax = jnp.array(rendered_depth_image_transferred) # jax, 2D  
         compared_time5 = time.time()
         # ignore edge pixels
@@ -714,9 +716,9 @@ class PBPFMove():
                 rendered_depth_image_transferred_jax = _ortho_to_persp(rendered_depth_image_transferred_jax, FY_DEPTH, CX_DEPTH, CY_DEPTH)
             
             if COMBINE_PARTICLE_DEPTH_MASK_FLAG == True:
-                real_depth_image_mask_values_2D = copy.deepcopy(real_depth_image_transferred_jax[self.x_min:self.x_max+1, self.y_min:self.y_max+1]) # jax 
+                real_depth_image_mask_values_2D = real_depth_image_transferred_jax[self.x_min:self.x_max+1, self.y_min:self.y_max+1] # jax 
                 real_depth_image_mask_values_1D = real_depth_image_mask_values_2D.ravel() # jax
-                rendered_depth_image_mask_values_2D = copy.deepcopy(rendered_depth_image_transferred_jax[self.x_min:self.x_max+1, self.y_min:self.y_max+1]) # jax
+                rendered_depth_image_mask_values_2D = rendered_depth_image_transferred_jax[self.x_min:self.x_max+1, self.y_min:self.y_max+1] # jax
                 rendered_depth_image_mask_values_1D = rendered_depth_image_mask_values_2D.ravel() # jax
                 number_of_pixels = len(rendered_depth_image_mask_values_1D)
 
@@ -755,9 +757,9 @@ class PBPFMove():
         else:
             # depth_value_difference = self.compareDifferenceBtTwoDepthImgs(self.real_depth_image_transferred, rendered_depth_image_transferred)
 
-            real_depth_image_mask_values_2D = copy.deepcopy(real_depth_image_transferred_jax) # jax 
+            real_depth_image_mask_values_2D = real_depth_image_transferred_jax # jax 
             real_depth_image_mask_values_1D = real_depth_image_mask_values_2D.ravel() # jax
-            rendered_depth_image_mask_values_2D = copy.deepcopy(rendered_depth_image_transferred_jax) # jax
+            rendered_depth_image_mask_values_2D = rendered_depth_image_transferred_jax # jax
             rendered_depth_image_mask_values_1D = rendered_depth_image_mask_values_2D.ravel() # jax
             number_of_pixels = len(rendered_depth_image_mask_values_1D)
         compared_time7 = time.time()
@@ -789,8 +791,8 @@ class PBPFMove():
         else:
             depth_value_difference_jax = jnp.linalg.norm(real_depth_image_mask_values_1D - rendered_depth_image_mask_values_1D)
             depth_value_difference_jax = depth_value_difference_jax / (math.sqrt(number_of_pixels))
-        compared_time8 = time.time()
         depth_value_difference = float(depth_value_difference_jax.item())
+        compared_time8 = time.time()
         # print("index:", index, compared_time2-compared_time1, compared_time3-compared_time2, compared_time4-compared_time3, compared_time5-compared_time4, compared_time6-compared_time5, compared_time7-compared_time6, compared_time8-compared_time7)
         # mark
         # if PRINT_SCORE_FLAG == True:
@@ -998,10 +1000,10 @@ class PBPFMove():
                 if VERSION == "multiray":
                     par_pos_ = copy.deepcopy([particle_x, particle_y, particle_z])
                     par_ori_ = copy.deepcopy(par_ori)
-                    if VK_RENDER_FLAG == True:
-                        weight = self.pixel_visibility_tracing(index, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val)
-                    if PB_RENDER_FLAG == True:
-                        weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
+                    # if VK_RENDER_FLAG == True:
+                    #     weight = self.pixel_visibility_tracing(index, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val)
+                    # if PB_RENDER_FLAG == True:
+                    weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
                 elif VERSION == "ray":
                     par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
                     weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
@@ -1022,10 +1024,10 @@ class PBPFMove():
                     # need to change
                     par_pos_ = copy.deepcopy([particle_x, particle_y, particle_z])
                     par_ori_ = copy.deepcopy(par_ori)
-                    if VK_RENDER_FLAG == True:
-                        weight = self.pixel_visibility_tracing(index, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val)
-                    if PB_RENDER_FLAG == True:
-                        weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
+                    # if VK_RENDER_FLAG == True:
+                    #     weight = self.pixel_visibility_tracing(index, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val)
+                    # if PB_RENDER_FLAG == True:
+                    weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
                 elif VERSION == "ray":
                     par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
                     weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
@@ -1539,6 +1541,7 @@ class PBPFMove():
         score_list_array_sub_sum = sum(score_list_array_sub)
         score_list_array_sub_sum_over = score_list_array_sub / score_list_array_sub_sum * 1 # 20
         return score_list_array_sub_sum_over
+        # return score_list_array_sub
 
     def array_normal_distribution(self, x, mean, sigma):
         return sigma * np.exp(-1*((x-mean)**2)/(2*(sigma**2)))/(math.sqrt(2*np.pi)* sigma)
@@ -3599,9 +3602,9 @@ while reset_flag == True:
                     #     (trans_ob,rot_ob) = _tf_listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
                     #     print("obse is FRESH")
 
-                    if check_dope_work_flag_init_list[obj_index] == 0:
-                        check_dope_work_flag_init_list[obj_index] = 1
-                        old_obse_time_list[obj_index] = latest_obse_time_list[obj_index].to_sec()
+                    # if check_dope_work_flag_init_list[obj_index] == 0:
+                    #     check_dope_work_flag_init_list[obj_index] = 1
+                    #     old_obse_time_list[obj_index] = latest_obse_time_list[obj_index].to_sec()
                     # print("latest_obse_time.to_sec():")
                     # print(latest_obse_time.to_sec())
                     # print("difference:", latest_obse_time.to_sec() - old_obse_time)

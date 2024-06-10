@@ -217,11 +217,11 @@ if ang_and_pos == "pos":
 
 if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
     if object_name == "cracker":
-        x_range_max = 2000 # 28, 129, 265
-        x_range_unit = 200 # 2, 6, 25, 125
+        x_range_max = 1800 # 28, 129, 265
+        x_range_unit = 180 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 2000 # 28
+        x_xlim = 1800 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Ketchup":
         x_range_max = 2000 # 28, 129, 265
@@ -340,11 +340,12 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
     # print(dataset_ADD)
     color_map = {
         "FOUD": "#FC8002",
-        "DOPE": "#4995C6",
+        "DOPE": "#F0EEBB",
         "PBPF_RGBD": "#614099",
         "PBPF_RGB": "#EE4431",
         "PBPF_D": "#369F2D",
-        "Diff-DOPE": "#EDB11A",
+        "Diff-DOPE": "#4995C6",
+        "Diff-DOPE-Tracking": "#EDB11A",
     }
     if ang_and_pos == "ADD":
         figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADD Error (m)", hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)

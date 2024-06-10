@@ -164,7 +164,7 @@ if __name__ == '__main__':
     _all_time_list = []
     # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
     rosbag_file_path = os.path.expanduser('~/pyvkdepth/rosbag/')
-    ImageCreator(rosbag_file_path+'1_scene1_soup1.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
+    ImageCreator(rosbag_file_path+'2_scene1_crackerSaladDressing1.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
     
 
 

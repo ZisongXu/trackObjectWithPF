@@ -3,7 +3,7 @@ camera_info_topic_color: /camera/color/camera_info
 camera_info_topic_depth: /camera/depth/camera_info
 combine_particle_depth_mask_flag: false
 convolution_size: 0
-debug_depth_img_flag: false
+debug_depth_img_flag: true
 depth_diff_value_0_1_alpha: 0.8
 depth_diff_value_0_1_flag: true
 depth_diff_value_0_1_threshold: 0.03
@@ -19,8 +19,8 @@ locate_camera_flag: ar
 nearVal: 0.03
 object_name_list:
 - soup
-- Mustard
-- Mayo
+- Parmesan
+- Milk
 object_num: 3
 objs_are_not_touching_target_objs_num: 0
 objs_touching_target_objs_num: 0
@@ -36,7 +36,7 @@ otob_name_list:
 - cracker_obstacle
 - fish_can
 panda_robot_link_number: 11
-particle_num: 40
+particle_num: 10
 pb_render_flag: false
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0

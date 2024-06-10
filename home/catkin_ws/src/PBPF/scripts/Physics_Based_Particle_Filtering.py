@@ -2313,13 +2313,44 @@ def _get_quaternion_from_matrix(a_T_b_4_4):
 def publish_par_pose_info(particle_cloud_pub):
     global _par_panda_step
     par_pose_list = list(range(PARTICLE_NUM))
+    rob_par_pose_list = list(range(PARTICLE_NUM))
     for par_index in range(PARTICLE_NUM):
         par_pose = particle_pose()
         par_pose.particles = par_index
+        rob_par_pose = particle_pose()
+        rob_par_pose.particles = par_index
         obj_pose_list = []
+        rob_obj_pose_list = []
+
         for obj_index in range(OBJECT_NUM):
-            obj_pose = object_pose()
             obj_info = particle_cloud_pub[par_index][obj_index]
+            if RECORD_RESULTS_FLAG == True:
+                obj = obj_info.par_name
+                scene = "scene"+str(task_flag)
+                obj_scene = obj_info.par_name+"_scene"+str(task_flag)
+                obj_name = obj_info.par_name
+                _record_t = time.time()
+                # x, y, z ,w
+                _boss_par_err_ADD_df_list[par_index].loc[_par_panda_step] = [_par_panda_step, _record_t - _record_t_begin, obj_info.pos[0], obj_info.pos[1], obj_info.pos[2], obj_info.ori[0], obj_info.ori[1], obj_info.ori[2], obj_info.ori[3], RUNNING_MODEL, obj, scene, PARTICLE_NUM, VERSION, obj_name]
+                _par_panda_step = _par_panda_step + 1
+    
+            print("---------------------------------------")
+            pw_T_par_pos = [obj_info.pos[0], obj_info.pos[1], obj_info.pos[2]]
+            pw_T_par_ori = [obj_info.ori[0], obj_info.ori[1], obj_info.ori[2], obj_info.ori[3]]
+            pw_T_par_3_3 = np.array(p.getMatrixFromQuaternion(pw_T_par_ori)).reshape(3, 3)
+            pw_T_par_3_4 = np.c_[pw_T_par_3_3, pw_T_par_pos]  # Add position to create 3x4 matrix
+            pw_T_par_4_4 = np.r_[pw_T_par_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+            
+            print("_pw_T_rob_sim_4_4:")
+            print(_pw_T_rob_sim_4_4)
+            rob_T_pw_4_4 = np.linalg.inv(_pw_T_rob_sim_4_4)
+            print("rob_T_pw_4_4:", rob_T_pw_4_4)
+            rob_T_par_4_4 = rob_T_pw_4_4 @ pw_T_par_4_4
+            print("pw_T_par_pos:", pw_T_par_pos)
+            rob_T_par_pos = [rob_T_par_4_4[0][3], rob_T_par_4_4[1][3], rob_T_par_4_4[2][3]]
+            rob_T_par_ori = transformations.quaternion_from_matrix(rob_T_par_4_4)
+            print("rob_T_par_pos:", rob_T_par_pos)
+            obj_pose = object_pose()
             obj_pose.id = obj_index
             obj_pose.name = obj_info.par_name
             obj_pose.pose.position.x = obj_info.pos[0]
@@ -2330,22 +2361,29 @@ def publish_par_pose_info(particle_cloud_pub):
             obj_pose.pose.orientation.z = obj_info.ori[2]
             obj_pose.pose.orientation.w = obj_info.ori[3]
             obj_pose_list.append(obj_pose)
-            if RECORD_RESULTS_FLAG == True:
-                obj = obj_info.par_name
-                scene = "scene"+str(task_flag)
-                obj_scene = obj_info.par_name+"_scene"+str(task_flag)
-                obj_name = obj_info.par_name
-                _record_t = time.time()
-                # x, y, z ,w
-                _boss_par_err_ADD_df_list[par_index].loc[_par_panda_step] = [_par_panda_step, _record_t - _record_t_begin, obj_info.pos[0], obj_info.pos[1], obj_info.pos[2], obj_info.ori[0], obj_info.ori[1], obj_info.ori[2], obj_info.ori[3], RUNNING_MODEL, obj, scene, PARTICLE_NUM, VERSION, obj_name]
-                _par_panda_step = _par_panda_step + 1
 
-        
+            rob_obj_pose = object_pose()
+            rob_obj_pose.id = obj_index
+            rob_obj_pose.name = obj_info.par_name
+            rob_obj_pose.pose.position.x = rob_T_par_pos[0]
+            rob_obj_pose.pose.position.y = rob_T_par_pos[1]
+            rob_obj_pose.pose.position.z = rob_T_par_pos[2]
+            rob_obj_pose.pose.orientation.x = rob_T_par_ori[0]
+            rob_obj_pose.pose.orientation.y = rob_T_par_ori[1]
+            rob_obj_pose.pose.orientation.z = rob_T_par_ori[2]
+            rob_obj_pose.pose.orientation.w = rob_T_par_ori[3]
+            rob_obj_pose_list.append(rob_obj_pose)
+
         par_pose.objects = obj_pose_list
         par_pose_list[par_index] = par_pose
+
+        rob_par_pose.objects = rob_obj_pose_list
+        rob_par_pose_list[par_index] = rob_par_pose
         
     par_list.particles = par_pose_list
     pub_par_pose.publish(par_list)
+    rob_par_list.particles = rob_par_pose_list
+    rob_pub_par_pose.publish(rob_par_list)
             
 def publish_esti_pose_info(estimated_object_set):
     global _PBPF_panda_step
@@ -3024,6 +3062,8 @@ while reset_flag == True:
         ray_trace_list = particle_list()
         pub_par_pose = rospy.Publisher('/par_list', particle_list, queue_size = 10)
         par_list = particle_list()
+        rob_pub_par_pose = rospy.Publisher('/rob_par_list', particle_list, queue_size = 10)
+        rob_par_list = particle_list()
         pub_esti_pose = rospy.Publisher('/esti_obj_list', estimated_obj_pose, queue_size = 10)
         esti_obj_list = estimated_obj_pose()
         pub_depth_image = rospy.Publisher("/camera/particle_depth_image_converted", Image, queue_size=5)

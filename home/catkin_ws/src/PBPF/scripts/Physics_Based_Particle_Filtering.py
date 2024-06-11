@@ -732,7 +732,7 @@ class PBPFMove():
                         rendered_mask_img_all_name = str(_particle_update_time)+"_rendered_mask_img_all_"+str(index)+".png"
                         imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_mask_img_all_name, rendered__mask_image_all)
                         for obj_index in range(OBJECT_NUM):
-                            rendered__mask_image_single = self.single_obj_rendered__mask_images_list[index+obj_index]
+                            rendered__mask_image_single = self.single_obj_rendered__mask_images_list[3*index+obj_index]
                             rendered_mask_img_single_name = str(_particle_update_time)+"_rendered_mask_img_single_"+str(3*index+obj_index)+".png"
                             imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+rendered_mask_img_single_name, rendered__mask_image_single)
 

@@ -18,6 +18,7 @@ gazebo_flag: false
 height: 480
 ignore_edge_pixels: false
 locate_camera_flag: ar
+multiprocessing_flag: true
 nearVal: 0.03
 object_name_list:
 - soup
@@ -55,5 +56,6 @@ task_flag: '2'
 update_style_flag: time
 use_convolution_flag: false
 version: multiray
+visibility_compute_separate_flag: true
 vk_render_flag: true
 width: 848

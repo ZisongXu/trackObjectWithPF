@@ -51,6 +51,7 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import imsave
 import pandas as pd
 import multiprocessing
+from multiprocessing import Process
 import yaml
 import jax.numpy as jnp
 from jax import jit
@@ -89,7 +90,7 @@ task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
 # which algorithm to run
 run_alg_flag = parameter_info['run_alg_flag'] # PBPF/CVPF
 # update mode (pose/time)
-update_style_flag = parameter_info['update_style_flag'] # time/pose
+UPDATE_STYLE_FLAG = parameter_info['update_style_flag'] # time/pose
 # observation model
 pick_particle_rate = parameter_info['pick_particle_rate']
 OPTITRACK_FLAG = parameter_info['optitrack_flag']
@@ -135,6 +136,8 @@ SHOW_PARTICLE_DEPTH_IMAGE_TO_POINT_CLOUD_FLAG = parameter_info['show_particle_de
 IGNORE_EDGE_PIXELS = parameter_info['ignore_edge_pixels'] 
 
 COMPARE_DEPTH_IMG_VK = parameter_info['compare_depth_img_vk']
+VISIBILITY_COMPUTE_SEPARATE_FLAG = parameter_info['visibility_compute_separate_flag']
+MULTIPROCESSING_FLAG = parameter_info['multiprocessing_flag']
 
 RECORD_RESULTS_FLAG = parameter_info['record_results_flag'] 
 
@@ -147,7 +150,7 @@ if VK_RENDER_FLAG == True:
     print("I am using Vulkan to generate Depth Image")
 if PB_RENDER_FLAG == True: 
     print("I am using Pybullet to generate Depth Image")
-SIM_TIME_STEP = 1.0/90
+SIM_TIME_STEP = 1.0/100
 
 _record_PBPF_esti_pose_list = []
 _record_PBPF_par_pose_list = []
@@ -335,9 +338,12 @@ class PBPFMove():
 
     # motion model
     def motion_model(self, pybullet_sim_envs, particle_robot_id, real_robot_joint_pos):  
-        self.motion_update_PB_parallelised(pybullet_sim_envs, particle_robot_id, real_robot_joint_pos)
+        if MULTIPROCESSING_FLAG == False:
+            self.motion_update_PB_threads(pybullet_sim_envs, particle_robot_id, real_robot_joint_pos)
+        elif MULTIPROCESSING_FLAG == True:
+            self.motion_update_PB_MultiProcesses(pybullet_sim_envs, particle_robot_id, real_robot_joint_pos)
 
-    def motion_update_PB_parallelised(self, pybullet_sim_envs, particle_robot_id, real_robot_joint_pos):
+    def motion_update_PB_threads(self, pybullet_sim_envs, particle_robot_id, real_robot_joint_pos):
         global simRobot_touch_par_flag
         threads = []
         for index, pybullet_env in enumerate(pybullet_sim_envs):
@@ -352,8 +358,25 @@ class PBPFMove():
             thread.join()
         if simRobot_touch_par_flag == 0:
             return
-    
+
+    def motion_update_PB_MultiProcesses(self, pybullet_sim_envs, particle_robot_id, real_robot_joint_pos):
+        global simRobot_touch_par_flag
+        processes = []
+        parallel = multiprocessing.Process
+        for index, pybullet_env in enumerate(pybullet_sim_envs):
+            if simRobot_touch_par_flag == 1:
+                process = parallel(target=self.motion_update_PB, args=(index, pybullet_env, particle_robot_id, real_robot_joint_pos))
+            else:
+                process = parallel(target=self.sim_robot_move_direct, args=(index, pybullet_env, particle_robot_id, real_robot_joint_pos))
+            process.start()
+            processes.append(process)
+        for process in processes:
+            process.join()
+        if simRobot_touch_par_flag == 0:
+            return
+
     def motion_update_PB(self, index, pybullet_env, particle_robot_id, real_robot_joint_pos):
+
         collision_detection_obj_id = []
         other_object_id_list_list = self.pybullet_sim_other_object_id_collection # now is empty
         
@@ -372,9 +395,9 @@ class PBPFMove():
             # change particle parameters
             self.change_obj_parameters(pybullet_env, pw_T_par_sim_id)
         # execute the control
-        if update_style_flag == "pose":
+        if UPDATE_STYLE_FLAG == "pose":
             self.pose_sim_robot_move(index, pybullet_env, particle_robot_id, real_robot_joint_pos)
-        elif update_style_flag == "time":
+        elif UPDATE_STYLE_FLAG == "time":
             # change simulation time
             pf_update_interval_in_sim = BOSS_PF_UPDATE_INTERVAL_IN_REAL / SIM_TIME_STEP
             # make sure all particles are updated
@@ -486,15 +509,20 @@ class PBPFMove():
         # plt.show()
         
         # observation model (RGB)
-        t_before_RGB = time.time()
         if USING_RGB_FLAG == True:
+            t_before_RGB = time.time()
             self.observation_update_PB_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list)
-            
-        t_after_RGB = time.time()
-        print("--------------------------------------------------------")
-        print("RGB/ray weight cost time:", t_after_RGB - t_before_RGB)
-        print("--------------------------------------------------------")
-        
+            t_after_RGB = time.time()
+            print("--------------------------------------------------------")
+            print("RGB update cost time:", t_after_RGB - t_before_RGB)
+            print("--------------------------------------------------------")
+            if VISIBILITY_COMPUTE_SEPARATE_FLAG == True:
+                self.visibility_computing_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list)
+                t_after_ray = time.time()
+                print("--------------------------------------------------------")
+                print("Ray tracing cost time:", t_after_ray - t_after_RGB)
+                print("--------------------------------------------------------")
+
     def get_real_depth_image(self):
         depth_image_real = ROS_LISTENER.depth_image # persp
         # self.___________depth_image_real = ROS_LISTENER.depth_image # persp
@@ -1025,38 +1053,64 @@ class PBPFMove():
                     weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
                     
                     weight = weight_xyz * weight_ang
-                            
-                if VERSION == "multiray":
-                    par_pos_ = [particle_x, particle_y, particle_z]
-                    par_ori_ = par_ori
-                    weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
-                elif VERSION == "ray":
-                    par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
-                    weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
+
+                if VISIBILITY_COMPUTE_SEPARATE_FLAG == False:
+                    if VERSION == "multiray":
+                        par_pos_ = [particle_x, particle_y, particle_z]
+                        par_ori_ = par_ori
+                        weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
+                    elif VERSION == "ray":
+                        par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
+                        weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
+                
                 particle[obj_index].w = weight
 
         else:
-            if self.DOPE_rep_flag == 0:
-                print("DOPE x")
-                self.DOPE_rep_flag = self.DOPE_rep_flag + 1
-            for obj_index in range(self.obj_num):
-                local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
-                local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
-                particle_x = particle[obj_index].pos[0]
-                particle_y = particle[obj_index].pos[1]
-                particle_z = particle[obj_index].pos[2]
-                par_ori = quaternion_correction(particle[obj_index].ori)
-                if VERSION == "multiray":
-                    # need to change
-                    par_pos_ = [particle_x, particle_y, particle_z]
-                    par_ori_ = par_ori
-                    weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
-                elif VERSION == "ray":
-                    par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
-                    weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
-                particle[obj_index].w = weight
+            if VISIBILITY_COMPUTE_SEPARATE_FLAG == False:
+                for obj_index in range(self.obj_num):
+                    local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
+                    local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
+                    particle_x = particle[obj_index].pos[0]
+                    particle_y = particle[obj_index].pos[1]
+                    particle_z = particle[obj_index].pos[2]
+                    par_ori = quaternion_correction(particle[obj_index].ori)
+                    if VERSION == "multiray":
+                        # need to change
+                        par_pos_ = [particle_x, particle_y, particle_z]
+                        par_ori_ = par_ori
+                        weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
+                    elif VERSION == "ray":
+                        par_pos = copy.deepcopy([particle_x, particle_y, particle_z])
+                        weight = self.single_ray_tracing(par_pos, pybullet_env, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
+                    particle[obj_index].w = weight
             
-    
+    def visibility_computing_parallelised(self, particle_cloud, pw_T_obj_obse_objects_pose_list):
+        threads_vis = []
+        for index, particle in enumerate(particle_cloud):
+            thread_vis = threading.Thread(target=self.visibility_computing, args=(index, particle, pw_T_obj_obse_objects_pose_list))
+            thread_vis.start()
+            threads_vis.append(thread_vis)
+        for thread_vis in threads_vis:
+            thread_vis.join()
+
+    def visibility_computing(self, index, particle, pw_T_obj_obse_objects_pose_list):
+        pybullet_env = self.pybullet_env_id_collection[index]
+        for obj_index in range(self.obj_num):
+            weight = particle[obj_index].w
+            local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
+            local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
+            particle_x = particle[obj_index].pos[0]
+            particle_y = particle[obj_index].pos[1]
+            particle_z = particle[obj_index].pos[2]
+            par_ori = quaternion_correction(particle[obj_index].ori)
+            if VERSION == "multiray":
+                # need to change
+                par_pos_ = [particle_x, particle_y, particle_z]
+                par_ori_ = par_ori
+                weight = self.multi_ray_tracing(par_pos_, par_ori_, pybullet_env, obj_index, weight, local_obj_visual_by_DOPE_val, local_obj_outlier_by_DOPE_val, particle)
+            particle[obj_index].w = weight
+
+
     def findPositions(self, matrix, targets):
         match_positions = matrix == targets[:, None, None]
         all_positions = jnp.argwhere(match_positions)
@@ -1558,7 +1612,7 @@ class PBPFMove():
         score_list_array_ = np.array(score_list_)
         score_list_array_sub = score_list_array_ - score_list_min
         if score_list_array_sub.ndim == 1:
-            print("Good")
+            print("Dimension of score list is 1")
         else:
             input("Error: depth_value_difference_list_array_sub.ndim should be 1! Please check the code and press Crtl-C")
         score_list_array_sub_sum = sum(score_list_array_sub)
@@ -3020,9 +3074,9 @@ def signal_handler(sig, frame):
             file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/')
             obj_name = OBJECT_NAME_LIST[obj_index]
 
-            file_name_PBPF_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+update_style_flag+'_PBPF_pose_'+RUNNING_MODEL+'.csv'
-            file_name_obse_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+update_style_flag+'_obse_pose_'+RUNNING_MODEL+'.csv'
-            file_name_GT_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+update_style_flag+'_GT_pose_'+RUNNING_MODEL+'.csv'
+            file_name_PBPF_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+'.csv'
+            file_name_obse_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_obse_pose_'+RUNNING_MODEL+'.csv'
+            file_name_GT_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_GT_pose_'+RUNNING_MODEL+'.csv'
 
             _boss_PBPF_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_PBPF_ADD,index=0,header=0,mode='w')
             
@@ -3035,7 +3089,7 @@ def signal_handler(sig, frame):
         for par_index in range(PARTICLE_NUM):
             file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/'+OBJECT_NAME_LIST[0]+'/')
             # file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/')
-            file_name_par_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+update_style_flag+'_PBPF_pose_'+RUNNING_MODEL+"_"+str(par_index)+'.csv'
+            file_name_par_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+"_"+str(par_index)+'.csv'
             
             _boss_par_err_ADD_df_list[par_index].to_csv(file_save_path+file_name_par_ADD,index=0,header=0,mode='w')
             print("write Particle file (should include all objects): "+RUNNING_MODEL)
@@ -3130,7 +3184,7 @@ while reset_flag == True:
             pub_DOPE_list.append(pub_DOPE)
             pub_PBPF_list.append(pub_PBPF)
         
-        print("This is "+update_style_flag+" update in scene"+task_flag)    
+        print("This is "+UPDATE_STYLE_FLAG+" update in scene"+task_flag)    
         # some parameters
         d_thresh = 0.005
         a_thresh = 0.01
@@ -3289,7 +3343,7 @@ while reset_flag == True:
                                                    pw_T_rob_sim_pose_list_alg, 
                                                    pw_T_obj_obse_obj_list_alg,
                                                    pw_T_objs_touching_targetObjs_list,
-                                                   update_style_flag, SIM_TIME_STEP)
+                                                   UPDATE_STYLE_FLAG, SIM_TIME_STEP)
         
         
         # get estimated object
@@ -3804,7 +3858,7 @@ while reset_flag == True:
             # pub_DOPE.publish(pose_DOPE)
 
             # update according to the pose
-            if update_style_flag == "pose":
+            if UPDATE_STYLE_FLAG == "pose":
                 # PBPF algorithm
                 if run_alg_flag == "PBPF":
                     if (dis_robcur_robold > d_thresh):
@@ -3854,7 +3908,7 @@ while reset_flag == True:
     #                    CVPF_alg.robot_arm_move_CV(ROS_LISTENER.current_joint_values) # joints of robot arm
                         
             # update according to the time
-            elif update_style_flag == "time":
+            elif UPDATE_STYLE_FLAG == "time":
                 while not rospy.is_shutdown():
                     t_begin_sleep = time.time()
                     # PBPF algorithm

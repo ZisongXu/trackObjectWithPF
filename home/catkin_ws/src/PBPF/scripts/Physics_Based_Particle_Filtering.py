@@ -416,7 +416,6 @@ class PBPFMove():
         motion_time6 = time.time()
 
         for obj_index in range(self.obj_num):
-            
             pw_T_par_sim_id = self.particle_cloud[index][obj_index].no_visual_par_id
             # get linearVelocity and angularVelocity of each particle
             linearVelocity, angularVelocity = pybullet_env.getBaseVelocity(pw_T_par_sim_id)
@@ -427,7 +426,6 @@ class PBPFMove():
                                                          [normal_x, normal_y, normal_z],
                                                          P_quat)
             collision_detection_obj_id.append(pw_T_par_sim_id)
-
             # check collision
             par_pose_3_1 = [normal_x, normal_y, normal_z, P_quat]
             normal_x, normal_y, normal_z, P_quat = self.collision_check(pybullet_env, 
@@ -447,7 +445,7 @@ class PBPFMove():
         t5 = motion_time6 - motion_time5
         t6 = motion_time7 - motion_time6
         t7 = motion_time8 - motion_time7
-        # print(t1, t2, t3, t4, t5, t6, t7)
+        print(t1, t2, t3, t4, t5, t6, t7)
         # pipe.send()
 
     # observation model

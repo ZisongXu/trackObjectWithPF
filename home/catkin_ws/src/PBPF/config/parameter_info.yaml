@@ -4,7 +4,7 @@ camera_info_topic_depth: /camera/depth/camera_info
 combine_particle_depth_mask_flag: false
 compare_depth_img_vk: true
 convolution_size: 0
-debug_depth_img_flag: true
+debug_depth_img_flag: false
 depth_diff_value_0_1_alpha: 0.8
 depth_diff_value_0_1_flag: true
 depth_diff_value_0_1_threshold: 0.03

@@ -249,7 +249,7 @@ class PBPFMove():
             real_robot_joint_list.append(real_robot_info)
         return real_robot_joint_list
         
-    def set_real_robot_JointPosition(self,pybullet_env, robot, position):
+    def set_real_robot_JointPosition(self, pybullet_env, robot, position):
         num_joints = 9
         for joint_index in range(num_joints):
             if joint_index == 7 or joint_index == 8:
@@ -377,15 +377,16 @@ class PBPFMove():
 
     def motion_update_PB(self, index, pybullet_env, particle_robot_id, real_robot_joint_pos):
 
+        motion_time1 = time.time()
         collision_detection_obj_id = []
         other_object_id_list_list = self.pybullet_sim_other_object_id_collection # now is empty
-        
+        motion_time2 = time.time()
         # collision check: add other objects (obstacles)
         # now is empty
         for other_obj_index in range(len(other_object_id_list_list)):
             other_object_id = other_object_id_list_list[other_obj_index][index]
             collision_detection_obj_id.append(other_object_id)
-        
+        motion_time3 = time.time()
         # ensure that each update of particles in the simulation inherits the velocity of the previous update 
         for obj_index in range(self.obj_num):
             pw_T_par_sim_id = self.particle_cloud[index][obj_index].no_visual_par_id
@@ -394,6 +395,7 @@ class PBPFMove():
                                            self.particle_cloud[index][obj_index].angularVelocity)
             # change particle parameters
             self.change_obj_parameters(pybullet_env, pw_T_par_sim_id)
+        motion_time4 = time.time()
         # execute the control
         if UPDATE_STYLE_FLAG == "pose":
             self.pose_sim_robot_move(index, pybullet_env, particle_robot_id, real_robot_joint_pos)
@@ -404,14 +406,14 @@ class PBPFMove():
             for time_index in range(int(pf_update_interval_in_sim)):
                 self.set_real_robot_JointPosition(pybullet_env, particle_robot_id[index], real_robot_joint_pos)
                 pybullet_env.stepSimulation()
-        
-        
+        motion_time5 = time.time()
         
         ### ori: x,y,z,w
         # collision check: add robot
         collision_detection_obj_id.append(particle_robot_id[index])
         # add board need to change
         collision_detection_obj_id.append(self.pybullet_sim_env_fix_obj_id_collection[index])
+        motion_time6 = time.time()
 
         for obj_index in range(self.obj_num):
             
@@ -435,7 +437,17 @@ class PBPFMove():
                                                                         par_pose_3_1)
             
             self.update_partcile_cloud_pose_PB(index, obj_index, normal_x, normal_y, normal_z, P_quat, linearVelocity, angularVelocity)
+        motion_time7 = time.time()
         pybullet_env.stepSimulation()
+        motion_time8 = time.time()
+        t1 = motion_time2 - motion_time1
+        t2 = motion_time3 - motion_time2
+        t3 = motion_time4 - motion_time3
+        t4 = motion_time5 - motion_time4
+        t5 = motion_time6 - motion_time5
+        t6 = motion_time7 - motion_time6
+        t7 = motion_time8 - motion_time7
+        # print(t1, t2, t3, t4, t5, t6, t7)
         # pipe.send()
 
     # observation model

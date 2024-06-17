@@ -1,0 +1,29 @@
+<?xml version="0.0" ?>
+<robot name="example_model">
+  <link name="baseLink">
+    <contact>
+      <friction_anchor/>
+      <lateral_friction value="0.5"/>
+      <contact_cfm value="0.0"/>
+      <contact_erp value="1.0"/>
+    </contact>
+    <inertial>
+       <origin rpy="0 0 0" xyz="0.00 -0.0 -0.00"/>
+       <mass value=".411"/>
+       <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="textured_simple.obj" scale="0.01 0.01 0.01"/>
+      </geometry>
+      <material name="white">
+        <color rgba="1. 1. 1. 1."/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="textured.obj" scale="0.01 0.01 0.01"/>
+      </geometry>
+    </collision>
+  </link>
+</robot>

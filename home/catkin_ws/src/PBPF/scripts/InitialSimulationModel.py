@@ -208,6 +208,8 @@ class InitialSimulationModel():
                 self.set_sim_robot_JointPosition(pybullet_simulation_env, fake_robot_id, joint_of_robot)
                 self.fake_robot_id_collection.append(fake_robot_id)
             # need to change
+            print("")
+            print("fake_robot_id:", type(fake_robot_id))
             collision_detection_obj_id.append(fake_robot_id)
             
             if self.SIM_REAL_WORLD_FLAG == True:

@@ -40,7 +40,7 @@ otob_name_list:
 - cracker_obstacle
 - fish_can
 panda_robot_link_number: 11
-particle_num: 70
+particle_num: 10
 pb_render_flag: false
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0

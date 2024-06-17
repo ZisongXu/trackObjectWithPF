@@ -137,7 +137,7 @@ IGNORE_EDGE_PIXELS = parameter_info['ignore_edge_pixels']
 
 COMPARE_DEPTH_IMG_VK = parameter_info['compare_depth_img_vk']
 VISIBILITY_COMPUTE_SEPARATE_FLAG = parameter_info['visibility_compute_separate_flag']
-MULTIPROCESSING_FLAG = parameter_info['multiprocessing_flag']
+MOTION_MODEL_FLAG = parameter_info['motion_model_flag'] # thread/multiprocess/normal
 
 RECORD_RESULTS_FLAG = parameter_info['record_results_flag'] 
 
@@ -262,6 +262,9 @@ class PBPFMove():
                                                    joint_index,
                                                    pybullet_env.POSITION_CONTROL,
                                                    targetPosition=position[joint_index])
+        pf_update_interval_in_sim = BOSS_PF_UPDATE_INTERVAL_IN_REAL / SIM_TIME_STEP
+        for time_index in range(int(pf_update_interval_in_sim)):
+            pybullet_env.stepSimulation()
 
     def compute_pos_err_bt_2_points(self,pos1,pos2):
         x_d = pos1[0]-pos2[0]
@@ -338,10 +341,12 @@ class PBPFMove():
 
     # motion model
     def motion_model(self, pybullet_sim_envs, particle_robot_id, real_robot_joint_pos):  
-        if MULTIPROCESSING_FLAG == False:
+        if MOTION_MODEL_FLAG == "thread": # thread/multiprocess/normal
             self.motion_update_PB_threads(pybullet_sim_envs, particle_robot_id, real_robot_joint_pos)
-        elif MULTIPROCESSING_FLAG == True:
+        elif MOTION_MODEL_FLAG == "multiprocess":
             self.motion_update_PB_MultiProcesses(pybullet_sim_envs, particle_robot_id, real_robot_joint_pos)
+        elif MOTION_MODEL_FLAG == "normal":
+            self.motion_update_PB_Normal(pybullet_sim_envs, particle_robot_id, real_robot_joint_pos)
 
     def motion_update_PB_threads(self, pybullet_sim_envs, particle_robot_id, real_robot_joint_pos):
         global simRobot_touch_par_flag
@@ -375,6 +380,17 @@ class PBPFMove():
         if simRobot_touch_par_flag == 0:
             return
 
+    def motion_update_PB_Normal(self, pybullet_sim_envs, particle_robot_id, real_robot_joint_pos):
+        global simRobot_touch_par_flag  
+        threads = []
+        for index, pybullet_env in enumerate(pybullet_sim_envs):
+            if simRobot_touch_par_flag == 1:
+                self.motion_update_PB(index, pybullet_env, particle_robot_id, real_robot_joint_pos)
+            else:
+                self.sim_robot_move_direct(index, pybullet_env, particle_robot_id, real_robot_joint_pos)
+        if simRobot_touch_par_flag == 0:
+            return
+
     def motion_update_PB(self, index, pybullet_env, particle_robot_id, real_robot_joint_pos):
 
         motion_time1 = time.time()
@@ -403,9 +419,9 @@ class PBPFMove():
             # change simulation time
             pf_update_interval_in_sim = BOSS_PF_UPDATE_INTERVAL_IN_REAL / SIM_TIME_STEP
             # make sure all particles are updated
-            for time_index in range(int(pf_update_interval_in_sim)):
-                self.set_real_robot_JointPosition(pybullet_env, particle_robot_id[index], real_robot_joint_pos)
-                pybullet_env.stepSimulation()
+            # for time_index in range(int(pf_update_interval_in_sim)):
+            self.set_real_robot_JointPosition(pybullet_env, particle_robot_id[index], real_robot_joint_pos)
+                # pybullet_env.stepSimulation()
         motion_time5 = time.time()
         
         ### ori: x,y,z,w
@@ -445,7 +461,7 @@ class PBPFMove():
         t5 = motion_time6 - motion_time5
         t6 = motion_time7 - motion_time6
         t7 = motion_time8 - motion_time7
-        print(t1, t2, t3, t4, t5, t6, t7)
+        # print(t1, t2, t3, t4, t5, t6, t7)
         # pipe.send()
 
     # observation model
@@ -1139,7 +1155,11 @@ class PBPFMove():
                 pybullet_env.resetJointState(robot_id[index],
                                              joint_index,
                                              targetValue=position[joint_index])
-    
+        pf_update_interval_in_sim = BOSS_PF_UPDATE_INTERVAL_IN_REAL / SIM_TIME_STEP
+        # make sure all particles are updated
+        for time_index in range(int(pf_update_interval_in_sim)):
+            pybullet_env.stepSimulation()
+        
     def pose_sim_robot_move(self, index, pybullet_env, particle_robot_id, real_robot_joint_pos):
         flag_set_sim = 1
         # ensure the robot arm in the simulation moves to the final state on each update
@@ -3125,7 +3145,7 @@ while reset_flag == True:
         # CVPF Pose list (motion model)
         boss_obs_pose_CVPF = []
         boss_est_pose_CVPF = []
-        rospy.init_node('PF_for_obse') # ros node
+        rospy.init_node('PBPF') # ros node
         signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
         # publish
         pub_ray_trace = rospy.Publisher('/ray_trace_list', particle_list, queue_size = 10)

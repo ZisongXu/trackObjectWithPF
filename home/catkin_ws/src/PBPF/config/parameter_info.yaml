@@ -18,10 +18,11 @@ gazebo_flag: false
 height: 480
 ignore_edge_pixels: false
 locate_camera_flag: ar
+motion_model_flag: normal
 multiprocessing_flag: false
 nearVal: 0.03
 object_name_list:
-- Mayo
+- soup
 - Parmesan
 - Milk
 object_num: 1

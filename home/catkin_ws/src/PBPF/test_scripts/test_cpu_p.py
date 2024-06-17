@@ -20,6 +20,7 @@ def set_real_robot_JointPosition(pybullet_env, robot):
     a4 = -2.1335976389165348
     a5 = random.uniform(-1, 1)
     a6 = random.uniform(-1, 1)
+    
     a7 = random.uniform(-1, 1)
     a8 = 0.00026791999698616564
     a9 = 0.00026791999698616564

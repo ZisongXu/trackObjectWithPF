@@ -109,7 +109,7 @@ class Create_Scene():
     #            self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)
                
     #        return self.pw_T_target_obj_obse_pose_lsit
-                
+        print_note_flag_list = [0] * self.target_obj_num
         for obj_index in range(self.target_obj_num):
             pw_T_rob_sim_4_4 = self.pw_T_rob_sim_pose_list[0].trans_matrix
             
@@ -120,26 +120,20 @@ class Create_Scene():
                 if self.dope_flag == True:
                     use_gazebo  = ""
             while_time = 0
-            print("self.object_name_list[obj_index]+use_gazebo")
-            print(self.object_name_list[obj_index]+use_gazebo)
+            print("Object Name:", self.object_name_list[obj_index]+use_gazebo)
             while True:
                 while_time = while_time + 1
                 if while_time > 1000:
-                    # print("WARNING: Problem happened in create_scene.py; maybe there is a problem on DOPE")
+                    if print_note_flag_list[obj_index] == 0:
+                        print("WARNING: Problem happened in create_scene.py; maybe there is a problem on DOPE:", self.object_name_list[obj_index]+use_gazebo)
+                        print_note_flag_list[obj_index] = 1
                     a = 1
-                    # if self.optitrack_flag == False:
-                    #     # mark
-                    #     trans_ob = [0, 0, 0]
-                    #     rot_ob = [0, 0, 0, 1]
-                    #     break
                 try:
                     (trans_ob, rot_ob) = self.listener.lookupTransform('/panda_link0', '/'+self.object_name_list[obj_index]+use_gazebo, rospy.Time(0))
                     break
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                     continue
                 
-                
-            
             rob_T_obj_obse_pos = list(trans_ob)
             rob_T_obj_obse_ori = list(rot_ob)
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
@@ -157,49 +151,6 @@ class Create_Scene():
             pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
             pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
-
-            # mark
-            # new camera 
-            # # 123_cracker_full_view.bag
-            # pw_T_obj_obse_pos = [0.37440226698353485, 0.14675928804436228, 0.7849156098144123]
-            # pw_T_obj_obse_ori = [ 0.56878298,  0.42443268,  0.56580163, -0.41977535]
-
-            # # 123_cracker_part_view2.bag
-            # pw_T_obj_obse_pos = [0.18252391836182735, 0.33187651313019706, 0.7869973436307546]
-            # pw_T_obj_obse_ori = [ 0.71052522, -0.00319479,  0.70363331,  0.00662347]
-
-            # # new_camera_CrackerSoup_forward1.bag
-            # if obj_index == 0:
-            #     pw_T_obj_obse_pos = [0.35106623337455206, 0.11037637137553352, 0.785094326764014]
-            #     pw_T_obj_obse_ori = [ 0.49906753, -0.50097175,  0.49368529,  0.50619535]
-            # else:
-            #     pw_T_obj_obse_pos = [0.3277490884717969, 0.17549837998726808, 0.7522391094604842]
-            #     pw_T_obj_obse_ori = [ 0.48764897, -0.50314893,  0.5173022,  -0.49136347]
-
-            # # scene1_new_camera_CrackerSoup_forward1.bag
-            # if obj_index == 0:
-            #     pw_T_obj_obse_pos = [0.3530564916539339, 0.10202786568428801, 0.7851134776774439]
-            #     pw_T_obj_obse_ori = [ 0.51761982, -0.48230897,  0.51148509,  0.48767898]
-            # else:
-            #     pw_T_obj_obse_pos = [0.3296020231274054, 0.17187127391179968, 0.7520476669087216]
-            #     pw_T_obj_obse_ori = [-0.56827916,  0.41034249, -0.42237669,  0.57469624]
-
-            # scene1_new_camera_CrackerSoup_forward3.bag
-            # if obj_index == 0:
-            #     pw_T_obj_obse_pos = [0.3893924609074244, -0.21022350625694902, 0.785282766303468]
-            #     pw_T_obj_obse_ori = [ 0.53710751, -0.46540461, 0.52534194, 0.46789948]
-            # else:
-            #     pw_T_obj_obse_pos = [0.3467758914563732, -0.1388689332545438, 0.7524848334935383]
-            #     pw_T_obj_obse_ori = [ 0.3345468, -0.61351791, 0.63265501, -0.3337991 ]
-
-            # # 2_scene2_new_camera_CrackerSoup_forward1.bag
-            # if obj_index == 0:
-            #     pw_T_obj_obse_pos = [0.35108837862799647, 0.11018339461147109, 0.7849158766269709]
-            #     pw_T_obj_obse_ori = [ 0.49921844, -0.50106989,  0.49336073,  0.50626584]
-            # else:
-            #     pw_T_obj_obse_pos = [0.3277494122064969, 0.17539807438080324, 0.7521003072520422]
-            #     pw_T_obj_obse_ori = [ 0.48727611, -0.50387013,  0.51681075, -0.49151148]
-
 
             obse_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
             self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)
@@ -270,9 +221,6 @@ class Create_Scene():
             pw_T_other_nt_opti = Object_Pose(objs_not_touching_target_objs_name, 0, pw_T_other_nt_pos, pw_T_other_nt_ori, oto_index)
             self.pw_T_objs_not_touching_targetObjs_list.append(pw_T_other_nt_opti)
 
-            # print(pw_T_other_nt_pos)
-            # print(pw_T_other_nt_ori)
-            # input("stop")
 
         return self.pw_T_objs_not_touching_targetObjs_list
 

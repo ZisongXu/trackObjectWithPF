@@ -66,6 +66,7 @@ from Franka_robot import Franka_robot
 from Ros_Listener import Ros_Listener
 from Particle import Particle
 from InitialSimulationModel import InitialSimulationModel
+from SingleENV import SingleENV
 from Realworld import Realworld
 from Visualisation_World import Visualisation_World
 from Create_Scene import Create_Scene
@@ -86,7 +87,7 @@ with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"),
 
 gazebo_flag = parameter_info['gazebo_flag']
 # scene
-task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
+TASK_FLAG = parameter_info['task_flag'] # parameter_info['task_flag']
 # which algorithm to run
 run_alg_flag = parameter_info['run_alg_flag'] # PBPF/CVPF
 # update mode (pose/time)
@@ -137,7 +138,7 @@ IGNORE_EDGE_PIXELS = parameter_info['ignore_edge_pixels']
 
 COMPARE_DEPTH_IMG_VK = parameter_info['compare_depth_img_vk']
 VISIBILITY_COMPUTE_SEPARATE_FLAG = parameter_info['visibility_compute_separate_flag']
-MOTION_MODEL_FLAG = parameter_info['motion_model_flag'] # thread/multiprocess/normal
+PROCESS_MODEL_FLAG = parameter_info['process_model_flag'] # thread/multiprocess/normal
 
 RECORD_RESULTS_FLAG = parameter_info['record_results_flag'] 
 
@@ -206,12 +207,19 @@ class PBPFMove():
             self.setup_camera_info()
         # initialize internal parameters
         self.obj_num = obj_num
-        self.particle_cloud = copy.deepcopy(initial_parameter.particle_cloud)
-        self.particle_no_visual_id_collection = copy.deepcopy(initial_parameter.particle_no_visual_id_collection)
-        self.pybullet_env_id_collection = copy.deepcopy(initial_parameter.pybullet_particle_env_collection)
-        self.pybullet_sim_fake_robot_id_collection = copy.deepcopy(initial_parameter.fake_robot_id_collection)
-        self.pybullet_sim_env_fix_obj_id_collection = copy.deepcopy(initial_parameter.env_fix_obj_id_collection)
-        self.pybullet_sim_other_object_id_collection = copy.deepcopy(initial_parameter.other_object_id_collection)
+        self.particle_cloud = 0
+        self.particle_no_visual_id_collection = 0
+        self.pybullet_env_id_collection = 0
+        self.pybullet_sim_fake_robot_id_collection = 0
+        self.pybullet_sim_env_fix_obj_id_collection = 0
+        self.pybullet_sim_other_object_id_collection = 0
+
+        # self.particle_cloud = copy.deepcopy(initial_parameter.particle_cloud)
+        # self.particle_no_visual_id_collection = copy.deepcopy(initial_parameter.particle_no_visual_id_collection)
+        # self.pybullet_env_id_collection = copy.deepcopy(initial_parameter.pybullet_particle_env_collection)
+        # self.pybullet_sim_fake_robot_id_collection = copy.deepcopy(initial_parameter.fake_robot_id_collection)
+        # self.pybullet_sim_env_fix_obj_id_collection = copy.deepcopy(initial_parameter.env_fix_obj_id_collection)
+        # self.pybullet_sim_other_object_id_collection = copy.deepcopy(initial_parameter.other_object_id_collection)
 
         self.joint_num = 7
         self.object_estimate_pose_x = []
@@ -249,7 +257,7 @@ class PBPFMove():
             real_robot_joint_list.append(real_robot_info)
         return real_robot_joint_list
         
-    def set_real_robot_JointPosition(self, pybullet_env, robot, position):
+    def move_robot_JointPosition(self, pybullet_env, robot, position):
         num_joints = 9
         for joint_index in range(num_joints):
             if joint_index == 7 or joint_index == 8:
@@ -275,9 +283,6 @@ class PBPFMove():
     
     # executed_control
     def update_particle_filter_PB(self, real_robot_joint_pos, pw_T_obj_obse_objects_pose_list):
-        global flag_record_obse
-        global flag_record_PBPF
-        global flag_record
         global _record_time_list
         self.rays_id_list = []
 
@@ -324,7 +329,7 @@ class PBPFMove():
         # Compute mean of particles
         object_estimate_pose, dis_std_list, ang_std_list = self.compute_estimate_pos_of_object(self.particle_cloud)
         # publish pose of particles
-        publish_par_pose_info(self.particle_cloud)
+        _publish_par_pose_info(self.particle_cloud)
         publish_esti_pose_info(object_estimate_pose)
 
         if RECORD_RESULTS_FLAG == True:
@@ -341,11 +346,11 @@ class PBPFMove():
 
     # motion model
     def motion_model(self, pybullet_sim_envs, particle_robot_id, real_robot_joint_pos):  
-        if MOTION_MODEL_FLAG == "thread": # thread/multiprocess/normal
+        if PROCESS_MODEL_FLAG == "thread": # thread/multiprocess/normal
             self.motion_update_PB_threads(pybullet_sim_envs, particle_robot_id, real_robot_joint_pos)
-        elif MOTION_MODEL_FLAG == "multiprocess":
+        elif PROCESS_MODEL_FLAG == "multiprocess":
             self.motion_update_PB_MultiProcesses(pybullet_sim_envs, particle_robot_id, real_robot_joint_pos)
-        elif MOTION_MODEL_FLAG == "normal":
+        elif PROCESS_MODEL_FLAG == "normal":
             self.motion_update_PB_Normal(pybullet_sim_envs, particle_robot_id, real_robot_joint_pos)
 
     def motion_update_PB_threads(self, pybullet_sim_envs, particle_robot_id, real_robot_joint_pos):
@@ -420,7 +425,7 @@ class PBPFMove():
             pf_update_interval_in_sim = BOSS_PF_UPDATE_INTERVAL_IN_REAL / SIM_TIME_STEP
             # make sure all particles are updated
             # for time_index in range(int(pf_update_interval_in_sim)):
-            self.set_real_robot_JointPosition(pybullet_env, particle_robot_id[index], real_robot_joint_pos)
+            self.move_robot_JointPosition(pybullet_env, particle_robot_id[index], real_robot_joint_pos)
                 # pybullet_env.stepSimulation()
         motion_time5 = time.time()
         
@@ -1005,7 +1010,6 @@ class PBPFMove():
                 pw_T_par_sim_pw_env = self.pybullet_env_id_collection[index]
                 # pw_T_par_sim_id = self.particle_no_visual_id_collection[index][obj_index]
                 pw_T_par_sim_id = particle[obj_index].no_visual_par_id
-                # sim_par_cur_pos, sim_par_cur_ori = self.get_item_pos(self.pybullet_env_id_collection[index], pw_T_par_sim_id)
                 sim_par_cur_pos, sim_par_cur_ori = self.get_item_pos(pw_T_par_sim_pw_env, pw_T_par_sim_id)
 
                 # check contact 
@@ -1059,7 +1063,7 @@ class PBPFMove():
                     dis_y = abs(particle_y - obse_obj_pos[1])
                     dis_z = abs(particle_z - obse_obj_pos[2])
                     dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
-                    weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
+                    weight_xyz = self.normal_distribution(dis_xyz, mean, BOSS_SIGMA_OBS_POS)
                     # rotation weight
                     obse_obj_quat = Quaternion(x=obse_obj_ori_corr[0], 
                                             y=obse_obj_ori_corr[1], 
@@ -1076,7 +1080,7 @@ class PBPFMove():
                     sin_theta_over_2 = math.sqrt(err_bt_par_obse_corr_quat.x ** 2 + err_bt_par_obse_corr_quat.y ** 2 + err_bt_par_obse_corr_quat.z ** 2)
                     theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
                     theta = theta_over_2 * 2.0
-                    weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
+                    weight_ang = self.normal_distribution(theta, mean, BOSS_SIGMA_OBS_ANG)
                     
                     weight = weight_xyz * weight_ang
 
@@ -1166,7 +1170,7 @@ class PBPFMove():
         while not rospy.is_shutdown():
             if flag_set_sim == 0:
                 break
-            self.set_real_robot_JointPosition(pybullet_env, particle_robot_id[index], real_robot_joint_pos)
+            self.move_robot_JointPosition(pybullet_env, particle_robot_id[index], real_robot_joint_pos)
             pybullet_env.stepSimulation()
             real_rob_joint_list_cur = self.get_real_robot_joint(pybullet_env, particle_robot_id[index])
             flag_set_sim = self.compare_rob_joint(real_rob_joint_list_cur, real_robot_joint_pos)
@@ -1242,8 +1246,8 @@ class PBPFMove():
         new_quat = nois_quat * quat_QuatStyle
         ###pb_quat(x,y,z,w)
         pb_quat = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
-        new_angle = p_sim.getEulerFromQuaternion(pb_quat)
-        P_quat = p_sim.getQuaternionFromEuler(new_angle)
+        new_angle = p.getEulerFromQuaternion(pb_quat)
+        P_quat = p.getQuaternionFromEuler(new_angle)
         # pipe.send()
         return normal_x, normal_y, normal_z, P_quat
     
@@ -1436,19 +1440,19 @@ class PBPFMove():
     
     # change particle parameters
     def change_obj_parameters(self, pybullet_env, par_id):
-        mass_a = self.take_easy_gaussian_value(mass_mean, mass_sigma)
+        mass_a = self.take_easy_gaussian_value(MASS_MEAN, MASS_SIGMA)
         if mass_a < 0.001:
             mass_a = 0.05
-        lateralFriction = self.take_easy_gaussian_value(friction_mean, friction_sigma)
-        spinningFriction = self.take_easy_gaussian_value(friction_mean, friction_sigma)
-        rollingFriction = self.take_easy_gaussian_value(friction_mean, friction_sigma)
+        lateralFriction = self.take_easy_gaussian_value(FRICTION_MEAN, FRICTION_SIGMA)
+        spinningFriction = self.take_easy_gaussian_value(FRICTION_MEAN, FRICTION_SIGMA)
+        rollingFriction = self.take_easy_gaussian_value(FRICTION_MEAN, FRICTION_SIGMA)
         if lateralFriction < 0.001:
             lateralFriction = 0.001
         if spinningFriction < 0.001:
             spinningFriction = 0.001
         if rollingFriction < 0.001:
             rollingFriction = 0.001
-        restitution = self.take_easy_gaussian_value(restitution_mean, restitution_sigma)
+        restitution = self.take_easy_gaussian_value(RESTITUTION_MEAN, RESTITUTION_SIGMA)
         # if restitution > 1:
         # mass_a = 0.351
         # fricton_b = 0.30
@@ -1470,14 +1474,14 @@ class PBPFMove():
 
     def add_noise_2_par(self,current_pos):
         mean = current_pos
-        sigma = pos_noise
+        sigma = POS_NOISE
         new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_pos_is_added_noise
 
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
-        sigma = boss_sigma_obs_ang
-        sigma = ang_noise
+        sigma = BOSS_SIGMA_OBS_ANG
+        sigma = ANG_NOISE
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
 
@@ -1791,11 +1795,18 @@ class CVPFMove():
     def __init__(self, obj_num=0):
         # init internals   
         self.obj_num = obj_num
-        self.particle_cloud_CV = copy.deepcopy(initial_parameter.particle_cloud_CV)
-        self.particle_no_visual_id_collection_CV = copy.deepcopy(initial_parameter.particle_no_visual_id_collection_CV)
-        self.pybullet_env_id_collection_CV = copy.deepcopy(initial_parameter.pybullet_particle_env_collection_CV)
-        self.pybullet_sim_fake_robot_id_collection = copy.deepcopy(initial_parameter.fake_robot_id_collection)
-        self.pybullet_sim_other_object_id_collection = copy.deepcopy(initial_parameter.other_object_id_collection)
+        self.particle_cloud_CV = 0
+        self.particle_no_visual_id_collection_CV = 0
+        self.pybullet_env_id_collection_CV = 0
+        self.pybullet_sim_fake_robot_id_collection = 0
+        self.pybullet_sim_other_object_id_collection = 0
+
+        # self.particle_cloud_CV = copy.deepcopy(initial_parameter.particle_cloud_CV)
+        # self.particle_no_visual_id_collection_CV = copy.deepcopy(initial_parameter.particle_no_visual_id_collection_CV)
+        # self.pybullet_env_id_collection_CV = copy.deepcopy(initial_parameter.pybullet_particle_env_collection_CV)
+        # self.pybullet_sim_fake_robot_id_collection = copy.deepcopy(initial_parameter.fake_robot_id_collection)
+        # self.pybullet_sim_other_object_id_collection = copy.deepcopy(initial_parameter.other_object_id_collection)
+
         self.object_estimate_pose_x = []
         self.object_estimate_pose_y = []
         self.object_real_____pose_x = []
@@ -1812,8 +1823,6 @@ class CVPFMove():
 
     # executed_control
     def update_particle_filter_CV(self, pw_T_obj_obse_objects_pose_list):
-        global flag_record_CVPF
-        global flag_record
         global _record_time_list
         # motion model
         self.motion_update_CV(pw_T_obj_obse_objects_pose_list)
@@ -1833,7 +1842,7 @@ class CVPFMove():
         boss_est_pose_CVPF.append(object_estimate_pose_CV)
 
         # publish pose of particles
-        publish_par_pose_info(self.particle_cloud_CV)
+        _publish_par_pose_info(self.particle_cloud_CV)
         publish_esti_pose_info(object_estimate_pose_CV)
         if RECORD_RESULTS_FLAG == True:
             _record_t_PBPF = time.time()
@@ -1929,7 +1938,7 @@ class CVPFMove():
                 dis_y = abs(particle_y - obse_obj_pos[1])
                 dis_z = abs(particle_z - obse_obj_pos[2])
                 dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
-                weight_xyz = self.normal_distribution(dis_xyz, mean, boss_sigma_obs_pos)
+                weight_xyz = self.normal_distribution(dis_xyz, mean, BOSS_SIGMA_OBS_POS)
                 # rotation weight    
                 par_ori = quaternion_correction(particle[obj_index].ori)
                 obse_obj_quat = Quaternion(x=obse_obj_ori_corr[0], 
@@ -1942,7 +1951,7 @@ class CVPFMove():
                 sin_theta_over_2 = math.sqrt(err_bt_par_obse.x ** 2 + err_bt_par_obse.y ** 2 + err_bt_par_obse.z ** 2)
                 theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
                 theta = theta_over_2 * 2
-                weight_ang = self.normal_distribution(theta, mean, boss_sigma_obs_ang)
+                weight_ang = self.normal_distribution(theta, mean, BOSS_SIGMA_OBS_ANG)
                 weight = weight_xyz * weight_ang
             
                 particle[obj_index].w = weight
@@ -2004,14 +2013,14 @@ class CVPFMove():
 
     def add_noise_2_par(self,current_pos):
         mean = current_pos
-        sigma = pos_noise
+        sigma = POS_NOISE
         new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_pos_is_added_noise
     
     def add_noise_2_ang(self,cur_angle):
         mean = cur_angle
-        sigma = boss_sigma_obs_ang
-        sigma = ang_noise
+        sigma = BOSS_SIGMA_OBS_ANG
+        sigma = ANG_NOISE
         new_angle_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_angle_is_added_noise
 
@@ -2299,10 +2308,9 @@ def compute_ang_err_bt_2_points(object1_ori, object2_ori):
     return theta
 
 def compute_diff_bt_two_pose(obj_index, particle_cloud_pub, pw_T_obj_obse_pose_new):
-    par_cloud_for_compute = copy.deepcopy(particle_cloud_pub)
-    obj_obse_pose_new = copy.deepcopy(pw_T_obj_obse_pose_new)
-    obj_obse_pos_new = obj_obse_pose_new[0]
-    obj_obse_ori_new = obj_obse_pose_new[1]
+    par_cloud_for_compute = particle_cloud_pub
+    obj_obse_pos_new = pw_T_obj_obse_pose_new[0]
+    obj_obse_ori_new = pw_T_obj_obse_pose_new[1]
     par_dis_list = []
     par_ang_list = []
     par_cloud_length = len(par_cloud_for_compute)
@@ -2417,7 +2425,7 @@ def _get_quaternion_from_matrix(a_T_b_4_4):
 #    par_list.particles = par_pose_list
 #    pub_ray_trace.publish(par_list)
 
-def publish_par_pose_info(particle_cloud_pub):
+def _publish_par_pose_info(particle_cloud_pub):
     global _par_panda_step
     par_pose_list = list(range(PARTICLE_NUM))
     rob_par_pose_list = list(range(PARTICLE_NUM))
@@ -2432,13 +2440,12 @@ def publish_par_pose_info(particle_cloud_pub):
         for obj_index in range(OBJECT_NUM):
             obj_info = particle_cloud_pub[par_index][obj_index]
             if RECORD_RESULTS_FLAG == True:
-                obj = obj_info.par_name
-                scene = "scene"+str(task_flag)
-                obj_scene = obj_info.par_name+"_scene"+str(task_flag)
                 obj_name = obj_info.par_name
+                scene = "scene"+str(TASK_FLAG)
+                obj_scene = obj_info.par_name+"_scene"+str(TASK_FLAG)
                 _record_t = time.time()
                 # x, y, z ,w
-                _boss_par_err_ADD_df_list[par_index].loc[_par_panda_step] = [_par_panda_step, _record_t - _record_t_begin, obj_info.pos[0], obj_info.pos[1], obj_info.pos[2], obj_info.ori[0], obj_info.ori[1], obj_info.ori[2], obj_info.ori[3], RUNNING_MODEL, obj, scene, PARTICLE_NUM, VERSION, obj_name]
+                _boss_par_err_ADD_df_list[par_index].loc[_par_panda_step] = [_par_panda_step, _record_t - _record_t_begin, obj_info.pos[0], obj_info.pos[1], obj_info.pos[2], obj_info.ori[0], obj_info.ori[1], obj_info.ori[2], obj_info.ori[3], RUNNING_MODEL, obj_name, scene, PARTICLE_NUM, VERSION, obj_name]
                 _par_panda_step = _par_panda_step + 1
     
             pw_T_par_pos = [obj_info.pos[0], obj_info.pos[1], obj_info.pos[2]]
@@ -2506,8 +2513,8 @@ def publish_esti_pose_info(estimated_object_set):
 
         if RECORD_RESULTS_FLAG == True:
             obj = esti_obj_info.obj_name
-            scene = "scene"+str(task_flag)
-            obj_scene = esti_obj_info.obj_name+"_scene"+str(task_flag)
+            scene = "scene"+str(TASK_FLAG)
+            obj_scene = esti_obj_info.obj_name+"_scene"+str(TASK_FLAG)
             obj_name = esti_obj_info.obj_name
             _record_t = time.time()
             # x, y, z ,w
@@ -2537,7 +2544,7 @@ def publish_esti_pose_info(estimated_object_set):
 def process_esti_pose_from_rostopic(estimated_object_set):
     esti_pose_list = []
     for obj_index in range(OBJECT_NUM):
-        esti_obj_info = copy.deepcopy(estimated_object_set[obj_index])
+        esti_obj_info = estimated_object_set[obj_index]
         esti_obj_pos_x = esti_obj_info.pos[0]
         esti_obj_pos_y = esti_obj_info.pos[1]
         esti_obj_pos_z = esti_obj_info.pos[2]
@@ -2597,37 +2604,17 @@ def generate_point_for_ray(pw_T_c_pos, pw_T_parC_4_4, obj_index):
 
 # get pose of the end-effector of the robot arm from joints of robot arm 
 def track_fk_sim_world():
-    # if SHOW_RAY == True:
-    #     p_track_fk_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT,GUI_SERVER
-    # else:
-    #     p_track_fk_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
     p_track_fk_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
     p_track_fk_env.setAdditionalSearchPath(pybullet_data.getDataPath())
-    track_fk_plane_id = p_track_fk_env.loadURDF("plane.urdf")
-    p_track_fk_env.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=90, cameraPitch=-20, cameraTargetPosition=[0.3,0.1,0.2])
-    
     if SIM_REAL_WORLD_FLAG == True:
         table_pos_1 = [0.46, -0.01, 0.710]
-        table_ori_1 = p_track_fk_env.getQuaternionFromEuler([0,0,0])
-        table_id_1 = p_track_fk_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1, useFixedBase = 1)
     else:
         table_pos_1 = [0, 0, 0]
     track_fk_rob_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
                                               [0, 0, 0.02+table_pos_1[2]],
                                               [0, 0, 0, 1],
                                               useFixedBase=1)
-
-    # if task_flag == "1":
-    #     track_fk_obst_big_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/object/others/pringles.urdf"),
-    #                                                pw_T_pringles_opti_pos_big,
-    #                                                pw_T_pringles_opti_ori_big,
-    #                                                useFixedBase=1)
-    #     # track_fk_obst_small_id = p_track_fk_env.loadURDF(os.path.expanduser("~/project/object/cracker/cracker_obstacle_small.urdf"),
-    #     #                                            pw_T_obst_opti_pos_small,
-    #     #                                            pw_T_obst_opti_ori_small,
-    #     #                                            useFixedBase=1)
-    
-    return p_track_fk_env, track_fk_rob_id, track_fk_plane_id
+    return p_track_fk_env, track_fk_rob_id
 
 def track_fk_world_rob_mv(p_sim, sim_rob_id, position):
     num_joints = 9
@@ -2665,6 +2652,40 @@ def _get_camera_intrinsic_params(camera_info_topic_name):
     Camera = namedtuple("Camera", "fx fy cx cy image_height image_width")
     camera_intrinsic_parameters = Camera(fx, fy, cx, cy, image_height, image_width)
     return camera_intrinsic_parameters 
+
+def _compute_estimate_pos_of_object(particle_cloud):
+    esti_objs_cloud = []
+    for obj_index in range(OBJECT_NUM):
+        x_set = 0
+        y_set = 0
+        z_set = 0
+        w_set = 0
+        quaternions = []
+        qws = []
+        for index, particle in enumerate(particle_cloud):
+            x_set = x_set + particle[obj_index].pos[0] * particle[obj_index].w
+            y_set = y_set + particle[obj_index].pos[1] * particle[obj_index].w
+            z_set = z_set + particle[obj_index].pos[2] * particle[obj_index].w
+            q = quaternion_correction(particle[obj_index].ori)
+            qws.append(particle[obj_index].w)
+            quaternions.append([q[0], q[1], q[2], q[3]])
+            w_set = w_set + particle[obj_index].w
+        q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
+        ###################################
+        esti_obj_pos_x = x_set/w_set
+        esti_obj_pos_y = y_set/w_set
+        esti_obj_pos_z = z_set/w_set
+        esti_obj_pos = [esti_obj_pos_x, esti_obj_pos_y, esti_obj_pos_z]
+        esti_obj_ori_x = q[0]
+        esti_obj_ori_y = q[1]
+        esti_obj_ori_z = q[2]
+        esti_obj_ori_w = q[3]
+        esti_obj_ori = [esti_obj_ori_x, esti_obj_ori_y, esti_obj_ori_z, esti_obj_ori_w]
+        ###################################
+        est_obj_pose = Object_Pose(OBJECT_NAME_LIST[obj_index], obj_index, esti_obj_pos, esti_obj_ori, obj_index)
+        esti_objs_cloud.append(est_obj_pose)
+    return esti_objs_cloud
+
 
 def _vk_config_setting():
     depth_img_height = RESOLUTION_DEPTH[0] # 480
@@ -2781,7 +2802,7 @@ def _vk_load_meshes():
     other_obj_id = _vk_context.load_model("assets/meshes/barrier.vkdepthmesh")
     vk_other_id_list.append(other_obj_id)
     # pringles
-    if task_flag == '1':
+    if TASK_FLAG == '1':
         other_obj_id = _vk_context.load_model("assets/meshes/pringles.vkdepthmesh")
         vk_other_id_list.append(other_obj_id)
 
@@ -2895,7 +2916,7 @@ def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4, pybullet_env, par_robot
                               barrier_pos_3[0], barrier_pos_3[1], barrier_pos_3[2],
                               barrier_ori_3[3], barrier_ori_3[0], barrier_ori_3[1], barrier_ori_3[2]) # w, x, y, z
         # pringles
-        if task_flag == '1':
+        if TASK_FLAG == '1':
             pringles_pos_1 = [0.6652218209791124, 0.058946644391304814, 0.8277292172960276]
             pringles_ori_1 = [ 0.67280124, -0.20574896, -0.20600051, 0.68012472] # x, y, z, w
             vk_state.add_instance(_vk_other_id_list[5],
@@ -3031,6 +3052,26 @@ def _vk_update_depth_image(vk_state_list, vk_single_obj_state_list, vk_particle_
         #     objs_states[OBJECT_NUM+PANDA_ROBOT_LINK_NUMBER+other_obj_index, 6] = table_ori_1[1] # y_ori
         #     objs_states[OBJECT_NUM+PANDA_ROBOT_LINK_NUMBER+other_obj_index, 7] = table_ori_1[2] # z_ori
 
+def create_particles(object_num, robot_num, particle_num,
+                     pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
+                     update_style_flag, sim_time_step, boss_pf_update_interval_in_real):
+    manager = multiprocessing.Manager()
+    single_envs_ = {i: SingleENV(object_num, robot_num, particle_num,
+                                 pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
+                                 update_style_flag, sim_time_step, boss_pf_update_interval_in_real,
+                                 manager.dict()) for i in range(particle_num)}
+    for _, single_env in single_envs_.items():
+        single_env.start()
+    return single_envs_
+
+def wait_and_get_result_from(single_env):
+    while True:
+        with single_env.lock:
+            if len(single_env.result) > 0 and single_env.queue.empty():
+                result = single_env.result.copy()
+                single_env.result.clear()
+                return result
+
 # ctrl-c write down the error file
 def signal_handler(sig, frame):
 
@@ -3104,9 +3145,9 @@ def signal_handler(sig, frame):
             file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/')
             obj_name = OBJECT_NAME_LIST[obj_index]
 
-            file_name_PBPF_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+'.csv'
-            file_name_obse_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_obse_pose_'+RUNNING_MODEL+'.csv'
-            file_name_GT_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_GT_pose_'+RUNNING_MODEL+'.csv'
+            file_name_PBPF_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+'.csv'
+            file_name_obse_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_obse_pose_'+RUNNING_MODEL+'.csv'
+            file_name_GT_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_GT_pose_'+RUNNING_MODEL+'.csv'
 
             _boss_PBPF_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_PBPF_ADD,index=0,header=0,mode='w')
             
@@ -3119,889 +3160,784 @@ def signal_handler(sig, frame):
         for par_index in range(PARTICLE_NUM):
             file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/'+OBJECT_NAME_LIST[0]+'/')
             # file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/')
-            file_name_par_ADD = str(PARTICLE_NUM)+"_scene"+task_flag+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+"_"+str(par_index)+'.csv'
+            file_name_par_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+"_"+str(par_index)+'.csv'
             
             _boss_par_err_ADD_df_list[par_index].to_csv(file_save_path+file_name_par_ADD,index=0,header=0,mode='w')
             print("write Particle file (should include all objects): "+RUNNING_MODEL)
     
     print("")
-    print(" ------------------------------------------ ")
-    print("|                                          |")
-    print("|             Thanks for using             |")
-    print("|              our PBPF code!              |")
-    print("|                                          |")
-    print("| Zisong Xu, Rafael Papallas, Mehmet Dogar |")
-    print("|         From Universtiy of Leeds         |")
-    print("|                                          |")
-    print(" ------------------------------------------ ")
+    print(" -------------------------------------------- ")
+    print("|                                            |")
+    print("|              Thanks for using              |")
+    print("|               our PBPF code!               |")
+    print("|                                            |")
+    print("| Zisong Xu, Rafael Papallas, Jaina Modisett |")
+    print("|    Markus Billeter, and Mehmet R. Dogar    |")
+    print("|          From Universtiy of Leeds          |")
+    print("|                                            |")
+    print(" -------------------------------------------- ")
     sys.exit()
 
+if __name__ == '__main__':
+    # CVPF Pose list (motion model)
+    boss_obs_pose_CVPF = []
+    boss_est_pose_CVPF = []
+    rospy.init_node('PBPF') # ros node
+    signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
+    # publish
+    pub_ray_trace = rospy.Publisher('/ray_trace_list', particle_list, queue_size = 10)
+    ray_trace_list = particle_list()
+    pub_par_pose = rospy.Publisher('/par_list', particle_list, queue_size = 10)
+    par_list = particle_list()
+    rob_pub_par_pose = rospy.Publisher('/rob_par_list', particle_list, queue_size = 10)
+    rob_par_list = particle_list()
+    pub_esti_pose = rospy.Publisher('/esti_obj_list', estimated_obj_pose, queue_size = 10)
+    esti_obj_list = estimated_obj_pose()
+    pub_depth_image = rospy.Publisher("/camera/particle_depth_image_converted", Image, queue_size=5)
+    # pub_depth_image_list = []
+    # for pointcloud_index in range(PARTICLE_NUM):
+    #     pub_depth_image = rospy.Publisher("/camera/particle_depth_image_converted_"+str(pointcloud_index), Image, queue_size=5)
+    #     pub_depth_image_list.append(pub_depth_image)
+    particle_depth_image_converted = Image()
+    
+    # only for drawing box
+    publish_DOPE_pose_flag = True
 
-reset_flag = True
+    if RUNNING_MODEL == "PBPF_RGB":
+        USING_RGB_FLAG = True
+        USING_D_FLAG = False
+    elif RUNNING_MODEL == "PBPF_RGBD":
+        USING_RGB_FLAG = True
+        USING_D_FLAG = True
+    else: # PBPF_D
+        USING_RGB_FLAG = False
+        USING_D_FLAG = True
 
-while reset_flag == True:
-    reset_flag = False
-    if __name__ == '__main__':
-        # CVPF Pose list (motion model)
-        boss_obs_pose_CVPF = []
-        boss_est_pose_CVPF = []
-        rospy.init_node('PBPF') # ros node
-        signal.signal(signal.SIGINT, signal_handler) # interrupt judgment
-        # publish
-        pub_ray_trace = rospy.Publisher('/ray_trace_list', particle_list, queue_size = 10)
-        ray_trace_list = particle_list()
-        pub_par_pose = rospy.Publisher('/par_list', particle_list, queue_size = 10)
-        par_list = particle_list()
-        rob_pub_par_pose = rospy.Publisher('/rob_par_list', particle_list, queue_size = 10)
-        rob_par_list = particle_list()
-        pub_esti_pose = rospy.Publisher('/esti_obj_list', estimated_obj_pose, queue_size = 10)
-        esti_obj_list = estimated_obj_pose()
-        pub_depth_image = rospy.Publisher("/camera/particle_depth_image_converted", Image, queue_size=5)
+    _particle_update_time = 0
+
+    if run_alg_flag == 'CVPF':
+        PARTICLE_NUM = 150
+    
+    # ============================================================================
+    # get camera intrinsic info
+    # CAMERA_INFO_TOPIC_COLOR: "/camera/color/camera_info"
+    # CAMERA_INFO_TOPIC_DEPTH: "/camera/depth/camera_info"
+    camera_intrinsic_parameters_color = _get_camera_intrinsic_params(CAMERA_INFO_TOPIC_COLOR)
+    camera_intrinsic_parameters_depth = _get_camera_intrinsic_params(CAMERA_INFO_TOPIC_DEPTH)
+
+    HEIGHT_DEPTH = camera_intrinsic_parameters_depth.image_height # 720/480
+    WIDTH_DEPTH = camera_intrinsic_parameters_depth.image_width # 1280/848
+    CX_DEPTH = camera_intrinsic_parameters_depth.cx
+    CY_DEPTH = camera_intrinsic_parameters_depth.cy
+    FX_DEPTH = camera_intrinsic_parameters_depth.fx
+    FY_DEPTH = camera_intrinsic_parameters_depth.fy
+    
+    FOV_H_DEPTH = math.degrees(2 * math.atan(WIDTH_DEPTH / (2*FX_DEPTH))) # fov: horizontal / x
+    FOV_V_DEPTH = math.degrees(2 * math.atan(HEIGHT_DEPTH / (2*FY_DEPTH))) # fov: vertical / y
+    
+    RESOLUTION_DEPTH = (HEIGHT_DEPTH, WIDTH_DEPTH) # 480 848
+    # ============================================================================
+
+    pub_DOPE_list = []
+    pub_PBPF_list = []
+    for obj_index in range(OBJECT_NUM):
+        pub_DOPE = rospy.Publisher('DOPE_pose_'+OBJECT_NAME_LIST[obj_index], PoseStamped, queue_size = 1)
+        pub_PBPF = rospy.Publisher('PBPF_pose_'+OBJECT_NAME_LIST[obj_index], PoseStamped, queue_size = 1)
+        pub_DOPE_list.append(pub_DOPE)
+        pub_PBPF_list.append(pub_PBPF)
+    
+    print("This is "+UPDATE_STYLE_FLAG+" update in scene"+TASK_FLAG)    
+    # some parameters
+    d_thresh = 0.005
+    a_thresh = 0.01
+    d_thresh_obse = 0.15
+    a_thresh_obse = math.pi * 2 / 3.0
+    d_thresh_CV = 0.0002
+    a_thresh_CV = 0.0010
+
+    flag_update_num_CV = 0
+    flag_update_num_PB = 0
+    
+    if run_alg_flag == "PBPF" and VERSION == "old" and USING_D_FLAG == False:
+        print("1: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION, "; USING_D_FLAG: ", USING_D_FLAG)
+        BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.05 # original value = 0.16
+        PF_UPDATE_TIME_ONCE = BOSS_PF_UPDATE_INTERVAL_IN_REAL # rosbag slow down 0.125
+    # elif run_alg_flag == "PBPF" and VERSION == "multiray" and USING_D_FLAG == False:
+    elif RUNNING_MODEL == "PBPF_RGB":
+        print("2: RUNNING_MODEL:", RUNNING_MODEL)
+        BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.16 # original value = 0.16
+        PF_UPDATE_TIME_ONCE = BOSS_PF_UPDATE_INTERVAL_IN_REAL # 70 particles -> 2s
+    elif RUNNING_MODEL == "PBPF_RGBD" and VK_RENDER_FLAG == True:
+        print("3: RUNNING_MODEL (VK):", RUNNING_MODEL)
+        BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.16 # original value = 0.16 
+        PF_UPDATE_TIME_ONCE = BOSS_PF_UPDATE_INTERVAL_IN_REAL # 70 particles -> 35s
+    elif RUNNING_MODEL == "PBPF_RGBD" and PB_RENDER_FLAG == True:
+        print("3: RUNNING_MODEL (PB):", RUNNING_MODEL)
+        BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.30 # original value = 0.16 
+        PF_UPDATE_TIME_ONCE = BOSS_PF_UPDATE_INTERVAL_IN_REAL # 70 particles -> 35s
+    else: # run_alg_flag == "CVPF":
+        print("4: RUNNING_MODEL:", RUNNING_MODEL)
+        BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.16 # original value = 0.16
+        PF_UPDATE_TIME_ONCE = BOSS_PF_UPDATE_INTERVAL_IN_REAL # rosbag slow down 0.02 0.3*(1/0.02)=15s
+    PF_UPDATE_RATE = rospy.Rate(1.0/PF_UPDATE_TIME_ONCE)
+    print("PF_UPDATE_TIME_ONCE")
+    print(PF_UPDATE_TIME_ONCE)
+
+    # Motion model Noise
+    POS_NOISE = 0.01 # original value = 0.005
+    ANG_NOISE = 0.1 # original value = 0.05
+    MOTION_NOISE = True
+    
+    # Standard deviation of computing the weight
+    
+    for obj_index in range(OBJECT_NUM):
+        object_name = OBJECT_NAME_LIST[obj_index]
+        if object_name == "cracker":
+            BOSS_SIGMA_OBS_POS = 0.10
+            BOSS_SIGMA_OBS_ANG = 0.0216773873 * 30
+            POS_NOISE = 0.001 * 5.0 # 5
+            ANG_NOISE = 0.05 * 3.0 # 3.0
+            # mark
+            # POS_NOISE = 0.0
+            # ANG_NOISE = 0.0
+        else:
+            BOSS_SIGMA_OBS_POS = 0.10 # 0.02 need to increase
+            BOSS_SIGMA_OBS_ANG = 0.0216773873 * 10
+            POS_NOISE = 0.001 * 5.0
+            ANG_NOISE = 0.05 * 1.0 # 3.0
+            # mark
+            # POS_NOISE = 0.0
+            # ANG_NOISE = 0.0
+
+    # mark
+    MASS_MEAN = 1.750 # 0.380
+    MASS_SIGMA = 0.5
+    FRICTION_MEAN = 0.1
+    FRICTION_SIGMA = 0.3
+    RESTITUTION_MEAN = 0.9
+    RESTITUTION_SIGMA = 0.2
+
+    PBPF_time_cosuming_list = []
+    
+    # multi-objects/robot list
+    pw_T_rob_sim_pose_list_alg = []
+    pw_T_obj_obse_obj_list_alg = []
+    pw_T_objs_touching_targetObjs_list = []
+    # need to change
+    dis_std_list = [d_thresh_obse]
+    ang_std_list = [a_thresh_obse]
+    print("begin to wait")
+    time.sleep(0.5)
+
+    # build an object of class "Ros_Listener"
+    ROS_LISTENER = Ros_Listener()
+    _tf_listener = tf.TransformListener()
+    
+    create_scene = Create_Scene(OBJECT_NUM, ROBOT_NUM)
+    _launch_camera = LaunchCamera(WIDTH_DEPTH, HEIGHT_DEPTH, FOV_V_DEPTH)
+    
+    pw_T_rob_sim_pose_list_alg = create_scene.initialize_robot()
+    print("Finish initializing robot")
+    # Here, because we are using only one robot so we use [0]
+    _pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
+    # get cameraDepth pose
+    _pw_T_camD_tf_4_4 = _launch_camera.getCameraInPybulletWorldPose44(_tf_listener, _pw_T_rob_sim_4_4)
+    print("========================")
+    print("Camera depth len pose in Pybullet world:")
+    print(_pw_T_camD_tf_4_4)
+    print("========================")
+    pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object()
+    print("trans_ob_list, rot_ob_list:")
+    print(trans_ob_list, rot_ob_list)
+    print("========================")
+    print("Finish initializing scene")
+
+    # ============================================================================
+    # we are not using this for now
+    if TASK_FLAG == '4':
+        objs_touching_target_objs_num_ = OBJS_TOUCHING_TARGET_OBJS_NUM
+        objs_touching_target_objs_num_ = 1
+        objs_touching_target_objs_name_list = ["base"]
+        pw_T_objs_touching_targetObjs = create_scene.initialize_other_objects_touching(objs_touching_target_objs_num_, objs_touching_target_objs_name_list)
+        for num_index in range(len(pw_T_objs_touching_targetObjs)):
+            pw_T_objs_touching_targetObjs_list.append(pw_T_objs_touching_targetObjs[num_index])
+    if TASK_FLAG == '1':
+        objs_not_touching_target_objs_num_ = OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM
+        objs_not_touching_target_objs_num_ = 0
+        objs_not_touching_target_objs_name_list = ["pringles"]
+        pw_T_objs_not_touching_targetObjs = create_scene.initialize_other_objects_not_touching(objs_not_touching_target_objs_num_, objs_not_touching_target_objs_name_list)
+    # ============================================================================
+
+    # cpu 
+    # create 70 "objects" of SingleENV class 
+    _single_envs = create_particles(OBJECT_NUM, ROBOT_NUM, PARTICLE_NUM,
+                                    pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
+                                    UPDATE_STYLE_FLAG, SIM_TIME_STEP, BOSS_PF_UPDATE_INTERVAL_IN_REAL)
+
+    _objs_pose_info_list = [0] * PARTICLE_NUM
+    _particle_cloud_pub = [0] * PARTICLE_NUM
+    for env_index, single_env in _single_envs.items():
+        single_env.queue.put((SingleENV.get_objects_pose, ))
+    for env_index, single_env in _single_envs.items():  
+        objs_pose_info = wait_and_get_result_from(single_env)
+        _objs_pose_info_list[env_index] = objs_pose_info
+        _particle_cloud_pub[env_index] = objs_pose_info["one_particle"]
+    # ============================================================================
+
+    # get estimated object
+    estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
+
+    # publish particles/estimated object
+    # first publish
+    _publish_par_pose_info(_particle_cloud_pub)
+    if RECORD_RESULTS_FLAG == True:
+        _record_t_PBPF = time.time()
+        _record_time_list.append(_record_t_PBPF - _record_t_begin)
+    publish_esti_pose_info(estimated_object_set)
+
+    # convert [obj1, obj2, ...] to list:[[[x,y,z],[x,y,z,w]], [[x,y,z],[x,y,z,w]], ...]
+    estimated_object_set_old = copy.deepcopy(estimated_object_set)
+    estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
+
+    print("Before locating the pose of the camera")
+    # if VERSION == "ray" or VERSION == "multiray":
+    if OPTITRACK_FLAG == True and LOCATE_CAMERA_FLAG == "opti": # ar/opti
+        realsense_tf = '/RealSense' # (use Optitrack)
+    else:
+        realsense_tf = '/ar_tracking_camera_frame' # (do not use Optitrack)
+    while_loop_time = 0
+    print("Locate Camera Method:", realsense_tf)
+    while not rospy.is_shutdown():
+        while_loop_time =  while_loop_time + 1
+        # if while_loop_time > 50:
+            # print("WARNING: ")
+        if gazebo_flag == True:
+            realsense_tf = '/realsense_camera'
+        try:
+            (trans_camera, rot_camera) = _tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
+            break
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            continue
+    print("I am here2")
+    rob_T_cam_tf_pos = list(trans_camera)
+    rob_T_cam_tf_ori = list(rot_camera)
+    rob_T_cam_tf_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_cam_tf_ori)).reshape(3, 3)
+    rob_T_cam_tf_3_4 = np.c_[rob_T_cam_tf_3_3, rob_T_cam_tf_pos]  # Add position to create 3x4 matrix
+    rob_T_cam_tf_4_4 = np.r_[rob_T_cam_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+    pw_T_cam_tf = np.dot(_pw_T_rob_sim_4_4, rob_T_cam_tf_4_4)
+    pw_T_cam_tf_pos = [pw_T_cam_tf[0][3], pw_T_cam_tf[1][3], pw_T_cam_tf[2][3]]
+    print("==============================================")
+    print("Camera RGB len pose in Robot world:")
+    print(rob_T_cam_tf_4_4)
+    print("Camera RGB len pose in Pybullet world:")
+    print(pw_T_cam_tf)
+    print("==============================================")        
+
+            
+    # get pose of the end-effector of the robot arm from joints of robot arm 
+    p_sim, sim_rob_id = track_fk_sim_world()
+    track_fk_world_rob_mv(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
+    rob_link_9_pose_old = p_sim.getLinkState(sim_rob_id, 9) # position = rob_link_9_pose_old[0], quaternion = rob_link_9_pose_old[1]
+
+    # ============================================================================
+    # initialisation of vk configuration
+    if VK_RENDER_FLAG == True:
+        print("Begin initializing vulkon...")
+        _camD_T_camVk_4_4 = np.array([[1, 0, 0, 0],
+                                        [0,-1, 0, 0],
+                                        [0, 0,-1, 0],
+                                        [0, 0, 0, 1]])
+        ## Setup vk_config
+        _vk_config = _vk_config_setting()
+        ## Setup vk_camera
+        _vk_camera, _pw_T_camVk_4_4 = _vk_camera_setting(_pw_T_camD_tf_4_4, _camD_T_camVk_4_4)
+        ## create context
+        _vk_context = vkdepth.initialize(_vk_config)
+        _vk_context.set_depth_threshold(DEPTH_DIFF_VALUE_0_1_THRESHOLD)
+        _vk_context.update_camera(_vk_camera)
+        ## Load meshes
+        _vk_obj_id_list, _vk_rob_link_id_list, _vk_other_id_list = _vk_load_meshes()
+        ## Create states
+        ## state -> particle
+        ## instance -> object
+        ## if we have many particles we can create many "q = vkdepth.State()"
+        _vk_particle_cloud = copy.deepcopy(_particle_cloud_pub)
+        _vk_state_list, _vk_single_obj_state_list = _vk_state_setting(_vk_particle_cloud, _pw_T_camVk_4_4, p_sim, sim_rob_id)
+        ## Render and Download
+        _vk_context.enqueue_render_and_download(vkdepth.DEPTH | vkdepth.MASK)
+        ## Waiting for rendering and download
+        _vk_context.wait()
+        ## Get Depth image
+        vk_rendered_depth_image_array_list, vk_rendered__mask_image_array_list, vk_single_obj_rendered__mask_image_array_list = _vk_depth_image_getting()
+
+        # for par_index in range(PARTICLE_NUM):
+        #     total_elements = vk_rendered__mask_image_array_list[par_index].size
+        #     for obj_index in range(OBJECT_NUM):
+        #         obj_pixel_num = np.sum(vk_rendered__mask_image_array_list[par_index] == _vk_obj_id_list[obj_index])
+        #         single_obj_index = par_index * OBJECT_NUM + obj_index
+        #         single_obj_num_zeros = np.sum(vk_single_obj_rendered__mask_image_array_list[single_obj_index] == 0)                    
+        #         print(obj_pixel_num, total_elements)
+        #         print(single_obj_num_zeros)
         
-        # pub_depth_image_list = []
-        # for pointcloud_index in range(PARTICLE_NUM):
-        #     pub_depth_image = rospy.Publisher("/camera/particle_depth_image_converted_"+str(pointcloud_index), Image, queue_size=5)
-        #     pub_depth_image_list.append(pub_depth_image)
+        ## show vk rendered depth image
+        # fig, axs = plt.subplots(2, PARTICLE_NUM)
+        # for par_index in range(PARTICLE_NUM):
+        #     axs[0, par_index].imshow(vk_rendered_depth_image_array_list[par_index], cmap="gray")
+        #     axs[1, par_index].imshow(vk_rendered__mask_image_array_list[par_index], cmap="gray")
+        # plt.show()
+    # ============================================================================
 
-        particle_depth_image_converted = Image()
-        
-        # only for drawing box
-        publish_DOPE_pose_flag = True
+    print("Welcome to Our Approach ! RUNNING MODEL: ", RUNNING_MODEL)
+    PBPF_alg = PBPFMove(OBJECT_NUM) # PF_alg
+    CVPF_alg = CVPFMove(OBJECT_NUM) 
 
+    t_begin = time.time()
 
-        if RUNNING_MODEL == "PBPF_RGB":
-            USING_RGB_FLAG = True
-            USING_D_FLAG = False
-        elif RUNNING_MODEL == "PBPF_RGBD":
-            USING_RGB_FLAG = True
-            USING_D_FLAG = True
-        else: # PBPF_D
-            USING_RGB_FLAG = False
-            USING_D_FLAG = True
+    old_obse_time_list = [0] * OBJECT_NUM
+    latest_obse_time_list = [0] * OBJECT_NUM
+    check_dope_work_flag_init_list = [0] * OBJECT_NUM
+    
+    outlier_dis_list = [0] * OBJECT_NUM
+    outlier_ang_list = [0] * OBJECT_NUM
 
-        _particle_update_time = 0
+    # ============================================================================
+    # set parameters
+    dope_detection_flag_list = [0] * OBJECT_NUM
+    global_objects_visual_by_DOPE_list = [0] * OBJECT_NUM
+    global_objects_outlier_by_DOPE_list = [0] * OBJECT_NUM
+    visible_threshold_dope_is_fresh_list = [0] * OBJECT_NUM
+    visible_threshold_dope_X_list = [0] * OBJECT_NUM 
+    visible_threshold_dope_X_small_list = [0] * OBJECT_NUM
+    visible_threshold_outlier_XS_list = [0] * OBJECT_NUM 
+    visible_threshold_outlier_S_list = [0] * OBJECT_NUM 
+    visible_threshold_outlier_L_list = [0] * OBJECT_NUM
+    visible_threshold_outlier_XL_list = [0] * OBJECT_NUM
+    visible_weight_dope_X_smaller_than_threshold_list = [0] * OBJECT_NUM
+    visible_weight_dope_X_larger_than_threshold_list = [0] * OBJECT_NUM
+    visible_weight_outlier_larger_than_threshold_list = [0] * OBJECT_NUM
+    visible_weight_outlier_smaller_than_threshold_list = [0] * OBJECT_NUM
+    x_w_list = [0] * OBJECT_NUM
+    y_l_list = [0] * OBJECT_NUM
+    z_h_list = [0] * OBJECT_NUM
+    for obj_index in range(OBJECT_NUM):
+        object_name = OBJECT_NAME_LIST[obj_index]
+        if object_name == "cracker":
+            x_w_list[obj_index] = 0.159
+            y_l_list[obj_index] = 0.21243700408935547
+            z_h_list[obj_index] = 0.06
+            visible_threshold_dope_X_list[obj_index] = 0.45 # 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.45
+            visible_threshold_outlier_S_list[obj_index] = 0.45
+            visible_threshold_outlier_L_list[obj_index] = 0.6
+            # visible_threshold_outlier_XL_list[obj_index] = 0.6
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.5
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.45 # 0.05
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.45
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 4.0
+        elif object_name == "soup":
+            x_w_list[obj_index] = 0.032829689025878906
+            y_l_list[obj_index] = 0.032829689025878906
+            z_h_list[obj_index] = 0.099
+            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.3
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.65
+            # visible_threshold_outlier_XL_list[obj_index] = 0.75
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+        elif object_name == "Ketchup":
+            x_w_list[obj_index] = 0.145
+            y_l_list[obj_index] = 0.042
+            z_h_list[obj_index] = 0.061
+            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.3
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.65
+            # visible_threshold_outlier_XL_list[obj_index] = 0.75
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+        elif object_name == "Milk":
+            x_w_list[obj_index] = 0.179934
+            y_l_list[obj_index] = 0.0613
+            z_h_list[obj_index] = 0.0613
+            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.3
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.65
+            # visible_threshold_outlier_XL_list[obj_index] = 0.75
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+        elif object_name == "Mustard":
+            x_w_list[obj_index] = 0.14
+            y_l_list[obj_index] = 0.038
+            z_h_list[obj_index] = 0.055
+            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.3
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.65
+            # visible_threshold_outlier_XL_list[obj_index] = 0.75
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.50 # 0.55/0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+        elif object_name == "Mayo":
+            x_w_list[obj_index] = 0.1377716
+            y_l_list[obj_index] = 0.0310130
+            z_h_list[obj_index] = 0.054478
+            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.3
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.65
+            # visible_threshold_outlier_XL_list[obj_index] = 0.75
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+        elif object_name == "Parmesan":
+            x_w_list[obj_index] = 0.0929022
+            y_l_list[obj_index] = 0.0592842
+            z_h_list[obj_index] = 0.0592842
+            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.3
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.65
+            # visible_threshold_outlier_XL_list[obj_index] = 0.75
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.45 # 0.55/0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+        elif object_name == "SaladDressing":
+            x_w_list[obj_index] = 0.1375274
+            y_l_list[obj_index] = 0.036266
+            z_h_list[obj_index] = 0.052722
+            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.3
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.65
+            # visible_threshold_outlier_XL_list[obj_index] = 0.75
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+        else: # gelatin
+            x_w_list[obj_index] = 0.159
+            y_l_list[obj_index] = 0.21243700408935547
+            z_h_list[obj_index] = 0.06
+            visible_threshold_dope_X_list[obj_index] = 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.5
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.5
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.45
+            outlier_dis_list[obj_index] = 0.05
+            outlier_ang_list[obj_index] = math.pi * 1 / 4.0
+    # ============================================================================
 
-        if run_alg_flag == 'CVPF':
-            PARTICLE_NUM = 150
-        
-        # ============================================================================
-
-        # get camera intrinsic info
-        # CAMERA_INFO_TOPIC_COLOR: "/camera/color/camera_info"
-        # CAMERA_INFO_TOPIC_DEPTH: "/camera/depth/camera_info"
-        camera_intrinsic_parameters_color = _get_camera_intrinsic_params(CAMERA_INFO_TOPIC_COLOR)
-        camera_intrinsic_parameters_depth = _get_camera_intrinsic_params(CAMERA_INFO_TOPIC_DEPTH)
-
-        HEIGHT_DEPTH = camera_intrinsic_parameters_depth.image_height # 720/480
-        WIDTH_DEPTH = camera_intrinsic_parameters_depth.image_width # 1280/848
-        CX_DEPTH = camera_intrinsic_parameters_depth.cx
-        CY_DEPTH = camera_intrinsic_parameters_depth.cy
-        FX_DEPTH = camera_intrinsic_parameters_depth.fx
-        FY_DEPTH = camera_intrinsic_parameters_depth.fy
-        
-        FOV_H_DEPTH = math.degrees(2 * math.atan(WIDTH_DEPTH / (2*FX_DEPTH))) # fov: horizontal / x
-        FOV_V_DEPTH = math.degrees(2 * math.atan(HEIGHT_DEPTH / (2*FY_DEPTH))) # fov: vertical / y
-        
-        RESOLUTION_DEPTH = (HEIGHT_DEPTH, WIDTH_DEPTH) # 480 848
-
-        # ============================================================================
-
-        pub_DOPE_list = []
-        pub_PBPF_list = []
-        for obj_index in range(OBJECT_NUM):
-            pub_DOPE = rospy.Publisher('DOPE_pose_'+OBJECT_NAME_LIST[obj_index], PoseStamped, queue_size = 1)
-            pub_PBPF = rospy.Publisher('PBPF_pose_'+OBJECT_NAME_LIST[obj_index], PoseStamped, queue_size = 1)
-            pub_DOPE_list.append(pub_DOPE)
-            pub_PBPF_list.append(pub_PBPF)
-        
-        print("This is "+UPDATE_STYLE_FLAG+" update in scene"+task_flag)    
-        # some parameters
-        d_thresh = 0.005
-        a_thresh = 0.01
-        d_thresh_obse = 0.15
-        a_thresh_obse = math.pi * 2 / 3.0
-        d_thresh_CV = 0.0002
-        a_thresh_CV = 0.0010
-        flag_record = 0
-        flag_record_obse = 0
-        flag_record_PBPF = 0
-        flag_record_CVPF = 0
-        flag_update_num_CV = 0
-        flag_update_num_PB = 0
-        
-        if run_alg_flag == "PBPF" and VERSION == "old" and USING_D_FLAG == False:
-            print("1: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION, "; USING_D_FLAG: ", USING_D_FLAG)
-            BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.05 # original value = 0.16
-            PF_UPDATE_TIME_ONCE = 0.4 # rosbag slow down 0.125
-        # elif run_alg_flag == "PBPF" and VERSION == "multiray" and USING_D_FLAG == False:
-        elif RUNNING_MODEL == "PBPF_RGB":
-            print("2: RUNNING_MODEL:", RUNNING_MODEL)
-            BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.16 # original value = 0.16
-            PF_UPDATE_TIME_ONCE = 0.16 # 70 particles -> 2s
-        elif RUNNING_MODEL == "PBPF_RGBD" and VK_RENDER_FLAG == True:
-            print("3: RUNNING_MODEL (VK):", RUNNING_MODEL)
-            BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.16 # original value = 0.16 
-            PF_UPDATE_TIME_ONCE = 0.32 # 70 particles -> 35s
-            PF_UPDATE_TIME_ONCE = 0.16 # 70 particles -> 35s
-        elif RUNNING_MODEL == "PBPF_RGBD" and PB_RENDER_FLAG == True:
-            print("3: RUNNING_MODEL (PB):", RUNNING_MODEL)
-            BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.30 # original value = 0.16 
-            PF_UPDATE_TIME_ONCE = 0.32 # 70 particles -> 35s
-            PF_UPDATE_TIME_ONCE = 0.1 # 70 particles -> 35s
-        else: # run_alg_flag == "CVPF":
-            print("4: RUNNING_MODEL:", RUNNING_MODEL)
-            BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.16 # original value = 0.16
-            PF_UPDATE_TIME_ONCE = 0.16 # rosbag slow down 0.02 0.3*(1/0.02)=15s
-        PF_UPDATE_RATE = rospy.Rate(1.0/BOSS_PF_UPDATE_INTERVAL_IN_REAL)
-        PF_UPDATE_RATE = rospy.Rate(1.0/PF_UPDATE_TIME_ONCE)
-        print("PF_UPDATE_TIME_ONCE")
-        print(PF_UPDATE_TIME_ONCE)
-        # # error in xyz axis obse before recalibrating
-        # boss_sigma_obs_x = 0.03973017808163751 / 2.0
-        # boss_sigma_obs_y = 0.01167211468503462 / 2.0
-        # boss_sigma_obs_z = 0.02820930183351492 / 2.0
-        # # new obse error
-        # boss_sigma_obs_x = 0.032860982 * 2.0
-        # boss_sigma_obs_y = 0.012899399 * 1.5
-        # boss_sigma_obs_z = 0.01
-        # boss_sigma_obs_ang_init = 0.0216773873 * 2.0
-
-        # Motion model Noise
-        pos_noise = 0.01 # original value = 0.005
-        ang_noise = 0.1 # original value = 0.05
-        MOTION_NOISE = True
-        
-        
-        # MOTION_NOISE = True
-
-        # Standard deviation of computing the weight
-        # boss_sigma_obs_ang = 0.216773873
-        # boss_sigma_obs_ang = 0.0216773873
-        
+    while not rospy.is_shutdown():
+        temp_pw_T_obj_obse_objs_list = []
+        #panda robot moves in the visualization window
+        track_fk_world_rob_mv(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
+        if RECORD_RESULTS_FLAG == True:
+            pw_T_obj_GT_pose = []
         for obj_index in range(OBJECT_NUM):
             object_name = OBJECT_NAME_LIST[obj_index]
-            if object_name == "cracker":
-                boss_sigma_obs_pos = 0.10 
-                boss_sigma_obs_ang = 0.0216773873 * 30
-                pos_noise = 0.001 * 5.0 # 5
-                ang_noise = 0.05 * 3.0 # 3.0
-                # boss_sigma_obs_ang = 0.0216773873 * 30
-                # boss_sigma_obs_pos = 0.25 # 0.02 need to increase
-                # mark
-                # pos_noise = 0.0
-                # ang_noise = 0.0
-            else:
-                boss_sigma_obs_pos = 0.10 # 0.02 need to increase
-                boss_sigma_obs_ang = 0.0216773873 * 10
-                pos_noise = 0.001 * 5.0
-                ang_noise = 0.05 * 1.0 # 3.0
-                # boss_sigma_obs_ang = 0.0216773873 * 20
-                # boss_sigma_obs_ang = 0.0216773873 * 60
-                # boss_sigma_obs_pos = 0.038226405
-                # boss_sigma_obs_pos = 0.004
-                # boss_sigma_obs_pos = 0.10 # 0.02 need to increase
-                # mark
-                # pos_noise = 0.0
-                # ang_noise = 0.0
-
-        # mark
-        mass_mean = 1.750 # 0.380
-        mass_sigma = 0.5
-        friction_mean = 0.1
-        friction_sigma = 0.3
-        restitution_mean = 0.9
-        restitution_sigma = 0.2
-        all_frame = 0
-        
-        PBPF_time_cosuming_list = []
-        
-        # pw_T_obst_opti_pos_small = [0.852134144216095, 0.14043691336334274, 0.10014295215002848]
-        # pw_T_obst_opti_ori_small = [0.00356749, -0.00269526, 0.28837681, 0.95750657]
-        # pw_T_pringles_opti_pos_big = 
-        # pw_T_pringles_opti_ori_big = 
-        
-        # multi-objects/robot list
-        pw_T_rob_sim_pose_list_alg = []
-        pw_T_obj_obse_obj_list_alg = []
-        pw_T_objs_touching_targetObjs_list = []
-        # need to change
-        dis_std_list = [d_thresh_obse]
-        ang_std_list = [a_thresh_obse]
-        print("begin to wait")
-        time.sleep(0.5)
-
-        # build an object of class "Ros_Listener"
-        ROS_LISTENER = Ros_Listener()
-        
-        create_scene = Create_Scene(OBJECT_NUM, ROBOT_NUM)
-        _tf_listener = tf.TransformListener()
-        _launch_camera = LaunchCamera(WIDTH_DEPTH, HEIGHT_DEPTH, FOV_V_DEPTH)
-        
-        pw_T_rob_sim_pose_list_alg = create_scene.initialize_robot()
-        print("Finish initializing robot")
-        _pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
-        # get cameraDepth pose
-        _pw_T_camD_tf_4_4 = _launch_camera.getCameraInPybulletWorldPose44(_tf_listener, _pw_T_rob_sim_4_4)
-        print("========================")
-        print("Camera depth len pose in Pybullet world:")
-        print(_pw_T_camD_tf_4_4)
-        print("========================")
-        pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object()
-        print("trans_ob_list, rot_ob_list:")
-        print(trans_ob_list, rot_ob_list)
-        print("========================")
-        print("Finish initializing scene")
-
-        if task_flag == '4':
-            objs_touching_target_objs_num_ = OBJS_TOUCHING_TARGET_OBJS_NUM
-            objs_touching_target_objs_num_ = 1
-            objs_touching_target_objs_name_list = ["base"]
-            pw_T_objs_touching_targetObjs = create_scene.initialize_other_objects_touching(objs_touching_target_objs_num_, objs_touching_target_objs_name_list)
-
-            for num_index in range(len(pw_T_objs_touching_targetObjs)):
-                pw_T_objs_touching_targetObjs_list.append(pw_T_objs_touching_targetObjs[num_index])
-
-        if task_flag == '1':
-            objs_not_touching_target_objs_num_ = OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM
-            objs_not_touching_target_objs_num_ = 0
-            objs_not_touching_target_objs_name_list = ["pringles"]
-            pw_T_objs_not_touching_targetObjs = create_scene.initialize_other_objects_not_touching(objs_not_touching_target_objs_num_, objs_not_touching_target_objs_name_list)
-
-
-
-        initial_parameter = InitialSimulationModel(OBJECT_NUM, ROBOT_NUM, PARTICLE_NUM, 
-                                                   pw_T_rob_sim_pose_list_alg, 
-                                                   pw_T_obj_obse_obj_list_alg,
-                                                   pw_T_objs_touching_targetObjs_list,
-                                                   UPDATE_STYLE_FLAG, SIM_TIME_STEP)
-        
-        
-        # get estimated object
-        print("Begin initializing particles...")
-        if run_alg_flag == "PBPF":
-            estimated_object_set, particle_cloud_pub, p_par_env_list = initial_parameter.initial_and_set_simulation_env()
-        if run_alg_flag == "CVPF":
-            estimated_object_set, particle_cloud_pub, p_par_env_list = initial_parameter.initial_and_set_simulation_env_CV()
-            boss_est_pose_CVPF.append(estimated_object_set) # [esti_obj1, esti_obj2]
-        print("Finish initializing particles")
-
-        # publish particles/estimated object
-        # first publish
-
-        publish_par_pose_info(particle_cloud_pub)
-        if RECORD_RESULTS_FLAG == True:
-            _record_t_PBPF = time.time()
-            _record_time_list.append(_record_t_PBPF - _record_t_begin)
-        publish_esti_pose_info(estimated_object_set)
-
-
-        estimated_object_set_old = copy.deepcopy(estimated_object_set)
-        estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
-        print("Before locating the pose of the camera")
-        # if VERSION == "ray" or VERSION == "multiray":
-        if OPTITRACK_FLAG == True and LOCATE_CAMERA_FLAG == "opti": # ar/opti
-            realsense_tf = '/RealSense' # (use Optitrack)
-        else:
-            realsense_tf = '/ar_tracking_camera_frame' # (do not use Optitrack)
-        while_loop_time = 0
-        print(realsense_tf)
-        while not rospy.is_shutdown():
-            while_loop_time =  while_loop_time + 1
-            # if while_loop_time > 50:
-                # print("WARNING: ")
+            use_gazebo = ""
             if gazebo_flag == True:
-                realsense_tf = '/realsense_camera'
+                use_gazebo = '_noise'
             try:
-                (trans_camera, rot_camera) = _tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
-                break
-            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                continue
-        print("I am here2")
-        rob_T_cam_tf_pos = list(trans_camera)
-        rob_T_cam_tf_ori = list(rot_camera)
-        # rob_T_cam_tf_3_3 = transformations.quaternion_matrix(rob_T_cam_tf_ori)
-        # rob_T_cam_tf_4_4 = rotation_4_4_to_transformation_4_4(rob_T_cam_tf_3_3, rob_T_cam_tf_pos)
-        rob_T_cam_tf_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_cam_tf_ori)).reshape(3, 3)
-        rob_T_cam_tf_3_4 = np.c_[rob_T_cam_tf_3_3, rob_T_cam_tf_pos]  # Add position to create 3x4 matrix
-        rob_T_cam_tf_4_4 = np.r_[rob_T_cam_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
-        pw_T_cam_tf = np.dot(_pw_T_rob_sim_4_4, rob_T_cam_tf_4_4)
-        pw_T_cam_tf_pos = [pw_T_cam_tf[0][3], pw_T_cam_tf[1][3], pw_T_cam_tf[2][3]]
-        print("==============================================")
-        print("Camera RGB len pose in Robot world:")
-        print(rob_T_cam_tf_4_4)
-        print("Camera RGB len pose in Pybullet world:")
-        print(pw_T_cam_tf)
-        print("==============================================")        
-        # run the simulation
-        Flag = True
-        # compute pose of robot arm
-        
-        # get pose of the end-effector of the robot arm from joints of robot arm 
-        p_sim, sim_rob_id, sim_plane_id = track_fk_sim_world()
-        track_fk_world_rob_mv(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
-        rob_link_9_pose_old = p_sim.getLinkState(sim_rob_id, 9) # position = rob_link_9_pose_old[0], quaternion = rob_link_9_pose_old[1]
-        # rob_T_obj_obse_pos_old = list(trans_ob)
-        # rob_T_obj_obse_ori_old = list(rot_ob)
+                latest_obse_time = _tf_listener.getLatestCommonTime('/panda_link0', '/'+object_name+use_gazebo)
+                latest_obse_time_list[obj_index] = latest_obse_time
 
-        # ============================================================================
-        # initialisation of vk configuration
-        if VK_RENDER_FLAG == True:
-            print("Begin initializing vulkon...")
-            _camD_T_camVk_4_4 = np.array([[1, 0, 0, 0],
-                                          [0,-1, 0, 0],
-                                          [0, 0,-1, 0],
-                                          [0, 0, 0, 1]])
-            ## Setup vk_config
-            _vk_config = _vk_config_setting()
-            ## Setup vk_camera
-            _vk_camera, _pw_T_camVk_4_4 = _vk_camera_setting(_pw_T_camD_tf_4_4, _camD_T_camVk_4_4)
-            ## create context
-            _vk_context = vkdepth.initialize(_vk_config)
-            _vk_context.set_depth_threshold(DEPTH_DIFF_VALUE_0_1_THRESHOLD)
-            _vk_context.update_camera(_vk_camera)
-            ## Load meshes
-            _vk_obj_id_list, _vk_rob_link_id_list, _vk_other_id_list = _vk_load_meshes()
-            ## Create states
-            ## state -> particle
-            ## instance -> object
-            ## if we have many particles we can create many "q = vkdepth.State()"
-            _vk_particle_cloud = copy.deepcopy(particle_cloud_pub)
-            _vk_state_list, _vk_single_obj_state_list = _vk_state_setting(_vk_particle_cloud, _pw_T_camVk_4_4, p_sim, sim_rob_id)
-            ## Render and Download
-            _vk_context.enqueue_render_and_download(vkdepth.DEPTH | vkdepth.MASK)
-            ## Waiting for rendering and download
-            _vk_context.wait()
-            ## Get Depth image
-            vk_rendered_depth_image_array_list, vk_rendered__mask_image_array_list, vk_single_obj_rendered__mask_image_array_list = _vk_depth_image_getting()
+                # old_obse_time = latest_obse_time.to_sec()
+                # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
+                #     (trans_ob,rot_ob) = _tf_listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
+                #     print("obse is FRESH")
 
-            # for par_index in range(PARTICLE_NUM):
-            #     total_elements = vk_rendered__mask_image_array_list[par_index].size
-            #     for obj_index in range(OBJECT_NUM):
-            #         obj_pixel_num = np.sum(vk_rendered__mask_image_array_list[par_index] == _vk_obj_id_list[obj_index])
-            #         single_obj_index = par_index * OBJECT_NUM + obj_index
-            #         single_obj_num_zeros = np.sum(vk_single_obj_rendered__mask_image_array_list[single_obj_index] == 0)                    
-            #         print(obj_pixel_num, total_elements)
-            #         print(single_obj_num_zeros)
-
-            # fig, axs = plt.subplots(2+OBJECT_NUM, PARTICLE_NUM)
-            # for par_index in range(PARTICLE_NUM):
-            #     axs[0, par_index].imshow(vk_rendered_depth_image_array_list[par_index], cmap="gray")
-            #     axs[1, par_index].imshow(vk_rendered__mask_image_array_list[par_index], cmap="gray")
-            #     for obj_index in range(OBJECT_NUM):
-            #         single_obj_index = par_index * OBJECT_NUM + obj_index
-            #         axs[2+obj_index, par_index].imshow(vk_single_obj_rendered__mask_image_array_list[single_obj_index], cmap="gray")
-
-            # plt.show()
-            # debug_depth
-            # input("stop")
-        # ============================================================================
-
-
-        print("Welcome to Our Approach ! RUNNING MODEL: ", RUNNING_MODEL)
-        PBPF_alg = PBPFMove(OBJECT_NUM) # PF_alg
-        CVPF_alg = CVPFMove(OBJECT_NUM) 
-        # while True:
-        #     print(ROS_LISTENER.detection_flag)
-        t_begin = time.time()
-
-        latest_obse_time_list = [0] * OBJECT_NUM
-        old_obse_time_list = [0] * OBJECT_NUM
-        check_dope_work_flag_init_list = [0] * OBJECT_NUM
-        
-        outlier_dis_list = [0] * OBJECT_NUM
-        outlier_ang_list = [0] * OBJECT_NUM
-
-        while not rospy.is_shutdown():
-            
-            if reset_flag == False:
-                continue_to_run = True
-            elif reset_flag == True:
-                break
-            
-
-            dope_detection_flag_list = [0] * OBJECT_NUM
-            global_objects_visual_by_DOPE_list = [0] * OBJECT_NUM
-            global_objects_outlier_by_DOPE_list = [0] * OBJECT_NUM
-            visible_threshold_dope_is_fresh_list = [0] * OBJECT_NUM
-            visible_threshold_dope_X_list = [0] * OBJECT_NUM 
-            visible_threshold_dope_X_small_list = [0] * OBJECT_NUM
-            visible_threshold_outlier_XS_list = [0] * OBJECT_NUM 
-            visible_threshold_outlier_S_list = [0] * OBJECT_NUM 
-            visible_threshold_outlier_L_list = [0] * OBJECT_NUM
-            visible_threshold_outlier_XL_list = [0] * OBJECT_NUM
-            visible_weight_dope_X_smaller_than_threshold_list = [0] * OBJECT_NUM
-            visible_weight_dope_X_larger_than_threshold_list = [0] * OBJECT_NUM
-            visible_weight_outlier_larger_than_threshold_list = [0] * OBJECT_NUM
-            visible_weight_outlier_smaller_than_threshold_list = [0] * OBJECT_NUM
-            x_w_list = [0] * OBJECT_NUM
-            y_l_list = [0] * OBJECT_NUM
-            z_h_list = [0] * OBJECT_NUM
-
-            
-
-            #panda robot moves in the visualization window
-            temp_pw_T_obj_obse_objs_list = []
-            track_fk_world_rob_mv(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
-            if RECORD_RESULTS_FLAG == True:
-                pw_T_obj_GT_pose = []
-            for obj_index in range(OBJECT_NUM):
-                # need to change
-                object_name = OBJECT_NAME_LIST[obj_index]
-
-                if object_name == "cracker":
-                    x_w_list[obj_index] = 0.159
-                    y_l_list[obj_index] = 0.21243700408935547
-                    z_h_list[obj_index] = 0.06
-                    visible_threshold_dope_X_list[obj_index] = 0.45 # 0.95
-                    visible_threshold_dope_X_small_list[obj_index] = 0
-                    # visible_threshold_outlier_XS_list[obj_index] = 0.45
-                    visible_threshold_outlier_S_list[obj_index] = 0.45
-                    visible_threshold_outlier_L_list[obj_index] = 0.6
-                    # visible_threshold_outlier_XL_list[obj_index] = 0.6
-                    visible_threshold_dope_is_fresh_list[obj_index] = 0.5
-                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.75
-                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.45 # 0.05
-                    visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-                    visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.45
-
-                    outlier_dis_list[obj_index] = 0.07
-                    outlier_ang_list[obj_index] = math.pi * 1 / 4.0
-
-                elif object_name == "soup":
-                    x_w_list[obj_index] = 0.032829689025878906
-                    y_l_list[obj_index] = 0.032829689025878906
-                    z_h_list[obj_index] = 0.099
-                    visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
-                    visible_threshold_dope_X_small_list[obj_index] = 0
-                    # visible_threshold_outlier_XS_list[obj_index] = 0.3
-                    visible_threshold_outlier_S_list[obj_index] = 0.4
-                    visible_threshold_outlier_L_list[obj_index] = 0.65
-                    # visible_threshold_outlier_XL_list[obj_index] = 0.75
-                    visible_threshold_dope_is_fresh_list[obj_index] = 0.6
-                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
-                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
-                    visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-                    visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
-
-                    outlier_dis_list[obj_index] = 0.07
-                    outlier_ang_list[obj_index] = math.pi * 1 / 2.0
-
-                elif object_name == "Ketchup":
-                    x_w_list[obj_index] = 0.145
-                    y_l_list[obj_index] = 0.042
-                    z_h_list[obj_index] = 0.061
-                    visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
-                    visible_threshold_dope_X_small_list[obj_index] = 0
-                    # visible_threshold_outlier_XS_list[obj_index] = 0.3
-                    visible_threshold_outlier_S_list[obj_index] = 0.4
-                    visible_threshold_outlier_L_list[obj_index] = 0.65
-                    # visible_threshold_outlier_XL_list[obj_index] = 0.75
-                    visible_threshold_dope_is_fresh_list[obj_index] = 0.6
-                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
-                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
-                    visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-                    visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
-
-                    outlier_dis_list[obj_index] = 0.07
-                    outlier_ang_list[obj_index] = math.pi * 1 / 2.0
-
-                elif object_name == "Milk":
-                    x_w_list[obj_index] = 0.179934
-                    y_l_list[obj_index] = 0.0613
-                    z_h_list[obj_index] = 0.0613
-                    visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
-                    visible_threshold_dope_X_small_list[obj_index] = 0
-                    # visible_threshold_outlier_XS_list[obj_index] = 0.3
-                    visible_threshold_outlier_S_list[obj_index] = 0.4
-                    visible_threshold_outlier_L_list[obj_index] = 0.65
-                    # visible_threshold_outlier_XL_list[obj_index] = 0.75
-                    visible_threshold_dope_is_fresh_list[obj_index] = 0.6
-                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
-                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
-                    visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-                    visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
-
-                    outlier_dis_list[obj_index] = 0.07
-                    outlier_ang_list[obj_index] = math.pi * 1 / 2.0
-
-                elif object_name == "Mustard":
-                    x_w_list[obj_index] = 0.14
-                    y_l_list[obj_index] = 0.038
-                    z_h_list[obj_index] = 0.055
-                    visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
-                    visible_threshold_dope_X_small_list[obj_index] = 0
-                    # visible_threshold_outlier_XS_list[obj_index] = 0.3
-                    visible_threshold_outlier_S_list[obj_index] = 0.4
-                    visible_threshold_outlier_L_list[obj_index] = 0.65
-                    # visible_threshold_outlier_XL_list[obj_index] = 0.75
-                    visible_threshold_dope_is_fresh_list[obj_index] = 0.6
-                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
-                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.50 # 0.55/0.25
-                    visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-                    visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
-
-                    outlier_dis_list[obj_index] = 0.07
-                    outlier_ang_list[obj_index] = math.pi * 1 / 2.0
-
-                elif object_name == "Mayo":
-                    x_w_list[obj_index] = 0.1377716
-                    y_l_list[obj_index] = 0.0310130
-                    z_h_list[obj_index] = 0.054478
-                    visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
-                    visible_threshold_dope_X_small_list[obj_index] = 0
-                    # visible_threshold_outlier_XS_list[obj_index] = 0.3
-                    visible_threshold_outlier_S_list[obj_index] = 0.4
-                    visible_threshold_outlier_L_list[obj_index] = 0.65
-                    # visible_threshold_outlier_XL_list[obj_index] = 0.75
-                    visible_threshold_dope_is_fresh_list[obj_index] = 0.6
-                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
-                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
-                    visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-                    visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
-
-                    outlier_dis_list[obj_index] = 0.07
-                    outlier_ang_list[obj_index] = math.pi * 1 / 2.0
-
-                elif object_name == "Parmesan":
-                    x_w_list[obj_index] = 0.0929022
-                    y_l_list[obj_index] = 0.0592842
-                    z_h_list[obj_index] = 0.0592842
-                    visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
-                    visible_threshold_dope_X_small_list[obj_index] = 0
-                    # visible_threshold_outlier_XS_list[obj_index] = 0.3
-                    visible_threshold_outlier_S_list[obj_index] = 0.4
-                    visible_threshold_outlier_L_list[obj_index] = 0.65
-                    # visible_threshold_outlier_XL_list[obj_index] = 0.75
-                    visible_threshold_dope_is_fresh_list[obj_index] = 0.6
-                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
-                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.45 # 0.55/0.25
-                    visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-                    visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
-
-                    outlier_dis_list[obj_index] = 0.07
-                    outlier_ang_list[obj_index] = math.pi * 1 / 2.0
-
-                elif object_name == "SaladDressing":
-                    x_w_list[obj_index] = 0.1375274
-                    y_l_list[obj_index] = 0.036266
-                    z_h_list[obj_index] = 0.052722
-                    visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
-                    visible_threshold_dope_X_small_list[obj_index] = 0
-                    # visible_threshold_outlier_XS_list[obj_index] = 0.3
-                    visible_threshold_outlier_S_list[obj_index] = 0.4
-                    visible_threshold_outlier_L_list[obj_index] = 0.65
-                    # visible_threshold_outlier_XL_list[obj_index] = 0.75
-                    visible_threshold_dope_is_fresh_list[obj_index] = 0.6
-                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
-                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
-                    visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-                    visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
-
-                    outlier_dis_list[obj_index] = 0.07
-                    outlier_ang_list[obj_index] = math.pi * 1 / 2.0
-
-
-                # mark
-                # elif object_name == "gelatin":
+                # if check_dope_work_flag_init_list[obj_index] == 0:
+                #     check_dope_work_flag_init_list[obj_index] = 1
+                #     old_obse_time_list[obj_index] = latest_obse_time_list[obj_index].to_sec()
+                
+                if (latest_obse_time_list[obj_index].to_sec() > old_obse_time_list[obj_index]):
+                    (trans_ob,rot_ob) = _tf_listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
+                    global_objects_visual_by_DOPE_list[obj_index] = 0
+                    t_after = time.time()
+                    trans_ob_list[obj_index] = trans_ob
+                    rot_ob_list[obj_index] = rot_ob
+                    # print(t_after - t_begin - 14)
+                    # print("obse is FRESH:", obj_index)
                 else:
-                    x_w_list[obj_index] = 0.159
-                    y_l_list[obj_index] = 0.21243700408935547
-                    z_h_list[obj_index] = 0.06
-                    visible_threshold_dope_X_list[obj_index] = 0.95
-                    visible_threshold_dope_X_small_list[obj_index] = 0
-                    visible_threshold_outlier_S_list[obj_index] = 0.4
-                    visible_threshold_outlier_L_list[obj_index] = 0.5
-                    visible_threshold_dope_is_fresh_list[obj_index] = 0.5
-                    visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.75
-                    visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.25
-                    visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-                    visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.45
-
-                use_gazebo = ""
-                if gazebo_flag == True:
-                    use_gazebo = '_noise'
-
-                try:
-                    latest_obse_time = _tf_listener.getLatestCommonTime('/panda_link0', '/'+object_name+use_gazebo)
-                    latest_obse_time_list[obj_index] = latest_obse_time
-                    # print("rospy.get_time():")
-                    # print(rospy.get_time())
-                    # print("latest_obse_time.to_sec():")
-                    # print(latest_obse_time.to_sec())
-                    # old_obse_time = latest_obse_time.to_sec()
-                    # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                    #     (trans_ob,rot_ob) = _tf_listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
-                    #     print("obse is FRESH")
-
-                    # if check_dope_work_flag_init_list[obj_index] == 0:
-                    #     check_dope_work_flag_init_list[obj_index] = 1
-                    #     old_obse_time_list[obj_index] = latest_obse_time_list[obj_index].to_sec()
-                    # print("latest_obse_time.to_sec():")
-                    # print(latest_obse_time.to_sec())
-                    # print("difference:", latest_obse_time.to_sec() - old_obse_time)
-                    
-                    if (latest_obse_time_list[obj_index].to_sec() > old_obse_time_list[obj_index]):
-                        (trans_ob,rot_ob) = _tf_listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
-                        global_objects_visual_by_DOPE_list[obj_index] = 0
-                        t_after = time.time()
-                        trans_ob_list[obj_index] = trans_ob
-                        rot_ob_list[obj_index] = rot_ob
-                        # print(t_after - t_begin - 14)
-                        # print("obse is FRESH:", obj_index)
-                    else:
-                        # obse has not been updating for a while
-                        global_objects_visual_by_DOPE_list[obj_index] = 1
-                        global_objects_outlier_by_DOPE_list[obj_index] = 1
-                        # print("obse is NOT fresh:", obj_index)
-                    old_obse_time_list[obj_index] = latest_obse_time_list[obj_index].to_sec()
-                    # break
-                except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                    
-                    print(obj_index)
-                    print("from main")
-                    print("can not find tf")
-                    
-                rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
-                rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
-                # rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
-                # rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
-                rob_T_obj_obse_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_obj_obse_ori)).reshape(3, 3)
-                rob_T_obj_obse_3_4 = np.c_[rob_T_obj_obse_3_3, rob_T_obj_obse_pos]  # Add position to create 3x4 matrix
-                rob_T_obj_obse_4_4 = np.r_[rob_T_obj_obse_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
-                # mark
-                bias_obse_x = -0.0
-                bias_obse_y = 0
-                bias_obse_z = 0.0
-                pw_T_obj_obse = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
-                pw_T_obj_obse_pos = [pw_T_obj_obse[0][3]+bias_obse_x, pw_T_obj_obse[1][3]+bias_obse_y, pw_T_obj_obse[2][3]+bias_obse_z]
-                pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
-
-                # mark
-                # if OPTITRACK_FLAG == False:
-                #     # opti
-                #     pw_T_obj_obse_pos = [0.42126008888811123, 0.170478291576308, 0.7841043693538842]
-                #     pw_T_obj_obse_ori = [ 0.71232545,  0.01881896,  0.70146424, -0.01364641]
-                #     # ar
-                #     pw_T_obj_obse_pos = [0.4111173962619566, 0.2417332651514922, 0.7841262399213144]
-                #     pw_T_obj_obse_ori = [7.13209378e-01, 4.71191996e-03, 7.00935199e-01, 1.64560070e-04]
+                    # obse has not been updating for a while
+                    global_objects_visual_by_DOPE_list[obj_index] = 1
+                    global_objects_outlier_by_DOPE_list[obj_index] = 1
+                    # print("obse is NOT fresh:", obj_index)
+                old_obse_time_list[obj_index] = latest_obse_time_list[obj_index].to_sec()
+                # break
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                print("Main function:", object_name, " can not find TF")
                 
-                # need to change when we run alg in multi-object tracking scene
-                # in the futrue we need to use "for obj_index in range(OBJECT_NUM):"
-                pw_T_obj_obse_pos_new = copy.deepcopy(pw_T_obj_obse_pos)
-                pw_T_obj_obse_ori_new = copy.deepcopy(pw_T_obj_obse_ori)
-                pw_T_esti_obj_pose_old = copy.deepcopy(estimated_object_set_old_list[obj_index])
-                pw_T_esti_obj_pos_old = copy.deepcopy(pw_T_esti_obj_pose_old[0])
-                pw_T_esti_obj_ori_old = copy.deepcopy(pw_T_esti_obj_pose_old[1])
+            rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
+            rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
+            rob_T_obj_obse_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_obj_obse_ori)).reshape(3, 3)
+            rob_T_obj_obse_3_4 = np.c_[rob_T_obj_obse_3_3, rob_T_obj_obse_pos]  # Add position to create 3x4 matrix
+            rob_T_obj_obse_4_4 = np.r_[rob_T_obj_obse_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
 
-                dis_obseCur_estiOld = compute_pos_err_bt_2_points(pw_T_obj_obse_pos_new, pw_T_esti_obj_pos_old)
-                ang_obseCur_estiOld = compute_ang_err_bt_2_points(pw_T_obj_obse_ori_new, pw_T_esti_obj_ori_old)
-                pw_T_obj_obse_pose_new = [pw_T_obj_obse_pos_new, pw_T_obj_obse_ori_new]
-
-                minDis_obseCur_parOld, minAng_obseCur_parOld = compute_diff_bt_two_pose(obj_index, particle_cloud_pub, pw_T_obj_obse_pose_new)            
-                
-                all_frame = all_frame + 1
-                if run_alg_flag == "PBPF":
-                    if minDis_obseCur_parOld > outlier_dis_list[obj_index] or minAng_obseCur_parOld > outlier_ang_list[obj_index]:
-                        # print("DOPE becomes crazy")
-                        global_objects_outlier_by_DOPE_list[obj_index] = 1
-                # if :
-                #     if minDis_obseCur_parOld > 0.10 or minAng_obseCur_parOld > math.pi * 1 / 2.0:
-                #         # print("DOPE becomes crazy")
-                # if dis_obseCur_estiOld > dis_std_list[obj_index]*3 or ang_obseCur_estiOld > ang_std_list[obj_index]*3:
-                # if dis_obseCur_estiOld > 0.30:# or ang_obseCur_estiOld > math.pi * 1 / 2.0:
-                #     # print("DOPE becomes crazy")
-
-                # only for drawing BOX/ need to change
-                if publish_DOPE_pose_flag == True:
-                    
-                    pose_DOPE = PoseStamped()
-                    pose_DOPE.pose.position.x = pw_T_obj_obse_pos[0]
-                    pose_DOPE.pose.position.y = pw_T_obj_obse_pos[1]
-                    pose_DOPE.pose.position.z = pw_T_obj_obse_pos[2]
-                    pose_DOPE.pose.orientation.x = pw_T_obj_obse_ori[0]
-                    pose_DOPE.pose.orientation.y = pw_T_obj_obse_ori[1]
-                    pose_DOPE.pose.orientation.z = pw_T_obj_obse_ori[2]
-                    pose_DOPE.pose.orientation.w = pw_T_obj_obse_ori[3]
-                    pub_DOPE_list[obj_index].publish(pose_DOPE)
-
-                    
-                    # print('DOPE_pose_'+OBJECT_NAME_LIST[obj_index])
-                    # print(pw_T_obj_obse_pos[0], pw_T_obj_obse_pos[1], pw_T_obj_obse_pos[2])
-
-                pw_T_obj_obse_name = object_name
-                pw_T_obj_obse_id = 0
-                obse_object = Object_Pose(pw_T_obj_obse_name, pw_T_obj_obse_id, pw_T_obj_obse_pos, pw_T_obj_obse_ori, index=obj_index)
-                temp_pw_T_obj_obse_objs_list.append(obse_object)
-
-                if RECORD_RESULTS_FLAG == True:
-                    obj_name = OBJECT_NAME_LIST[obj_index]
-                    opti_T_rob_opti_pos = ROS_LISTENER.listen_2_robot_pose()[0]
-                    opti_T_rob_opti_ori = ROS_LISTENER.listen_2_robot_pose()[1]
-                    # pose of objects in OptiTrack coordinate frame
-                    opti_T_obj_opti_pos = ROS_LISTENER.listen_2_object_pose(obj_name)[0]
-                    opti_T_obj_opti_ori = ROS_LISTENER.listen_2_object_pose(obj_name)[1]
-                    # pose of objects in robot coordinate frame
-                    rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
-                    pw_T_obj_opti_4_4 = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
-                    pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
-                    pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
-                    pw_T_obj_GT_pose.append(pw_T_obj_opti_4_4)
-                    
-                    obj = obj_name
-                    scene = "scene"+str(task_flag)
-                    obj_scene = obj_name+"_scene"+str(task_flag)
-                    _record_t = time.time()
-                    # x, y, z ,w
-                    _boss_GT_err_ADD_df_list[obj_index].loc[_GT_panda_step] = [_GT_panda_step, _record_t - _record_t_begin, pw_T_obj_opti_pos[0], pw_T_obj_opti_pos[1], pw_T_obj_opti_pos[2], pw_T_obj_opti_ori[0], pw_T_obj_opti_ori[1], pw_T_obj_opti_ori[2], pw_T_obj_opti_ori[3], 'GT', obj, scene, PARTICLE_NUM, VERSION, obj_name]
-                    _boss_obse_err_ADD_df_list[obj_index].loc[_obse_panda_step] = [_obse_panda_step, _record_t - _record_t_begin, pw_T_obj_obse_pos[0], pw_T_obj_obse_pos[1], pw_T_obj_obse_pos[2], pw_T_obj_obse_ori[0], pw_T_obj_obse_ori[1], pw_T_obj_obse_ori[2], pw_T_obj_obse_ori[3], 'DOPE', obj, scene, PARTICLE_NUM, VERSION, obj_name]      
-            _GT_panda_step = _GT_panda_step + 1
-            _obse_panda_step = _obse_panda_step + 1
-
-            pw_T_obj_obse_objects_list = copy.deepcopy(temp_pw_T_obj_obse_objs_list)
+            pw_T_obj_obse = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
+            pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
+            pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
             
+            pw_T_esti_obj_pose_old = estimated_object_set_old_list[obj_index]
+
+            dis_obseCur_estiOld = compute_pos_err_bt_2_points(pw_T_obj_obse_pos, pw_T_esti_obj_pose_old[0])
+            ang_obseCur_estiOld = compute_ang_err_bt_2_points(pw_T_obj_obse_ori, pw_T_esti_obj_pose_old[1])
+            pw_T_obj_obse_pose_new = [pw_T_obj_obse_pos, pw_T_obj_obse_ori]
+
+            minDis_obseCur_parOld, minAng_obseCur_parOld = compute_diff_bt_two_pose(obj_index, _particle_cloud_pub, pw_T_obj_obse_pose_new)            
+
+            if run_alg_flag == "PBPF":
+                # if dis_obseCur_estiOld > dis_std_list[obj_index] or ang_obseCur_estiOld > ang_std_list[obj_index]
+                # "dis_std_list": the mean distance value from each PARTICLE to the OBSE pose
+                if minDis_obseCur_parOld > outlier_dis_list[obj_index] or minAng_obseCur_parOld > outlier_ang_list[obj_index]:
+                    global_objects_outlier_by_DOPE_list[obj_index] = 1
+
+            # only for drawing BOX/ need to change
+            if publish_DOPE_pose_flag == True:
+                pose_DOPE = PoseStamped()
+                pose_DOPE.pose.position.x = pw_T_obj_obse_pos[0]
+                pose_DOPE.pose.position.y = pw_T_obj_obse_pos[1]
+                pose_DOPE.pose.position.z = pw_T_obj_obse_pos[2]
+                pose_DOPE.pose.orientation.x = pw_T_obj_obse_ori[0]
+                pose_DOPE.pose.orientation.y = pw_T_obj_obse_ori[1]
+                pose_DOPE.pose.orientation.z = pw_T_obj_obse_ori[2]
+                pose_DOPE.pose.orientation.w = pw_T_obj_obse_ori[3]
+                pub_DOPE_list[obj_index].publish(pose_DOPE)
+            pw_T_obj_obse_name = object_name
+            pw_T_obj_obse_id = 0
+            obse_object = Object_Pose(pw_T_obj_obse_name, pw_T_obj_obse_id, pw_T_obj_obse_pos, pw_T_obj_obse_ori, index=obj_index)
+            temp_pw_T_obj_obse_objs_list.append(obse_object)
+
             if RECORD_RESULTS_FLAG == True:
+                obj_name = OBJECT_NAME_LIST[obj_index]
+                opti_T_rob_opti_pos = ROS_LISTENER.listen_2_robot_pose()[0]
+                opti_T_rob_opti_ori = ROS_LISTENER.listen_2_robot_pose()[1]
+                # pose of objects in OptiTrack coordinate frame
+                opti_T_obj_opti_pos = ROS_LISTENER.listen_2_object_pose(obj_name)[0]
+                opti_T_obj_opti_ori = ROS_LISTENER.listen_2_object_pose(obj_name)[1]
+                # pose of objects in robot coordinate frame
+                rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
+                pw_T_obj_opti_4_4 = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
+                pw_T_obj_opti_pos = [pw_T_obj_opti_4_4[0][3], pw_T_obj_opti_4_4[1][3], pw_T_obj_opti_4_4[2][3]]
+                pw_T_obj_opti_ori = transformations.quaternion_from_matrix(pw_T_obj_opti_4_4)
+                pw_T_obj_GT_pose.append(pw_T_obj_opti_4_4)
                 
-                # print(pw_T_obj_obse_objects_list[0].pos)
-                # print(pw_T_obj_obse_objects_list[1].pos)
-                _record_obse_pose_first_flag = 1
-                _record_obse_pose_list.append(pw_T_obj_obse_objects_list)
-                _record_GT_pose_list.append(pw_T_obj_GT_pose)
+                obj = obj_name
+                scene = "scene"+str(TASK_FLAG)
+                obj_scene = obj_name+"_scene"+str(TASK_FLAG)
+                _record_t = time.time()
+                # x, y, z ,w
+                _boss_GT_err_ADD_df_list[obj_index].loc[_GT_panda_step] = [_GT_panda_step, _record_t - _record_t_begin, pw_T_obj_opti_pos[0], pw_T_obj_opti_pos[1], pw_T_obj_opti_pos[2], pw_T_obj_opti_ori[0], pw_T_obj_opti_ori[1], pw_T_obj_opti_ori[2], pw_T_obj_opti_ori[3], 'GT', obj, scene, PARTICLE_NUM, VERSION, obj_name]
+                _boss_obse_err_ADD_df_list[obj_index].loc[_obse_panda_step] = [_obse_panda_step, _record_t - _record_t_begin, pw_T_obj_obse_pos[0], pw_T_obj_obse_pos[1], pw_T_obj_obse_pos[2], pw_T_obj_obse_ori[0], pw_T_obj_obse_ori[1], pw_T_obj_obse_ori[2], pw_T_obj_obse_ori[3], 'DOPE', obj, scene, PARTICLE_NUM, VERSION, obj_name]      
 
-            # compute distance between old robot and cur robot (position and angle)
-            rob_link_9_pose_cur = p_sim.getLinkState(sim_rob_id, 9)
-            rob_link_9_ang_cur = p_sim.getEulerFromQuaternion(rob_link_9_pose_cur[1])
-            
-            dis_robcur_robold = compute_pos_err_bt_2_points(rob_link_9_pose_cur[0], rob_link_9_pose_old[0])
-            
-            # only for drawing box
-            # obse_obj_pos_draw = copy.deepcopy(pw_T_obj_obse_objects_list[0].pos)
-            # obse_obj_ori_draw = copy.deepcopy(pw_T_obj_obse_objects_list[0].ori) # pybullet x,y,z,w
-            # pose_DOPE = PoseStamped()
-            # pose_DOPE.pose.position.x = obse_obj_pos_draw[0]
-            # pose_DOPE.pose.position.y = obse_obj_pos_draw[1]
-            # pose_DOPE.pose.position.z = obse_obj_pos_draw[2]
-            # pose_DOPE.pose.orientation.x = obse_obj_ori_draw[0]
-            # pose_DOPE.pose.orientation.y = obse_obj_ori_draw[1]
-            # pose_DOPE.pose.orientation.z = obse_obj_ori_draw[2]
-            # pose_DOPE.pose.orientation.w = obse_obj_ori_draw[3]
-            # # print(pose_DOPE)
-            # pub_DOPE.publish(pose_DOPE)
+        _GT_panda_step = _GT_panda_step + 1
+        _obse_panda_step = _obse_panda_step + 1
 
-            # update according to the pose
-            if UPDATE_STYLE_FLAG == "pose":
-                # PBPF algorithm
-                if run_alg_flag == "PBPF":
-                    if (dis_robcur_robold > d_thresh):
-                        # judgement for any particles contact
-                        if PBPF_alg.isAnyParticleInContact():
-                            simRobot_touch_par_flag = 1
-                            _particle_update_time = _particle_update_time + 1
-                            print("_particle_update_time:")
-                            print(_particle_update_time)
-                            t_begin_PBPF = time.time()
-                            flag_update_num_PB = flag_update_num_PB + 1
-                            pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
-                            # execute PBPF algorithm movement
-                            estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = PBPF_alg.update_particle_filter_PB(ROS_LISTENER.current_joint_values, # joints of robot arm
-                                                                                    pw_T_obj_obse_objects_pose_list) # flag for judging obse work
-                            rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
+        pw_T_obj_obse_objects_list = copy.deepcopy(temp_pw_T_obj_obse_objs_list)
+        
+        if RECORD_RESULTS_FLAG == True:
+            _record_obse_pose_first_flag = 1
+            _record_obse_pose_list.append(pw_T_obj_obse_objects_list)
+            _record_GT_pose_list.append(pw_T_obj_GT_pose)
 
-                            # print("Average time of updating: ",np.mean(PBPF_alg.times))
-                            t_finish_PBPF = time.time()
-                            PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
-                            # print("Time consuming:", t_finish_PBPF - t_begin_PBPF)
-                            # print("Max value:", PBPF_time_cosuming_list.max())
-                            simRobot_touch_par_flag = 0
-                        else:
-                            # also update the pose of the robot arm in the simulation when particles are not touched
-                            PBPF_alg.motion_model(initial_parameter.pybullet_particle_env_collection,
-                                                                initial_parameter.fake_robot_id_collection,
-                                                                ROS_LISTENER.current_joint_values)
-    #                else:
-    #                    PBPF_alg.motion_model(initial_parameter.pybullet_particle_env_collection,
-    #                                                             initial_parameter.fake_robot_id_collection,
-    #                                                             ROS_LISTENER.current_joint_values)
-                # CVPF algorithm
-                if run_alg_flag == "CVPF":
-                    # if (dis_betw_cur_and_old_CV > d_thresh_CV) or (ang_betw_cur_and_old_CV > a_thresh_CV) or (dis_robcur_robold_CV > d_thresh_CV):
-                    if (dis_robcur_robold > d_thresh_CV):
-                        if CVPF_alg.isAnyParticleInContact():
-                            flag_update_num_CV = flag_update_num_CV + 1
-                            boss_obs_pose_CVPF.append(pw_T_obj_obse_objects_list)
-                            # execute CVPF algorithm movement
-                            pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
-                            estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list) # flag for judging obse work
-                            rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
-                        else:
-                            CVPF_alg.robot_arm_move_CV(ROS_LISTENER.current_joint_values) # joints of robot arm
-    #                else:
-    #                    CVPF_alg.robot_arm_move_CV(ROS_LISTENER.current_joint_values) # joints of robot arm
-                        
-            # update according to the time
-            elif UPDATE_STYLE_FLAG == "time":
-                while not rospy.is_shutdown():
-                    t_begin_sleep = time.time()
-                    # PBPF algorithm
-                    Only_update_robot_flag = False
-                    if run_alg_flag == "PBPF":
-                        # mark
-                        if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
-                        # if True:
-                            print("Run ", RUNNING_MODEL, "; Repeat time:", REPEAT_TIME)
-                            simRobot_touch_par_flag = 1
-                            _particle_update_time = _particle_update_time + 1
-                            print("_particle_update_time:", _particle_update_time)
-                            t_begin_PBPF = time.time()
-                            flag_update_num_PB = flag_update_num_PB + 1
-                            pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
-                            # execute PBPF algorithm movement
-                            estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = PBPF_alg.update_particle_filter_PB(ROS_LISTENER.current_joint_values, # joints of robot arm
-                                                                                    pw_T_obj_obse_objects_pose_list)
-                            rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
-                            t_finish_PBPF = time.time()
-                            PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
-                            # mark
-                            print("Time consuming:", t_finish_PBPF - t_begin_PBPF)
-                            print("Max value:", max(PBPF_time_cosuming_list))
-                            simRobot_touch_par_flag = 0
-                        else:
-                            Only_update_robot_flag = True
-                            # print("Just Update Robot")
-                            PBPF_alg.motion_model(initial_parameter.pybullet_particle_env_collection,
-                                                                initial_parameter.fake_robot_id_collection,
-                                                                ROS_LISTENER.current_joint_values)
-                    # CVPF algorithm
-                    elif run_alg_flag == "CVPF":
-                        # if CVPF_alg.isAnyParticleInContact():
-                        # if dis_robcur_robold > 0.002:
+        # compute distance between old robot and cur robot (position and angle)
+        rob_link_9_pose_cur = p_sim.getLinkState(sim_rob_id, 9)
+        rob_link_9_ang_cur = p_sim.getEulerFromQuaternion(rob_link_9_pose_cur[1])
+        
+        dis_robcur_robold = compute_pos_err_bt_2_points(rob_link_9_pose_cur[0], rob_link_9_pose_old[0])
+                
+        # update according to the pose
+        if UPDATE_STYLE_FLAG == "pose":
+            # PBPF algorithm
+            if run_alg_flag == "PBPF":
+                if (dis_robcur_robold > d_thresh):
+                    # judgement for any particles contact
+                    if PBPF_alg.isAnyParticleInContact():
+                        simRobot_touch_par_flag = 1
+                        _particle_update_time = _particle_update_time + 1
+                        print("_particle_update_time:")
+                        print(_particle_update_time)
+                        t_begin_PBPF = time.time()
+                        flag_update_num_PB = flag_update_num_PB + 1
+                        pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
+                        # execute PBPF algorithm movement
+                        estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = PBPF_alg.update_particle_filter_PB(ROS_LISTENER.current_joint_values, # joints of robot arm
+                                                                                pw_T_obj_obse_objects_pose_list) # flag for judging obse work
+                        rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
+
+                        # print("Average time of updating: ",np.mean(PBPF_alg.times))
+                        t_finish_PBPF = time.time()
+                        PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
+                        # print("Time consuming:", t_finish_PBPF - t_begin_PBPF)
+                        # print("Max value:", PBPF_time_cosuming_list.max())
+                        simRobot_touch_par_flag = 0
+                    else:
+                        # also update the pose of the robot arm in the simulation when particles are not touched
+                        PBPF_alg.motion_model(initial_parameter.pybullet_particle_env_collection,
+                                                            initial_parameter.fake_robot_id_collection,
+                                                            ROS_LISTENER.current_joint_values)
+                # else:
+                #     PBPF_alg.motion_model(initial_parameter.pybullet_particle_env_collection,
+                #                           initial_parameter.fake_robot_id_collection,
+                #                           ROS_LISTENER.current_joint_values)
+            # CVPF algorithm
+            if run_alg_flag == "CVPF":
+                # if (dis_betw_cur_and_old_CV > d_thresh_CV) or (ang_betw_cur_and_old_CV > a_thresh_CV) or (dis_robcur_robold_CV > d_thresh_CV):
+                if (dis_robcur_robold > d_thresh_CV):
+                    if CVPF_alg.isAnyParticleInContact():
                         flag_update_num_CV = flag_update_num_CV + 1
                         boss_obs_pose_CVPF.append(pw_T_obj_obse_objects_list)
                         # execute CVPF algorithm movement
                         pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                         estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list) # flag for judging obse work
                         rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
-                        # else:
-                        #     CVPF_alg.robot_arm_move_CV(ROS_LISTENER.current_joint_values) # joints of robot arm
-                            
-                    estimated_object_set_old = copy.deepcopy(estimated_object_set)
-                    estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
+                    else:
+                        CVPF_alg.robot_arm_move_CV(ROS_LISTENER.current_joint_values) # joints of robot arm
+                # else:
+                #    CVPF_alg.robot_arm_move_CV(ROS_LISTENER.current_joint_values) # joints of robot arm
                     
-                    if Only_update_robot_flag == False:
-                        print("Waiting for next loop")
-                        PF_UPDATE_RATE.sleep()
-                        t_finish_sleep = time.time()
-                        print("sleep time:", t_finish_sleep - t_begin_sleep)
-                        print("========================================")
-                    break    
-            t_end_while = time.time()
-            if Flag is False:
-                break
+        # update according to the time
+        elif UPDATE_STYLE_FLAG == "time":
+            while not rospy.is_shutdown():
+                contact_results_list = []
+                t_begin_sleep = time.time()
+                Only_update_robot_flag = False
+                if run_alg_flag == "PBPF": # PBPF algorithm
+                    # check robot arm and objects have collision
+                    for env_index, single_env in _single_envs.items():
+                        single_env.queue.put((SingleENV.isAnyParticleInContact, ))
+                    for env_index, single_env in _single_envs.items():  
+                        contact_result = wait_and_get_result_from(single_env)
+                        contact_results_list.append(contact_result)
+                    has_true = any(result['result'] for result in contact_results_list)
+                    if any(result['result'] for result in contact_results_list) and (dis_robcur_robold > 0.002):
+
+
+                    else:
+                        Only_update_robot_flag = True
+                        for env_index, single_env in _single_envs.items():
+                            single_env.queue.put((SingleENV.move_robot_JointPosition, ROS_LISTENER.current_joint_values))
+                            
+
+                    input("stop")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    if PBPF_alg.isAnyParticleInContact() and (dis_robcur_robold > 0.002):
+                    # if True:
+                        print("Run ", RUNNING_MODEL, "; Repeat time:", REPEAT_TIME)
+                        simRobot_touch_par_flag = 1
+                        _particle_update_time = _particle_update_time + 1
+                        print("_particle_update_time:", _particle_update_time)
+                        t_begin_PBPF = time.time()
+                        flag_update_num_PB = flag_update_num_PB + 1
+                        pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
+                        # execute PBPF algorithm movement
+                        estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = PBPF_alg.update_particle_filter_PB(ROS_LISTENER.current_joint_values, # joints of robot arm
+                                                                                pw_T_obj_obse_objects_pose_list)
+                        rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
+                        t_finish_PBPF = time.time()
+                        PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
+                        # mark
+                        print("Time consuming:", t_finish_PBPF - t_begin_PBPF)
+                        print("Max value:", max(PBPF_time_cosuming_list))
+                        simRobot_touch_par_flag = 0
+                    else:
+                        Only_update_robot_flag = True
+                        # print("Just Update Robot")
+                        PBPF_alg.motion_model(initial_parameter.pybullet_particle_env_collection,
+                                                            initial_parameter.fake_robot_id_collection,
+                                                            ROS_LISTENER.current_joint_values)
+                # CVPF algorithm
+                elif run_alg_flag == "CVPF":
+                    # if CVPF_alg.isAnyParticleInContact():
+                    # if dis_robcur_robold > 0.002:
+                    flag_update_num_CV = flag_update_num_CV + 1
+                    boss_obs_pose_CVPF.append(pw_T_obj_obse_objects_list)
+                    # execute CVPF algorithm movement
+                    pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
+                    estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = CVPF_alg.update_particle_filter_CV(pw_T_obj_obse_objects_pose_list) # flag for judging obse work
+                    rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
+                    # else:
+                    #     CVPF_alg.robot_arm_move_CV(ROS_LISTENER.current_joint_values) # joints of robot arm
+                        
+                estimated_object_set_old = copy.deepcopy(estimated_object_set)
+                estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
+                
+                if Only_update_robot_flag == False:
+                    print("Waiting for next loop")
+                    PF_UPDATE_RATE.sleep()
+                    t_finish_sleep = time.time()
+                    print("sleep time:", t_finish_sleep - t_begin_sleep)
+                    print("========================================")
+                break    
+        t_end_while = time.time()
+
         
-        
-        p_sim.disconnect()
-        par_length = len(p_par_env_list)
-        for i in range(par_length):
-            p_par_env_list[i].disconnect()
+    p_sim.disconnect()
+    par_length = len(p_par_env_list)
+    for i in range(par_length):
+        p_par_env_list[i].disconnect()
 
 
 

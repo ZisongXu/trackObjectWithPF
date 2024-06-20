@@ -18,14 +18,13 @@ gazebo_flag: false
 height: 480
 ignore_edge_pixels: false
 locate_camera_flag: ar
-motion_model_flag: normal
 multiprocessing_flag: false
 nearVal: 0.03
 object_name_list:
-- soup
-- Parmesan
+- cracker
+- Ketchup
 - Milk
-object_num: 1
+object_num: 2
 objs_are_not_touching_target_objs_num: 0
 objs_touching_target_objs_num: 0
 optitrack_flag: true
@@ -40,11 +39,12 @@ otob_name_list:
 - cracker_obstacle
 - fish_can
 panda_robot_link_number: 11
-particle_num: 10
+particle_num: 5
 pb_render_flag: false
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0
 print_score_flag: false
+process_model_flag: normal
 ray_tracing_type: multiray
 record_results_flag: false
 robot_num: 1

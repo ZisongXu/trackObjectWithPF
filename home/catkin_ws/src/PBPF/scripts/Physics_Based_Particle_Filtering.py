@@ -3376,12 +3376,16 @@ if __name__ == '__main__':
 
     _objs_pose_info_list = [0] * PARTICLE_NUM
     _particle_cloud_pub = [0] * PARTICLE_NUM
+    t1 = time.time()
     for env_index, single_env in _single_envs.items():
         single_env.queue.put((SingleENV.get_objects_pose, ))
     for env_index, single_env in _single_envs.items():  
         objs_pose_info = wait_and_get_result_from(single_env)
         _objs_pose_info_list[env_index] = objs_pose_info
         _particle_cloud_pub[env_index] = objs_pose_info["one_particle"]
+    t2 = time.time()
+    print(t2-t1)
+    input("")
     # ============================================================================
 
     # get estimated object
@@ -3860,7 +3864,7 @@ if __name__ == '__main__':
                         simRobot_touch_par_flag = 1
                         _particle_update_time = _particle_update_time + 1
                         if PRINT_FLAG == True:
-                            print("Run ", RUNNING_MODEL, "; Repeat time:", REPEAT_TIME. "; Particle Update Time:", _particle_update_time)
+                            print("Run ", RUNNING_MODEL, "; Repeat time:", REPEAT_TIME, "; Particle Update Time:", _particle_update_time)
                         t_begin_PBPF = time.time()
                         pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                         # execute PBPF algorithm movement

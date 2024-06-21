@@ -39,11 +39,11 @@ otob_name_list:
 - cracker_obstacle
 - fish_can
 panda_robot_link_number: 11
-particle_num: 5
-print_flag: true
+particle_num: 70
 pb_render_flag: false
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0
+print_flag: true
 print_score_flag: false
 process_model_flag: normal
 ray_tracing_type: multiray

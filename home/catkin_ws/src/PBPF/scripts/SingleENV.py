@@ -91,7 +91,19 @@ class SingleENV(multiprocessing.Process):
         self.OBJS_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_touching_target_objs_num']
         self.OBJECT_NAME_LIST = self.parameter_info['object_name_list']
         
+        self.MASS_MEAN = 1.750 # 0.380
+        self.MASS_SIGMA = 0.5
+        self.FRICTION_MEAN = 0.1
+        self.FRICTION_SIGMA = 0.3
+        self.RESTITUTION_MEAN = 0.9
+        self.RESTITUTION_SIGMA = 0.2
+
     def run(self):
+        # This is needed due to how multiprocessing works which will fork the
+        # main process, including the seed for numpy random library and as a result, 
+        # if the seed is not re-generated in each process, 
+        # each process will generate the same noisy trajectory.
+        np.random.seed()
         self.init_pybullet()
         while True:
             with self.lock:
@@ -237,7 +249,46 @@ class SingleENV(multiprocessing.Process):
                     return [('result', True)]
         return [('result', False)]
 
+    def motion_model(self, joint_states):
+        # change object parameters
+        for obj_index in range(self.object_num):
+            obj_id = self.objects_list[obj_index].no_visual_par_id
+            self.p_env.resetBaseVelocity(obj_id,
+                                         self.objects_list[obj_index].linearVelocity,
+                                         self.objects_list[obj_index].angularVelocity,)
+            self.change_obj_parameters(obj_id)
+        # excute robot movement
+        self.move_robot_JointPosition(joint_states)
+        # collision check
+        
 
+
+    def init_set_sim_robot_JointPosition(self, joint_states):
+        num_joints = 9
+        for joint_index in range(num_joints):
+            if joint_index == 7 or joint_index == 8:
+                self.p_env.resetJointState(self.robot_id,
+                                           joint_index+2,
+                                           targetValue=joint_states[joint_index])
+            else:
+                self.p_env.resetJointState(self.robot_id,
+                                           joint_index,
+                                           targetValue=joint_states[joint_index])
+
+    def move_robot_JointPosition(self, joint_states):
+        num_joints = 9
+        for joint_index in range(num_joints):
+            if joint_index == 7 or joint_index == 8:
+                self.p_env.setJointMotorControl2(self.robot_id, joint_index+2,
+                                                 pybullet_env.POSITION_CONTROL,
+                                                 targetPosition=joint_states[joint_index])
+            else:
+                self.p_env.setJointMotorControl2(self.robot_id, joint_index,
+                                                 pybullet_env.POSITION_CONTROL,
+                                                 argetPosition=joint_states[joint_index])
+        for time_index in range(int(self.pf_update_interval_in_sim)):
+            self.p_env.stepSimulation()
+        return [("done", True)]
 
     def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):
         quat = pw_T_obj_obse_ori # x,y,z,w
@@ -260,32 +311,6 @@ class SingleENV(multiprocessing.Process):
         ###pb_quat(x,y,z,w)
         pb_quat = [new_quat[1], new_quat[2], new_quat[3], new_quat[0]]
         return [x, y, z], pb_quat
-    
-    def init_set_sim_robot_JointPosition(self, position):
-        num_joints = 9
-        for joint_index in range(num_joints):
-            if joint_index == 7 or joint_index == 8:
-                self.p_env.resetJointState(self.robot_id,
-                                           joint_index+2,
-                                           targetValue=position[joint_index])
-            else:
-                self.p_env.resetJointState(self.robot_id,
-                                           joint_index,
-                                           targetValue=position[joint_index])
-
-    def move_robot_JointPosition(self, position):
-        num_joints = 9
-        for joint_index in range(num_joints):
-            if joint_index == 7 or joint_index == 8:
-                self.p_env.setJointMotorControl2(self.robot_id, joint_index+2,
-                                                 pybullet_env.POSITION_CONTROL,
-                                                 targetPosition=position[joint_index])
-            else:
-                self.p_env.setJointMotorControl2(self.robot_id, joint_index,
-                                                 pybullet_env.POSITION_CONTROL,
-                                                 argetPosition=position[joint_index])
-        for time_index in range(int(self.pf_update_interval_in_sim)):
-            self.p_env.stepSimulation()
 
     def add_noise_to_init_par(self, current_pos, sigma_init):
         mean = current_pos
@@ -308,3 +333,24 @@ class SingleENV(multiprocessing.Process):
             new_quaternion = [-quaternion[0], -quaternion[1], -quaternion[2], -quaternion[3]]
             return new_quaternion
         return quaternion
+
+    # change particle parameters
+    def change_obj_parameters(self, obj_id):
+        mass_a = self.take_easy_gaussian_value(self.MASS_MEAN, self.MASS_SIGMA)
+        if mass_a < 0.001:
+            mass_a = 0.05
+        lateralFriction = self.take_easy_gaussian_value(self.FRICTION_MEAN, self.FRICTION_SIGMA)
+        spinningFriction = self.take_easy_gaussian_value(self.FRICTION_MEAN, self.FRICTION_SIGMA)
+        rollingFriction = self.take_easy_gaussian_value(self.FRICTION_MEAN, self.FRICTION_SIGMA)
+        if lateralFriction < 0.001:
+            lateralFriction = 0.001
+        if spinningFriction < 0.001:
+            spinningFriction = 0.001
+        if rollingFriction < 0.001:
+            rollingFriction = 0.001
+        restitution = self.take_easy_gaussian_value(self.RESTITUTION_MEAN, self.RESTITUTION_SIGMA)
+        pybullet_env.changeDynamics(obj_id, -1, mass = mass_a, 
+                                    lateralFriction = lateralFriction, 
+                                    spinningFriction = spinningFriction, 
+                                    rollingFriction = rollingFriction, 
+                                    restitution = restitution)

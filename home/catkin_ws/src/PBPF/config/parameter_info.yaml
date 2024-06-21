@@ -40,6 +40,7 @@ otob_name_list:
 - fish_can
 panda_robot_link_number: 11
 particle_num: 5
+print_flag: true
 pb_render_flag: false
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0

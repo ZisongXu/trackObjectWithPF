@@ -141,6 +141,7 @@ VISIBILITY_COMPUTE_SEPARATE_FLAG = parameter_info['visibility_compute_separate_f
 PROCESS_MODEL_FLAG = parameter_info['process_model_flag'] # thread/multiprocess/normal
 
 RECORD_RESULTS_FLAG = parameter_info['record_results_flag'] 
+PRINT_FLAG = parameter_info['print_flag']
 
 PRINT_SCORE_FLAG = parameter_info['print_score_flag'] 
 SHOW_RAY = parameter_info['show_ray']
@@ -3256,7 +3257,6 @@ if __name__ == '__main__':
     a_thresh_CV = 0.0010
 
     flag_update_num_CV = 0
-    flag_update_num_PB = 0
     
     if run_alg_flag == "PBPF" and VERSION == "old" and USING_D_FLAG == False:
         print("1: run_alg_flag: ",run_alg_flag,"; VERSION: ", VERSION, "; USING_D_FLAG: ", USING_D_FLAG)
@@ -3418,7 +3418,7 @@ if __name__ == '__main__':
             break
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
-    print("I am here2")
+    print("Finish getting pose of camera!")
     rob_T_cam_tf_pos = list(trans_camera)
     rob_T_cam_tf_ori = list(rot_camera)
     rob_T_cam_tf_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_cam_tf_ori)).reshape(3, 3)
@@ -3806,7 +3806,6 @@ if __name__ == '__main__':
                         print("_particle_update_time:")
                         print(_particle_update_time)
                         t_begin_PBPF = time.time()
-                        flag_update_num_PB = flag_update_num_PB + 1
                         pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                         # execute PBPF algorithm movement
                         estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = PBPF_alg.update_particle_filter_PB(ROS_LISTENER.current_joint_values, # joints of robot arm
@@ -3854,18 +3853,29 @@ if __name__ == '__main__':
                     # check robot arm and objects have collision
                     for env_index, single_env in _single_envs.items():
                         single_env.queue.put((SingleENV.isAnyParticleInContact, ))
-                    for env_index, single_env in _single_envs.items():  
+                    for env_index, single_env in _single_envs.items():
                         contact_result = wait_and_get_result_from(single_env)
                         contact_results_list.append(contact_result)
-                    has_true = any(result['result'] for result in contact_results_list)
                     if any(result['result'] for result in contact_results_list) and (dis_robcur_robold > 0.002):
-
-
+                        simRobot_touch_par_flag = 1
+                        _particle_update_time = _particle_update_time + 1
+                        if PRINT_FLAG == True:
+                            print("Run ", RUNNING_MODEL, "; Repeat time:", REPEAT_TIME. "; Particle Update Time:", _particle_update_time)
+                        t_begin_PBPF = time.time()
+                        pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
+                        # execute PBPF algorithm movement
+                        # motion model
+                        for env_index, single_env in _single_envs.items():
+                            single_env.queue.put((SingleENV.motion_model, ROS_LISTENER.current_joint_values))
+                        estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = PBPF_alg.update_particle_filter_PB(ROS_LISTENER.current_joint_values, # joints of robot arm
+                                                                                pw_T_obj_obse_objects_pose_list)
+                        
                     else:
                         Only_update_robot_flag = True
                         for env_index, single_env in _single_envs.items():
                             single_env.queue.put((SingleENV.move_robot_JointPosition, ROS_LISTENER.current_joint_values))
-                            
+                        for env_index, single_env in _single_envs.items():
+                            no_use = wait_and_get_result_from(single_env)
 
                     input("stop")
 
@@ -3890,7 +3900,6 @@ if __name__ == '__main__':
                         _particle_update_time = _particle_update_time + 1
                         print("_particle_update_time:", _particle_update_time)
                         t_begin_PBPF = time.time()
-                        flag_update_num_PB = flag_update_num_PB + 1
                         pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                         # execute PBPF algorithm movement
                         estimated_object_set, dis_std_list, ang_std_list, particle_cloud_pub = PBPF_alg.update_particle_filter_PB(ROS_LISTENER.current_joint_values, # joints of robot arm

@@ -74,6 +74,13 @@ class SingleENV(multiprocessing.Process):
         self.boss_sigma_obs_z = 0.02
         self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
         
+        # Motion Model Noise
+        self.MOTION_MODEL_POS_NOISE = 0.01 # original value = 0.005
+        self.MOTION_MODEL_ANG_NOISE = 0.1 # original value = 0.05
+        self.MOTION_NOISE = True
+        # Observation Model
+        self.BOSS_SIGMA_OBS_POS = 0.1
+        
         # mark
         # self.boss_sigma_obs_x = 0
         # self.boss_sigma_obs_y = 0
@@ -90,7 +97,7 @@ class SingleENV(multiprocessing.Process):
         self.OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_are_not_touching_target_objs_num']
         self.OBJS_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_touching_target_objs_num']
         self.OBJECT_NAME_LIST = self.parameter_info['object_name_list']
-        
+        self.PANDA_ROBOT_LINK_NUMBER = self.parameter_info['panda_robot_link_number']
         self.MASS_MEAN = 1.750 # 0.380
         self.MASS_SIGMA = 0.5
         self.FRICTION_MEAN = 0.1
@@ -112,6 +119,10 @@ class SingleENV(multiprocessing.Process):
                     result = method(self, *args)
                     for key, value in result:
                         self.result[key] = value
+            time.sleep(0.00001)
+    
+    def dummy(self):
+        return [('success', True)]
 
     def init_pybullet(self):
         if self.SHOW_RAY == True:
@@ -163,9 +174,9 @@ class SingleENV(multiprocessing.Process):
 
             board_pos_1 = [0.274, 0.581, 0.87575]
             board_ori_1 = self.p_env.getQuaternionFromEuler([math.pi/2,math.pi/2,0])
-            board_id_1 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"), board_pos_1, board_ori_1, useFixedBase = 1)
+            self.board_id_1 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"), board_pos_1, board_ori_1, useFixedBase = 1)
 
-            self.collision_detection_obj_id_collection.append(board_id_1)
+            self.collision_detection_obj_id_collection.append(self.board_id_1)
 
     def add_robot(self):
         real_robot_start_pos = self.pw_T_rob_sim_pose_list_alg[0].pos
@@ -184,7 +195,6 @@ class SingleENV(multiprocessing.Process):
             obj_obse_name = self.pw_T_obj_obse_obj_list_alg[obj_index].obj_name
             if print_object_name_flag == obj_index:
                 print_object_name_flag = print_object_name_flag + 1
-                print("Generate particles for the target object:", obj_obse_name)
             particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
             gazebo_contain = ""
             if self.gazebo_flag == True:
@@ -225,7 +235,7 @@ class SingleENV(multiprocessing.Process):
             objPose = Particle(obj_obse_name, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, 0, 0, 0)
             self.objects_list[obj_index] = objPose
             
-    def get_objects_pose(self):
+    def get_objects_pose(self, par_index):
         return_results = []
         for obj_index in range(self.object_num):
             obj_id = self.particle_objects_id_collection[obj_index]
@@ -233,7 +243,7 @@ class SingleENV(multiprocessing.Process):
             obj_name = self.OBJECT_NAME_LIST[obj_index]
             obj_tuple = (obj_name, obj_info)
             return_results.append(obj_tuple)
-        return_results.append(("one_particle", self.objects_list))
+        return_results.append((str(par_index), self.objects_list))
         return return_results
 
     def isAnyParticleInContact(self):
@@ -249,18 +259,41 @@ class SingleENV(multiprocessing.Process):
                     return [('result', True)]
         return [('result', False)]
 
-    def motion_model(self, joint_states):
+    def motion_model(self, joint_states, par_index):
         # change object parameters
+        collision_detection_obj_id_ = []
+        return_results = []
         for obj_index in range(self.object_num):
             obj_id = self.objects_list[obj_index].no_visual_par_id
             self.p_env.resetBaseVelocity(obj_id,
                                          self.objects_list[obj_index].linearVelocity,
                                          self.objects_list[obj_index].angularVelocity,)
             self.change_obj_parameters(obj_id)
-        # excute robot movement
+        # execute the control
         self.move_robot_JointPosition(joint_states)
+        # collision check: add robot
+        collision_detection_obj_id_.append(self.robot_id)
+        # collision check: add board
+        collision_detection_obj_id_.append(self.board_id_1)
         # collision check
-        
+        for obj_index in range(self.object_num):
+            obj_id = self.objects_list[obj_index].no_visual_par_id
+            # get linearVelocity and angularVelocity of the object from each particle
+            linearVelocity, angularVelocity = self.p_env.getBaseVelocity(obj_id)
+            obj_cur_pos, obj_cur_ori = self.get_item_pos(obj_id)
+            # add noise on pose of each particle
+            normal_x, normal_y, normal_z, pb_quat = self.add_noise_pose(obj_cur_pos, obj_cur_ori)
+            self.p_env.resetBasePositionAndOrientation(obj_id, [normal_x, normal_y, normal_z], pb_quat)
+            collision_detection_obj_id_.append(obj_id)
+            obj_pose_3_1 = [normal_x, normal_y, normal_z, pb_quat]
+            if self.MOTION_NOISE == True:
+                normal_x, normal_y, normal_z, pb_quat = self.collision_check(collision_detection_obj_id_,
+                                                                             obj_cur_pos, obj_cur_ori,
+                                                                             obj_id, obj_index, obj_pose_3_1)
+            self.update_object_pose_PB(obj_index, normal_x, normal_y, normal_z, pb_quat, linearVelocity, angularVelocity)
+        self.p_env.stepSimulation()
+        return_results = self.get_objects_pose(par_index)
+        return return_results
 
 
     def init_set_sim_robot_JointPosition(self, joint_states):
@@ -280,15 +313,61 @@ class SingleENV(multiprocessing.Process):
         for joint_index in range(num_joints):
             if joint_index == 7 or joint_index == 8:
                 self.p_env.setJointMotorControl2(self.robot_id, joint_index+2,
-                                                 pybullet_env.POSITION_CONTROL,
+                                                 self.p_env.POSITION_CONTROL,
                                                  targetPosition=joint_states[joint_index])
             else:
                 self.p_env.setJointMotorControl2(self.robot_id, joint_index,
-                                                 pybullet_env.POSITION_CONTROL,
-                                                 argetPosition=joint_states[joint_index])
+                                                 self.p_env.POSITION_CONTROL,
+                                                 targetPosition=joint_states[joint_index])
         for time_index in range(int(self.pf_update_interval_in_sim)):
             self.p_env.stepSimulation()
         return [("done", True)]
+
+    def compare_distance(self, par_index, pw_T_obj_obse_objects_pose_list, visual_by_DOPE_list, outlier_by_DOPE_list):
+        weight =  1.0 / self.particle_num
+        weights_list = [weight] * self.obj_num
+        for obj_index in range(self.obj_num):
+            self.objects_list[obj_index].w = weight
+        # at least one object is detected by camera
+        if (sum(visual_by_DOPE_list)<self.object_num) and (sum(outlier_by_DOPE_list)<self.object_num):
+            for obj_index in range(self.object_num):
+                obj_visual = visual_by_DOPE_list[obj_index]
+                obj_outlier = outlier_by_DOPE_list[obj_index]
+                obj_x = self.objects_list[obj_index].pos[0]
+                obj_y = self.objects_list[obj_index].pos[1]
+                obj_z = self.objects_list[obj_index].pos[2]
+                obj_ori = self.quaternion_correction(self.objects_list[obj_index].ori)
+                # obj_visual=0 means DOPE detects the object[obj_index]
+                # obj_visual=1 means DOPE does not detect the object[obj_index] and skip this loop
+                # obj_outlier=0 means DOPE detects the object[obj_index]
+                # obj_outlier=1 means DOPE detects the object[obj_index], but we judge it is outlier and skip this loop
+                if obj_visual==0 and obj_outlier==0:
+                    obse_obj_pos = pw_T_obj_obse_objects_pose_list[obj_index].pos
+                    obse_obj_ori = pw_T_obj_obse_objects_pose_list[obj_index].ori # pybullet x,y,z,w
+                    # make sure theta between -pi and pi
+                    obse_obj_ori = self.quaternion_correction(obse_obj_ori)
+                    mean = 0
+                    # position weight
+                    dis_x = abs(obj_x - obse_obj_pos[0])
+                    dis_y = abs(obj_y - obse_obj_pos[1])
+                    dis_z = abs(obj_z - obse_obj_pos[2])
+                    dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
+                    weight_xyz = self.normal_distribution(dis_xyz, mean, self.BOSS_SIGMA_OBS_POS)
+                    # rotation weight
+                    obse_obj_quat = Quaternion(x=obse_obj_ori[0], y=obse_obj_ori[1], z=obse_obj_ori[2], w=obse_obj_ori[3]) # Quaternion(): w,x,y,z
+                    par_quat = Quaternion(x=obj_ori[0], y=obj_ori[1], z=obj_ori[2], w=obj_ori[3])
+                    err_bt_par_obse = par_quat * obse_obj_quat.inverse
+                    err_bt_par_obse_corr = quaternion_correction([err_bt_par_obse.x, err_bt_par_obse.y, err_bt_par_obse.z, err_bt_par_obse.w])
+                    err_bt_par_obse_corr_quat = Quaternion(x=err_bt_par_obse_corr[0], y=err_bt_par_obse_corr[1], z=err_bt_par_obse_corr[2], w=err_bt_par_obse_corr[3]) # Quaternion(): w,x,y,z
+                    cos_theta_over_2 = err_bt_par_obse_corr_quat.w
+                    sin_theta_over_2 = math.sqrt(err_bt_par_obse_corr_quat.x ** 2 + err_bt_par_obse_corr_quat.y ** 2 + err_bt_par_obse_corr_quat.z ** 2)
+                    theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
+                    theta = theta_over_2 * 2.0
+                    weight_ang = self.normal_distribution(theta, mean, BOSS_SIGMA_OBS_ANG)
+                    weight = weight_xyz * weight_ang
+                    self.objects_list[obj_index].w = weight
+                    weights_list[obj_index] = weight
+        return [(str(par_index), weights_list)]
 
     def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):
         quat = pw_T_obj_obse_ori # x,y,z,w
@@ -312,15 +391,70 @@ class SingleENV(multiprocessing.Process):
         pb_quat = [new_quat[1], new_quat[2], new_quat[3], new_quat[0]]
         return [x, y, z], pb_quat
 
+    def update_object_pose_PB(self, obj_index, x, y, z, pb_quat, linearVelocity, angularVelocity):
+        self.objects_list[obj_index].pos = [x, y, z]
+        self.objects_list[obj_index].ori = pb_quat
+        self.objects_list[obj_index].linearVelocity = linearVelocity
+        self.objects_list[obj_index].angularVelocity = angularVelocity
+        obj_id = self.objects_list[obj_index].no_visual_par_id
+        self.p_env.resetBasePositionAndOrientation(obj_id, [x, y, z], pb_quat)
+
     def add_noise_to_init_par(self, current_pos, sigma_init):
         mean = current_pos
         sigma = sigma_init
         new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
         return new_pos_is_added_noise
     
-    def take_easy_gaussian_value(self, mean,sigma):
+    def take_easy_gaussian_value(self, mean, sigma):
         normal = random.normalvariate(mean, sigma)
         return normal
+
+    def get_item_pos(self, item_id):
+        item_info = self.p_env.getBasePositionAndOrientation(item_id)
+        return item_info[0], item_info[1]
+
+    def getLinkStates(self):
+        all_links_info = self.p_env.getLinkStates(self.robot_id, range(self.PANDA_ROBOT_LINK_NUMBER + 2), computeForwardKinematics=True) # 11+2; range: [0,13)
+        return [("links_info", all_links_info)]
+
+    # add noise
+    def add_noise_pose(self, obj_cur_pos, obj_cur_ori): # obj_cur_pos: x,y,z; obj_cur_ori: x,y,z,w
+        # add noise to pos of object
+        normal_x = self.add_noise_2_par(obj_cur_pos[0])
+        normal_y = self.add_noise_2_par(obj_cur_pos[1])
+        normal_z = self.add_noise_2_par(obj_cur_pos[2])
+        # add noise to ang of object
+        quat_QuatStyle = Quaternion(x=obj_cur_ori[0], y=obj_cur_ori[1], z=obj_cur_ori[2], w=obj_cur_ori[3])# w,x,y,z
+        random_dir = random.uniform(0, 2*math.pi)
+        z_axis = random.uniform(-1,1)
+        x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
+        y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
+        angle_noise = self.add_noise_2_ang(0)
+        w_quat = math.cos(angle_noise/2.0)
+        x_quat = math.sin(angle_noise/2.0) * x_axis
+        y_quat = math.sin(angle_noise/2.0) * y_axis
+        z_quat = math.sin(angle_noise/2.0) * z_axis
+        ###nois_quat(w,x,y,z); new_quat(w,x,y,z)
+        nois_quat = Quaternion(x=x_quat, y=y_quat, z=z_quat, w=w_quat)
+        new_quat = nois_quat * quat_QuatStyle
+        ###pb_quat(x,y,z,w); pb_quat(x,y,z,w)
+        pb_quat = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
+        new_angle = p.getEulerFromQuaternion(pb_quat)
+        pb_quat = p.getQuaternionFromEuler(new_angle)
+        # pipe.send()
+        return normal_x, normal_y, normal_z, pb_quat
+
+    def add_noise_2_par(self, current_pos):
+        mean = current_pos
+        sigma = self.MOTION_MODEL_POS_NOISE
+        new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
+        return new_pos_is_added_noise
+
+    def add_noise_2_ang(self, cur_angle):
+        mean = cur_angle
+        sigma = self.MOTION_MODEL_ANG_NOISE
+        new_ang_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
+        return new_ang_is_added_noise
     
     # make sure all quaternions all between -pi and +pi
     def quaternion_correction(self, quaternion): # x,y,z,w
@@ -328,11 +462,50 @@ class SingleENV(multiprocessing.Process):
         cos_theta_over_2 = new_quat.w
         sin_theta_over_2 = math.sqrt(new_quat.x ** 2 + new_quat.y ** 2 + new_quat.z ** 2)
         theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
-        theta = theta_over_2 * 2
-        if theta >= math.pi or theta <= -math.pi:
-            new_quaternion = [-quaternion[0], -quaternion[1], -quaternion[2], -quaternion[3]]
-            return new_quaternion
-        return quaternion
+        theta = theta_over_2 * 2.0
+        while theta >= math.pi:
+            theta = theta - 2.0*math.pi
+        while theta <= -math.pi:
+            theta = theta + 2.0*math.pi
+        new_quaternion = [math.sin(theta/2.0)*(new_quat.x/sin_theta_over_2), math.sin(theta/2.0)*(new_quat.y/sin_theta_over_2), math.sin(theta/2.0)*(new_quat.z/sin_theta_over_2), math.cos(theta/2.0)]
+        return new_quaternion
+
+    def normal_distribution(self, x, mean, sigma):
+        return sigma * np.exp(-1*((x-mean)**2)/(2*(sigma**2)))/(math.sqrt(2*np.pi)* sigma)
+    
+
+    def collision_check(self, collision_detection_obj_id_, obj_cur_pos, obj_cur_ori, obj_id, obj_index, obj_pose_3_1):
+        normal_x = obj_pose_3_1[0]
+        normal_y = obj_pose_3_1[1]
+        normal_z = obj_pose_3_1[2]
+        pb_quat = obj_pose_3_1[3]
+        nTries = 0
+        collision_id_length = len(collision_detection_obj_id_)
+        while nTries < 20:
+            nTries = nTries + 1
+            flag = 0
+            for check_num in range(collision_id_length-1):
+                self.p_env.stepSimulation()
+                # will return all collision points
+                contacts = self.p_env.getContactPoints(bodyA=collision_detection_obj_id_[check_num], # robot, other object...
+                                                       bodyB=collision_detection_obj_id_[-1]) # main(target) object
+                for contact in contacts:
+                    contactNormalOnBtoA = contact[7]
+                    contact_dis = contact[8]
+                    if contact_dis < -0.001: # means: positive for separation, negative for penetration
+                        normal_x, normal_y, normal_z, pb_quat = self.add_noise_pose(obj_cur_pos, obj_cur_ori)
+                        self.p_env.resetBasePositionAndOrientation(obj_id, [normal_x, normal_y, normal_z], pb_quat)
+                        flag = 1
+                        break
+                if flag == 1:
+                    break
+            if flag == 0:
+                break
+        if nTries >= 20:
+            print("WARNING: Could not find a non-colliding pose after motion noise. Moving particle object to noise-less pose.")
+            self.p_env.resetBasePositionAndOrientation(obj_id, obj_cur_pos, obj_cur_ori)
+        return normal_x, normal_y, normal_z, pb_quat
+
 
     # change particle parameters
     def change_obj_parameters(self, obj_id):
@@ -349,8 +522,8 @@ class SingleENV(multiprocessing.Process):
         if rollingFriction < 0.001:
             rollingFriction = 0.001
         restitution = self.take_easy_gaussian_value(self.RESTITUTION_MEAN, self.RESTITUTION_SIGMA)
-        pybullet_env.changeDynamics(obj_id, -1, mass = mass_a, 
-                                    lateralFriction = lateralFriction, 
-                                    spinningFriction = spinningFriction, 
-                                    rollingFriction = rollingFriction, 
-                                    restitution = restitution)
+        self.p_env.changeDynamics(obj_id, -1, mass = mass_a, 
+                                  lateralFriction = lateralFriction, 
+                                  spinningFriction = spinningFriction, 
+                                  rollingFriction = rollingFriction, 
+                                  restitution = restitution)

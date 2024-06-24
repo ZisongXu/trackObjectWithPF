@@ -462,7 +462,7 @@ class PBPFMove():
         t5 = motion_time6 - motion_time5
         t6 = motion_time7 - motion_time6
         t7 = motion_time8 - motion_time7
-        # print(t1, t2, t3, t4, t5, t6, t7)
+        print(t1, t2, t3, t4, t5, t6, t7)
         # pipe.send()
 
     # observation model
@@ -3274,9 +3274,9 @@ while reset_flag == True:
             PF_UPDATE_TIME_ONCE = 0.16 # 70 particles -> 2s
         elif RUNNING_MODEL == "PBPF_RGBD" and VK_RENDER_FLAG == True:
             print("3: RUNNING_MODEL (VK):", RUNNING_MODEL)
-            BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.16 # original value = 0.16 
+            BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.02 # original value = 0.16 
             PF_UPDATE_TIME_ONCE = 0.32 # 70 particles -> 35s
-            PF_UPDATE_TIME_ONCE = 0.16 # 70 particles -> 35s
+            PF_UPDATE_TIME_ONCE = 0.02 # 70 particles -> 35s
         elif RUNNING_MODEL == "PBPF_RGBD" and PB_RENDER_FLAG == True:
             print("3: RUNNING_MODEL (PB):", RUNNING_MODEL)
             BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.30 # original value = 0.16 

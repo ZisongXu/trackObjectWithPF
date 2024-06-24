@@ -137,6 +137,7 @@ IGNORE_EDGE_PIXELS = parameter_info['ignore_edge_pixels']
 
 COMPARE_DEPTH_IMG_VK = parameter_info['compare_depth_img_vk']
 VISIBILITY_COMPUTE_SEPARATE_FLAG = parameter_info['visibility_compute_separate_flag']
+VISIBILITY_COMPUTE_VK = parameter_info['visibility_compute_vk']
 MOTION_MODEL_FLAG = parameter_info['motion_model_flag'] # thread/multiprocess/normal
 
 RECORD_RESULTS_FLAG = parameter_info['record_results_flag'] 
@@ -527,7 +528,7 @@ class PBPFMove():
             # for i in range(len(score_list_array_sub_sum_over)):
             #     print("_particle_update_time: ",_particle_update_time,"; Index:", i, "; depth_weight_that_particle_get: ",score_list_array_sub_sum_over[i])
             #     print("==================================")
-
+            
 
         # fig, axs = plt.subplots(1, PARTICLE_NUM)
         # for par_index in range(PARTICLE_NUM):
@@ -543,7 +544,10 @@ class PBPFMove():
             print("RGB update cost time:", t_after_RGB - t_before_RGB)
             print("--------------------------------------------------------")
             if VISIBILITY_COMPUTE_SEPARATE_FLAG == True:
-                self.visibility_computing_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list)
+                if VISIBILITY_COMPUTE_VK == True:
+                    self.visibility_computing_vk(self.particle_cloud)
+                else:
+                    self.visibility_computing_parallelised(self.particle_cloud, pw_T_obj_obse_objects_pose_list)
                 t_after_ray = time.time()
                 print("--------------------------------------------------------")
                 print("Ray tracing cost time:", t_after_ray - t_after_RGB)
@@ -681,6 +685,36 @@ class PBPFMove():
         scores_0 = np.array( scoresV, copy = False )
         scores_0 = scores_0 / (HEIGHT_DEPTH*WIDTH_DEPTH)
         self.depth_value_difference_list = scores_0
+
+    def visibility_computing_vk(self, particle_cloud):
+        _vk_context.enqueue_render_and_download( vkdepth.VISIBILITY )
+        _vk_context.wait()
+        for index, particle in enumerate(particle_cloud):
+            part = _vk_context.part_vis_counts(index)
+            part_arr = np.array(part, copy = False)
+            full = _vk_context.full_vis_counts(index)
+            full_arr = np.array(full, copy = False)
+            for obj_index in range(self.obj_num):
+                visible_score = 1.0 * part_arr[obj_index] / full_arr[obj_index]
+                weight = particle[obj_index].w
+                local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
+                local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
+                if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0:
+                    # visible_score low, weight low
+                    if visible_score < visible_threshold_dope_is_fresh_list[obj_index]:
+                        weight = weight / 3.0
+                        weight = weight * visible_score
+                    # visible_score high, weight high
+                    else:
+                        weight = weight
+                else:
+                    # visible_score<0.95 low, weight high
+                    if visible_threshold_dope_X_small_list[obj_index]<=visible_score and visible_score<=visible_threshold_dope_X_list[obj_index]:
+                        weight = visible_weight_dope_X_smaller_than_threshold_list[obj_index] * weight
+                    else:
+                        weight = visible_weight_dope_X_larger_than_threshold_list[obj_index] * weight # 0.25/0.5
+                self.particle_cloud[index][obj_index].w = weight
+
 
     def compare_depth_image_parallelised(self, particle_cloud):
         threads_obs = []
@@ -1281,11 +1315,11 @@ class PBPFMove():
             else:
                 weight = weight
         else:
-            # visible_score<0.95 low, weight high
+            # visible_score<0.55 low, weight high
             if visible_threshold_dope_X_small_list[obj_index]<=visible_score and visible_score<=visible_threshold_dope_X_list[obj_index]: # 0.95
                 weight = visible_weight_dope_X_smaller_than_threshold_list[obj_index] * weight # 0.75/0.6
                 # weight = weight * (1 - visible_score) # 0.75/0.6
-            # visible_score>0.95 high, weight low
+            # visible_score>0.55 high, weight low
             else: 
                 weight = visible_weight_dope_X_larger_than_threshold_list[obj_index] * weight # 0.25/0.5
         return weight
@@ -3487,9 +3521,9 @@ while reset_flag == True:
             # for par_index in range(PARTICLE_NUM):
             #     axs[0, par_index].imshow(vk_rendered_depth_image_array_list[par_index], cmap="gray")
             #     axs[1, par_index].imshow(vk_rendered__mask_image_array_list[par_index], cmap="gray")
-            #     for obj_index in range(OBJECT_NUM):
-            #         single_obj_index = par_index * OBJECT_NUM + obj_index
-            #         axs[2+obj_index, par_index].imshow(vk_single_obj_rendered__mask_image_array_list[single_obj_index], cmap="gray")
+            #     # for obj_index in range(OBJECT_NUM):
+            #     #     single_obj_index = par_index * OBJECT_NUM + obj_index
+            #     #     axs[2+obj_index, par_index].imshow(vk_single_obj_rendered__mask_image_array_list[single_obj_index], cmap="gray")
 
             # plt.show()
             # debug_depth

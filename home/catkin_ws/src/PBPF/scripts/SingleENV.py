@@ -78,8 +78,6 @@ class SingleENV(multiprocessing.Process):
         self.MOTION_MODEL_POS_NOISE = 0.01 # original value = 0.005
         self.MOTION_MODEL_ANG_NOISE = 0.1 # original value = 0.05
         self.MOTION_NOISE = True
-        # Observation Model
-        self.BOSS_SIGMA_OBS_POS = 0.1
         
         # mark
         # self.boss_sigma_obs_x = 0
@@ -104,6 +102,15 @@ class SingleENV(multiprocessing.Process):
         self.FRICTION_SIGMA = 0.3
         self.RESTITUTION_MEAN = 0.9
         self.RESTITUTION_SIGMA = 0.2
+        
+        # Observation Model
+        self.BOSS_SIGMA_OBS_POS = 0.1
+        for name in self.OBJECT_NAME_LIST:
+            if name == "cracker":
+                self.BOSS_SIGMA_OBS_ANG = 0.0216773873 * 30
+            else:
+                self.BOSS_SIGMA_OBS_ANG = 0.0216773873 * 10
+
 
     def run(self):
         # This is needed due to how multiprocessing works which will fork the
@@ -325,8 +332,8 @@ class SingleENV(multiprocessing.Process):
 
     def compare_distance(self, par_index, pw_T_obj_obse_objects_pose_list, visual_by_DOPE_list, outlier_by_DOPE_list):
         weight =  1.0 / self.particle_num
-        weights_list = [weight] * self.obj_num
-        for obj_index in range(self.obj_num):
+        weights_list = [weight] * self.object_num
+        for obj_index in range(self.object_num):
             self.objects_list[obj_index].w = weight
         # at least one object is detected by camera
         if (sum(visual_by_DOPE_list)<self.object_num) and (sum(outlier_by_DOPE_list)<self.object_num):
@@ -357,13 +364,13 @@ class SingleENV(multiprocessing.Process):
                     obse_obj_quat = Quaternion(x=obse_obj_ori[0], y=obse_obj_ori[1], z=obse_obj_ori[2], w=obse_obj_ori[3]) # Quaternion(): w,x,y,z
                     par_quat = Quaternion(x=obj_ori[0], y=obj_ori[1], z=obj_ori[2], w=obj_ori[3])
                     err_bt_par_obse = par_quat * obse_obj_quat.inverse
-                    err_bt_par_obse_corr = quaternion_correction([err_bt_par_obse.x, err_bt_par_obse.y, err_bt_par_obse.z, err_bt_par_obse.w])
+                    err_bt_par_obse_corr = self.quaternion_correction([err_bt_par_obse.x, err_bt_par_obse.y, err_bt_par_obse.z, err_bt_par_obse.w])
                     err_bt_par_obse_corr_quat = Quaternion(x=err_bt_par_obse_corr[0], y=err_bt_par_obse_corr[1], z=err_bt_par_obse_corr[2], w=err_bt_par_obse_corr[3]) # Quaternion(): w,x,y,z
                     cos_theta_over_2 = err_bt_par_obse_corr_quat.w
                     sin_theta_over_2 = math.sqrt(err_bt_par_obse_corr_quat.x ** 2 + err_bt_par_obse_corr_quat.y ** 2 + err_bt_par_obse_corr_quat.z ** 2)
                     theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
                     theta = theta_over_2 * 2.0
-                    weight_ang = self.normal_distribution(theta, mean, BOSS_SIGMA_OBS_ANG)
+                    weight_ang = self.normal_distribution(theta, mean, self.BOSS_SIGMA_OBS_ANG)
                     weight = weight_xyz * weight_ang
                     self.objects_list[obj_index].w = weight
                     weights_list[obj_index] = weight
@@ -391,6 +398,17 @@ class SingleENV(multiprocessing.Process):
         pb_quat = [new_quat[1], new_quat[2], new_quat[3], new_quat[0]]
         return [x, y, z], pb_quat
 
+    def set_particle_in_each_sim_env(self, single_particle):
+        for obj_index in range(self.object_num):
+            x = single_particle[obj_index].pos[0]
+            y = single_particle[obj_index].pos[1]
+            z = single_particle[obj_index].pos[2]
+            pb_quat = single_particle[obj_index].ori
+            linearVelocity = single_particle[obj_index].linearVelocity
+            angularVelocity = single_particle[obj_index].angularVelocity
+            self.update_object_pose_PB(obj_index, x, y, z, pb_quat, linearVelocity, angularVelocity)
+        return [("done", True)]
+
     def update_object_pose_PB(self, obj_index, x, y, z, pb_quat, linearVelocity, angularVelocity):
         self.objects_list[obj_index].pos = [x, y, z]
         self.objects_list[obj_index].ori = pb_quat
@@ -415,6 +433,7 @@ class SingleENV(multiprocessing.Process):
 
     def getLinkStates(self):
         all_links_info = self.p_env.getLinkStates(self.robot_id, range(self.PANDA_ROBOT_LINK_NUMBER + 2), computeForwardKinematics=True) # 11+2; range: [0,13)
+        all_links_info = all_links_info[:12]
         return [("links_info", all_links_info)]
 
     # add noise

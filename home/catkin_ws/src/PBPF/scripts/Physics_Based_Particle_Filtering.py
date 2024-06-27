@@ -653,9 +653,15 @@ def _vk_camera_setting(pw_T_camD_tf_4_4, camD_T_camVk_4_4):
     #                           [ 0, 0, 0,     1]])
     # pw_T_camVk_4_4_ = np.dot(pw_T_camVk_4_4_, trick_matrix3)
     
+    # trick_matrix3 = np.array([[ 1, 0, 0,-0.010],
+    #                           [ 0, 1, 0,-0.010],
+    #                           [ 0, 0, 1,-0.03],
+    #                           [ 0, 0, 0, 1]])
+    # pw_T_camVk_4_4_ = np.dot(pw_T_camVk_4_4_, trick_matrix3)
+    
     trick_matrix3 = np.array([[ 1, 0, 0,-0.010],
                               [ 0, 1, 0,-0.010],
-                              [ 0, 0, 1,-0.03],
+                              [ 0, 0, 1,-0.000],
                               [ 0, 0, 0, 1]])
     pw_T_camVk_4_4_ = np.dot(pw_T_camVk_4_4_, trick_matrix3)
 

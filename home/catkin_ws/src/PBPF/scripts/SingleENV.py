@@ -77,7 +77,7 @@ class SingleENV(multiprocessing.Process):
         # Motion Model Noise
         self.MOTION_MODEL_POS_NOISE = 0.01 # original value = 0.005
         self.MOTION_MODEL_ANG_NOISE = 0.1 # original value = 0.05
-        self.MOTION_NOISE = False
+        self.MOTION_NOISE = True
         
         # mark
         # self.boss_sigma_obs_x = 0

@@ -655,7 +655,7 @@ def _vk_camera_setting(pw_T_camD_tf_4_4, camD_T_camVk_4_4):
     
     trick_matrix3 = np.array([[ 1, 0, 0,-0.010],
                               [ 0, 1, 0,-0.010],
-                              [ 0, 0, 1, 0.0],
+                              [ 0, 0, 1,-0.03],
                               [ 0, 0, 0, 1]])
     pw_T_camVk_4_4_ = np.dot(pw_T_camVk_4_4_, trick_matrix3)
 
@@ -1185,6 +1185,63 @@ def compute_std(mean_pose, particle_cloud):
     ang_std = np.std(ang_list)
     return dis_std, ang_std
 
+def compare_distance_seq(particle_cloud, pw_T_obj_obse_objects_pose_list, visual_by_DOPE_list, outlier_by_DOPE_list):
+    weight = 1.0/PARTICLE_NUM
+    RGB_weights_lists = [0] * PARTICLE_NUM
+    weights_list = [weight] * OBJECT_NUM
+    for par_index in range(PARTICLE_NUM):
+        RGB_weights_lists[par_index] = weights_list
+        for obj_index in range(OBJECT_NUM):
+            particle_cloud[par_index][obj_index].w = weight
+        # at least one object is detected by camera
+    if (sum(visual_by_DOPE_list)<OBJECT_NUM) and (sum(outlier_by_DOPE_list)<OBJECT_NUM):
+        for par_index in range(PARTICLE_NUM):
+            weight = 1.0/PARTICLE_NUM
+            weights_list = [weight] * OBJECT_NUM
+            for obj_index in range(OBJECT_NUM):
+                weight = 1.0/PARTICLE_NUM
+                obj_visual = visual_by_DOPE_list[obj_index]
+                obj_outlier = outlier_by_DOPE_list[obj_index]
+                if obj_visual==0 and obj_outlier==0:
+                    obj_x = particle_cloud[par_index][obj_index].pos[0]
+                    obj_y = particle_cloud[par_index][obj_index].pos[1]
+                    obj_z = particle_cloud[par_index][obj_index].pos[2]
+                    obj_ori = quaternion_correction(particle_cloud[par_index][obj_index].ori)
+                    obse_obj_pos = pw_T_obj_obse_objects_pose_list[obj_index].pos
+                    obse_obj_ori = pw_T_obj_obse_objects_pose_list[obj_index].ori # pybullet x,y,z,w
+                    obse_obj_ori = quaternion_correction(obse_obj_ori)
+                    mean = 0
+                    # position weight
+                    dis_x = abs(obj_x - obse_obj_pos[0])
+                    dis_y = abs(obj_y - obse_obj_pos[1])
+                    dis_z = abs(obj_z - obse_obj_pos[2])
+                    dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
+                    weight_xyz = normal_distribution(dis_xyz, mean, BOSS_SIGMA_OBS_POS)
+                    # rotation weight
+                    obse_obj_quat = Quaternion(x=obse_obj_ori[0], y=obse_obj_ori[1], z=obse_obj_ori[2], w=obse_obj_ori[3]) # Quaternion(): w,x,y,z
+                    par_quat = Quaternion(x=obj_ori[0], y=obj_ori[1], z=obj_ori[2], w=obj_ori[3])
+                    err_bt_par_obse = par_quat * obse_obj_quat.inverse
+                    err_bt_par_obse_corr = quaternion_correction([err_bt_par_obse.x, err_bt_par_obse.y, err_bt_par_obse.z, err_bt_par_obse.w])
+                    err_bt_par_obse_corr_quat = Quaternion(x=err_bt_par_obse_corr[0], y=err_bt_par_obse_corr[1], z=err_bt_par_obse_corr[2], w=err_bt_par_obse_corr[3]) # Quaternion(): w,x,y,z
+                    cos_theta_over_2 = err_bt_par_obse_corr_quat.w
+                    sin_theta_over_2 = math.sqrt(err_bt_par_obse_corr_quat.x ** 2 + err_bt_par_obse_corr_quat.y ** 2 + err_bt_par_obse_corr_quat.z ** 2)
+                    theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
+                    theta = theta_over_2 * 2.0
+                    weight_ang = normal_distribution(theta, mean, BOSS_SIGMA_OBS_ANG)
+                    weight = weight_xyz * weight_ang
+                    particle_cloud[par_index][obj_index].w = weight
+                    weights_list[obj_index] = weight
+                else:
+                    particle_cloud[par_index][obj_index].w = weight
+                    weights_list[obj_index] = weight
+            RGB_weights_lists[par_index] = weights_list
+    return RGB_weights_lists, particle_cloud
+
+def normal_distribution(x, mean, sigma):
+        return sigma * np.exp(-1*((x-mean)**2)/(2*(sigma**2)))/(math.sqrt(2*np.pi)* sigma)
+    
+                            
+
 
 # ctrl-c write down the error file
 def signal_handler(sig, frame):
@@ -1378,11 +1435,11 @@ if __name__ == '__main__':
     # elif run_alg_flag == "PBPF" and VERSION == "multiray" and USING_D_FLAG == False:
     elif RUNNING_MODEL == "PBPF_RGB":
         print("2: RUNNING_MODEL:", RUNNING_MODEL)
-        BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.16 # original value = 0.16
+        BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.25 # original value = 0.16
         PF_UPDATE_TIME_ONCE = BOSS_PF_UPDATE_INTERVAL_IN_REAL # 70 particles -> 2s
     elif RUNNING_MODEL == "PBPF_RGBD" and VK_RENDER_FLAG == True:
         print("3: RUNNING_MODEL (VK):", RUNNING_MODEL)
-        BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.16 # original value = 0.16 
+        BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.25 # original value = 0.16 
         PF_UPDATE_TIME_ONCE = BOSS_PF_UPDATE_INTERVAL_IN_REAL # 70 particles -> 35s
     elif RUNNING_MODEL == "PBPF_RGBD" and PB_RENDER_FLAG == True:
         print("3: RUNNING_MODEL (PB):", RUNNING_MODEL)
@@ -1616,9 +1673,6 @@ if __name__ == '__main__':
 
     # ============================================================================
     # set parameters
-    dope_detection_flag_list = [0] * OBJECT_NUM
-    global_objects_visual_by_DOPE_list = [0] * OBJECT_NUM
-    global_objects_outlier_by_DOPE_list = [0] * OBJECT_NUM
     visible_threshold_dope_is_fresh_list = [0] * OBJECT_NUM
     visible_threshold_dope_X_list = [0] * OBJECT_NUM 
     visible_threshold_dope_X_small_list = [0] * OBJECT_NUM
@@ -1789,6 +1843,11 @@ if __name__ == '__main__':
     # ============================================================================
 
     while not rospy.is_shutdown():
+
+        dope_detection_flag_list = [0] * OBJECT_NUM
+        global_objects_visual_by_DOPE_list = [0] * OBJECT_NUM
+        global_objects_outlier_by_DOPE_list = [0] * OBJECT_NUM
+
         temp_pw_T_obj_obse_objs_list = []
         #panda robot moves in the visualization window
         track_fk_world_rob_mv(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
@@ -1997,11 +2056,15 @@ if __name__ == '__main__':
                         if USING_RGB_FLAG == True:
                             # a. Compare Distance #################################################################################
                             t_before_RGB = time.time()
-                            for env_index, single_env in _single_envs.items():
-                                single_env.queue.put((SingleENV.compare_distance, env_index, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list))
-                            for env_index, single_env in _single_envs.items():
-                                _RGB_weights_list = wait_and_get_result_from(single_env)
-                                _RGB_weights_lists[env_index] = _RGB_weights_list[str(env_index)]
+                            compare_distance_method = "seq" # seq/multi
+                            if compare_distance_method == "seq":
+                                _RGB_weights_lists, test_particle_cloud_pub = compare_distance_seq(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list)
+                            elif compare_distance_method == "multi":
+                                for env_index, single_env in _single_envs.items():
+                                    single_env.queue.put((SingleENV.compare_distance, env_index, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list))
+                                for env_index, single_env in _single_envs.items():
+                                    _RGB_weights_list = wait_and_get_result_from(single_env)
+                                    _RGB_weights_lists[env_index] = _RGB_weights_list[str(env_index)]
                             t_after_RGB = time.time()
                             if PRINT_FLAG == True:
                                 print("--------------------------------------------------------")
@@ -2058,7 +2121,7 @@ if __name__ == '__main__':
                         PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
                         if PRINT_FLAG == True:
                             print("Time consuming:", t_finish_PBPF - t_begin_PBPF)
-                            print("Max value:", max(PBPF_time_cosuming_list))
+                            print("Mean value:", np.mean(PBPF_time_cosuming_list))
                         simRobot_touch_par_flag = 0
 
                     else:

@@ -77,7 +77,7 @@ class SingleENV(multiprocessing.Process):
         # Motion Model Noise
         self.MOTION_MODEL_POS_NOISE = 0.01 # original value = 0.005
         self.MOTION_MODEL_ANG_NOISE = 0.1 # original value = 0.05
-        self.MOTION_NOISE = True
+        self.MOTION_NOISE = False
         
         # mark
         # self.boss_sigma_obs_x = 0
@@ -97,11 +97,11 @@ class SingleENV(multiprocessing.Process):
         self.OBJECT_NAME_LIST = self.parameter_info['object_name_list']
         self.PANDA_ROBOT_LINK_NUMBER = self.parameter_info['panda_robot_link_number']
         self.MASS_MEAN = 1.750 # 0.380
-        self.MASS_SIGMA = 0.5
+        self.MASS_SIGMA = 1.5 # 0.5
         self.FRICTION_MEAN = 0.1
         self.FRICTION_SIGMA = 0.3
         self.RESTITUTION_MEAN = 0.9
-        self.RESTITUTION_SIGMA = 0.2
+        self.RESTITUTION_SIGMA = 0.6 # 0.2
         
         # Observation Model
         self.BOSS_SIGMA_OBS_POS = 0.1
@@ -288,12 +288,16 @@ class SingleENV(multiprocessing.Process):
             # get linearVelocity and angularVelocity of the object from each particle
             linearVelocity, angularVelocity = self.p_env.getBaseVelocity(obj_id)
             obj_cur_pos, obj_cur_ori = self.get_item_pos(obj_id)
+            normal_x = obj_cur_pos[0]
+            normal_y = obj_cur_pos[1]
+            normal_z = obj_cur_pos[2]
+            pb_quat = obj_cur_ori
             # add noise on pose of each particle
-            normal_x, normal_y, normal_z, pb_quat = self.add_noise_pose(obj_cur_pos, obj_cur_ori)
-            self.p_env.resetBasePositionAndOrientation(obj_id, [normal_x, normal_y, normal_z], pb_quat)
-            collision_detection_obj_id_.append(obj_id)
-            obj_pose_3_1 = [normal_x, normal_y, normal_z, pb_quat]
             if self.MOTION_NOISE == True:
+                normal_x, normal_y, normal_z, pb_quat = self.add_noise_pose(obj_cur_pos, obj_cur_ori)
+                self.p_env.resetBasePositionAndOrientation(obj_id, [normal_x, normal_y, normal_z], pb_quat)
+                collision_detection_obj_id_.append(obj_id)
+                obj_pose_3_1 = [normal_x, normal_y, normal_z, pb_quat]
                 normal_x, normal_y, normal_z, pb_quat = self.collision_check(collision_detection_obj_id_,
                                                                              obj_cur_pos, obj_cur_ori,
                                                                              obj_id, obj_index, obj_pose_3_1)
@@ -338,17 +342,18 @@ class SingleENV(multiprocessing.Process):
         # at least one object is detected by camera
         if (sum(visual_by_DOPE_list)<self.object_num) and (sum(outlier_by_DOPE_list)<self.object_num):
             for obj_index in range(self.object_num):
+                weight =  1.0 / self.particle_num
                 obj_visual = visual_by_DOPE_list[obj_index]
                 obj_outlier = outlier_by_DOPE_list[obj_index]
-                obj_x = self.objects_list[obj_index].pos[0]
-                obj_y = self.objects_list[obj_index].pos[1]
-                obj_z = self.objects_list[obj_index].pos[2]
-                obj_ori = self.quaternion_correction(self.objects_list[obj_index].ori)
                 # obj_visual=0 means DOPE detects the object[obj_index]
                 # obj_visual=1 means DOPE does not detect the object[obj_index] and skip this loop
                 # obj_outlier=0 means DOPE detects the object[obj_index]
                 # obj_outlier=1 means DOPE detects the object[obj_index], but we judge it is outlier and skip this loop
                 if obj_visual==0 and obj_outlier==0:
+                    obj_x = self.objects_list[obj_index].pos[0]
+                    obj_y = self.objects_list[obj_index].pos[1]
+                    obj_z = self.objects_list[obj_index].pos[2]
+                    obj_ori = self.quaternion_correction(self.objects_list[obj_index].ori)
                     obse_obj_pos = pw_T_obj_obse_objects_pose_list[obj_index].pos
                     obse_obj_ori = pw_T_obj_obse_objects_pose_list[obj_index].ori # pybullet x,y,z,w
                     # make sure theta between -pi and pi
@@ -374,6 +379,10 @@ class SingleENV(multiprocessing.Process):
                     weight = weight_xyz * weight_ang
                     self.objects_list[obj_index].w = weight
                     weights_list[obj_index] = weight
+                else:
+                    self.objects_list[obj_index].w = weight
+                    weights_list[obj_index] = weight
+
         return [(str(par_index), weights_list)]
 
     def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):

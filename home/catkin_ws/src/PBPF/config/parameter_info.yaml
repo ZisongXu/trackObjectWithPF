@@ -21,10 +21,10 @@ locate_camera_flag: ar
 multiprocessing_flag: false
 nearVal: 0.03
 object_name_list:
-- soup
-- Parmesan
+- cracker
+- Ketchup
 - Milk
-object_num: 3
+object_num: 2
 objs_are_not_touching_target_objs_num: 0
 objs_touching_target_objs_num: 0
 optitrack_flag: true
@@ -39,7 +39,7 @@ otob_name_list:
 - cracker_obstacle
 - fish_can
 panda_robot_link_number: 11
-particle_num: 50
+particle_num: 40
 pb_render_flag: false
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0
@@ -50,11 +50,11 @@ ray_tracing_type: multiray
 record_results_flag: false
 robot_num: 1
 run_alg_flag: PBPF
-running_model: PBPF_RGBD
+running_model: PBPF_D
 show_particle_depth_image_to_point_cloud_flag: false
 show_ray: false
 sim_real_world_flag: true
-task_flag: '2'
+task_flag: '1'
 update_style_flag: time
 use_convolution_flag: false
 version: multiray

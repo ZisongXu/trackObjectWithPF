@@ -275,7 +275,7 @@ existing_columns = ['step','time','alg','obj','scene','particle_num','ray_type',
 new_err_data = data[existing_columns].copy()
 new_err_data[ang_and_pos] = pd.Series(dtype='float64')
 
-file_name_error = 'based_on_time_'+str(particle_num)+'_'+task_flag+'_'+update_style_flag+'_'+object_name+'_'+ang_and_pos
+file_name_error = 'based_on_time_'+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_'+update_style_flag+'_'+object_name+'_'+ang_and_pos
 
 for row_index in range(num_rows_data):
     pos_compare = pos_combined[row_index][0]
@@ -287,7 +287,7 @@ for row_index in range(num_rows_data):
     print("Compute "+ang_and_pos+" error: "+file_name+" processing... ", row_index)
 
 new_err_data.to_csv(file_path+file_name_error+".csv",index=0,header=0,mode='a')
-if run_alg_flag == "FOUD" or run_alg_flag == "obse" or run_alg_flag == "DiffDOPE":
+if run_alg_flag == "FOUD" or run_alg_flag == "obse" or run_alg_flag == "DiffDOPE" or run_alg_flag == "DiffDOPET":
     new_err_data.to_csv(file_path+"particles/"+file_name_error+"_par_min.csv",index=0,header=0,mode='a')
     new_err_data.to_csv(file_path+"particles/"+file_name_error+"_par_avg.csv",index=0,header=0,mode='a')
 print("Done")  

@@ -1,13 +1,19 @@
 #!/bin/bash
 
 # declare -a objectNames=("cracker" "soup")
+# declare -a objectNames=("cracker" "Ketchup")
+# declare -a objectNames=("Mayo" "Milk" "Mustard")
+# declare -a objectNames=("Parmesan")
+# declare -a objectNames=("SaladDressing" "soup")
+# declare -a objectNames=("cracker" "Ketchup")
+# declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing")
+# declare -a objectNames=("soup")
 declare -a objectNames=("cracker" "Ketchup")
-# declare -a objectNames=("Ketchup")
 # declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
 declare -a sceneNames=("scene1")
 
-declare -a particleNumbers=(70)
+declare -a particleNumbers=(40)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 # declare -a runAlgFlags=("PBPF" "obse" "FOUD")
@@ -15,11 +21,12 @@ declare -a runAlgFlags=("PBPF")
 # declare -a runAlgFlags=("FOUD")
 # declare -a runobseFlags=("obse" "FOUD")
 # declare -a Ang_and_Pos=("ang" "pos")
+# declare -a Ang_and_Pos=("ADD")
 declare -a Ang_and_Pos=("ADD" "ADDS")
 declare -a update_style_flag=("time") # "time" "pose"
 # declare -a runVersions=("depth_img" "multiray")
 declare -a runVersions=("PBPF_RGBD" "PBPF_RGB" "PBPF_D")
-# declare -a runVersions=("PBPF_RGBD")
+# declare -a runVersions=("PBPF_D")
 
 for ang_and_pos in "${Ang_and_Pos[@]}"
 do
@@ -45,7 +52,7 @@ do
 						# 	DATA_PRO_PID=$!
 						# 	sleep 2
 						# 	# for repeat in {1..10}
-						for ((repeat=0;repeat<=4;repeat++));
+						for ((repeat=0;repeat<=0;repeat++));
 						do
 							for runVersion in "${runVersions[@]}"
 							do

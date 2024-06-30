@@ -7,15 +7,17 @@
 # declare -a objectNames=("soup" "Parmesan")
 # declare -a objectNames=("SaladDressing" "Mustard")
 # declare -a objectNames=("Mayo" "Milk")
+# declare -a objectNames=("cracker" "Ketchup")
+declare -a objectNames=("cracker")
+# declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing")
 # declare -a sceneNames=("scene1" "scene2")
 declare -a sceneNames=("scene1")
 # declare -a objectNames=("cracker" "soup" "Parmesan")
 # declare -a objectNames=("cracker" "Mayo" "Milk")
 # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
-declare -a objectNames=("cracker" "Ketchup")
 
 
-declare -a particleNumbers=(70)
+declare -a particleNumbers=(40)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("PBPF")
@@ -23,36 +25,39 @@ declare -a runAlgFlags=("PBPF")
 declare -a Ang_and_Pos=("ADD")
 declare -a update_style_flag=("time") # "time" "pose"
 # declare -a runVersions=("depth_img" "multiray")
-declare -a runVersions=("PBPF_RGBD" "PBPF_RGB" "PBPF_D")
+declare -a runVersions=("PBPF_D" "PBPF_RGB" "PBPF_RGBD")
 # declare -a runVersions=("PBPF_RGBD")
 
-for ang_and_pos in "${Ang_and_Pos[@]}"
+for objectName in "${objectNames[@]}"
 do
-	for sceneName in "${sceneNames[@]}"
+	for ang_and_pos in "${Ang_and_Pos[@]}"
 	do
-		for particleNumber in "${particleNumbers[@]}"
+		for sceneName in "${sceneNames[@]}"
 		do
-			for runAlgFlag in "${runAlgFlags[@]}"
+			for particleNumber in "${particleNumbers[@]}"
 			do
-				if [[ "$objectName" == "soup" ]]; then
-					if [[ "$sceneName" == "scene4" ]]; then
-						continue
-					fi
-				fi
-				# for rosbag in {1..10}
-				for ((rosbag=1;rosbag<=1;rosbag++)); 
+				for runAlgFlag in "${runAlgFlags[@]}"
 				do
-					# for repeat in {1..10}
-					for ((repeat=0;repeat<=0;repeat++));
+					if [[ "$objectName" == "soup" ]]; then
+						if [[ "$sceneName" == "scene4" ]]; then
+							continue
+						fi
+					fi
+					# for rosbag in {1..10}
+					for ((rosbag=1;rosbag<=1;rosbag++)); 
 					do
-						for runVersion in "${runVersions[@]}"
+						# for repeat in {1..10}
+						for ((repeat=0;repeat<=0;repeat++));
 						do
-							for ((par_index=0;par_index<${particleNumber};par_index++)); 
+							for runVersion in "${runVersions[@]}"
 							do
-								python3 split_data.py "${particleNumber}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" "${par_index}"&
-								DATA_PRO_PID=$!
+								for ((par_index=0;par_index<${particleNumber};par_index++)); 
+								do
+									python3 split_data.py "${particleNumber}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${runVersion}" "${par_index}" "${objectName}"&
+									DATA_PRO_PID=$!
 
-								sleep 0.5
+									sleep 0.5
+								done
 							done
 						done
 					done

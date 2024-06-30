@@ -4,7 +4,7 @@
 # declare -a objectNames=("cracker" "Ketchup")
 # declare -a objectNames=("Mayo" "Milk")
 # declare -a objectNames=("cracker" "Ketchup" "Milk")
-declare -a objectNames=("Milk")
+declare -a objectNames=("Mayo")
 # declare -a objectNames=("SaladDressing" "cracker")
 # declare -a objectNames=("soup" "Parmesan")
 # declare -a objectNames=("SaladDressing" "Mustard")

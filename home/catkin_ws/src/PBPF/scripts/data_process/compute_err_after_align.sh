@@ -4,26 +4,28 @@
 # declare -a objectNames=("cracker" "Ketchup")
 # declare -a objectNames=("cracker" "Ketchup")
 # declare -a objectNames=("cracker" "Ketchup" "Milk")
-# declare -a objectNames=("Mayo")
-# declare -a objectNames=("SaladDressing" "cracker")
-declare -a objectNames=("Mustard")
+# declare -a objectNames=("Parmesan")
+# declare -a objectNames=("cracker" "Ketchup")
+# declare -a objectNames=("Mustard")
 # declare -a objectNames=("soup" "Parmesan")
 # declare -a objectNames=("SaladDressing" "Mustard")
 # declare -a objectNames=("cracker" "soup" "Parmesan")
 # declare -a objectNames=("cracker" "Mayo" "Milk")
-# declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
-# declare -a objectNames=("cracker" "Ketchup")
+# declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
+declare -a objectNames=("cracker" "Ketchup")
 # declare -a objectNames=("Ketchup")
 # declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
 declare -a sceneNames=("scene1")
 
-declare -a particleNumbers=(70)
+declare -a particleNumbers=(40)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 # declare -a runAlgFlags=("PBPF" "obse" "FOUD")
 # declare -a runAlgFlags=("FOUD")
-declare -a runAlgFlags=("DiffDOPE" "DiffDOPET")
+# declare -a runAlgFlags=("PBPF")
+# declare -a runAlgFlags=("DiffDOPE" "DiffDOPET")
+declare -a runAlgFlags=("FOUD" "DiffDOPE" "DiffDOPET")
 # declare -a runAlgFlags=("PBPF" "obse")
 # declare -a runAlgFlags=("FOUD" "DiffDOPE")
 # declare -a runobseFlags=("obse" "FOUD")
@@ -49,7 +51,7 @@ do
 						fi
 					fi
 					# for rosbag in {1..10}
-					for ((rosbag=2;rosbag<=2;rosbag++)); 
+					for ((rosbag=1;rosbag<=1;rosbag++)); 
 					do
 						# for runobseFlag in "${runobseFlags[@]}"
 						# do

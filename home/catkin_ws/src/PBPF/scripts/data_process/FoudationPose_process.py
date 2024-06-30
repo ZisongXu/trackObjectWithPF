@@ -52,6 +52,7 @@ class ImageCreator():
             timestr_first = 0
             count = 0
             FOUN_panda_step = 0
+            slow_down_rate = 1
             for topic, msg, t in bag.read_messages():              
                 if topic == "/camera/color/image_raw":
                     if first_get_time_flag == 0:
@@ -59,7 +60,7 @@ class ImageCreator():
                         timestr_first = "%.6f" %  msg.header.stamp.to_sec()
                     timestr = "%.6f" %  msg.header.stamp.to_sec()
                     time_d = float(timestr) - float(timestr_first)
-                    time_d = time_d * 20
+                    time_d = time_d * slow_down_rate
                     print(FOUN_panda_step)
                     pw_T_obj_foudation_pose_4_4 = all_data_list[FOUN_panda_step]
                     pos_x = pw_T_obj_foudation_pose_4_4[0][3]
@@ -101,11 +102,11 @@ class ImageCreator():
 
 if __name__ == '__main__':
 
-    OBJ_NAME = sys.argv[1]
+    OBJ_NAME = sys.argv[1] # ("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing" "soup")
     SCENE_NAMES = sys.argv[2]
     ROSBAG_TIME = sys.argv[3]
     REPEAT_TIME = sys.argv[4]
-
+    
     SIM_REAL_WORLD_FLAG = True
     boss_FOUD_err_ADD_df_list = []
     boss_FOUD_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name'],index=[])
@@ -116,11 +117,15 @@ if __name__ == '__main__':
     
 
 
-    pw_T_cam_pose = np.array([[ 3.96235287e-04,  2.53526658e-01, -9.67328319e-01,  9.51147287e-01],
-                              [ 9.99988399e-01, -4.74415418e-03, -8.33779851e-04,  6.27580045e-02],
-                              [-4.80054010e-03, -9.67316767e-01, -2.53525596e-01,  9.49659315e-01],
-                              [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+    # pw_T_cam_pose = np.array([[ 3.96235287e-04,  2.53526658e-01, -9.67328319e-01,  9.51147287e-01],
+    #                           [ 9.99988399e-01, -4.74415418e-03, -8.33779851e-04,  6.27580045e-02],
+    #                           [-4.80054010e-03, -9.67316767e-01, -2.53525596e-01,  9.49659315e-01],
+    #                           [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
 
+    pw_T_cam_pose = np.array([[-0.17022463,  0.22072718, -0.96036612,  1.01227219],
+                              [ 0.98534948,  0.02775525, -0.16827375,  0.09076827],
+                              [-0.01048739, -0.97494059, -0.22221804,  0.93997983],
+                              [ 0.        ,  0.        ,  0.        ,  1.        ]])
 
 
 
@@ -164,7 +169,8 @@ if __name__ == '__main__':
     _all_time_list = []
     # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
     rosbag_file_path = os.path.expanduser('~/pyvkdepth/rosbag/')
-    ImageCreator(rosbag_file_path+'2_scene1_crackerSaladDressing1.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
+    # ImageCreator(rosbag_file_path+'1_scene2_'+OBJ_NAME+'1.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
+    ImageCreator(rosbag_file_path+'2_scene1_crackerKetchup1.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
     
 
 

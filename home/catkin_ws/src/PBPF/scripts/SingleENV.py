@@ -75,7 +75,7 @@ class SingleENV(multiprocessing.Process):
         self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
         
         # Motion Model Noise
-        self.MOTION_MODEL_POS_NOISE = 0.01 # original value = 0.005
+        self.MOTION_MODEL_POS_NOISE = 0.005 # original value = 0.005
         self.MOTION_MODEL_ANG_NOISE = 0.1 # original value = 0.05
         self.MOTION_NOISE = True
         

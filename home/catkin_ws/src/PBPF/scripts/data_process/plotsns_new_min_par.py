@@ -60,262 +60,75 @@ if update_style_flag == "pose":
 elif update_style_flag == "time":
     title_name = "Time"
 
+# based_on_time_70_scene1_rosbag1_time_Mayo_ADD_par_avg
 # based_on_time_10_scene1_time_cracker_ADD
-file_name = "based_on_time_"+str(particle_num)+'_'+sceneName+'_'+update_style_flag+'_'+object_name+'_'+ang_and_pos
+file_name = "based_on_time_"+str(particle_num)+'_'+sceneName+'_rosbag'+str(rosbag_flag)+'_'+update_style_flag+'_'+object_name+'_'+ang_and_pos
 
 title_ang = "Rotational errors (rad) vs Time (s)"
 title_pos = "Positional errors (m) vs Time (s)"
 title_ADD = object_name+": "+ang_and_pos+" errors (m) vs Time (s)"
 
-if ang_and_pos == "ang":
-    if sceneName == "scene1":
-        x_range_max = 340
-        x_range_unit = 25
-        y_range_max = 5
-        y_range_unit = 0.4
-        x_xlim = 340
-        y_ylim = 5
-    if sceneName == "scene2":
-        x_range_max = 1300
-        x_range_unit = 100
-        y_range_max = 2.5
-        y_range_unit = 0.2
-        x_xlim = 1300
-        y_ylim = 2.5
-    if sceneName == "scene3":
-        # x_range_max = 28
-        # x_range_unit = 2
-        # y_range_max = 2.5
-        # y_range_unit = 0.2
-        # x_xlim = 28
-        # y_ylim = 2.5
-        x_range_max = 265
-        x_range_unit = 25
-        y_range_max = 2.4
-        y_range_unit = 0.2
-        x_xlim = 265
-        y_ylim = 2.4
-    if sceneName == "scene4":
-        x_range_max = 28
-        x_range_unit = 2
-        # y_range_max = 0.4
-        y_range_max = 2.5
-        y_range_unit = 0.2
-        x_xlim = 28
-        # y_ylim = 0.4
-        y_ylim = 2.5
-    if sceneName == "scene5":
-        # x_range_max = 28
-        # x_range_unit = 2
-        # y_range_max = 2.5
-        # y_range_unit = 0.2
-        # x_xlim = 28
-        # y_ylim = 2.5
-        x_range_max = 3480
-        x_range_unit = 300
-        y_range_max = 5
-        y_range_unit = 0.4
-        x_xlim = 3480
-        y_ylim = 5
-    print("Ready to plot the figure of ang")
-    dataset_ang = pd.read_csv(save_file_path+file_name+'.csv', header=None)
-    dataset_ang.columns=["index","time","Rotational Error (rad)","alg","obj_scene","particle_num","ray_type","obj_name"]
-    figure_ang = sns.lineplot(x="time", y="Rotational Error (rad)", data=dataset_ang, palette=['y', 'g', 'r'], hue = 'alg', errorbar=('ci', 95), legend=True, linewidth = 0.5)
-    figure_ang.set(xlabel = None, ylabel = None)
-    # figure_ang.set_xlabel(None)
-    x = range(0, x_range_max, x_range_unit)
-    y = np.arange(0, y_range_max, y_range_unit)
-    plt.xticks(x)
-    plt.yticks(y)
-    plt.tick_params(labelsize=15)
-    plt.xlim(0, x_xlim)
-    plt.ylim(0, y_ylim)
-    plt.title(title_ang, fontsize=16)
-    svg_fig_ang = figure_ang.get_figure()
-    svg_fig_ang.savefig(save_file_path+file_name+".png",format="png")
 
-if ang_and_pos == "pos":
-    if sceneName == "scene1":
-        x_range_max = 265 # 28, 129, 265
-        x_range_unit = 25 # 2, 6, 25, 125
-        y_range_max = 0.5 # 0.5
-        y_range_unit = 0.04 # 0.04
-        x_xlim = 265 # 28
-        y_ylim = 0.5 # 0.5
-    if sceneName == "scene2":
-        x_range_max = 1300
-        x_range_unit = 100
-        y_range_max = 1.5
-        y_range_unit = 0.1
-        x_xlim = 1300
-        y_ylim = 1.5
-    if sceneName == "scene3":
-        # x_range_max = 28
-        # x_range_unit = 2
-        # y_range_max = 0.5
-        # y_range_unit = 0.04
-        # x_xlim = 28
-        # y_ylim = 0.5
-        x_range_max = 265 # 28, 129, 265, 1
-        x_range_unit = 25 # 2, 6, 25, 125
-        y_range_max = 0.5 # 0.5
-        y_range_unit = 0.04 # 0.04
-        x_xlim = 265 # 28
-        y_ylim = 0.5 # 0.5
-    if sceneName == "scene4":
-        x_range_max = 28
-        x_range_unit = 2
-        y_range_max = 0.5
-        y_range_unit = 0.04
-        x_xlim = 28
-        y_ylim = 0.5
-    if sceneName == "scene5":
-        # x_range_max = 28
-        # x_range_unit = 2
-        # y_range_max = 0.5
-        # y_range_unit = 0.04
-        # x_xlim = 28
-        # y_ylim = 0.5
-        x_range_max = 3480 # 28, 129, 265, 1
-        x_range_unit = 300 # 2, 6, 25, 125
-        y_range_max = 0.5 # 0.5
-        y_range_unit = 0.04 # 0.04
-        x_xlim = 3480 # 28
-        y_ylim = 0.5 # 0.5
-    print("Ready to plot the figure of pos")
-    ymax = 0.12
-    dataset_pos = pd.read_csv(save_file_path+file_name+'.csv', header=None)
-
-    print(dataset_pos)
-    dataset_pos.columns=["index","time","Positional Error (m)","alg","obj_scene","particle_num","ray_type","obj_name"]
-    print(pd.__version__)
-    print(sns.__version__)
-    print(matplotlib.__version__)
-    # print("Before")
-    # print(dataset_pos)
-    # dataset_pos = dataset_pos.to_numpy()[:,np.newaxis]
-    # print("After")
-    # print(dataset_pos)
-
-
-    figure_pos = sns.lineplot(data=dataset_pos, x="time", y="Positional Error (m)", palette=['y', 'g', 'r'], hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5)
-    # figure_pos = sns.lineplot(data=dataset_pos, x=1, y=2, hue=3, errorbar=('ci', 95), legend=False, linewidth = 0.5)
-    figure_pos.set(xlabel = None, ylabel = None)
-    x = range(0, x_range_max, x_range_unit)
-    y = np.arange(0, y_range_max, y_range_unit)
-    plt.xticks(x)
-    plt.yticks(y)
-    plt.tick_params(labelsize=15)
-    plt.xlim(0, x_xlim)
-    plt.ylim(0, y_ylim)
-    plt.title(title_pos, fontsize=16)
-    svg_fig_pos = figure_pos.get_figure()
-    svg_fig_pos.savefig(save_file_path+file_name+".png",format="png")
 
 if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
-    if object_name == "cracker":
-        x_range_max = 1800 # 28, 129, 265
-        x_range_unit = 180 # 2, 6, 25, 125
+    
+    if object_name == "cracker" and rosbag_flag == "1":
+        x_range_max = 60 # 28, 129, 265
+        x_range_unit = 6 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 1800 # 28
+        x_xlim = 60 # 28
         y_ylim = 0.5 # 0.5
-    if object_name == "Ketchup":
-        x_range_max = 2000 # 28, 129, 265
-        x_range_unit = 200 # 2, 6, 25, 125
+    if object_name == "Ketchup" and rosbag_flag == "1":
+        x_range_max = 60 # 28, 129, 265
+        x_range_unit = 6 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 2000 # 28
+        x_xlim = 60 # 28
         y_ylim = 0.5 # 0.5
-    if object_name == "Mayo":
-        x_range_max = 1700 # 28, 129, 265
-        x_range_unit = 170 # 2, 6, 25, 125
+    if object_name == "Mayo" and rosbag_flag == "1":
+        x_range_max = 95 # 28, 129, 265
+        x_range_unit = 10 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 1700 # 28
+        x_xlim = 95 # 28
         y_ylim = 0.5 # 0.5
-    if object_name == "Milk":
-        x_range_max = 2000 # 28, 129, 265
-        x_range_unit = 200 # 2, 6, 25, 125
+    if object_name == "Milk" and rosbag_flag == "1":
+        x_range_max = 80 # 28, 129, 265
+        x_range_unit = 8 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 2000 # 28
+        x_xlim = 80 # 28
         y_ylim = 0.5 # 0.5
-    if object_name == "Mustard":
-        x_range_max = 1800 # 28, 129, 265
-        x_range_unit = 180 # 2, 6, 25, 125
+    if object_name == "Mustard" and rosbag_flag == "1":
+        x_range_max = 120 # 28, 129, 265
+        x_range_unit = 12 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 1800 # 28
+        x_xlim = 120 # 28
         y_ylim = 0.5 # 0.5
-    if object_name == "Parmesan":
-        x_range_max = 1300 # 28, 129, 265
-        x_range_unit = 130 # 2, 6, 25, 125
+    if object_name == "Parmesan" and rosbag_flag == "1":
+        x_range_max = 85 # 28, 129, 265
+        x_range_unit = 9 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 1300 # 28
+        x_xlim = 85 # 28
         y_ylim = 0.5 # 0.5
-    if object_name == "SaladDressing":
-        x_range_max = 1800 # 28, 129, 265
-        x_range_unit = 180 # 2, 6, 25, 125
+    if object_name == "SaladDressing" and rosbag_flag == "1":
+        x_range_max = 85 # 28, 129, 265
+        x_range_unit = 9 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 1800 # 28
+        x_xlim = 85 # 28
         y_ylim = 0.5 # 0.5
-    if object_name == "soup":
-        x_range_max = 2000 # 28, 129, 265
-        x_range_unit = 200 # 2, 6, 25, 125
+    if object_name == "soup" and rosbag_flag == "1":
+        x_range_max = 90 # 28, 129, 265
+        x_range_unit = 9 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 2000 # 28
+        x_xlim = 90 # 28
         y_ylim = 0.5 # 0.5
-    # if sceneName == "scene1":
-    #     x_range_max = 1600 # 28, 129, 265
-    #     x_range_unit = 160 # 2, 6, 25, 125
-    #     y_range_max = 0.5 # 0.5
-    #     y_range_unit = 0.05 # 0.04
-    #     x_xlim = 1600 # 28
-    #     y_ylim = 0.5 # 0.5
-    # if sceneName == "scene2":
-    #     x_range_max = 2550
-    #     x_range_unit = 300
-    #     y_range_max = 0.5
-    #     y_range_unit = 0.05
-    #     x_xlim = 2550
-    #     y_ylim = 0.5
-    # if sceneName == "scene3":
-    #     # x_range_max = 28
-    #     # x_range_unit = 2
-    #     # y_range_max = 0.5
-    #     # y_range_unit = 0.04
-    #     # x_xlim = 28
-    #     # y_ylim = 0.5
-    #     x_range_max = 2000 # 28, 129, 265, 1
-    #     x_range_unit = 200# 2, 6, 25, 125
-    #     y_range_max = 0.5 # 0.5
-    #     y_range_unit = 0.05 # 0.04
-    #     x_xlim = 2000 # 28
-    #     y_ylim = 0.5 # 0.5
-    # if sceneName == "scene4":
-    #     x_range_max = 28
-    #     x_range_unit = 2
-    #     y_range_max = 0.5
-    #     y_range_unit = 0.04
-    #     x_xlim = 28
-    #     y_ylim = 0.5
-    # if sceneName == "scene5":
-    #     # x_range_max = 28
-    #     # x_range_unit = 2
-    #     # y_range_max = 0.5
-    #     # y_range_unit = 0.04
-    #     # x_xlim = 28
-    #     # y_ylim = 0.5
-    #     x_range_max = 3480 # 28, 129, 265, 1
-    #     x_range_unit = 300 # 2, 6, 25, 125
-    #     y_range_max = 0.5 # 0.5
-    #     y_range_unit = 0.04 # 0.04
-    #     x_xlim = 3480 # 28
-    #     y_ylim = 0.5 # 0.5
+
     print("Ready to plot the figure of "+ang_and_pos+" ("+object_name+")")
     ymax = 0.12
     dataset_ADD = pd.read_csv(save_file_path+file_name+'_par_min.csv', header=None)
@@ -330,11 +143,12 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
     print(matplotlib.__version__)
     color_map = {
         "FOUD": "#FC8002",
-        "DOPE": "#4995C6",
+        "DOPE": "#F0EEBB",
         "PBPF_RGBD_par_min": "#614099",
         "PBPF_RGB_par_min": "#EE4431",
         "PBPF_D_par_min": "#369F2D",
-        "Diff-DOPE": "#EDB11A",
+        "Diff-DOPE": "#4995C6",
+        "Diff-DOPE-Tracking": "#EDB11A",
     }
     # print("Before")
     # print(dataset_ADD)
@@ -357,7 +171,7 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
     plt.ylim(0, y_ylim)
     plt.title(title_ADD, fontsize=16)
     svg_fig_ADD = figure_ADD.get_figure()
-    svg_fig_ADD.savefig(save_file_path+file_name+"_par_min.png",format="png")
+    svg_fig_ADD.savefig(save_file_path+file_name+"_par_min.svg",format="svg")
     # svg_fig_ADD.savefig(save_file_path+file_name+".svg", format="svg", dpi=150)
 
     print("finished "+object_name+" par min "+ang_and_pos+" plot")

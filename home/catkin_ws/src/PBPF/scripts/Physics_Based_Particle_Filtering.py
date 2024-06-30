@@ -661,7 +661,7 @@ def _vk_camera_setting(pw_T_camD_tf_4_4, camD_T_camVk_4_4):
     
     trick_matrix3 = np.array([[ 1, 0, 0,-0.010],
                               [ 0, 1, 0,-0.010],
-                              [ 0, 0, 1,-0.000],
+                              [ 0, 0, 1,-0.03],
                               [ 0, 0, 0, 1]])
     pw_T_camVk_4_4_ = np.dot(pw_T_camVk_4_4_, trick_matrix3)
 
@@ -1453,7 +1453,7 @@ if __name__ == '__main__':
         PF_UPDATE_TIME_ONCE = BOSS_PF_UPDATE_INTERVAL_IN_REAL # 70 particles -> 35s
     else: # run_alg_flag == "CVPF":
         print("4: RUNNING_MODEL:", RUNNING_MODEL)
-        BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.16 # original value = 0.16
+        BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.25 # original value = 0.16
         PF_UPDATE_TIME_ONCE = BOSS_PF_UPDATE_INTERVAL_IN_REAL # rosbag slow down 0.02 0.3*(1/0.02)=15s
     PF_UPDATE_RATE = rospy.Rate(1.0/PF_UPDATE_TIME_ONCE)
     print("PF_UPDATE_TIME_ONCE")
@@ -1575,8 +1575,8 @@ if __name__ == '__main__':
     publish_esti_pose_info(estimated_object_set)
 
     # convert [obj1, obj2, ...] to list:[[[x,y,z],[x,y,z,w]], [[x,y,z],[x,y,z,w]], ...]
-    estimated_object_set_old = copy.deepcopy(estimated_object_set)
-    estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
+    # estimated_object_set_old = copy.deepcopy(estimated_object_set)
+    # estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
 
     print("Before locating the pose of the camera")
     # if VERSION == "ray" or VERSION == "multiray":
@@ -1905,10 +1905,10 @@ if __name__ == '__main__':
             pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
             
-            pw_T_esti_obj_pose_old = estimated_object_set_old_list[obj_index]
+            # pw_T_esti_obj_pose_old = estimated_object_set_old_list[obj_index]
 
-            dis_obseCur_estiOld = compute_pos_err_bt_2_points(pw_T_obj_obse_pos, pw_T_esti_obj_pose_old[0])
-            ang_obseCur_estiOld = compute_ang_err_bt_2_points(pw_T_obj_obse_ori, pw_T_esti_obj_pose_old[1])
+            # dis_obseCur_estiOld = compute_pos_err_bt_2_points(pw_T_obj_obse_pos, pw_T_esti_obj_pose_old[0])
+            # ang_obseCur_estiOld = compute_ang_err_bt_2_points(pw_T_obj_obse_ori, pw_T_esti_obj_pose_old[1])
             pw_T_obj_obse_pose_new = [pw_T_obj_obse_pos, pw_T_obj_obse_ori]
 
             minDis_obseCur_parOld, minAng_obseCur_parOld = compute_diff_bt_two_pose(obj_index, _particle_cloud_pub, pw_T_obj_obse_pose_new)            
@@ -2137,8 +2137,8 @@ if __name__ == '__main__':
                         for env_index, single_env in _single_envs.items():
                             _empty_return = wait_and_get_result_from(single_env)
 
-                estimated_object_set_old = copy.deepcopy(estimated_object_set)
-                estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
+                # estimated_object_set_old = copy.deepcopy(estimated_object_set)
+                # estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
                 
                 if Only_update_robot_flag == False:
                     print("Waiting for next loop")

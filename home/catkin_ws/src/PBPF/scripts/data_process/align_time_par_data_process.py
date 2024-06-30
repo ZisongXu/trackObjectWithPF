@@ -70,67 +70,31 @@ prepare_time = 265 * 100
 prepare_time = 1730 * 100
 prepare_time = 1600 * 100
 rosbag_slowdown_rate = 20
-if object_name == "Mustard" and rosbag_flag == "1":
-    prepare_time = 1100 * 100
-    rosbag_slowdown_rate = 20
-if object_name == "Mustard" and rosbag_flag == "2":
-    prepare_time = 1800 * 100
-    rosbag_slowdown_rate = 20
-if object_name == "Parmesan" and rosbag_flag == "1":
-    prepare_time = 1500 * 100
-    rosbag_slowdown_rate = 20
-if object_name == "Parmesan" and rosbag_flag == "2":
-    prepare_time = 1300 * 100
-    rosbag_slowdown_rate = 20
+
+if object_name == "cracker" and rosbag_flag == "1":
+    prepare_time = 60 * 100
+    rosbag_slowdown_rate = 1
+if object_name == "Ketchup" and rosbag_flag == "1":
+    prepare_time = 60 * 100
+    rosbag_slowdown_rate = 1
 if object_name == "Mayo" and rosbag_flag == "1":
-    prepare_time = 1700 * 100
-    rosbag_slowdown_rate = 20
-
-if object_name == "SaladDressing":
-    prepare_time = 1800 * 100
-    rosbag_slowdown_rate = 20
-if object_name == "soup":
-    prepare_time = 2000 * 100
-    rosbag_slowdown_rate = 20
-
-if object_name == "Milk":
-    prepare_time = 2000 * 100
-    rosbag_slowdown_rate = 20
-if object_name == "Ketchup":
-    prepare_time = 2000 * 100
-    rosbag_slowdown_rate = 20
-if object_name == "cracker":
-    prepare_time = 1800 * 100
-    rosbag_slowdown_rate = 20
-# if object_name == "Ketchup":
-#     prepare_time = 1500 * 100
-#     rosbag_slowdown_rate = 20
-# if object_name == "Mayo":
-#     prepare_time = 2000 * 100
-#     rosbag_slowdown_rate = 20
-# if object_name == "Milk":
-#     prepare_time = 1600 * 100
-#     rosbag_slowdown_rate = 20
-# if object_name == "Mustard":
-#     prepare_time = 2400 * 100
-#     rosbag_slowdown_rate = 20
-# if object_name == "Parmesan":
-#     prepare_time = 1700 * 100
-#     rosbag_slowdown_rate = 20
-# if object_name == "SaladDressing":
-#     prepare_time = 1800 * 100
-#     rosbag_slowdown_rate = 20
-# if object_name == "soup":
-#     prepare_time = 1900 * 100
-#     rosbag_slowdown_rate = 20
-
-if task_flag == "scene3":
-    prepare_time = 2000 * 100
-    rosbag_slowdown_rate = 20
-# prepare_time = 134000
-
-
-# prepare_time = 250000
+    prepare_time = 95 * 100
+    rosbag_slowdown_rate = 1
+if object_name == "Milk" and rosbag_flag == "1":
+    prepare_time = 80 * 100
+    rosbag_slowdown_rate = 1
+if object_name == "Mustard" and rosbag_flag == "1":
+    prepare_time = 120 * 100
+    rosbag_slowdown_rate = 1
+if object_name == "Parmesan" and rosbag_flag == "1":
+    prepare_time = 85 * 100
+    rosbag_slowdown_rate = 1
+if object_name == "SaladDressing" and rosbag_flag == "1":
+    prepare_time = 85 * 100
+    rosbag_slowdown_rate = 1
+if object_name == "soup" and rosbag_flag == "1":
+    prepare_time = 90 * 100
+    rosbag_slowdown_rate = 1
 
 # save file
 # save_file_name = tem_name+'_'+'based_on_time_'+str(particle_num)+'_'+object_name+'_'+task_flag+'_'+update_style_flag+'_'+ang_and_pos+'.csv'

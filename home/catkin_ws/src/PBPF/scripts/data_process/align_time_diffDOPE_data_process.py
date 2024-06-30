@@ -71,26 +71,44 @@ prepare_time = 28 * 100
 prepare_time = 129 * 100
 prepare_time = 265 * 100
 prepare_time = 1730 * 100
-prepare_time = 2000 * 100
-rosbag_slowdown_rate = 20
-# prepare_time = 134000
+prepare_time = 55 * 100
+rosbag_slowdown_rate = 1
+
+if object_name == "cracker" and rosbag_flag == "1":
+    prepare_time = 60 * 100
+    rosbag_slowdown_rate = 1
+if object_name == "Ketchup" and rosbag_flag == "1":
+    prepare_time = 60 * 100
+    rosbag_slowdown_rate = 1
+if object_name == "Mayo" and rosbag_flag == "1":
+    prepare_time = 95 * 100
+    rosbag_slowdown_rate = 1
+if object_name == "Milk" and rosbag_flag == "1":
+    prepare_time = 80 * 100
+    rosbag_slowdown_rate = 1
+if object_name == "Mustard" and rosbag_flag == "1":
+    prepare_time = 120 * 100
+    rosbag_slowdown_rate = 1
+if object_name == "Parmesan" and rosbag_flag == "1":
+    prepare_time = 85 * 100
+    rosbag_slowdown_rate = 1
+if object_name == "SaladDressing" and rosbag_flag == "1":
+    prepare_time = 85 * 100
+    rosbag_slowdown_rate = 1
+if object_name == "soup" and rosbag_flag == "1":
+    prepare_time = 90 * 100
+    rosbag_slowdown_rate = 1
 
 # pw_T_cam_pose = np.array([[-0.17022463,  0.22072718, -0.96036612,  1.01227219],
 #                           [ 0.98534948,  0.02775525, -0.16827375,  0.09076827],
 #                           [-0.01048739, -0.97494059, -0.22221804,  0.93997983],
 #                           [ 0.        ,  0.        ,  0.        ,  1.        ]])
 
-pw_T_cam_pose = np.array([[-0.12142169,  0.24211981, -0.9626187,   0.91924279],
-                          [ 0.99253294,  0.01825799, -0.1206027,   0.10111739],
-                          [-0.01162482, -0.97007455, -0.24252881,  0.93975793],
-                          [ 0.        ,  0.        ,  0.        ,  1.        ]]
-)
 
-
-# pw_T_cam_pose = np.array([[ 3.96235287e-04,  2.53526658e-01, -9.67328319e-01,  9.51147287e-01],
-#                           [ 9.99988399e-01, -4.74415418e-03, -8.33779851e-04,  6.27580045e-02],
-#                           [-4.80054010e-03, -9.67316767e-01, -2.53525596e-01,  9.49659315e-01],
-#                           [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+pw_T_cam_pose = np.array([[-0.17022463,  0.22072718, -0.96036612,  1.01227219],
+                              [ 0.98534948,  0.02775525, -0.16827375,  0.09076827],
+                              [-0.01048739, -0.97494059, -0.22221804,  0.93997983],
+                              [ 0.        ,  0.        ,  0.        ,  1.        ]])
 # prepare_time = 250000
 
 # save file
@@ -227,150 +245,3 @@ for i in range(int(prepare_time/rosbag_slowdown_rate)):
 print("Done")
 newdataset.to_csv(save_file_path+save_file_name, index=0, header=0, mode='w')
 
-# particle_num = sys.argv[1]
-# object_name = sys.argv[2]
-# task_flag = sys.argv[3] # "scene1"
-# rosbag_flag = sys.argv[4]
-# repeat_time = sys.argv[5]
-# run_alg_flag = sys.argv[6] # PBPF
-# ang_and_pos = sys.argv[7] # pos/ang
-
-
-#     for j in range(loop_flag):
-#         dataset = pd.read_csv(before_name+str(j+1)+PBPF_pos_file_name, header=None)
-#         dataset.columns=["index","time","error","alg"]
-#         # dataset.time = dataset.time - 4.3
-#         datasetcopy = copy.deepcopy(dataset)
-#         newdataset = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-#         # timedf = dataset['time']
-#         timestep_list = []
-#         for timestep in range(prepare_time):
-#             timestep_list.append(timestep/100.0)
-#         if update_style_flag == "time" and task_flag == "2" and correct_time_flag == True:
-#             correct_time(datasetcopy)
-#         timedf = datasetcopy['time']
-#         for i in range(prepare_time):
-#             newdata = (timedf - timestep_list[int(i)]).abs()
-#             #print(newdata)
-#             #print(newdata.idxmin())
-#             datasetcopy.loc[datasetcopy.index==newdata.idxmin(),'time'] = timestep_list[int(i)]
-#             #datasetcopy.loc[datasetcopy.index==newdata.idxmin(),'error'] = dataset.loc[dataset.index==newdata.idxmin(),'error'] - 0.005
-#             newdataset.loc[i] = [datasetcopy.loc[newdata.idxmin(),'index'],
-#                                  datasetcopy.loc[newdata.idxmin(),'time'],
-#                                  datasetcopy.loc[newdata.idxmin(),'error'],
-#                                  datasetcopy.loc[newdata.idxmin(),'alg']]
-#         print("PFPE_pos ",j)
-#         newdataset.to_csv(file_path_pos+file_name_pos,index=0,header=0,mode='a')
-#     print("finished")
-#     if flag_CVPF == True:
-#         for j in range(loop_flag):     
-#             dataset = pd.read_csv(before_name+str(j+1)+CVPF_pos_file_name, header=None)
-#             dataset.columns=["index","time","error","alg"]
-#             datasetcopy = copy.deepcopy(dataset)
-#             newdataset = pd.DataFrame(columns=['step','time','pos','alg'],index=[])
-#             # timedf = dataset['time']
-#             timestep_list = []
-#             for timestep in range(prepare_time):
-#                 timestep_list.append(timestep/100.0)
-#             if update_style_flag == "time" and task_flag == "2" and correct_time_flag == True:
-#                 correct_time(datasetcopy)
-#             timedf = datasetcopy['time']
-#             for i in range(prepare_time):
-#                 newdata = (timedf - timestep_list[int(i)]).abs()
-#                 #print(newdata)
-#                 #print(newdata.idxmin())
-#                 datasetcopy.loc[datasetcopy.index==newdata.idxmin(),'time'] = timestep_list[int(i)]
-#                 newdataset.loc[i] = [datasetcopy.loc[newdata.idxmin(),'index'],
-#                                     datasetcopy.loc[newdata.idxmin(),'time'],
-#                                     datasetcopy.loc[newdata.idxmin(),'error'],
-#                                     datasetcopy.loc[newdata.idxmin(),'alg']]
-#             print("CVPF_pos ",j)
-#             newdataset.to_csv(file_path_pos+file_name_pos,index=0,header=0,mode='a')
-#     print("finished")
-# # ang
-# if flag_ang == True:
-#     print("Ready to integrate the data of ang")
-#     for j in range(loop_flag):
-#         dataset = pd.read_csv(before_name+str(j+1)+obse_ang_file_name, header=None)
-#         dataset.columns=["index","time","error","alg"]
-#         # dataset.time = dataset.time - 4.3
-#         datasetcopy = copy.deepcopy(dataset)
-#         newdataset = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-#         # timedf = dataset['time']
-#         timestep_list = []
-#         for timestep in range(prepare_time):
-#             timestep_list.append(timestep/100.0)
-#         if update_style_flag == "time" and task_flag == "2" and correct_time_flag == True:
-#             correct_time(datasetcopy)
-#         timedf = datasetcopy['time']
-#         for i in range(prepare_time):
-#             newdata = (timedf - timestep_list[i]).abs()
-#             #print(newdata)
-#             #print(newdata.idxmin())
-#             datasetcopy.loc[datasetcopy.index==newdata.idxmin(),'time'] = timestep_list[i]
-#             #datasetcopy.loc[datasetcopy.index==newdata.idxmin(),'error'] = dataset.loc[dataset.index==newdata.idxmin(),'error'] + 0.05
-#             newdataset.loc[i] = [datasetcopy.loc[newdata.idxmin(),'index'],
-#                                  datasetcopy.loc[newdata.idxmin(),'time'],
-#                                  datasetcopy.loc[newdata.idxmin(),'error'],
-#                                  datasetcopy.loc[newdata.idxmin(),'alg']]
-#         print("obse_ang ",j)
-#         newdataset.to_csv(file_path_ang+file_name_ang,index=0,header=0,mode='a')
-#     print("finished")
-#     for j in range(loop_flag):
-#         dataset = pd.read_csv(before_name+str(j+1)+PBPF_ang_file_name, header=None)
-#         dataset.columns=["index","time","error","alg"]
-#         # dataset.time = dataset.time - 4.3
-#         datasetcopy = copy.deepcopy(dataset)
-#         newdataset = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-#         # timedf = dataset['time']
-#         timestep_list = []
-#         for timestep in range(prepare_time):
-#             timestep_list.append(timestep/100.0)
-#         if update_style_flag == "time" and task_flag == "2" and correct_time_flag == True:
-#             correct_time(datasetcopy)
-#         timedf = datasetcopy['time']
-#         for i in range(prepare_time):
-#             newdata = (timedf - timestep_list[i]).abs()
-#             #print(newdata)
-#             #print(newdata.idxmin())
-#             datasetcopy.loc[datasetcopy.index==newdata.idxmin(),'time'] = timestep_list[i]
-#             newdataset.loc[i] = [datasetcopy.loc[newdata.idxmin(),'index'],
-#                                  datasetcopy.loc[newdata.idxmin(),'time'],
-#                                  datasetcopy.loc[newdata.idxmin(),'error'],
-#                                  datasetcopy.loc[newdata.idxmin(),'alg']]
-#         print("PFPE_ang ",j)
-#         newdataset.to_csv(file_path_ang+file_name_ang,index=0,header=0,mode='a')
-#     print("finished")
-#     if flag_CVPF == True:
-#         for j in range(loop_flag):     
-#             dataset = pd.read_csv(before_name+str(j+1)+CVPF_ang_file_name, header=None)
-#             dataset.columns=["index","time","error","alg"]
-#             datasetcopy = copy.deepcopy(dataset)
-#             newdataset = pd.DataFrame(columns=['step','time','ang','alg'],index=[])
-#             # timedf = dataset['time']
-#             timestep_list = []
-#             for timestep in range(prepare_time):
-#                 timestep_list.append(timestep/100.0)
-#             if update_style_flag == "time" and task_flag == "2" and correct_time_flag == True:
-#                 correct_time(datasetcopy)
-#             timedf = datasetcopy['time']
-#             for i in range(prepare_time):
-#                 newdata = (timedf - timestep_list[i]).abs()
-#                 #print(newdata)
-#                 #print(newdata.idxmin())
-#                 datasetcopy.loc[datasetcopy.index==newdata.idxmin(),'time'] = timestep_list[i]
-#                 #datasetcopy.loc[datasetcopy.index==newdata.idxmin(),'error'] = dataset.loc[dataset.index==newdata.idxmin(),'error'] + 0.05
-#                 newdataset.loc[i] = [datasetcopy.loc[newdata.idxmin(),'index'],
-#                                     datasetcopy.loc[newdata.idxmin(),'time'],
-#                                     datasetcopy.loc[newdata.idxmin(),'error'],
-#                                     datasetcopy.loc[newdata.idxmin(),'alg']]
-#             print("CVPF_ang ",j)
-#             newdataset.to_csv(file_path_ang+file_name_ang,index=0,header=0,mode='a')
-#     print("finished")
-
-
-
-# '''hue = 'alg','''
-# #figure = sns.lineplot(x="time", y=newdataset.error,data=newdataset, ci=95)
-# #svg_fig = figure.get_figure()
-# #svg_fig.savefig("0_2_scene1a_err_pos.svg",format="svg")

@@ -26,7 +26,8 @@ import tf
 import tf.transformations as transformations
 import tf2_ros
 from tf2_geometry_msgs import tf2_geometry_msgs
-
+from pyquaternion import Quaternion
+from quaternion_averaging import weightedAverageQuaternions
 
 def ADDMatrixBtTwoObjects(obj_name, pos1, ori1, pos2, ori2):
     center_T_points_pose_4_4_list = getCenterTPointsList(obj_name)
@@ -45,35 +46,11 @@ def ADDMatrixBtTwoObjects(obj_name, pos1, ori1, pos2, ori2):
             new_ori = transformations.quaternion_from_matrix(new)
             ori2 = new_ori
             pos2[2] = pos2[2] - 0.145
-        if ori2[3] < 0:
-            ori2[0] = -ori2[0]
-            ori2[1] = -ori2[1]
-            ori2[2] = -ori2[2]
-            ori2[3] = -ori2[3]
-    if obj_name == "Parmesan" and task_flag == "scene2":
-        if ori2[3] > 0:
-            ori2[0] = -ori2[0]
-            ori2[1] = -ori2[1]
-            ori2[2] = -ori2[2]
-            ori2[3] = -ori2[3]
-    if obj_name == "Mustard" and task_flag == "scene1":
-        if ori2[3] > 0:
-            ori2[0] = -ori2[0]
-            ori2[1] = -ori2[1]
-            ori2[2] = -ori2[2]
-            ori2[3] = -ori2[3]
-    if obj_name == "SaladDressing" and task_flag == "scene1":
-        if ori2[3] < 0:
-            ori2[0] = -ori2[0]
-            ori2[1] = -ori2[1]
-            ori2[2] = -ori2[2]
-            ori2[3] = -ori2[3]
-
-    # mark
-    # if obj_name == "soup":
-    #     pw_T_parC_ang = list(p.getEulerFromQuaternion(pw_T_parC_ori))
-    #     pw_T_parC_ang[0] = pw_T_parC_ang[0] + 1.5707963
-    #     pw_T_parC_ori = p.getQuaternionFromEuler(pw_T_parC_ang)
+            
+    # pos1: [0.4685696586646535, -0.2038274908013323, 0.7970063996498579]
+    # pos2: [0.3304728561443379, -0.2181392347083696, 0.7753211406030377]
+    # ori1: [-0.3066626133656215, 0.5752608330760987, 0.4145899811624447, 0.6349394955522012]
+    # ori2: [-0.4857279655585651, 0.5239397674606893, 0.4965236874302953, 0.4929702743251346]
 
     pw_T_points_pose_4_4_list_1 = getPwTPointsList(center_T_points_pose_4_4_list, pos1, ori1)
     pw_T_points_pose_4_4_list_2 = getPwTPointsList(center_T_points_pose_4_4_list, pos2, ori2)
@@ -186,6 +163,71 @@ def computeADDS(pw_T_points_pose_4_4_list_1, pw_T_points_pose_4_4_list_2):
     average_distance = 1.0 * dis_sum / points_num
     return average_distance
 
+def _compute_estimate_pos_of_object_and_find_which_particle_is_closed(particle_cloud_pos_list, particle_cloud_ori_list):
+    w = 1.0/float(particle_num)
+    esti_objs_cloud = []
+    # remenber after resampling weight of each particle is the same
+    x_set = 0
+    y_set = 0
+    z_set = 0
+    w_set = 0
+    quaternions = []
+    qws = []
+
+    # for index, particle in enumerate(particle_cloud_pos_list):
+    for index in range(int(particle_num)):
+        x_set = x_set + particle_cloud_pos_list[index][0] * w
+        y_set = y_set + particle_cloud_pos_list[index][1] * w
+        z_set = z_set + particle_cloud_pos_list[index][2] * w
+        q = quaternion_correction(particle_cloud_ori_list[index])
+
+        qws.append(w)
+        quaternions.append([q[0], q[1], q[2], q[3]])
+        w_set = w_set + w
+    q = weightedAverageQuaternions(np.array(quaternions), np.array(qws))
+    ###################################
+    esti_obj_pos_x = x_set/w_set
+    esti_obj_pos_y = y_set/w_set
+    esti_obj_pos_z = z_set/w_set
+    esti_obj_pos = [esti_obj_pos_x, esti_obj_pos_y, esti_obj_pos_z]
+    esti_obj_ori_x = q[0]
+    esti_obj_ori_y = q[1]
+    esti_obj_ori_z = q[2]
+    esti_obj_ori_w = q[3]
+    esti_obj_ori = [esti_obj_ori_x, esti_obj_ori_y, esti_obj_ori_z, esti_obj_ori_w]
+    ###################################
+    est_obj_pose = [esti_obj_pos, esti_obj_ori]
+    err_distance_list = []
+    for index in range(int(particle_num)):
+        par_pos = [particle_cloud_pos_list[index][0], particle_cloud_pos_list[index][1], particle_cloud_pos_list[index][2]]
+        par_ori = quaternion_correction(particle_cloud_ori_list[index])
+        err_distance = ADDMatrixBtTwoObjects(object_name, par_pos, par_ori, esti_obj_pos, esti_obj_ori)
+        err_distance_list.append(err_distance)
+    min_value = min(err_distance_list)
+    min_index = err_distance_list.index(min_value)
+    min_par_pose = [[particle_cloud_pos_list[min_index][0], particle_cloud_pos_list[min_index][1], particle_cloud_pos_list[min_index][2]], quaternion_correction(particle_cloud_ori_list[min_index])]
+    return min_par_pose
+
+
+# make sure all quaternions all between -pi and +pi
+def quaternion_correction(quaternion): # x,y,z,w
+    new_quat = Quaternion(x=quaternion[0], y=quaternion[1], z=quaternion[2], w=quaternion[3]) # w,x,y,z
+    cos_theta_over_2 = new_quat.w
+    sin_theta_over_2 = math.sqrt(new_quat.x ** 2 + new_quat.y ** 2 + new_quat.z ** 2)
+    theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
+    theta = theta_over_2 * 2.0
+    while theta >= math.pi:
+        theta = theta - 2.0*math.pi
+    while theta <= -math.pi:
+        theta = theta + 2.0*math.pi
+    new_quaternion = [math.sin(theta/2.0)*(new_quat.x/sin_theta_over_2), math.sin(theta/2.0)*(new_quat.y/sin_theta_over_2), math.sin(theta/2.0)*(new_quat.z/sin_theta_over_2), math.cos(theta/2.0)]
+    #if theta >= math.pi or theta <= -math.pi:
+    #    new_quaternion = [-quaternion[0], -quaternion[1], -quaternion[2], -quaternion[3]]
+    #    return new_quaternion
+    #return quaternion # x,y,z,w
+    return new_quaternion
+
+
 def compute_pos_err_bt_2_points(pos1, pos2):
     x1=pos1[0]
     y1=pos1[1]
@@ -225,19 +267,19 @@ runVersion = sys.argv[8] # "PBPF_RGBD" "PBPF_RGB" "PBPF_D"
 
 file_path_par = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/results/particles/")
 file_path_GT = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/results/")
-# Time_aligned_10_scene1_rosbag1_repeat0_cracker_time_GT_pose_PBPF_RGBD.csv
-# Time_aligned_10_scene1_rosbag1_repeat0_cracker_time_obse_pose_PBPF_RGBD.csv
-# Time_aligned_10_scene1_rosbag1_repeat0_cracker_time_PBPF_pose_PBPF_RGBD.csv
-# Time_aligned_5_scene1_rosbag1_repeat0_time_PBPF_pose_PBPF_RGBD_0_cracker
+# Time_aligned_5_scene1_rosbag1_repeat0_time_PBPF_pose_PBPF_RGBD_0_cracker.csv
+# Time_aligned_70_scene1_rosbag1_repeat0_time_PBPF_pose_PBPF_RGBD_69_Mayo.csv
 file_name_list = []
 for par_index in range(int(particle_num)):
     par_index_name = par_index
     file_name = "Time_aligned_"+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+update_style_flag+'_'+run_alg_flag+'_pose_'+runVersion+'_'+str(par_index_name)+'_'+object_name+'.csv'
     file_name_list.append(file_name)
 
+# Time_aligned_70_scene1_rosbag1_repeat0_Mayo_time_GT_pose_PBPF_D.csv
 # GT_file_name = "Time_aligned_"+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_GT_pose_'+runVersion+'.csv'
 GT_file_name = "Time_aligned_"+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_GT_pose_'+runVersion+'.csv'
 
+# load data
 columns_names = ['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name']
 data_list = []
 for par_index in range(int(particle_num)):
@@ -245,7 +287,7 @@ for par_index in range(int(particle_num)):
     data_list.append(data)
 data_GT = pd.read_csv(file_path_GT+GT_file_name, names=columns_names, header=None)
 
-
+# simple data
 columns_of_interest = ['pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w']
 pos_ori_data_list = []
 for par_index in range(int(particle_num)):
@@ -296,22 +338,33 @@ new_err_data['alg'] = runVersion+'_par_avg'
 new_err_data[ang_and_pos] = pd.Series(dtype='float64')
 
 
+min_par_pose_list = []
+# try to compute mean
+for row_index in range(num_rows_data):
+    alg_pos_combined_list = []
+    alg_ori_combined_list = []
+    for par_index in range(int(particle_num)):
+        pos_compare = pos_combined_list[par_index][row_index][0] # pos1: [0.4685696586646535, -0.2038274908013323, 0.7970063996498579]
+        ori_compare = ori_combined_list[par_index][row_index][0] # ori1: [-0.3066626133656215, 0.5752608330760987, 0.4145899811624447, 0.6349394955522012]
+        alg_pos_combined_list.append(pos_compare)
+        alg_ori_combined_list.append(ori_compare)
+    min_par_pose = _compute_estimate_pos_of_object_and_find_which_particle_is_closed(alg_pos_combined_list, alg_ori_combined_list)
+    print(task_flag, rosbag_flag, object_name, ang_and_pos,". Finish compute the ",row_index, " row min particle!")
+    min_par_pose_list.append(min_par_pose)
 
 # based_on_time_70_scene1_time_cracker_ADD
-file_name_error = 'based_on_time_'+str(particle_num)+'_'+task_flag+'_'+update_style_flag+'_'+object_name+'_'+ang_and_pos+'_par_avg.csv'
+file_name_error = 'based_on_time_'+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_'+update_style_flag+'_'+object_name+'_'+ang_and_pos+'_par_avg.csv'
 
 for row_index in range(num_rows_data):
     err_distance_list = []
-    for par_index in range(int(particle_num)):
-        pos_compare = pos_combined_list[par_index][row_index][0]
-        pos______GT = pos_combined_list[par_index][row_index][1]
-        ori_compare = ori_combined_list[par_index][row_index][0]
-        ori______GT = ori_combined_list[par_index][row_index][1]
-        err_distance = ADDMatrixBtTwoObjects(object_name, pos_compare, ori_compare, pos______GT, ori______GT)
-        err_distance_list.append(err_distance)
-    mean_err_distance = np.mean(err_distance_list)
-    new_err_data.loc[row_index, ang_and_pos] = mean_err_distance
-    print("Compute par avg "+ang_and_pos+" error: "+file_name_error+" processing... ", row_index)
+    pos_par = min_par_pose_list[row_index][0]
+    ori_par = min_par_pose_list[row_index][1]
+    pos__GT = pos_combined_list[0][row_index][1]
+    ori__GT = ori_combined_list[0][row_index][1]
+    err_distance = ADDMatrixBtTwoObjects(object_name, pos_par, ori_par, pos__GT, ori__GT)
+    new_err_data.loc[row_index, ang_and_pos] = err_distance
+    print("Compute par avg "+ang_and_pos+" error: "+file_name_error+" processing... ", row_index, err_distance)
+
 
 
 new_err_data.to_csv(file_path_par+file_name_error,index=0,header=0,mode='a')

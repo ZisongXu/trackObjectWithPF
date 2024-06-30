@@ -231,11 +231,11 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
         x_xlim = 2000 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Mayo":
-        x_range_max = 1700 # 28, 129, 265
-        x_range_unit = 170 # 2, 6, 25, 125
+        x_range_max = 85 # 28, 129, 265
+        x_range_unit = 5 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 1700 # 28
+        x_xlim = 85 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Milk":
         x_range_max = 2000 # 28, 129, 265
@@ -363,7 +363,7 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
     plt.ylim(0, y_ylim)
     plt.title(title_ADD, fontsize=16)
     svg_fig_ADD = figure_ADD.get_figure()
-    svg_fig_ADD.savefig(save_file_path+file_name+".png",format="png")
-    # svg_fig_ADD.savefig(save_file_path+file_name+".svg", format="svg", dpi=150)
+    # svg_fig_ADD.savefig(save_file_path+file_name+".png",format="png")
+    svg_fig_ADD.savefig(save_file_path+file_name+".svg", format="svg")
 
 print("finished")

@@ -301,10 +301,7 @@ class SingleENV(multiprocessing.Process):
                 normal_x, normal_y, normal_z, pb_quat = self.collision_check(collision_detection_obj_id_,
                                                                              obj_cur_pos, obj_cur_ori,
                                                                              obj_id, obj_index, obj_pose_3_1)
-            if obj_index == 0:
-                normal_x = normal_x - 0.005       
-            if obj_index == 1:
-                normal_x = normal_x - 0.01                  
+            normal_x = normal_x - 0.0025                 
             self.update_object_pose_PB(obj_index, normal_x, normal_y, normal_z, pb_quat, linearVelocity, angularVelocity)
         self.p_env.stepSimulation()
         return_results = self.get_objects_pose(par_index)

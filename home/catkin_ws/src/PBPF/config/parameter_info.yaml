@@ -21,7 +21,7 @@ locate_camera_flag: ar
 multiprocessing_flag: false
 nearVal: 0.03
 object_name_list:
-- cracker
+- Parmesan
 - Ketchup
 - Milk
 object_num: 2
@@ -43,7 +43,7 @@ particle_num: 40
 pb_render_flag: false
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0
-print_flag: true
+print_flag: false
 print_score_flag: false
 process_model_flag: normal
 ray_tracing_type: multiray

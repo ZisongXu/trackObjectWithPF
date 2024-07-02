@@ -16,7 +16,8 @@
 # declare -a sceneNames=("scene1" "scene2")
 
 # declare -a objectNames=("cracker" "soup" "Parmesan")
-declare -a objectNames=("cracker" "Ketchup")
+declare -a objectNames=("Mustard" "SaladDressing")
+# declare -a objectNames=("Mayo" "Milk")
 # declare -a objectNames=("soup")
 # declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing")
 # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")

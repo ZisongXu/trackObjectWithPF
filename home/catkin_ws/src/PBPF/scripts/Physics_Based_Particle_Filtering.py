@@ -661,7 +661,7 @@ def _vk_camera_setting(pw_T_camD_tf_4_4, camD_T_camVk_4_4):
     
     trick_matrix3 = np.array([[ 1, 0, 0,-0.010],
                               [ 0, 1, 0,-0.010],
-                              [ 0, 0, 1,-0.03],
+                              [ 0, 0, 1,-0.00],
                               [ 0, 0, 0, 1]])
     pw_T_camVk_4_4_ = np.dot(pw_T_camVk_4_4_, trick_matrix3)
 
@@ -1330,29 +1330,30 @@ def signal_handler(sig, frame):
             
             _boss_obse_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_obse_ADD,index=0,header=0,mode='w')
             _boss_GT_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_GT_ADD,index=0,header=0,mode='w')
-            print("write "+obj_name+" PBPF file: "+RUNNING_MODEL)
-            print("write "+obj_name+" obse file: "+RUNNING_MODEL)
-            print("write "+obj_name+" GT file: "+RUNNING_MODEL)
+            # print("write "+obj_name+" PBPF file: "+RUNNING_MODEL)
+            # print("write "+obj_name+" obse file: "+RUNNING_MODEL)
+            # print("write "+obj_name+" GT file: "+RUNNING_MODEL)
 
+        # print("write Particle file (should include all objects): "+RUNNING_MODEL)
         for par_index in range(PARTICLE_NUM):
             file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/'+OBJECT_NAME_LIST[0]+'/')
             # file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/')
             file_name_par_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+"_"+str(par_index)+'.csv'
             
             _boss_par_err_ADD_df_list[par_index].to_csv(file_save_path+file_name_par_ADD,index=0,header=0,mode='w')
-            print("write Particle file (should include all objects): "+RUNNING_MODEL)
+            
     
-    print("")
-    print(" -------------------------------------------- ")
-    print("|                                            |")
-    print("|              Thanks for using              |")
-    print("|               our PBPF code!               |")
-    print("|                                            |")
-    print("| Zisong Xu, Rafael Papallas, Jaina Modisett |")
-    print("|    Markus Billeter, and Mehmet R. Dogar    |")
-    print("|          From Universtiy of Leeds          |")
-    print("|                                            |")
-    print(" -------------------------------------------- ")
+    # print("")
+    # print(" -------------------------------------------- ")
+    # print("|                                            |")
+    # print("|              Thanks for using              |")
+    # print("|               our PBPF code!               |")
+    # print("|                                            |")
+    # print("| Zisong Xu, Rafael Papallas, Jaina Modisett |")
+    # print("|    Markus Billeter, and Mehmet R. Dogar    |")
+    # print("|          From Universtiy of Leeds          |")
+    # print("|                                            |")
+    # print(" -------------------------------------------- ")
     sys.exit()
 
 if __name__ == '__main__':
@@ -1449,7 +1450,7 @@ if __name__ == '__main__':
         PF_UPDATE_TIME_ONCE = BOSS_PF_UPDATE_INTERVAL_IN_REAL # 70 particles -> 35s
     elif RUNNING_MODEL == "PBPF_RGBD" and PB_RENDER_FLAG == True:
         print("3: RUNNING_MODEL (PB):", RUNNING_MODEL)
-        BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.30 # original value = 0.16 
+        BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.25 # original value = 0.16 
         PF_UPDATE_TIME_ONCE = BOSS_PF_UPDATE_INTERVAL_IN_REAL # 70 particles -> 35s
     else: # run_alg_flag == "CVPF":
         print("4: RUNNING_MODEL:", RUNNING_MODEL)

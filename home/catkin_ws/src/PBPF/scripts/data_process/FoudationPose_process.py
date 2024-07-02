@@ -122,10 +122,12 @@ if __name__ == '__main__':
     #                           [-4.80054010e-03, -9.67316767e-01, -2.53525596e-01,  9.49659315e-01],
     #                           [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
 
-    pw_T_cam_pose = np.array([[-0.17022463,  0.22072718, -0.96036612,  1.01227219],
-                              [ 0.98534948,  0.02775525, -0.16827375,  0.09076827],
-                              [-0.01048739, -0.97494059, -0.22221804,  0.93997983],
-                              [ 0.        ,  0.        ,  0.        ,  1.        ]])
+    pw_T_cam_pose = np.array([[-0.12892243,  0.24623873, -0.96059643,  0.9256145 ],
+                              [ 0.99164883,  0.03533915, -0.12403119,  0.11166203],
+                              [ 0.00340538, -0.96856473, -0.24873836,  0.92073054],
+                              [ 0.        ,  0.        ,  0.        ,  1.        ]]
+                            )
+
 
 
 
@@ -170,7 +172,7 @@ if __name__ == '__main__':
     # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
     rosbag_file_path = os.path.expanduser('~/pyvkdepth/rosbag/')
     # ImageCreator(rosbag_file_path+'1_scene2_'+OBJ_NAME+'1.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
-    ImageCreator(rosbag_file_path+'2_scene1_crackerKetchup1.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
+    ImageCreator(rosbag_file_path+'2_scene1_MustardSaladDressing1.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
     
 
 

@@ -75,28 +75,28 @@ prepare_time = 55 * 100
 rosbag_slowdown_rate = 1
 
 if object_name == "cracker" and rosbag_flag == "1":
-    prepare_time = 60 * 100
+    prepare_time = 65 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Ketchup" and rosbag_flag == "1":
-    prepare_time = 60 * 100
+    prepare_time = 50 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Mayo" and rosbag_flag == "1":
-    prepare_time = 95 * 100
+    prepare_time = 50 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Milk" and rosbag_flag == "1":
-    prepare_time = 80 * 100
+    prepare_time = 50 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Mustard" and rosbag_flag == "1":
-    prepare_time = 120 * 100
+    prepare_time = 55 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Parmesan" and rosbag_flag == "1":
-    prepare_time = 85 * 100
+    prepare_time = 50 * 100
     rosbag_slowdown_rate = 1
 if object_name == "SaladDressing" and rosbag_flag == "1":
-    prepare_time = 85 * 100
+    prepare_time = 55 * 100
     rosbag_slowdown_rate = 1
 if object_name == "soup" and rosbag_flag == "1":
-    prepare_time = 90 * 100
+    prepare_time = 65 * 100
     rosbag_slowdown_rate = 1
 
 # pw_T_cam_pose = np.array([[-0.17022463,  0.22072718, -0.96036612,  1.01227219],
@@ -105,10 +105,10 @@ if object_name == "soup" and rosbag_flag == "1":
 #                           [ 0.        ,  0.        ,  0.        ,  1.        ]])
 
 
-pw_T_cam_pose = np.array([[-0.17022463,  0.22072718, -0.96036612,  1.01227219],
-                              [ 0.98534948,  0.02775525, -0.16827375,  0.09076827],
-                              [-0.01048739, -0.97494059, -0.22221804,  0.93997983],
-                              [ 0.        ,  0.        ,  0.        ,  1.        ]])
+pw_T_cam_pose = np.array([[-2.82329883e-02,  1.61464239e-01, -9.86474631e-01,  9.75989378e-01],
+                          [ 9.99601205e-01,  3.99339782e-03, -2.79550404e-02,  9.28372152e-02],
+                          [-5.74353683e-04, -9.86870484e-01, -1.61512593e-01,  9.59719590e-01],
+                          [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
 # prepare_time = 250000
 
 # save file

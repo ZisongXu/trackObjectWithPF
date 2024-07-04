@@ -913,10 +913,10 @@ def _vk_get_rendered_depth_image_parallelised(particle_cloud, links_info):
     # for par_index in range(PARTICLE_NUM):
     #     axs[par_index].imshow(vk_rendered_depth_image_array_list_[par_index])
     # plt.show()
-    # for index in range(len(vk_single_obj_rendered__mask_image_array_list_)):
+    # for index in range(len(vk_rendered_depth_image_array_list_)):
     #     img_name = "single_obj_Maskimg_"+str(index)+".png"
     #     # cv2.imwrite(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, (cv_image).astype(np.uint16))
-    #     imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+img_name, vk_single_obj_rendered__mask_image_array_list_[index], cmap='gray')
+    #     imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+img_name, vk_rendered_depth_image_array_list_[index], cmap='gray')
     #     # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, self.real_depth_image_transferred, cmap='gray')
     # ============================================================================
     return vk_rendered_depth_image_array_list_, vk_rendered__mask_image_array_list_, vk_single_obj_rendered__mask_image_array_list_

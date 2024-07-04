@@ -75,7 +75,7 @@ prepare_time = 55 * 100
 rosbag_slowdown_rate = 1
 
 if object_name == "cracker" and rosbag_flag == "1":
-    prepare_time = 65 * 100
+    prepare_time = 75 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Ketchup" and rosbag_flag == "1":
     prepare_time = 50 * 100
@@ -87,16 +87,16 @@ if object_name == "Milk" and rosbag_flag == "1":
     prepare_time = 50 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Mustard" and rosbag_flag == "1":
-    prepare_time = 55 * 100
+    prepare_time = 115 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Parmesan" and rosbag_flag == "1":
     prepare_time = 50 * 100
     rosbag_slowdown_rate = 1
 if object_name == "SaladDressing" and rosbag_flag == "1":
-    prepare_time = 55 * 100
+    prepare_time = 75 * 100
     rosbag_slowdown_rate = 1
 if object_name == "soup" and rosbag_flag == "1":
-    prepare_time = 65 * 100
+    prepare_time = 50 * 100
     rosbag_slowdown_rate = 1
 
 # pw_T_cam_pose = np.array([[-0.17022463,  0.22072718, -0.96036612,  1.01227219],
@@ -105,10 +105,11 @@ if object_name == "soup" and rosbag_flag == "1":
 #                           [ 0.        ,  0.        ,  0.        ,  1.        ]])
 
 
-pw_T_cam_pose = np.array([[-2.82329883e-02,  1.61464239e-01, -9.86474631e-01,  9.75989378e-01],
-                          [ 9.99601205e-01,  3.99339782e-03, -2.79550404e-02,  9.28372152e-02],
-                          [-5.74353683e-04, -9.86870484e-01, -1.61512593e-01,  9.59719590e-01],
-                          [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+pw_T_cam_pose = np.array([[ 8.30409874e-04,  2.40681154e-01, -9.70603880e-01,  9.54645115e-01],
+                              [ 9.99981449e-01, -6.05667530e-03, -6.46332806e-04,  6.29171091e-02],
+                              [-6.03419267e-03, -9.70585338e-01, -2.40681719e-01,  9.37778413e-01],
+                              [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+
 # prepare_time = 250000
 
 # save file

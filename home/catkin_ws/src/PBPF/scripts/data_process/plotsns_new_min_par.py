@@ -73,11 +73,11 @@ title_ADD = object_name+": "+ang_and_pos+" errors (m) vs Time (s)"
 if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
     
     if object_name == "cracker" and rosbag_flag == "1":
-        x_range_max = 65 # 28, 129, 265
-        x_range_unit = 7 # 2, 6, 25, 125
+        x_range_max = 75 # 28, 129, 265
+        x_range_unit = 8 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 65 # 28
+        x_xlim = 75 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Ketchup" and rosbag_flag == "1":
         x_range_max = 50 # 28, 129, 265
@@ -87,25 +87,25 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
         x_xlim = 50 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Mayo" and rosbag_flag == "1":
-        x_range_max = 50 # 28, 129, 265
-        x_range_unit = 5 # 2, 6, 25, 125
+        x_range_max = 120 # 28, 129, 265
+        x_range_unit = 12 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 50 # 28
+        x_xlim = 120 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Milk" and rosbag_flag == "1":
-        x_range_max = 50 # 28, 129, 265
-        x_range_unit = 5 # 2, 6, 25, 125
+        x_range_max = 85 # 28, 129, 265
+        x_range_unit = 9 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 50 # 28
+        x_xlim = 85 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Mustard" and rosbag_flag == "1":
-        x_range_max = 55 # 28, 129, 265
-        x_range_unit = 6 # 2, 6, 25, 125
+        x_range_max = 115 # 28, 129, 265
+        x_range_unit = 12 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 55 # 28
+        x_xlim = 115 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Parmesan" and rosbag_flag == "1":
         x_range_max = 50 # 28, 129, 265
@@ -115,18 +115,18 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
         x_xlim = 50 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "SaladDressing" and rosbag_flag == "1":
-        x_range_max = 55 # 28, 129, 265
-        x_range_unit = 6 # 2, 6, 25, 125
+        x_range_max = 75 # 28, 129, 265
+        x_range_unit = 8 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 55 # 28
+        x_xlim = 75 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "soup" and rosbag_flag == "1":
-        x_range_max = 65 # 28, 129, 265
-        x_range_unit = 7 # 2, 6, 25, 125
+        x_range_max = 50 # 28, 129, 265
+        x_range_unit = 5 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 65 # 28
+        x_xlim = 50 # 28
         y_ylim = 0.5 # 0.5
 
     print("Ready to plot the figure of "+ang_and_pos+" ("+object_name+")")

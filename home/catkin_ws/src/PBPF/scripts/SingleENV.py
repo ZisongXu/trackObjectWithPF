@@ -96,13 +96,18 @@ class SingleENV(multiprocessing.Process):
         self.OBJS_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_touching_target_objs_num']
         self.OBJECT_NAME_LIST = self.parameter_info['object_name_list']
         self.PANDA_ROBOT_LINK_NUMBER = self.parameter_info['panda_robot_link_number']
-        self.MASS_MEAN = 1.750 # 0.380
-        self.MASS_SIGMA = 1.5 # 0.5
+        self.MASS_MEAN = 1.5 # 0.380
+        self.MASS_SIGMA = 0.5 # 0.5
         self.FRICTION_MEAN = 0.1
         self.FRICTION_SIGMA = 0.3
         self.RESTITUTION_MEAN = 0.9
-        self.RESTITUTION_SIGMA = 0.6 # 0.2
-        
+        self.RESTITUTION_SIGMA = 0.2 # 0.2
+        # MASS_MEAN = 1.750 # 0.380
+        # MASS_SIGMA = 0.5
+        # FRICTION_MEAN = 0.1
+        # FRICTION_SIGMA = 0.3
+        # RESTITUTION_MEAN = 0.9
+        # RESTITUTION_SIGMA = 0.2
         # Observation Model
         self.BOSS_SIGMA_OBS_POS = 0.1
         for name in self.OBJECT_NAME_LIST:
@@ -301,7 +306,12 @@ class SingleENV(multiprocessing.Process):
                 normal_x, normal_y, normal_z, pb_quat = self.collision_check(collision_detection_obj_id_,
                                                                              obj_cur_pos, obj_cur_ori,
                                                                              obj_id, obj_index, obj_pose_3_1)
-            normal_x = normal_x - 0.0025                 
+            if obj_index == 0:
+                normal_x = normal_x - 0.002
+                normal_y = normal_y - 0.0025
+            else:
+                normal_y = normal_y - 0.000
+
             self.update_object_pose_PB(obj_index, normal_x, normal_y, normal_z, pb_quat, linearVelocity, angularVelocity)
         self.p_env.stepSimulation()
         return_results = self.get_objects_pose(par_index)

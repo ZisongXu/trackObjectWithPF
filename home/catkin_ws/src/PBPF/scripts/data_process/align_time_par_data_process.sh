@@ -16,16 +16,18 @@
 # declare -a sceneNames=("scene1" "scene2")
 
 # declare -a objectNames=("cracker" "soup" "Parmesan")
-declare -a objectNames=("Mustard" "SaladDressing")
+# declare -a objectNames=("Mustard" "SaladDressing")
+declare -a objectNames=("Mayo" "Milk")
+# declare -a objectNames=("cracker" "SaladDressing")
 # declare -a objectNames=("Mayo" "Milk")
 # declare -a objectNames=("soup")
 # declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing")
 # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
 # declare -a objectNames=("Ketchup" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
-declare -a sceneNames=("scene1")
+declare -a sceneNames=("scene2")
 
 
-declare -a particleNumbers=(40)
+declare -a particleNumbers=(50)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("PBPF")

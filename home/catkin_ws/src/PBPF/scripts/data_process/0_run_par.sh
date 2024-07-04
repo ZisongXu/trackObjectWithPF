@@ -7,10 +7,10 @@
 
 # sleep 60
 
-echo "Running align_time_par_data_process.sh"
-./align_time_par_data_process.sh &
-wait  # 等待所有后台进程完成
-echo "align_time_par_data_process.sh completed"
+# echo "Running align_time_par_data_process.sh"
+# ./align_time_par_data_process.sh &
+# wait  # 等待所有后台进程完成
+# echo "align_time_par_data_process.sh completed"
 
 # sleep 60
 

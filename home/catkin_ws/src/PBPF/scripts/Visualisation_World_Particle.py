@@ -392,7 +392,7 @@ while reset_flag == True:
         display_par_flag = True
         display_esti_flag = False
         
-        display_gt_flag = True
+        display_gt_flag = False
         if optitrack_flag == False:
             display_gt_flag = False
 

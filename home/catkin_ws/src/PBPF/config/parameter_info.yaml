@@ -21,13 +21,13 @@ locate_camera_flag: ar
 multiprocessing_flag: false
 nearVal: 0.03
 object_name_list:
-- cracker
+- Parmesan
 - soup
 - Parmesan
-object_num: 3
+object_num: 1
 objs_are_not_touching_target_objs_num: 0
 objs_touching_target_objs_num: 0
-optitrack_flag: true
+optitrack_flag: false
 ortho_to_persp_flag: true
 other_base_obj_num: 0
 other_obj_num: 0
@@ -47,10 +47,10 @@ print_flag: false
 print_score_flag: false
 process_model_flag: normal
 ray_tracing_type: multiray
-record_results_flag: true
+record_results_flag: false
 robot_num: 1
 run_alg_flag: PBPF
-running_model: PBPF_RGB
+running_model: PBPF_RGBD
 show_particle_depth_image_to_point_cloud_flag: false
 show_ray: false
 sim_real_world_flag: true

@@ -1698,7 +1698,6 @@ if __name__ == '__main__':
     x_w_list = [0] * OBJECT_NUM
     y_l_list = [0] * OBJECT_NUM
     z_h_list = [0] * OBJECT_NUM
-    
     for obj_index in range(OBJECT_NUM):
         object_name = OBJECT_NAME_LIST[obj_index]
         if object_name == "cracker":

@@ -17,7 +17,8 @@
 
 # declare -a objectNames=("cracker" "soup" "Parmesan")
 # declare -a objectNames=("Mustard" "SaladDressing")
-declare -a objectNames=("Mayo" "Milk")
+# declare -a objectNames=("soup" "Parmesan" "Milk")
+declare -a objectNames=("cracker" "soup" "Parmesan")
 # declare -a objectNames=("cracker" "SaladDressing")
 # declare -a objectNames=("Mayo" "Milk")
 # declare -a objectNames=("soup")
@@ -27,7 +28,7 @@ declare -a objectNames=("Mayo" "Milk")
 declare -a sceneNames=("scene2")
 
 
-declare -a particleNumbers=(50)
+declare -a particleNumbers=(40)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("PBPF")
@@ -66,7 +67,7 @@ do
 									python3 align_time_par_data_process.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" "${par_index}"&
 									DATA_PRO_PID=$!
 
-									sleep 2
+									sleep 0.2
 								done
 							done
 						done

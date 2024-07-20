@@ -73,32 +73,32 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
     
     
     if object_name == "cracker" and rosbag_flag == "1":
-        x_range_max = 75 # 28, 129, 265
-        x_range_unit = 8 # 2, 6, 25, 125
+        x_range_max = 95 # 28, 129, 265
+        x_range_unit = 10 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 75 # 28
+        x_xlim = 95 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Ketchup" and rosbag_flag == "1":
-        x_range_max = 50 # 28, 129, 265
-        x_range_unit = 5 # 2, 6, 25, 125
+        x_range_max = 100 # 28, 129, 265
+        x_range_unit = 10 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 50 # 28
+        x_xlim = 100 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Mayo" and rosbag_flag == "1":
-        x_range_max = 120 # 28, 129, 265
-        x_range_unit = 12 # 2, 6, 25, 125
+        x_range_max = 105 # 28, 129, 265
+        x_range_unit = 11 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 120 # 28
+        x_xlim = 105 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Milk" and rosbag_flag == "1":
-        x_range_max = 85 # 28, 129, 265
-        x_range_unit = 9 # 2, 6, 25, 125
+        x_range_max = 100 # 28, 129, 265
+        x_range_unit = 10 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 85 # 28
+        x_xlim = 100 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Mustard" and rosbag_flag == "1":
         x_range_max = 115 # 28, 129, 265
@@ -108,25 +108,25 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
         x_xlim = 115 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Parmesan" and rosbag_flag == "1":
-        x_range_max = 50 # 28, 129, 265
-        x_range_unit = 5 # 2, 6, 25, 125
+        x_range_max = 95 # 28, 129, 265
+        x_range_unit = 10 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 50 # 28
+        x_xlim = 95 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "SaladDressing" and rosbag_flag == "1":
-        x_range_max = 75 # 28, 129, 265
-        x_range_unit = 8 # 2, 6, 25, 125
+        x_range_max = 115 # 28, 129, 265
+        x_range_unit = 12 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 75 # 28
+        x_xlim = 115 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "soup" and rosbag_flag == "1":
-        x_range_max = 50 # 28, 129, 265
-        x_range_unit = 5 # 2, 6, 25, 125
+        x_range_max = 95 # 28, 129, 265
+        x_range_unit = 10 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 50 # 28
+        x_xlim = 95 # 28
         y_ylim = 0.5 # 0.5
 
 

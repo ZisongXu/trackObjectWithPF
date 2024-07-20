@@ -12,7 +12,9 @@
 # declare -a objectNames=("Mustard")
 # declare -a objectNames=("Mayo" "Milk")
 # declare -a objectNames=("Parmesan" "soup")
-declare -a objectNames=("cracker" "SaladDressing")
+# declare -a objectNames=("cracker" "SaladDressing")
+# declare -a objectNames=("soup" "Parmesan" "Milk")
+declare -a objectNames=("cracker" "soup" "Parmesan")
 # declare -a objectNames=("SaladDressing")
 # declare -a objectNames=("Mustard" "SaladDressing")
 # declare -a objectNames=("Parmesan" "Mustard")
@@ -29,7 +31,7 @@ declare -a sceneNames=("scene2")
 # declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
 # declare -a objectNames=("cracker")
 
-declare -a particleNumbers=(50)
+declare -a particleNumbers=(40)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("PBPF")
@@ -73,7 +75,7 @@ do
 								python3 compute_par_min_err_after_align.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" &
 								DATA_PRO_PID=$!
 
-								sleep 2
+								sleep 0.5
 							done
 						done
 						# done

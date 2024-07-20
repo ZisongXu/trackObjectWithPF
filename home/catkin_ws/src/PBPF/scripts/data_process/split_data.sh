@@ -8,7 +8,7 @@
 # declare -a objectNames=("SaladDressing" "Mustard")
 # declare -a objectNames=("Mayo" "Milk")
 # declare -a objectNames=("cracker" "Ketchup")
-declare -a objectNames=("Mayo")
+declare -a objectNames=("cracker")
 # declare -a objectNames=("Mustard" "SaladDressing")
 # declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing")
 # declare -a sceneNames=("scene1" "scene2")
@@ -18,7 +18,7 @@ declare -a sceneNames=("scene2")
 # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
 
 
-declare -a particleNumbers=(50)
+declare -a particleNumbers=(40)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("PBPF")
@@ -57,7 +57,7 @@ do
 									python3 split_data.py "${particleNumber}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${runVersion}" "${par_index}" "${objectName}"&
 									DATA_PRO_PID=$!
 
-									sleep 0.5
+									sleep 0.1
 								done
 							done
 						done

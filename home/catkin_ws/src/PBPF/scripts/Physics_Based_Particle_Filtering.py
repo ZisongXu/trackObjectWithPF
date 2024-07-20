@@ -973,25 +973,29 @@ def visibility_computing_vk(particle_cloud, RGB_weights_lists_):
         full = _vk_context.full_vis_counts(index)
         full_arr = np.array(full, copy = False)
         for obj_index in range(OBJECT_NUM):
-            visible_score = 1.0 * part_arr[obj_index] / full_arr[obj_index]
-            # weight = particle[obj_index].w
-            weight = RGB_weights_lists_[index][obj_index]
-            local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
-            local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
-            if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0:
-                # visible_score low, weight low
-                if visible_score < visible_threshold_dope_is_fresh_list[obj_index]:
-                    weight = weight / 3.0
-                    weight = weight * visible_score
-                # visible_score high, weight high
-                else:
-                    weight = weight
+            if full_arr[obj_index] == 0:
+                weight = RGB_weights_lists_[index][obj_index]
+                weight = weight * 0.1
             else:
-                # visible_score<0.95 low, weight high
-                if visible_threshold_dope_X_small_list[obj_index]<=visible_score and visible_score<=visible_threshold_dope_X_list[obj_index]:
-                    weight = visible_weight_dope_X_smaller_than_threshold_list[obj_index] * weight
+                visible_score = 1.0 * part_arr[obj_index] / full_arr[obj_index]
+                # weight = particle[obj_index].w
+                weight = RGB_weights_lists_[index][obj_index]
+                local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
+                local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
+                if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0:
+                    # visible_score low, weight low
+                    if visible_score < visible_threshold_dope_is_fresh_list[obj_index]:
+                        weight = weight / 3.0
+                        weight = weight * visible_score
+                    # visible_score high, weight high
+                    else:
+                        weight = weight
                 else:
-                    weight = visible_weight_dope_X_larger_than_threshold_list[obj_index] * weight # 0.25/0.5
+                    # visible_score<0.95 low, weight high
+                    if visible_threshold_dope_X_small_list[obj_index]<=visible_score and visible_score<=visible_threshold_dope_X_list[obj_index]:
+                        weight = visible_weight_dope_X_smaller_than_threshold_list[obj_index] * weight
+                    else:
+                        weight = visible_weight_dope_X_larger_than_threshold_list[obj_index] * weight # 0.25/0.5
             particle_cloud[index][obj_index].w = weight
     return particle_cloud
 

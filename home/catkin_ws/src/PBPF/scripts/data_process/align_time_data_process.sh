@@ -6,9 +6,9 @@
 # declare -a objectNames=("SaladDressing" "soup")
 # declare -a objectNames=("soup" "Parmesan")
 # declare -a objectNames=("SaladDressing" "Mustard")
-# declare -a objectNames=("cracker" "soup" "Parmesan")
-# declare -a objectNames=("cracker" "Ketchup" "Milk")
-declare -a objectNames=("Mayo" "Milk")
+declare -a objectNames=("cracker" "soup" "Parmesan")
+# declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
+# declare -a objectNames=("soup" "Mayo")
 # declare -a objectNames=("Mustard" "SaladDressing")
 # declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing" "soup")
 # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
@@ -18,12 +18,12 @@ declare -a objectNames=("Mayo" "Milk")
 # declare -a sceneNames=("scene1")
 declare -a sceneNames=("scene2")
 
-declare -a particleNumbers=(50)
+declare -a particleNumbers=(40)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 # declare -a runAlgFlags=("GT")
-declare -a runAlgFlags=("FOUD")
-# declare -a runAlgFlags=("GT" "FOUD")
+# declare -a runAlgFlags=("FOUD")
+declare -a runAlgFlags=("GT" "FOUD")
 # declare -a runAlgFlags=("obse" "PBPF" "GT")
 # declare -a runAlgFlags=("GT" "FOUD")
 # declare -a Ang_and_Pos=("ang" "pos")
@@ -58,7 +58,7 @@ do
 								python3 align_time_data_process.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" &
 								DATA_PRO_PID=$!
 
-								sleep 2
+								sleep 0.1
 							done
 						done
 					done

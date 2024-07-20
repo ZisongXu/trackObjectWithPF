@@ -110,7 +110,7 @@ class ImageCreator():
 
 
 rosbag_file_path = os.path.expanduser("~/pyvkdepth/rosbag/")
-rosbag_file_name = "2_scene2_crackerSaladDressing1.bag"
+rosbag_file_name = "2_scene1_ParmesanMilk1.bag"
 save_file_path = os.path.expanduser("~/")
 if __name__ == '__main__':
     ImageCreator(rosbag_file_path+rosbag_file_name, save_file_path+"rgb/", save_file_path+"depth/", 1, 1)

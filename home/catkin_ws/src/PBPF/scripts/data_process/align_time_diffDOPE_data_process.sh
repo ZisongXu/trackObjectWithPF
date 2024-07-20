@@ -7,14 +7,15 @@
 # declare -a objectNames=("Parmesan")
 # declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("Parmesan" "Ketchup")
-declare -a objectNames=("Mayo" "Milk")
+# declare -a objectNames=("soup" "Parmesan" "Milk")
+declare -a objectNames=("cracker" "soup" "Parmesan")
 # declare -a objectNames=("cracker" "SaladDressing")
 # declare -a objectNames=("Mayo" "Milk")
 # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard" "cracker")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
 declare -a sceneNames=("scene2")
 
-declare -a particleNumbers=(50)
+declare -a particleNumbers=(40)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("DiffDOPE" "DiffDOPET")
@@ -51,7 +52,7 @@ do
 								python3 align_time_diffDOPE_data_process.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" &
 								DATA_PRO_PID=$!
 
-								sleep 4
+								sleep 0.5
 							done
 						done
 					done

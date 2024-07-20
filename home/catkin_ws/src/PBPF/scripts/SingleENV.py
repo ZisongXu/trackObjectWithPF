@@ -72,12 +72,10 @@ class SingleENV(multiprocessing.Process):
         self.boss_sigma_obs_x = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_z = 0.02
+        # self.boss_sigma_obs_ang_init = 0.0216773873 * 20 # original value: 0.0216773873 * 20
         self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
         
-        # Motion Model Noise
-        self.MOTION_MODEL_POS_NOISE = 0.005 # original value = 0.005
-        self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05
-        self.MOTION_NOISE = True
+        
         
         # mark
         # self.boss_sigma_obs_x = 0
@@ -108,6 +106,18 @@ class SingleENV(multiprocessing.Process):
         # FRICTION_SIGMA = 0.3
         # RESTITUTION_MEAN = 0.9
         # RESTITUTION_SIGMA = 0.2
+
+        # Motion Model Noise
+        self.MOTION_MODEL_POS_NOISE = 0.005 # original value = 0.005
+        for name in self.OBJECT_NAME_LIST:
+            if name == "cracker":
+                self.MOTION_MODEL_ANG_NOISE = 0.5 # original value = 0.05
+            else:
+                self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05
+        
+        self.MOTION_NOISE = True
+
+
         # Observation Model
         self.BOSS_SIGMA_OBS_POS = 0.1
         for name in self.OBJECT_NAME_LIST:
@@ -306,11 +316,14 @@ class SingleENV(multiprocessing.Process):
                 normal_x, normal_y, normal_z, pb_quat = self.collision_check(collision_detection_obj_id_,
                                                                              obj_cur_pos, obj_cur_ori,
                                                                              obj_id, obj_index, obj_pose_3_1)
-            if obj_index == 0:
-                normal_x = normal_x - 0.002
-                normal_y = normal_y - 0.0025
-            else:
-                normal_y = normal_y - 0.000
+            # if obj_index == 0:
+            #     normal_x = normal_x - 0.003
+            #     normal_y = normal_y - 0.000
+            # elif obj_index == 1:
+            #     normal_x = normal_x - 0.000
+            #     normal_y = normal_y - 0.000
+            # elif obj_index == 2:
+            #     normal_x = normal_x - 0.000
 
             self.update_object_pose_PB(obj_index, normal_x, normal_y, normal_z, pb_quat, linearVelocity, angularVelocity)
         self.p_env.stepSimulation()

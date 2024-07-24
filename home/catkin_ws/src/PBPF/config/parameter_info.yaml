@@ -22,9 +22,8 @@ multiprocessing_flag: false
 nearVal: 0.03
 object_name_list:
 - Parmesan
-- soup
-- Parmesan
-object_num: 1
+- cracker
+object_num: 2
 objs_are_not_touching_target_objs_num: 0
 objs_touching_target_objs_num: 0
 optitrack_flag: false

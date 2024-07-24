@@ -19,8 +19,11 @@
          <mesh filename="Parmesan.obj" scale="1 1 1"/>
        </geometry>
        <!-- <material name="light_green"/> -->
-       <material name="yellow">
+       <!-- <material name="yellow">
          <color rgba="1.0 1.0 0.0 1"/>
+       </material> -->
+       <material name="blue">
+         <color rgba="0.3 0.73137 0.888 1"/>
        </material>
        <origin xyz="0 0 0" rpy="0 0 0"/>
      </visual>

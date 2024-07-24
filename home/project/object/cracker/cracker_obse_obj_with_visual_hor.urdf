@@ -11,7 +11,13 @@
        <geometry>
          <box size="0.16 0.21343700408935547 0.061"/>
        </geometry>
-       <material name="yellow"/>
+       <!-- <material name="yellow"/>-->
+       <!-- <material name="yellow">
+         <color rgba="1.0 1.0 0.0 1"/>
+       </material> -->
+       <material name="blue">
+         <color rgba="0.3 0.73137 0.888 1"/>
+       </material>
      </visual>
      <inertial>
        <mass value="0"/>

@@ -93,7 +93,10 @@ class SingleENV(multiprocessing.Process):
         self.OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_are_not_touching_target_objs_num']
         self.OBJS_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_touching_target_objs_num']
         self.OBJECT_NAME_LIST = self.parameter_info['object_name_list']
+        self.OBJECT_NUM = self.parameter_info['object_num']
+        
         self.PANDA_ROBOT_LINK_NUMBER = self.parameter_info['panda_robot_link_number']
+        self.MASS_MEAN_list = [1.5] * self.object_num
         self.MASS_MEAN = 1.5 # 0.380
         self.MASS_SIGMA = 0.5 # 0.5
         self.FRICTION_MEAN = 0.1
@@ -109,10 +112,14 @@ class SingleENV(multiprocessing.Process):
 
         # Motion Model Noise
         self.MOTION_MODEL_POS_NOISE = 0.005 # original value = 0.005
-        for name in self.OBJECT_NAME_LIST:
+        for index, name in enumerate(self.OBJECT_NAME_LIST):
             if name == "cracker":
-                self.MOTION_MODEL_ANG_NOISE = 0.5 # original value = 0.05
+                mass = 1.0
+                self.MASS_MEAN_list[index] = mass
+                self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5
             else:
+                mass = 1.5
+                self.MASS_MEAN_list[index] = mass
                 self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05
         
         self.MOTION_NOISE = True
@@ -122,7 +129,7 @@ class SingleENV(multiprocessing.Process):
         self.BOSS_SIGMA_OBS_POS = 0.1
         for name in self.OBJECT_NAME_LIST:
             if name == "cracker":
-                self.BOSS_SIGMA_OBS_ANG = 0.0216773873 * 30
+                self.BOSS_SIGMA_OBS_ANG = 0.0216773873 * 10 # 30
             else:
                 self.BOSS_SIGMA_OBS_ANG = 0.0216773873 * 10
 
@@ -290,7 +297,7 @@ class SingleENV(multiprocessing.Process):
             self.p_env.resetBaseVelocity(obj_id,
                                          self.objects_list[obj_index].linearVelocity,
                                          self.objects_list[obj_index].angularVelocity,)
-            self.change_obj_parameters(obj_id)
+            self.change_obj_parameters(obj_id, obj_index)
         # execute the control
         self.move_robot_JointPosition(joint_states)
         # collision check: add robot
@@ -560,8 +567,9 @@ class SingleENV(multiprocessing.Process):
 
 
     # change particle parameters
-    def change_obj_parameters(self, obj_id):
-        mass_a = self.take_easy_gaussian_value(self.MASS_MEAN, self.MASS_SIGMA)
+    def change_obj_parameters(self, obj_id, obj_index):
+        # mass_a = self.take_easy_gaussian_value(self.MASS_MEAN, self.MASS_SIGMA)
+        mass_a = self.take_easy_gaussian_value(self.MASS_MEAN_list[obj_index], self.MASS_SIGMA)
         if mass_a < 0.001:
             mass_a = 0.05
         lateralFriction = self.take_easy_gaussian_value(self.FRICTION_MEAN, self.FRICTION_SIGMA)

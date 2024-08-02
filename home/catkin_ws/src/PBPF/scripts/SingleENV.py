@@ -112,15 +112,33 @@ class SingleENV(multiprocessing.Process):
 
         # Motion Model Noise
         self.MOTION_MODEL_POS_NOISE = 0.005 # original value = 0.005
-        for index, name in enumerate(self.OBJECT_NAME_LIST):
-            if name == "cracker":
+        for obj_num_index in range(self.object_num):
+            if self.OBJECT_NAME_LIST[obj_num_index] == "cracker":
                 mass = 1.0
-                self.MASS_MEAN_list[index] = mass
+                self.MASS_MEAN_list[obj_num_index] = mass
+                self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5 
+            elif self.OBJECT_NAME_LIST[obj_num_index] == "Parmesan":
+                mass = 1.0
+                self.MASS_MEAN_list[obj_num_index] = mass
                 self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5
             else:
                 mass = 1.5
-                self.MASS_MEAN_list[index] = mass
+                self.MASS_MEAN_list[obj_num_index] = mass
                 self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05
+        
+        # for index, name in enumerate(self.OBJECT_NAME_LIST):
+        #     if name == "cracker":
+        #         mass = 1.0
+        #         self.MASS_MEAN_list[index] = mass
+        #         self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5
+        #     elif name == "Parmesan":
+        #         mass = 1.0
+        #         self.MASS_MEAN_list[index] = mass
+        #         self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5
+        #     else:
+        #         mass = 1.5
+        #         self.MASS_MEAN_list[index] = mass
+        #         self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05
         
         self.MOTION_NOISE = True
 
@@ -323,9 +341,9 @@ class SingleENV(multiprocessing.Process):
                 normal_x, normal_y, normal_z, pb_quat = self.collision_check(collision_detection_obj_id_,
                                                                              obj_cur_pos, obj_cur_ori,
                                                                              obj_id, obj_index, obj_pose_3_1)
-            # if obj_index == 0:
-            #     normal_x = normal_x - 0.003
-            #     normal_y = normal_y - 0.000
+            if obj_index == 0:
+                normal_x = normal_x - 0.005
+                normal_y = normal_y - 0.000
             # elif obj_index == 1:
             #     normal_x = normal_x - 0.000
             #     normal_y = normal_y - 0.000

@@ -6,16 +6,20 @@
    <material name="coral">
      <color rgba="1 0.498 0.3137 1"/>
    </material>
+   <material name="purple">
+     <color rgba="0.68 0.55 0.90 1"/>
+   </material>
    <link name="Mustard">
      <visual>
        <geometry>
          <!-- <box size="0.16 0.21343700408935547 0.061"/> -->
          <mesh filename="Mustard.obj" scale="1 1 1"/>
        </geometry>
+       <material name="purple"/>
        <!-- <material name="light_green"/> -->
-       <material name="white">
+       <!-- <material name="white">
          <color rgba="1. 1. 1. 1."/>
-       </material>
+       </material> -->
        <origin xyz="0 0 0" rpy="0 0 0"/>
      </visual>
      <inertial>

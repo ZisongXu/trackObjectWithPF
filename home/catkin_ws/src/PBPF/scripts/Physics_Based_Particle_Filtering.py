@@ -149,6 +149,8 @@ SHOW_RAY = parameter_info['show_ray']
 VK_RENDER_FLAG = parameter_info['vk_render_flag']
 PB_RENDER_FLAG = parameter_info['pb_render_flag']
 PANDA_ROBOT_LINK_NUMBER = parameter_info['panda_robot_link_number']
+DRAW_WIREFRAME_FLAG = parameter_info['draw_wireframe_flag']
+
 if VK_RENDER_FLAG == True:
     print("I am using Vulkan to generate Depth Image")
 if PB_RENDER_FLAG == True: 
@@ -423,7 +425,7 @@ def _publish_par_pose_info(particle_cloud_pub):
     rob_par_list.particles = rob_par_pose_list
     rob_pub_par_pose.publish(rob_par_list)
             
-def publish_esti_pose_info(estimated_object_set):
+def _publish_esti_pose_info(estimated_object_set):
     global _PBPF_panda_step
     # global _boss_PBPF_err_ADD_df_list
     esti_pose_list = []
@@ -1138,6 +1140,7 @@ def computePosition(position, base_w_list):
         else:
             continue
 
+# do not use
 def compute_estimate_pos_of_object(particle_cloud): # need to change
     esti_objs_cloud = []
     dis_std_list = []
@@ -1577,7 +1580,7 @@ if __name__ == '__main__':
     if RECORD_RESULTS_FLAG == True:
         _record_t_PBPF = time.time()
         _record_time_list.append(_record_t_PBPF - _record_t_begin)
-    publish_esti_pose_info(estimated_object_set)
+    _publish_esti_pose_info(estimated_object_set)
 
     # convert [obj1, obj2, ...] to list:[[[x,y,z],[x,y,z,w]], [[x,y,z],[x,y,z,w]], ...]
     # estimated_object_set_old = copy.deepcopy(estimated_object_set)
@@ -2111,7 +2114,7 @@ if __name__ == '__main__':
                             _empty_return = wait_and_get_result_from(single_env)
                         estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
                         _publish_par_pose_info(_particle_cloud_pub)
-                        publish_esti_pose_info(estimated_object_set)
+                        _publish_esti_pose_info(estimated_object_set)
 
                         if RECORD_RESULTS_FLAG == True:
                             _record_obse_pose_list.append(_pw_T_obj_obse_objects_pose_list)

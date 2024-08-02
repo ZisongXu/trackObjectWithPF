@@ -22,8 +22,8 @@ locate_camera_flag: ar
 multiprocessing_flag: false
 nearVal: 0.03
 object_name_list:
+- cracker
 - Parmesan
-- Milk
 object_num: 2
 objs_are_not_touching_target_objs_num: 0
 objs_touching_target_objs_num: 0
@@ -50,11 +50,11 @@ ray_tracing_type: multiray
 record_results_flag: false
 robot_num: 1
 run_alg_flag: PBPF
-running_model: PBPF_RGBD
+running_model: PBPF_RGB
 show_particle_depth_image_to_point_cloud_flag: false
 show_ray: false
 sim_real_world_flag: true
-task_flag: '1'
+task_flag: '2'
 update_style_flag: time
 use_convolution_flag: false
 version: multiray

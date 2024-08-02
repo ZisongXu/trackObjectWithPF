@@ -69,6 +69,7 @@ class SingleENV(multiprocessing.Process):
         
         self.pf_update_interval_in_sim = self.pf_update_interval_in_real / self.sim_time_step
         self.boss_sigma_obs_pos_init = 0.05 # original value: 16cm/10CM 
+        # self.boss_sigma_obs_pos_init = 0.09 # original value: 16cm/10CM 
         self.boss_sigma_obs_x = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_z = 0.02
@@ -96,9 +97,11 @@ class SingleENV(multiprocessing.Process):
         self.OBJECT_NUM = self.parameter_info['object_num']
         
         self.PANDA_ROBOT_LINK_NUMBER = self.parameter_info['panda_robot_link_number']
-        self.MASS_MEAN_list = [1.5] * self.object_num
-        self.MASS_MEAN = 1.5 # 0.380
+        self.MASS_MEAN_list = [1.0] * self.object_num
+        self.MASS_MEAN = 1.0 # 0.380
+        self.MASS_SIGMA_list = [0.5] * self.object_num
         self.MASS_SIGMA = 0.5 # 0.5
+        self.MASS_MIN_VALUE = 0.05
         self.FRICTION_MEAN = 0.1
         self.FRICTION_SIGMA = 0.3
         self.RESTITUTION_MEAN = 0.9
@@ -112,44 +115,81 @@ class SingleENV(multiprocessing.Process):
 
         # Motion Model Noise
         self.MOTION_MODEL_POS_NOISE = 0.005 # original value = 0.005
-        for obj_num_index in range(self.object_num):
-            if self.OBJECT_NAME_LIST[obj_num_index] == "cracker":
-                mass = 1.0
-                self.MASS_MEAN_list[obj_num_index] = mass
-                self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5 
-            elif self.OBJECT_NAME_LIST[obj_num_index] == "Parmesan":
-                mass = 1.0
-                self.MASS_MEAN_list[obj_num_index] = mass
-                self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5
-            else:
-                mass = 1.5
-                self.MASS_MEAN_list[obj_num_index] = mass
-                self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05
-        
-        # for index, name in enumerate(self.OBJECT_NAME_LIST):
-        #     if name == "cracker":
-        #         mass = 1.0
-        #         self.MASS_MEAN_list[index] = mass
-        #         self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5
-        #     elif name == "Parmesan":
-        #         mass = 1.0
-        #         self.MASS_MEAN_list[index] = mass
-        #         self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5
-        #     else:
-        #         mass = 1.5
-        #         self.MASS_MEAN_list[index] = mass
-        #         self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05
+        self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5 
+        self.mass_flag = False
+        if self.mass_flag == True:
+            self.MASS_MIN_VALUE = 0.02
+            for obj_num_index in range(self.object_num):
+                if self.OBJECT_NAME_LIST[obj_num_index] == "cracker":
+                    mass = 0.45
+                    self.MASS_MEAN_list[obj_num_index] = mass
+                    mass_sigma = 0.5
+                    self.MASS_SIGMA_list[obj_num_index] = mass_sigma
+                elif self.OBJECT_NAME_LIST[obj_num_index] == "Parmesan":
+                    mass = 0.035
+                    self.MASS_MEAN_list[obj_num_index] = mass
+                    mass_sigma = 0.1
+                    self.MASS_SIGMA_list[obj_num_index] = mass_sigma
+                elif self.OBJECT_NAME_LIST[obj_num_index] == "soup":
+                    mass = 0.35
+                    self.MASS_MEAN_list[obj_num_index] = mass
+                    mass_sigma = 0.5
+                    self.MASS_SIGMA_list[obj_num_index] = mass_sigma
+                elif self.OBJECT_NAME_LIST[obj_num_index] == "Milk":
+                    mass = 0.04
+                    self.MASS_MEAN_list[obj_num_index] = mass
+                    mass_sigma = 0.1
+                    self.MASS_SIGMA_list[obj_num_index] = mass_sigma
+                elif self.OBJECT_NAME_LIST[obj_num_index] == "Mustard":
+                    mass = 0.05
+                    self.MASS_MEAN_list[obj_num_index] = mass
+                    mass_sigma = 0.1
+                    self.MASS_SIGMA_list[obj_num_index] = mass_sigma
+                elif self.OBJECT_NAME_LIST[obj_num_index] == "Mayo":
+                    mass = 0.06
+                    self.MASS_MEAN_list[obj_num_index] = mass
+                    mass_sigma = 0.1
+                    self.MASS_SIGMA_list[obj_num_index] = mass_sigma
+                elif self.OBJECT_NAME_LIST[obj_num_index] == "SaladDressing":
+                    mass = 0.06
+                    self.MASS_MEAN_list[obj_num_index] = mass
+                    mass_sigma = 0.1
+                    self.MASS_SIGMA_list[obj_num_index] = mass_sigma
+                elif self.OBJECT_NAME_LIST[obj_num_index] == "Ketchup":
+                    mass = 0.06
+                    self.MASS_MEAN_list[obj_num_index] = mass
+                    mass_sigma = 0.1
+                    self.MASS_SIGMA_list[obj_num_index] = mass_sigma
+                else:
+                    mass = 1.5
+                    self.MASS_MEAN_list[obj_num_index] = mass
+                    mass_sigma = 0.1
+                    self.MASS_SIGMA_list[obj_num_index] = mass_sigma
+            
+            # for index, name in enumerate(self.OBJECT_NAME_LIST):
+            #     if name == "cracker":
+            #         mass = 1.0
+            #         self.MASS_MEAN_list[index] = mass
+            #         self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5
+            #     elif name == "Parmesan":
+            #         mass = 1.0
+            #         self.MASS_MEAN_list[index] = mass
+            #         self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5
+            #     else:
+            #         mass = 1.5
+            #         self.MASS_MEAN_list[index] = mass
+            #         self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05
         
         self.MOTION_NOISE = True
 
 
         # Observation Model
-        self.BOSS_SIGMA_OBS_POS = 0.1
+        self.OBS_SIGMA_POS_FOR_WEIGHT = 0.1
         for name in self.OBJECT_NAME_LIST:
             if name == "cracker":
-                self.BOSS_SIGMA_OBS_ANG = 0.0216773873 * 10 # 30
+                self.OBS_SIGMA_ANG_FOR_WEIGHT = 0.0216773873 * 10 # 30
             else:
-                self.BOSS_SIGMA_OBS_ANG = 0.0216773873 * 10
+                self.OBS_SIGMA_ANG_FOR_WEIGHT = 0.0216773873 * 10
 
 
     def run(self):
@@ -341,9 +381,9 @@ class SingleENV(multiprocessing.Process):
                 normal_x, normal_y, normal_z, pb_quat = self.collision_check(collision_detection_obj_id_,
                                                                              obj_cur_pos, obj_cur_ori,
                                                                              obj_id, obj_index, obj_pose_3_1)
-            if obj_index == 0:
-                normal_x = normal_x - 0.005
-                normal_y = normal_y - 0.000
+            # if obj_index == 0:
+            #     normal_x = normal_x - 0.005
+            #     normal_y = normal_y - 0.000
             # elif obj_index == 1:
             #     normal_x = normal_x - 0.000
             #     normal_y = normal_y - 0.000
@@ -413,7 +453,7 @@ class SingleENV(multiprocessing.Process):
                     dis_y = abs(obj_y - obse_obj_pos[1])
                     dis_z = abs(obj_z - obse_obj_pos[2])
                     dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
-                    weight_xyz = self.normal_distribution(dis_xyz, mean, self.BOSS_SIGMA_OBS_POS)
+                    weight_xyz = self.normal_distribution(dis_xyz, mean, self.OBS_SIGMA_POS_FOR_WEIGHT)
                     # rotation weight
                     obse_obj_quat = Quaternion(x=obse_obj_ori[0], y=obse_obj_ori[1], z=obse_obj_ori[2], w=obse_obj_ori[3]) # Quaternion(): w,x,y,z
                     par_quat = Quaternion(x=obj_ori[0], y=obj_ori[1], z=obj_ori[2], w=obj_ori[3])
@@ -424,7 +464,7 @@ class SingleENV(multiprocessing.Process):
                     sin_theta_over_2 = math.sqrt(err_bt_par_obse_corr_quat.x ** 2 + err_bt_par_obse_corr_quat.y ** 2 + err_bt_par_obse_corr_quat.z ** 2)
                     theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
                     theta = theta_over_2 * 2.0
-                    weight_ang = self.normal_distribution(theta, mean, self.BOSS_SIGMA_OBS_ANG)
+                    weight_ang = self.normal_distribution(theta, mean, self.OBS_SIGMA_ANG_FOR_WEIGHT)
                     weight = weight_xyz * weight_ang
                     self.objects_list[obj_index].w = weight
                     weights_list[obj_index] = weight
@@ -587,9 +627,9 @@ class SingleENV(multiprocessing.Process):
     # change particle parameters
     def change_obj_parameters(self, obj_id, obj_index):
         # mass_a = self.take_easy_gaussian_value(self.MASS_MEAN, self.MASS_SIGMA)
-        mass_a = self.take_easy_gaussian_value(self.MASS_MEAN_list[obj_index], self.MASS_SIGMA)
+        mass_a = self.take_easy_gaussian_value(self.MASS_MEAN_list[obj_index], self.MASS_SIGMA_list[obj_index])
         if mass_a < 0.001:
-            mass_a = 0.05
+            mass_a = self.MASS_MIN_VALUE
         lateralFriction = self.take_easy_gaussian_value(self.FRICTION_MEAN, self.FRICTION_SIGMA)
         spinningFriction = self.take_easy_gaussian_value(self.FRICTION_MEAN, self.FRICTION_SIGMA)
         rollingFriction = self.take_easy_gaussian_value(self.FRICTION_MEAN, self.FRICTION_SIGMA)

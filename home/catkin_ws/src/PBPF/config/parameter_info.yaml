@@ -23,8 +23,7 @@ multiprocessing_flag: false
 nearVal: 0.03
 object_name_list:
 - cracker
-- Parmesan
-object_num: 2
+object_num: 1
 objs_are_not_touching_target_objs_num: 0
 objs_touching_target_objs_num: 0
 optitrack_flag: false
@@ -50,7 +49,7 @@ ray_tracing_type: multiray
 record_results_flag: false
 robot_num: 1
 run_alg_flag: PBPF
-running_model: PBPF_RGB
+running_model: PBPF_RGBD
 show_particle_depth_image_to_point_cloud_flag: false
 show_ray: false
 sim_real_world_flag: true

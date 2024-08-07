@@ -114,8 +114,8 @@ class SingleENV(multiprocessing.Process):
         # RESTITUTION_SIGMA = 0.2
 
         # Motion Model Noise
-        self.MOTION_MODEL_POS_NOISE = 0.005 # original value = 0.005
-        self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5 
+        self.MOTION_MODEL_POS_NOISE = 0.01 # original value = 0.005
+        self.MOTION_MODEL_ANG_NOISE = 0.1 # original value = 0.05/0.5 
         self.mass_flag = False
         if self.mass_flag == True:
             self.MASS_MIN_VALUE = 0.02

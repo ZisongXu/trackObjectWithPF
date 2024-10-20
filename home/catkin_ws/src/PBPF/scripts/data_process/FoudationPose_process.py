@@ -73,6 +73,9 @@ class ImageCreator():
                     #         ori[1] = -ori[1]
                     #         ori[2] = -ori[2]
                             # ori[3] = -ori[3]
+                    if OBJ_NAME == "cracker" and SCENE_NAMES == "scene2":
+                        if ori[1] > 0:
+                            ori[1] = -ori[1]
                     # if OBJ_NAME == "soup" and SCENE_NAMES == "scene2":
                     #     if ori[3] > 0:
                     #         ori[0] = -ori[0]
@@ -103,7 +106,7 @@ class ImageCreator():
 if __name__ == '__main__':
 
     OBJ_NAME = sys.argv[1] # ("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing" "soup")
-    SCENE_NAMES = sys.argv[2]
+    SCENE_NAMES = sys.argv[2] # scene1 scene2
     ROSBAG_TIME = sys.argv[3]
     REPEAT_TIME = sys.argv[4]
     
@@ -122,10 +125,10 @@ if __name__ == '__main__':
     #                           [-4.80054010e-03, -9.67316767e-01, -2.53525596e-01,  9.49659315e-01],
     #                           [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
 
-    pw_T_cam_pose = np.array([[-0.11932691,  0.22814166, -0.96628798,  0.9232672 ],
- [ 0.99279037,  0.01631176, -0.11874847,  0.10087403],
- [-0.01132961, -0.9734913 , -0.22844328,  0.92533336],
- [ 0.        ,  0.        ,  0.        ,  1.        ]])
+    pw_T_cam_pose = np.array([[ 4.00994672e-02,  3.70849964e-01, -9.27826674e-01,  1.09106847e+00],
+ [ 9.99195687e-01, -1.49875652e-02,  3.71934518e-02, -2.02243172e-02],
+ [-1.12672521e-04, -9.28571848e-01, -3.71152678e-01,  1.08219147e+00],
+ [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
 
 
 
@@ -171,7 +174,7 @@ if __name__ == '__main__':
     # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
     rosbag_file_path = os.path.expanduser('~/pyvkdepth/rosbag/')
     # ImageCreator(rosbag_file_path+'1_scene2_'+OBJ_NAME+'1.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
-    ImageCreator(rosbag_file_path+'3_scene2_crackersoupParmesan1.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
+    ImageCreator(rosbag_file_path+'up_down3.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
     
 
 

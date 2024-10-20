@@ -20,7 +20,7 @@ declare -a objectNames=("cracker" "soup" "Parmesan")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
 declare -a sceneNames=("scene2")
 
-declare -a particleNumbers=(40)
+declare -a particleNumbers=(70)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 # declare -a runAlgFlags=("PBPF" "obse" "FOUD")

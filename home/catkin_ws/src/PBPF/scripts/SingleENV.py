@@ -114,7 +114,7 @@ class SingleENV(multiprocessing.Process):
         # RESTITUTION_SIGMA = 0.2
 
         # Motion Model Noise
-        self.MOTION_MODEL_POS_NOISE = 0.01 # original value = 0.005
+        self.MOTION_MODEL_POS_NOISE = 0.005 # original value = 0.005
         self.MOTION_MODEL_ANG_NOISE = 0.1 # original value = 0.05/0.5 
         self.mass_flag = False
         if self.mass_flag == True:
@@ -381,12 +381,12 @@ class SingleENV(multiprocessing.Process):
                 normal_x, normal_y, normal_z, pb_quat = self.collision_check(collision_detection_obj_id_,
                                                                              obj_cur_pos, obj_cur_ori,
                                                                              obj_id, obj_index, obj_pose_3_1)
-            # if obj_index == 0:
-            #     normal_x = normal_x - 0.005
-            #     normal_y = normal_y - 0.000
-            # elif obj_index == 1:
-            #     normal_x = normal_x - 0.000
-            #     normal_y = normal_y - 0.000
+            if obj_index == 0:
+                normal_x = normal_x - 0.000
+                normal_y = normal_y - 0.000
+            elif obj_index == 1:
+                normal_x = normal_x + 0.002
+                normal_y = normal_y - 0.000
             # elif obj_index == 2:
             #     normal_x = normal_x - 0.000
 

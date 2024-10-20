@@ -73,11 +73,11 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
     
     
     if object_name == "cracker" and rosbag_flag == "1":
-        x_range_max = 95 # 28, 129, 265
-        x_range_unit = 10 # 2, 6, 25, 125
+        x_range_max = 30 # 28, 129, 265
+        x_range_unit = 3 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 95 # 28
+        x_xlim = 30 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Ketchup" and rosbag_flag == "1":
         x_range_max = 100 # 28, 129, 265

@@ -87,7 +87,7 @@ class SingleENV(multiprocessing.Process):
         with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
             self.parameter_info = yaml.safe_load(file)
         self.gazebo_flag = self.parameter_info['gazebo_flag']
-        self.task_flag = self.parameter_info['task_flag']
+        self.task_flag = self.parameter_info['task_flag'] # '1', '2', '3', 'basket_retrieve'
         self.SIM_REAL_WORLD_FLAG = self.parameter_info['sim_real_world_flag']
         self.SHOW_RAY = self.parameter_info['show_ray'] 
         self.VK_RENDER_FLAG = self.parameter_info['vk_render_flag'] 
@@ -234,6 +234,13 @@ class SingleENV(multiprocessing.Process):
             pw_T_pringles_ori = [ 0.67280124, -0.20574896, -0.20600051, 0.68012472] # x, y, z, w
             pringles_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/pringles.urdf"),
                                               pw_T_pringles_pos, pw_T_pringles_ori, useFixedBase=1)
+        else: self.task_flag == "basket_retrieve":
+            pw_T_basket_pos = [0.46, -0.01, 0.720]
+            pw_T_basket_ori = [ 0.67280124, -0.20574896, -0.20600051, 0.68012472] # x, y, z, w
+            pw_T_basket_ori = self.p_env.getQuaternionFromEuler([0,0,0])
+            basket_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/basket.urdf"),
+                                            pw_T_basket_pos, pw_T_basket_ori, useFixedBase=1)
+
         if self.SIM_REAL_WORLD_FLAG == True:
             table_pos_1 = [0.46, -0.01, 0.710]
             table_ori_1 = self.p_env.getQuaternionFromEuler([0,0,0])

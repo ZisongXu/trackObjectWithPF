@@ -3,6 +3,9 @@
    <material name="light_green">
      <color rgba="0 1 0.498 1"/>
    </material>
+   <material name="yellow">
+     <color rgba="1.0 1.0 0.0 1"/>
+   </material>
    <material name="coral">
      <color rgba="1 0.498 0.3137 1"/>
    </material>
@@ -13,8 +16,8 @@
          <mesh filename="Ketchup_sim.obj" scale="1 1 1"/>
        </geometry>
        <!-- <material name="light_green"/> -->
-       <material name="yellow">
-         <color rgba="1.0 1.0 0.0 1"/>
+       <material name="blue">
+         <color rgba="0.3 0.73137 0.888 1"/>
        </material>
        <origin xyz="0 0 0" rpy="0 0 0"/>
      </visual>

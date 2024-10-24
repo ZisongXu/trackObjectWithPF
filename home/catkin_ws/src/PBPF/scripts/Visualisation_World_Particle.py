@@ -566,10 +566,11 @@ while reset_flag == True:
                             # print("obse is NOT fresh")
                         # break
                     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                        print("from pbpf")
+                        print("from PBPF")
                         print("In Visualisation_World_Particle.py: can not find "+object_name_list[obj_index]+" tf (obse)")
                     rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
                     rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
+                    print(object_name_list[obj_index], ": ", rob_T_obj_obse_ori)
                     rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
                     rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
                     # print("rob_T_obj_obse_pos")

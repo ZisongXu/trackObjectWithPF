@@ -53,7 +53,7 @@ table_pos_1 = [0.46, -0.01, 0.710]
 table_ori_1 = p_env.getQuaternionFromEuler([0,0,0])
 table_id_1 = p_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1, useFixedBase=True)
 
-basket_pos_1 = [0.46, -0.01, 1.2]
+basket_pos_1 = [0.46, -0.01, 0.720]
 basket_ori_1 = p_env.getQuaternionFromEuler([0,0,0])
 basket_id_1 = p_env.loadURDF(os.path.expanduser("~/project/object/others/basket.urdf"), basket_pos_1, basket_ori_1)
 

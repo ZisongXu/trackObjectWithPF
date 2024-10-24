@@ -19,6 +19,7 @@
        <geometry>
          <box size="0.231 0.345 0.0115"/>
        </geometry>
+       <origin rpy="1.5707963 1.5707963 0" xyz="0.0 0.0 0.0"/>
      </collision>
      <inertial>
        <mass value="1"/>
@@ -38,6 +39,7 @@
        <geometry>
          <box size="0.231 0.45 0.0115"/>
        </geometry>
+       <origin rpy="1.5707963 1.5707963 1.5707963" xyz="0.0 0.0 0.0"/>
      </collision>
      <inertial>
        <mass value="1"/>
@@ -57,6 +59,7 @@
        <geometry>
          <box size="0.231 0.345 0.0115"/>
        </geometry>
+       <origin rpy="1.5707963 1.5707963 0" xyz="0.0 0.0 0.0"/>
      </collision>
      <inertial>
        <mass value="1"/>
@@ -76,6 +79,7 @@
        <geometry>
          <box size="0.231 0.345 0.0115"/>
        </geometry>
+       <origin rpy="1.5707963 1.5707963 1.5707963" xyz="0.0 0.0 0.0"/>
      </collision>
      <inertial>
        <mass value="1"/>
@@ -95,6 +99,7 @@
        <geometry>
          <box size="0.345 0.473 0.005"/>
        </geometry>
+       <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
      </collision>
      <inertial>
        <mass value="1"/>

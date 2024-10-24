@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+ <robot name="myfirst">
+   <material name="DimGray">
+     <color rgba="0.41176471 0.41176471 0.41176471 1"/>
+   </material>
+   <material name="Silver">
+     <color rgba="0.75294118 0.75294118 0.75294118 1"/>
+   </material>
+
+   <link name="short_wall1">
+     <visual>
+       <geometry>
+         <box size="0.231 0.345 0.0115"/>
+       </geometry>
+       <origin rpy="1.5707963 1.5707963 0" xyz="0.0 0.0 0.0"/>
+       <material name="DimGray"/>
+     </visual>
+     <collision>
+       <geometry>
+         <box size="0.231 0.345 0.0115"/>
+       </geometry>
+     </collision>
+     <inertial>
+       <mass value="1"/>
+       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+     </inertial>
+   </link>
+
+   <link name="long_wall1">
+     <visual>
+       <geometry>
+         <box size="0.231 0.45 0.0115"/>
+       </geometry>
+       <origin rpy="1.5707963 1.5707963 1.5707963" xyz="0.0 0.0 0.0"/>
+       <material name="DimGray"/>
+     </visual>
+     <collision>
+       <geometry>
+         <box size="0.231 0.45 0.0115"/>
+       </geometry>
+     </collision>
+     <inertial>
+       <mass value="1"/>
+       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+     </inertial>
+   </link>
+
+   <link name="short_wall2">
+     <visual>
+       <geometry>
+         <box size="0.231 0.345 0.0115"/>
+       </geometry>
+       <origin rpy="1.5707963 1.5707963 0" xyz="0.0 0.0 0.0"/>
+       <material name="DimGray"/>
+     </visual>
+     <collision>
+       <geometry>
+         <box size="0.231 0.345 0.0115"/>
+       </geometry>
+     </collision>
+     <inertial>
+       <mass value="1"/>
+       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+     </inertial>
+   </link>
+
+   <link name="long_wall2">
+     <visual>
+       <geometry>
+         <box size="0.231 0.45 0.0115"/>
+       </geometry>
+       <origin rpy="1.5707963 1.5707963 1.5707963" xyz="0.0 0.0 0.0"/>
+       <material name="DimGray"/>
+     </visual>
+     <collision>
+       <geometry>
+         <box size="0.231 0.345 0.0115"/>
+       </geometry>
+     </collision>
+     <inertial>
+       <mass value="1"/>
+       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+     </inertial>
+   </link>
+
+   <link name="base">
+     <visual>
+       <geometry>
+         <box size="0.345 0.473 0.005"/>
+       </geometry>
+       <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+       <material name="DimGray"/>
+     </visual>
+     <collision>
+       <geometry>
+         <box size="0.345 0.473 0.005"/>
+       </geometry>
+     </collision>
+     <inertial>
+       <mass value="1"/>
+       <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+     </inertial>
+   </link>
+
+
+    <joint name="base_to_long_wall1" type="fixed">
+      <parent link="base"/>
+      <child link="long_wall1"/>
+      <origin xyz="0.16675 0 0.118"/>
+    </joint>
+
+    <joint name="base_to_long_wall2" type="fixed">
+      <parent link="base"/>
+      <child link="long_wall2"/>
+      <origin xyz="-0.16675 0 0.118"/>
+    </joint>
+
+    <joint name="base_to_short_wall1" type="fixed">
+      <parent link="base"/>
+      <child link="short_wall1"/>
+      <origin xyz="0.0 0.23075 0.118"/>
+    </joint>
+
+    <joint name="base_to_short_wall2" type="fixed">
+      <parent link="base"/>
+      <child link="short_wall2"/>
+      <origin xyz="0.0 -0.23075 0.118"/>
+    </joint>
+
+ </robot>

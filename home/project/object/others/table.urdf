@@ -7,14 +7,14 @@
    <link name="base_link">
      <visual>
        <geometry>
-         <box size="1.200 1.20 0.016"/>
+         <box size="1.20 1.20 0.016"/>
        </geometry>
        <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
        <material name="silver"/>
      </visual>
      <collision>
        <geometry>
-         <box size="1.200 1.200 0.016"/>
+         <box size="1.20 1.20 0.016"/>
        </geometry>
      </collision>
      <inertial>

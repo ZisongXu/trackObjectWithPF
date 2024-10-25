@@ -41,6 +41,15 @@ import yaml
 
 
 
+
+# object_pos = [0, 0, 0]
+# object_ori = [0, 0, 0, 1]
+# object_pose = [object_pos, object_ori] 
+# objects_poses_list = [object_pose for _ in range(3)]
+
+# print(objects_poses_list)
+
+
 p_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT,GUI_SERVER
 p_env.resetDebugVisualizerCamera(cameraDistance=1., cameraYaw=90, cameraPitch=-50, cameraTargetPosition=[0.1,0.15,0.35])  
 p_env.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -53,10 +62,74 @@ table_pos_1 = [0.46, -0.01, 0.710]
 table_ori_1 = p_env.getQuaternionFromEuler([0,0,0])
 table_id_1 = p_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1, useFixedBase=True)
 
+pw_T_rob_pos = [0.0, 0.0, 0.02+table_pos_1[2]] # robot pose
+pw_T_rob_ori = [0, 0, 0, 1]
+robot_id = p_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"), pw_T_rob_pos, pw_T_rob_ori, useFixedBase=1)
+
 basket_pos_1 = [0.46, -0.01, 0.720]
 basket_ori_1 = p_env.getQuaternionFromEuler([0,0,0])
 basket_id_1 = p_env.loadURDF(os.path.expanduser("~/project/object/others/basket.urdf"), basket_pos_1, basket_ori_1)
 
+
+for i in range(480):
+    p_env.stepSimulation()
+    time.sleep(1./240.)
+
+
+p_env.resetSimulation()
+
+time.sleep(2)
+
+p_env.resetDebugVisualizerCamera(cameraDistance=1., cameraYaw=90, cameraPitch=-50, cameraTargetPosition=[0.1,0.15,0.35])  
+p_env.setAdditionalSearchPath(pybullet_data.getDataPath())
+p_env.setGravity(0, 0, -9.81)
+p_env.setPhysicsEngineParameter(maxNumCmdPer1ms=1000)
+
+plane_id = p_env.loadURDF("plane.urdf")
+
+table_pos_1 = [0.46, -0.01, 0.710]
+table_ori_1 = p_env.getQuaternionFromEuler([0,0,0])
+table_id_1 = p_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1, useFixedBase=True)
+
+pw_T_rob_pos = [0.0, 0.0, 0.02+table_pos_1[2]] # robot pose
+pw_T_rob_ori = [0, 0, 0, 1]
+robot_id = p_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"), pw_T_rob_pos, pw_T_rob_ori, useFixedBase=1)
+
+basket_pos_1 = [0.46, -0.01, 0.720]
+basket_ori_1 = p_env.getQuaternionFromEuler([0,0,0])
+basket_id_1 = p_env.loadURDF(os.path.expanduser("~/project/object/others/basket.urdf"), basket_pos_1, basket_ori_1)
+
+
+for i in range(480):
+    p_env.stepSimulation()
+    time.sleep(1./240.)
+
+
+
+p_env.disconnect()
+
+time.sleep(2)
+
+
+p_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT,GUI_SERVER
+p_env.resetDebugVisualizerCamera(cameraDistance=1., cameraYaw=90, cameraPitch=-50, cameraTargetPosition=[0.1,0.15,0.35])  
+p_env.setAdditionalSearchPath(pybullet_data.getDataPath())
+p_env.setGravity(0, 0, -9.81)
+p_env.setPhysicsEngineParameter(maxNumCmdPer1ms=1000)
+
+plane_id = p_env.loadURDF("plane.urdf")
+
+table_pos_1 = [0.46, -0.01, 0.710]
+table_ori_1 = p_env.getQuaternionFromEuler([0,0,0])
+table_id_1 = p_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1, useFixedBase=True)
+
+pw_T_rob_pos = [0.0, 0.0, 0.02+table_pos_1[2]] # robot pose
+pw_T_rob_ori = [0, 0, 0, 1]
+robot_id = p_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"), pw_T_rob_pos, pw_T_rob_ori, useFixedBase=1)
+
+basket_pos_1 = [0.46, -0.01, 0.720]
+basket_ori_1 = p_env.getQuaternionFromEuler([0,0,0])
+basket_id_1 = p_env.loadURDF(os.path.expanduser("~/project/object/others/basket.urdf"), basket_pos_1, basket_ori_1)
 
 while True:
     p_env.stepSimulation()

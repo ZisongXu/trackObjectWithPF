@@ -47,6 +47,9 @@ class Ros_Listener():
         
         rospy.Subscriber('/mocap/rigid_bodies/pandaRobot/pose', PoseStamped, self.robot_pose_callback, queue_size=1)
         self.robot_pose = PoseStamped()
+
+        rospy.Subscriber('/mocap/rigid_bodies/basket/pose', PoseStamped, self.basket_pose_callback, queue_size=1)
+        self.basket_pose = PoseStamped()
         
         rospy.Subscriber('/mocap/rigid_bodies/cracker_opti/pose', PoseStamped, self.object_pose_callback_cracker, queue_size=1)
         self.object_cracker_pose = PoseStamped()
@@ -140,8 +143,8 @@ class Ros_Listener():
         gzb_T_obj_obse_4_4_list = []
         for name_index in range(name_lenght):
             if model_states.name[name_index] == "panda":
-#                self.pos_added_noise, self.ori_added_noise = self.add_noise_pose(self.model_pos, self.model_ori)
-#                self.model_pose_added_noise = [self.pos_added_noise, self.ori_added_noise]
+                # self.pos_added_noise, self.ori_added_noise = self.add_noise_pose(self.model_pos, self.model_ori)
+                # self.model_pose_added_noise = [self.pos_added_noise, self.ori_added_noise]
                 panda_name = model_states.name[name_index]
                 panda_pos = model_states.pose[name_index].position
                 panda_ori = model_states.pose[name_index].orientation
@@ -171,10 +174,10 @@ class Ros_Listener():
                     gzb_T_obj_obse_3_3 = transformations.quaternion_matrix(self.model_ori)
                     gzb_T_obj_obse_4_4 = self.rotation_4_4_to_transformation_4_4(gzb_T_obj_obse_3_3, self.model_pos)
                     gzb_T_obj_obse_4_4_list.append(gzb_T_obj_obse_4_4)
-    #                gzb_T_obj_opti_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_opti_4_4)
+                    # gzb_T_obj_opti_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_opti_4_4)
                 
                 
-#        pandalink0_T_gzb_obse_4_4 = np.linalg.inv(gzb_T_rob_obse_4_4)
+        # pandalink0_T_gzb_obse_4_4 = np.linalg.inv(gzb_T_rob_obse_4_4)
         for obj_num in range(self.object_num):
             pandalink0_T_obj_obse_4_4 = np.dot(pandalink0_T_gzb_obse_4_4, gzb_T_obj_obse_4_4_list[obj_num])
             # print(pandalink0_T_obj_obse_4_4)
@@ -264,6 +267,9 @@ class Ros_Listener():
             return self.panda_pose
         return self.robot_pose
     
+    def listen_2_basket_pose(self):
+        return self.basket_pose
+
     def joint_values_callback(self, msg):
         self.current_joint_values = list(msg.position)    
     
@@ -281,6 +287,20 @@ class Ros_Listener():
         self.robot_ori = [x_ori,y_ori,z_ori,w_ori]
         self.robot_pose = [self.robot_pos, self.robot_ori]
     
+    def basket_pose_callback(self, data):
+        #pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.basket_pos = [x_pos,y_pos,z_pos]
+        #ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.basket_ori = [x_ori,y_ori,z_ori,w_ori]
+        self.basket_pose = [self.basket_pos, self.basket_ori]
+
     def object_pose_callback_cracker(self, data):
         #pos
         x_pos = data.pose.position.x

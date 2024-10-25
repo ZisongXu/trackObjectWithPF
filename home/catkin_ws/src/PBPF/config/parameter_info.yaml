@@ -62,3 +62,5 @@ visibility_compute_separate_flag: true
 visibility_compute_vk: true
 vk_render_flag: true
 width: 848
+Incremental_Pose_Generator_Flag: true 
+

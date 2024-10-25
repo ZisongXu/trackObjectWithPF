@@ -99,7 +99,7 @@
        <geometry>
          <box size="0.345 0.473 0.005"/>
        </geometry>
-       <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+       <origin rpy="0 0 0" xyz="0.0 0.0 -0.0025"/>
      </collision>
      <inertial>
        <mass value="1"/>

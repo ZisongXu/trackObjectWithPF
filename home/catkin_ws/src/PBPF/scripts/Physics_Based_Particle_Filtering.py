@@ -151,6 +151,9 @@ PB_RENDER_FLAG = parameter_info['pb_render_flag']
 PANDA_ROBOT_LINK_NUMBER = parameter_info['panda_robot_link_number']
 DRAW_WIREFRAME_FLAG = parameter_info['draw_wireframe_flag']
 
+INCREMENTAL_POSE_GENERATOR_FLAG = parameter_info['Incremental_Pose_Generator_Flag']
+
+
 if VK_RENDER_FLAG == True:
     print("I am using Vulkan to generate Depth Image")
 if PB_RENDER_FLAG == True: 
@@ -534,7 +537,7 @@ def generate_point_for_ray(pw_T_c_pos, pw_T_parC_4_4, obj_index):
     return point_list, point_pos_list
 
 # get pose of the end-effector of the robot arm from joints of robot arm 
-def track_fk_sim_world():
+def new_sim_world_for_updating_condition(): # track_fk_sim_world
     p_track_fk_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
     p_track_fk_env.setAdditionalSearchPath(pybullet_data.getDataPath())
     if SIM_REAL_WORLD_FLAG == True:
@@ -547,7 +550,7 @@ def track_fk_sim_world():
                                               useFixedBase=1)
     return p_track_fk_env, track_fk_rob_id
 
-def track_fk_world_rob_mv(p_sim, sim_rob_id, position):
+def _sim_rob_movement(p_sim, sim_rob_id, position): # track_fk_world_rob_mv
     num_joints = 9
     for joint_index in range(num_joints):
         if joint_index == 7 or joint_index == 8:
@@ -558,6 +561,48 @@ def track_fk_world_rob_mv(p_sim, sim_rob_id, position):
             p_sim.resetJointState(sim_rob_id,
                                   joint_index,
                                   targetValue=position[joint_index])
+
+def _set_generator_sim_world():
+    generator_plane_id = _generator_env.loadURDF("plane.urdf")
+    generator_robot_id = _generator_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"), _pw_T_rob_pos, _pw_T_rob_ori, useFixedBase=1)
+    robot_joint_states = ROS_LISTENER.current_joint_values
+    _sim_rob_movement(_generator_env, generator_robot_id, robot_joint_states)
+    table_id_1 = _generator_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), _table_pos_1, _table_ori_1)
+    basket_id = _generator_env.loadURDF(os.path.expanduser("~/project/object/others/basket.urdf"), _pw_T_basket_pos, _pw_T_basket_ori)
+    objects_id_list = [0 for _ in range(OBJECT_NUM)]
+    for obj_index in range(OBJECT_NUM):
+        obj_name = OBJECT_NAME_LIST[obj_index]
+        temp_pos = [10.0, 0.0, 0.0] # robot pose
+        temp_ori = [0.0, 0.0, 0.0, 1]
+        # object_id = _generator_env.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_name+"/"+gazebo_contain+obj_name+"_par_no_visual_hor.urdf"), temp_pos, temp_ori)
+        object_id = _generator_env.loadURDF(os.path.expanduser("~/project/object/"+obj_name+"/"+obj_name+"_par_no_visual_hor.urdf"), temp_pos, temp_ori)
+        objects_id_list[index] = object_id
+    return objects_id_list
+
+# get obj pose from name
+def _get_obj_pose_from_name(object_name):
+    # may need to change
+
+    # ===========================    
+    # get robEnd_T_camera_pose  |
+    # get rob_T_robEnd          |
+    # get rob_T_camera          |
+    # get camera_T_object       |
+    # get rob_T_object          |
+    # ===========================
+
+    (trans_ob, rot_ob) = _tf_listener.lookupTransform('/panda_link0', '/'+object_name, rospy.Time(0))
+    rob_T_obj_obse_pos = list(trans_ob)
+    rob_T_obj_obse_ori = list(rot_ob)
+    rob_T_obj_obse_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_obj_obse_ori)).reshape(3, 3)
+    rob_T_obj_obse_3_4 = np.c_[rob_T_obj_obse_3_3, rob_T_obj_obse_pos]  # Add position to create 3x4 matrix
+    rob_T_obj_obse_4_4 = np.r_[rob_T_obj_obse_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+    pw_T_obj_obse = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
+    pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
+    pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
+    return pw_T_obj_obse_pos, pw_T_obj_obse_ori
+
+
 
 # get camera intrinsic params
 def _get_camera_intrinsic_params(camera_info_topic_name):
@@ -1251,10 +1296,43 @@ def compare_distance_seq(particle_cloud, pw_T_obj_obse_objects_pose_list, visual
     return RGB_weights_lists, particle_cloud
 
 def normal_distribution(x, mean, sigma):
-        return sigma * np.exp(-1*((x-mean)**2)/(2*(sigma**2)))/(math.sqrt(2*np.pi)* sigma)
-    
-                            
+    return sigma * np.exp(-1*((x-mean)**2)/(2*(sigma**2)))/(math.sqrt(2*np.pi)* sigma)
 
+# Incremental Pose Generator Flag 
+def _update_from_real_world_incrementally(objects_id_list):
+    while True:
+        object_pos = [0, 0, 0]
+        object_ori = [0, 0, 0, 1]
+        object_pose = [object_pos, object_ori] 
+        objects_poses_list = [object_pose for _ in range(OBJECT_NUM)]
+        objects_id_list = _set_generator_sim_world()
+        for index, object_name in enumerate(OBJECT_NAME_LIST):
+            input(f'Fixing the pose for {object_name}. Press ENTER to view.')
+            pw_T_obj_obse_pos, pw_T_obj_obse_ori = _get_obj_pose_from_name(object_name)
+            generator_env.resetBasePositionAndOrientation(objects_id_list[index], pw_T_obj_obse_pos, pw_T_obj_obse_ori)
+            for i in range(5):
+                generator_env.stepSimulation()
+            answer = input('Are you happy with this state? [y/n]: ')
+            if answer == 'y':
+                objects_poses_list[index][0] = pw_T_obj_obse_pos
+                objects_poses_list[index][1] = pw_T_obj_obse_ori
+                print("Let's continue!!!")
+            else:
+                break
+        if answer == 'y':
+            break
+        else:
+            _generator_env.resetSimulation()
+    return objects_poses_list   
+
+
+
+def _update_state_from_real_world_incrementally(object_name, object_name_list):
+    other_objects = copy.copy(object_name_list)
+    other_objects.remove(object_name)
+    other_pose = []
+    for other_object in other_objects:
+         other_pose.append
 
 # ctrl-c write down the error file
 def signal_handler(sig, frame):
@@ -1473,7 +1551,6 @@ if __name__ == '__main__':
     MOTION_NOISE = True
     
     # Standard deviation of computing the weight
-    
     for obj_index in range(OBJECT_NUM):
         object_name = OBJECT_NAME_LIST[obj_index]
         if object_name == "cracker":
@@ -1535,6 +1612,47 @@ if __name__ == '__main__':
     print(trans_ob_list, rot_ob_list)
     print("========================")
     print("Finish initializing scene")
+
+    _first_run_incremental_pose_generator = 0
+    if INCREMENTAL_POSE_GENERATOR_FLAG == True and TASK_FLAG == 'basket_retrieve':
+        opti_T_robot_pos = ROS_LISTENER.listen_2_robot_pose()[0]
+        opti_T_robot_ori = ROS_LISTENER.listen_2_robot_pose()[1]
+        opti_T_basket_pos = ROS_LISTENER.listen_2_basket_pose()[0]
+        opti_T_basket_ori = ROS_LISTENER.listen_2_basket_pose()[1]
+        rob_T_basket_pose = compute_transformation_matrix(opti_T_robot_pos, opti_T_robot_ori, opti_T_basket_pos, opti_T_basket_ori)
+        rob_T_basket_pos = _get_position_from_matrix44(rob_T_basket_pose)
+        rob_T_basket_ori = _get_quaternion_from_matrix(rob_T_basket_pose)
+        # _pw_T_rob_sim_4_4
+        if SIM_REAL_WORLD_FLAG == True:
+            _table_pos_1 = [0.46, -0.01, 0.710]
+        else:
+            _table_pos_1 = [0, 0, 0]
+        _table_ori_1 = [0, 0, 0, 1]
+        _pw_T_rob_pos = [0.0, 0.0, 0.02+_table_pos_1[2]] # robot pose
+        _pw_T_rob_ori = [0, 0, 0, 1]
+        _pw_T_basket_pose = compute_transformation_matrix(_pw_T_rob_pos, _pw_T_rob_ori, rob_T_basket_pos, rob_T_basket_ori)
+        _pw_T_basket_pos = _get_position_from_matrix44(_pw_T_basket_pose)
+        _pw_T_basket_ori = _get_quaternion_from_matrix(_pw_T_basket_pose)
+        
+        _generator_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
+        objects_poses_list_for_init = _update_from_real_world_incrementally()
+        _generator_env.disconnect()
+        
+        # _generator_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
+        # generator_plane_id = _generator_env.loadURDF("plane.urdf")
+        # generator_robot_id = _generator_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"), pw_T_rob_pos, pw_T_rob_ori, useFixedBase=1)
+        # robot_joint_states = ROS_LISTENER.current_joint_values
+        # _sim_rob_movement(_generator_env, generator_robot_id, robot_joint_states)
+        # basket_id = _generator_env.loadURDF(os.path.expanduser("~/project/object/others/basket.urdf"), pw_T_basket_pos, pw_T_basket_ori)
+        # _objects_id_list = [0 for _ in range(OBJECT_NUM)]
+        # for obj_index in range(OBJECT_NUM):
+        #     obj_name = OBJECT_NAME_LIST[obj_index]
+        #     temp_pos = [10.0, 0.0, 0.0] # robot pose
+        #     temp_ori = [0.0, 0.0, 0.0, 1]
+        #     # object_id = _generator_env.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_name+"/"+gazebo_contain+obj_name+"_par_no_visual_hor.urdf"), temp_pos, temp_ori)
+        #     object_id = _generator_env.loadURDF(os.path.expanduser("~/project/object/"+obj_name+"/"+obj_name+"_par_no_visual_hor.urdf"), temp_pos, temp_ori)
+        #     _objects_id_list[index] = object_id
+
 
     # ============================================================================
     # we are not using this for now
@@ -1622,8 +1740,8 @@ if __name__ == '__main__':
 
             
     # get pose of the end-effector of the robot arm from joints of robot arm 
-    p_sim, sim_rob_id = track_fk_sim_world()
-    track_fk_world_rob_mv(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
+    p_sim, sim_rob_id = new_sim_world_for_updating_condition()
+    _sim_rob_movement(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
     rob_link_9_pose_old = p_sim.getLinkState(sim_rob_id, 9) # position = rob_link_9_pose_old[0], quaternion = rob_link_9_pose_old[1]
 
     # ============================================================================
@@ -1864,7 +1982,7 @@ if __name__ == '__main__':
 
         temp_pw_T_obj_obse_objs_list = []
         #panda robot moves in the visualization window
-        track_fk_world_rob_mv(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
+        _sim_rob_movement(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
         if RECORD_RESULTS_FLAG == True:
             pw_T_obj_GT_pose = []
         for obj_index in range(OBJECT_NUM):

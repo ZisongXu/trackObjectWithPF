@@ -1613,6 +1613,19 @@ if __name__ == '__main__':
     print("========================")
     print("Finish initializing scene")
 
+
+    camHolderCenter_T_camHolderSq_pos = [0.0, -0.043855, -0.072988]
+    camHolderCenter_T_camHolderSq_ori = [0.0, 0.0, 0.0, 1.0]
+    camHolderSq_T_camRGB_pos = [0.325, -0.0125, -0.0065]
+    camHolderSq_T_camRGB_ori_44 = [[-1, 0, 0, 0],
+                                   [ 0,-1, 0, 0],
+                                   [ 0, 0,-1, 0],
+                                   [ 0, 0, 0, 1]]
+
+    camHolderSq_T_camRGB_ori = _get_quaternion_from_matrix(camHolderSq_T_camRGB_ori_44)
+
+
+
     _first_run_incremental_pose_generator = 0
     if INCREMENTAL_POSE_GENERATOR_FLAG == True and TASK_FLAG == 'basket_retrieve':
         opti_T_robot_pos = ROS_LISTENER.listen_2_robot_pose()[0]
@@ -1637,7 +1650,7 @@ if __name__ == '__main__':
         _generator_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
         objects_poses_list_for_init = _update_from_real_world_incrementally()
         _generator_env.disconnect()
-        
+
         # _generator_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
         # generator_plane_id = _generator_env.loadURDF("plane.urdf")
         # generator_robot_id = _generator_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"), pw_T_rob_pos, pw_T_rob_ori, useFixedBase=1)

@@ -64,12 +64,16 @@ table_id_1 = p_env.loadURDF(os.path.expanduser("~/project/object/others/table.ur
 
 pw_T_rob_pos = [0.0, 0.0, 0.02+table_pos_1[2]] # robot pose
 pw_T_rob_ori = [0, 0, 0, 1]
-robot_id = p_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"), pw_T_rob_pos, pw_T_rob_ori, useFixedBase=1)
+robot_id = p_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda_pump.urdf"), pw_T_rob_pos, pw_T_rob_ori, useFixedBase=1)
 
 basket_pos_1 = [0.46, -0.01, 0.720]
 basket_ori_1 = p_env.getQuaternionFromEuler([0,0,0])
 basket_id_1 = p_env.loadURDF(os.path.expanduser("~/project/object/others/basket.urdf"), basket_pos_1, basket_ori_1)
 
+
+while True:
+    p_env.stepSimulation()
+    time.sleep(1./240.)
 
 for i in range(480):
     p_env.stepSimulation()
@@ -93,7 +97,7 @@ table_id_1 = p_env.loadURDF(os.path.expanduser("~/project/object/others/table.ur
 
 pw_T_rob_pos = [0.0, 0.0, 0.02+table_pos_1[2]] # robot pose
 pw_T_rob_ori = [0, 0, 0, 1]
-robot_id = p_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"), pw_T_rob_pos, pw_T_rob_ori, useFixedBase=1)
+robot_id = p_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda_pump.urdf"), pw_T_rob_pos, pw_T_rob_ori, useFixedBase=1)
 
 basket_pos_1 = [0.46, -0.01, 0.720]
 basket_ori_1 = p_env.getQuaternionFromEuler([0,0,0])
@@ -125,7 +129,7 @@ table_id_1 = p_env.loadURDF(os.path.expanduser("~/project/object/others/table.ur
 
 pw_T_rob_pos = [0.0, 0.0, 0.02+table_pos_1[2]] # robot pose
 pw_T_rob_ori = [0, 0, 0, 1]
-robot_id = p_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"), pw_T_rob_pos, pw_T_rob_ori, useFixedBase=1)
+robot_id = p_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda_pump.urdf"), pw_T_rob_pos, pw_T_rob_ori, useFixedBase=1)
 
 basket_pos_1 = [0.46, -0.01, 0.720]
 basket_ori_1 = p_env.getQuaternionFromEuler([0,0,0])

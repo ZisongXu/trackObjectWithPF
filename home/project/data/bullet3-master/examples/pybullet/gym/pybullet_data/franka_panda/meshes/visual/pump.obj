@@ -1,7 +1,7 @@
 # File produced by Open Asset Import Library (http://www.assimp.sf.net)
 # (assimp v5.0.0)
 
-mtllib pump.mtl
+# mtllib pump.mtl
 
 # 66702 vertex positions
 v  -0.0157563 -0.01240295 -0.044281479

@@ -40,7 +40,10 @@ class LaunchCamera():
         self.NEARVAL = self.parameter_info['nearVal']
         self.FARVAL = self.parameter_info['farVal']
         self.pw_T_camD_tf_4_4 = 0
-        self.compute_cam_pose_flag = 0
+        if self.LOCATE_CAMERA_FLAG == "onTheGripper": # 'ar', 'opti', 'onTheGripper'
+            self.compute_cam_pose_flag = 1
+        else:
+            self.compute_cam_pose_flag = 0
         
     def setCameraPicAndGetPic(self, p_world=0, tf_listener=0, pw_T_rob_sim_4_4=0):
         
@@ -132,11 +135,13 @@ class LaunchCamera():
         if self.compute_cam_pose_flag == 0:
             if self.OPTITRACK_FLAG == True and self.LOCATE_CAMERA_FLAG == "opti":
                 realsense_tf = '/RealSense' # (use Optitrack)
+            # elif self.LOCATE_CAMERA_FLAG == "onTheGripper":
             else:
                 realsense_tf = '/ar_tracking_camera_frame' # (do not use Optitrack)
             if self.GAZEBO_FLAG == True:
                 realsense_tf = '/realsense_camera'
-            # mark
+            # if self.LOCATE_CAMERA_FLAG != "onTheGripper":
+            # else:
             while_time = 0
             while True:
                 while_time = while_time + 1

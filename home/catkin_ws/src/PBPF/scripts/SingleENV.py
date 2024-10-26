@@ -234,7 +234,7 @@ class SingleENV(multiprocessing.Process):
             pw_T_pringles_ori = [ 0.67280124, -0.20574896, -0.20600051, 0.68012472] # x, y, z, w
             pringles_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/pringles.urdf"),
                                               pw_T_pringles_pos, pw_T_pringles_ori, useFixedBase=1)
-        else: self.task_flag == "basket_retrieve":
+        elif self.task_flag == "basket_retrieve":
             pw_T_basket_pos = [0.46, -0.01, 0.720]
             pw_T_basket_ori = [ 0.67280124, -0.20574896, -0.20600051, 0.68012472] # x, y, z, w
             pw_T_basket_ori = self.p_env.getQuaternionFromEuler([0,0,0])

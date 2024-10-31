@@ -36,14 +36,17 @@ class LaunchCamera():
             self.parameter_info = yaml.safe_load(file)
         self.OPTITRACK_FLAG = self.parameter_info['optitrack_flag']
         self.GAZEBO_FLAG = self.parameter_info['gazebo_flag']
-        self.LOCATE_CAMERA_FLAG = self.parameter_info['locate_camera_flag']
         self.NEARVAL = self.parameter_info['nearVal']
         self.FARVAL = self.parameter_info['farVal']
+        self.LOCATE_CAMERA_FLAG = self.parameter_info['locate_camera_flag'] # 'ar', 'opti', 'onTheHolder'
+        self.ROBOT_END_EFFECTOR = self.parameter_info['robot_end_effector'] # 'gripper', 'pump', 'pump_with_extention'
+        self.TASK_FLAG = self.parameter_info['task_flag'] # '1', '2', '3', 'basket_retrieve'
+        self.INCREMENTAL_POSE_GENERATOR_FLAG = self.parameter_info['Incremental_Pose_Generator_Flag']
+        
         self.pw_T_camD_tf_4_4 = 0
-        if self.LOCATE_CAMERA_FLAG == "onTheGripper": # 'ar', 'opti', 'onTheGripper'
-            self.compute_cam_pose_flag = 1
-        else:
-            self.compute_cam_pose_flag = 0
+            
+        
+        
         
     def setCameraPicAndGetPic(self, p_world=0, tf_listener=0, pw_T_rob_sim_4_4=0):
         
@@ -131,55 +134,77 @@ class LaunchCamera():
                                                                          )
         return width, height, rgbImg, depthImg, segImg
 
-    def getCameraInPybulletWorldPose44(self, tf_listener, pw_T_rob_sim_4_4):
-        if self.compute_cam_pose_flag == 0:
-            if self.OPTITRACK_FLAG == True and self.LOCATE_CAMERA_FLAG == "opti":
-                realsense_tf = '/RealSense' # (use Optitrack)
-            # elif self.LOCATE_CAMERA_FLAG == "onTheGripper":
-            else:
-                realsense_tf = '/ar_tracking_camera_frame' # (do not use Optitrack)
-            if self.GAZEBO_FLAG == True:
-                realsense_tf = '/realsense_camera'
-            # if self.LOCATE_CAMERA_FLAG != "onTheGripper":
-            # else:
-            while_time = 0
-            while True:
-                while_time = while_time + 1
-                if while_time > 1000:
-                    # print("In launch_camera.py: Can not find the pose of the camera!!!! You need to wait a while or try to debug")
-                    a = 1
-                try:
-                    # (trans_camera, rot_camera) = tf_listener.lookupTransform('/zisong_robot', realsense_tf, rospy.Time(0))
-                    (trans_camera, rot_camera) = tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
-                    # (trans_camera_link0, rot_camera_link0) = tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
-                    break
-                except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                    continue
-            camRGB_T_camD_tf_pos = [0.015, 0.0, 0.0]
-            camRGB_T_camD_tf_ori = [0.0, 0.0, -0.008, 1] # x, y, z, w
-            # camRGB_T_camD_tf_ori = [0.001, 0.001, -0.009, 1] # x, y, z, w
+    def getCameraInPybulletWorldPose44(self, tf_listener, pw_T_rob_sim_4_4, _pump_T_camRGB_pose_44=0):
+        # if self.LOCATE_CAMERA_FLAG != "onTheHolder":
+        if self.GAZEBO_FLAG == True:
+            realsense_tf = '/realsense_camera'
+        
+        if self.OPTITRACK_FLAG == True and self.LOCATE_CAMERA_FLAG == "opti":
+            realsense_tf = '/RealSense' # (use Optitrack)
+        # elif self.LOCATE_CAMERA_FLAG == "onTheGripper":
+        elif self.LOCATE_CAMERA_FLAG == "ar":
+            realsense_tf = '/ar_tracking_camera_frame' # (do not use Optitrack)
+        elif self.LOCATE_CAMERA_FLAG == "onTheHolder":
+            realsense_tf = '/panda_pump' # (do not use Optitrack)
+            
+        # if self.LOCATE_CAMERA_FLAG != "onTheGripper":
+        # else:
+        while_time = 0
+        while True:
+            while_time = while_time + 1
+            if while_time > 1000:
+                print("In launch_camera.py: Can not find the pose of the camera!!!! You need to wait a while or try to debug")
+                a = 1
+            try:
+                # (trans_camera, rot_camera) = tf_listener.lookupTransform('/zisong_robot', realsense_tf, rospy.Time(0))
+                (trans_camera, rot_camera) = tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
+                # (trans_camera_link0, rot_camera_link0) = tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
+                break
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                continue
+        
+        camRGB_T_camD_tf_pos = [0.015, 0.0, 0.0]
+        camRGB_T_camD_tf_ori = [0.0, 0.0, -0.008, 1] # x, y, z, w
+        # camRGB_T_camD_tf_ori = [0.001, 0.001, -0.009, 1] # x, y, z, w
+        # camRGB_T_camD_tf_pos = [0.0, 0.0, 0.0]
+        # camRGB_T_camD_tf_ori = [0.0, 0.0, -0.00, 1] # x, y, z, w
 
+        camRGB_T_camD_tf_3_3 = np.array(p.getMatrixFromQuaternion(camRGB_T_camD_tf_ori)).reshape(3, 3)
+        camRGB_T_camD_tf_3_4 = np.c_[camRGB_T_camD_tf_3_3, camRGB_T_camD_tf_pos]  # Add position to create 3x4 matrix
+        camRGB_T_camD_tf_4_4 = np.r_[camRGB_T_camD_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
 
-            # camRGB_T_camD_tf_pos = [0.0, 0.0, 0.0]
-            # camRGB_T_camD_tf_ori = [0.0, 0.0, -0.00, 1] # x, y, z, w
-
-            camRGB_T_camD_tf_3_3 = np.array(p.getMatrixFromQuaternion(camRGB_T_camD_tf_ori)).reshape(3, 3)
-            camRGB_T_camD_tf_3_4 = np.c_[camRGB_T_camD_tf_3_3, camRGB_T_camD_tf_pos]  # Add position to create 3x4 matrix
-            camRGB_T_camD_tf_4_4 = np.r_[camRGB_T_camD_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
-
+        if realsense_tf == '/panda_pump':
+            if not isinstance(_pump_T_camRGB_pose_44, np.ndarray):
+                while True:
+                    print("Error! In launch_camera.py file!")
+            rob_T_pump_pos = trans_camera
+            rob_T_pump_ori = rot_camera
+            # rob_T_pump_ang = p.getEulerFromQuaternion(rob_T_pump_ori)
+            
+            # print("rob_T_pump_pos:", rob_T_pump_pos)
+            # print("rob_T_pump_ori:", rob_T_pump_ori)
+            # print("rob_T_pump_ang:", rob_T_pump_ang)
+            
+            rob_T_pump_pose_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_pump_ori)).reshape(3, 3)
+            rob_T_pump_pose_3_4 = np.c_[rob_T_pump_pose_3_3, rob_T_pump_pos]  # Add position to create 3x4 matrix
+            rob_T_pump_pose_4_4 = np.r_[rob_T_pump_pose_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+            diff_bt_ROSModel_and_Model = np.array([[-1, 0, 0, 0],
+                                                   [ 0, 0,-1, 0],
+                                                   [ 0,-1, 0, 0],
+                                                   [ 0, 0, 0, 1]])
+            rob_T_pump_pose_4_4 = np.dot(rob_T_pump_pose_4_4, diff_bt_ROSModel_and_Model)
+            rob_T_camRGB_tf_4_4 = np.dot(rob_T_pump_pose_4_4, _pump_T_camRGB_pose_44)
+        else:
             rob_T_camRGB_tf_pos = list(trans_camera)
             rob_T_camRGB_tf_ori = list(rot_camera)
             rob_T_camRGB_tf_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_camRGB_tf_ori)).reshape(3, 3)
             rob_T_camRGB_tf_3_4 = np.c_[rob_T_camRGB_tf_3_3, rob_T_camRGB_tf_pos]  # Add position to create 3x4 matrix
             rob_T_camRGB_tf_4_4 = np.r_[rob_T_camRGB_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
 
-            rob_T_camD_tf_4_4 = np.dot(rob_T_camRGB_tf_4_4, camRGB_T_camD_tf_4_4)
-            self.pw_T_camD_tf_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_camD_tf_4_4)
-            # self.pw_T_camD_tf_4_4[0][3] = self.pw_T_camD_tf_4_4[0][3] - 0.02
-            # self.pw_T_camD_tf_4_4[1][3] = self.pw_T_camD_tf_4_4[1][3] - 0.02
-            self.compute_cam_pose_flag = 1
-        else:
-            return self.pw_T_camD_tf_4_4
+        rob_T_camD_tf_4_4 = np.dot(rob_T_camRGB_tf_4_4, camRGB_T_camD_tf_4_4)
+        self.pw_T_camD_tf_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_camD_tf_4_4)
+        # self.pw_T_camD_tf_4_4[0][3] = self.pw_T_camD_tf_4_4[0][3] - 0.02
+        # self.pw_T_camD_tf_4_4[1][3] = self.pw_T_camD_tf_4_4[1][3] - 0.02
 
         return self.pw_T_camD_tf_4_4 # pw_T_camD_tf_4_4
 

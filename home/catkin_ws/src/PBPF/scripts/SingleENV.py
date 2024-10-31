@@ -36,6 +36,7 @@ import sys
 import multiprocessing
 import matplotlib.pyplot as plt
 import pandas as pd
+from scipy.spatial.transform import Rotation as R
 #from sksurgerycore.algorithms.averagequaternions import average_quaternions
 from quaternion_averaging import weightedAverageQuaternions
 from Particle import Particle
@@ -46,7 +47,7 @@ import yaml
 class SingleENV(multiprocessing.Process):
     def __init__(self, object_num, robot_num, particle_num,
                  pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list,
-                 update_style_flag, sim_time_step, pf_update_interval_in_real, 
+                 update_style_flag, sim_time_step, pf_update_interval_in_real, ROS_LISTENER, 
                  result_dict, daemon=True):
         super().__init__(daemon=daemon)
         self.queue = multiprocessing.Queue()
@@ -62,6 +63,11 @@ class SingleENV(multiprocessing.Process):
         self.update_style_flag = update_style_flag
         self.sim_time_step = sim_time_step
         self.pf_update_interval_in_real = pf_update_interval_in_real
+        self.ROS_LISTENER = ROS_LISTENER
+
+        # get the pose of the robot
+        self.opti_T_robot_pos = self.ROS_LISTENER.listen_2_robot_pose()[0]
+        self.opti_T_robot_ori = self.ROS_LISTENER.listen_2_robot_pose()[1]
 
         self.collision_detection_obj_id_collection = []
         self.particle_objects_id_collection = ["None"] * self.object_num
@@ -89,7 +95,7 @@ class SingleENV(multiprocessing.Process):
         self.gazebo_flag = self.parameter_info['gazebo_flag']
         self.task_flag = self.parameter_info['task_flag'] # '1', '2', '3', 'basket_retrieve'
         self.SIM_REAL_WORLD_FLAG = self.parameter_info['sim_real_world_flag']
-        self.SHOW_RAY = self.parameter_info['show_ray'] 
+        self.SHOW_PARTICLE = self.parameter_info['show_particle'] 
         self.VK_RENDER_FLAG = self.parameter_info['vk_render_flag'] 
         self.OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_are_not_touching_target_objs_num']
         self.OBJS_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_touching_target_objs_num']
@@ -97,6 +103,12 @@ class SingleENV(multiprocessing.Process):
         self.OBJECT_NUM = self.parameter_info['object_num']
         
         self.PANDA_ROBOT_LINK_NUMBER = self.parameter_info['panda_robot_link_number']
+        
+        self.LOCATE_CAMERA_FLAG = self.parameter_info['locate_camera_flag'] # 'ar', 'opti', 'onTheHolder'
+        self.ROBOT_END_EFFECTOR = self.parameter_info['robot_end_effector'] # 'gripper', 'pump', 'pump_with_extention'
+        self.TASK_FLAG = self.parameter_info['task_flag'] # '1', '2', '3', 'basket_retrieve'
+        self.INCREMENTAL_POSE_GENERATOR_FLAG = self.parameter_info['Incremental_Pose_Generator_Flag']
+        
         self.MASS_MEAN_list = [1.0] * self.object_num
         self.MASS_MEAN = 1.0 # 0.380
         self.MASS_SIGMA_list = [0.5] * self.object_num
@@ -212,7 +224,7 @@ class SingleENV(multiprocessing.Process):
         return [('success', True)]
 
     def init_pybullet(self):
-        if self.SHOW_RAY == True:
+        if self.SHOW_PARTICLE == True:
             self.p_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT,GUI_SERVER
         else:
             self.p_env = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT,GUI_SERVER
@@ -235,14 +247,28 @@ class SingleENV(multiprocessing.Process):
             pringles_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/pringles.urdf"),
                                               pw_T_pringles_pos, pw_T_pringles_ori, useFixedBase=1)
         elif self.task_flag == "basket_retrieve":
-            pw_T_basket_pos = [0.46, -0.01, 0.720]
-            pw_T_basket_ori = [ 0.67280124, -0.20574896, -0.20600051, 0.68012472] # x, y, z, w
-            pw_T_basket_ori = self.p_env.getQuaternionFromEuler([0,0,0])
-            basket_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/basket.urdf"),
+            opti_T_basket_pos = self.ROS_LISTENER.listen_2_basket_pose()[0]
+            opti_T_basket_ori = self.ROS_LISTENER.listen_2_basket_pose()[1]
+            rob_T_basket_pose = self.compute_transformation_matrix(self.opti_T_robot_pos, self.opti_T_robot_ori, opti_T_basket_pos, opti_T_basket_ori)
+
+            table_pos_1 = [0.46, -0.01, 0.702] # 0.710
+            pw_T_rob_pos = [0.0, 0.0, 0.02+table_pos_1[2]+0.008] # robot pose
+            pw_T_rob_ori = [0, 0, 0, 1]
+            pw_T_rob_pose = self.get_matrix_from_pos_ori(pw_T_rob_pos, pw_T_rob_ori)
+            pw_T_basket_pose = np.dot(pw_T_rob_pose, rob_T_basket_pose)
+            rot_fix_matrix = [[ 0,-1, 0, 0],
+                              [ 1, 0, 0, 0],
+                              [ 0, 0, 1, 0],
+                              [ 0, 0, 0, 1]]
+            pw_T_basket_pose = np.dot(pw_T_basket_pose, rot_fix_matrix)
+            pw_T_basket_pos = self.get_position_from_matrix44(pw_T_basket_pose)
+            pw_T_basket_ori = self.get_quaternion_from_matrix(pw_T_basket_pose)
+            self.basket_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/basket.urdf"),
                                             pw_T_basket_pos, pw_T_basket_ori, useFixedBase=1)
+            self.collision_detection_obj_id_collection.append(self.basket_id)
 
         if self.SIM_REAL_WORLD_FLAG == True:
-            table_pos_1 = [0.46, -0.01, 0.710]
+            table_pos_1 = [0.46, -0.01, 0.702] # 0.710
             table_ori_1 = self.p_env.getQuaternionFromEuler([0,0,0])
             table_id_1 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1)
 
@@ -333,7 +359,7 @@ class SingleENV(multiprocessing.Process):
         return_results = []
         for obj_index in range(self.object_num):
             obj_id = self.particle_objects_id_collection[obj_index]
-            obj_info = self.p_env.getBasePositionAndOrientation(obj_id)
+            obj_info = self.p_env.getBasePositionAndOrientation(obj_id)    
             obj_name = self.OBJECT_NAME_LIST[obj_index]
             obj_tuple = (obj_name, obj_info)
             return_results.append(obj_tuple)
@@ -404,16 +430,30 @@ class SingleENV(multiprocessing.Process):
 
 
     def init_set_sim_robot_JointPosition(self, joint_states):
-        num_joints = 9
-        for joint_index in range(num_joints):
-            if joint_index == 7 or joint_index == 8:
-                self.p_env.resetJointState(self.robot_id,
-                                           joint_index+2,
-                                           targetValue=joint_states[joint_index])
-            else:
-                self.p_env.resetJointState(self.robot_id,
-                                           joint_index,
-                                           targetValue=joint_states[joint_index])
+        print("The end effector of the robot is "+self.ROBOT_END_EFFECTOR)
+        if self.ROBOT_END_EFFECTOR == 'pump_with_extention':
+            num_joints = 7
+            for joint_index in range(num_joints):
+                if joint_index == 7 or joint_index == 8:
+                    self.p_env.resetJointState(self.robot_id,
+                                               joint_index+2,
+                                               targetValue=joint_states[joint_index])
+                else:
+                    self.p_env.resetJointState(self.robot_id,
+                                               joint_index,
+                                               targetValue=joint_states[joint_index])
+        else:
+            num_joints = 9
+            for joint_index in range(num_joints):
+                if joint_index == 7 or joint_index == 8:
+                    self.p_env.resetJointState(self.robot_id,
+                                               joint_index+2,
+                                               targetValue=joint_states[joint_index])
+                else:
+                    self.p_env.resetJointState(self.robot_id,
+                                               joint_index,
+                                               targetValue=joint_states[joint_index])
+
 
     def move_robot_JointPosition(self, joint_states):
         num_joints = 9
@@ -652,3 +692,43 @@ class SingleENV(multiprocessing.Process):
                                   spinningFriction = spinningFriction, 
                                   rollingFriction = rollingFriction, 
                                   restitution = restitution)
+
+    def compute_transformation_matrix(self, a_pos, a_ori, b_pos, b_ori):
+        # ow_T_a_3_3 = transformations.quaternion_matrix(a_ori)
+        # ow_T_a_4_4 = rotation_4_4_to_transformation_4_4(ow_T_a_3_3,a_pos)
+        # ow_T_b_3_3 = transformations.quaternion_matrix(b_ori)
+        # ow_T_b_4_4 = rotation_4_4_to_transformation_4_4(ow_T_b_3_3,b_pos)
+        # a_T_ow_4_4 = np.linalg.inv(ow_T_a_4_4)
+        # a_T_b_4_4 = np.dot(a_T_ow_4_4,ow_T_b_4_4)
+        ow_T_a_3_3 = np.array(p.getMatrixFromQuaternion(a_ori)).reshape(3, 3)
+        ow_T_a_3_4 = np.c_[ow_T_a_3_3, a_pos]  # Add position to create 3x4 matrix
+        ow_T_a_4_4 = np.r_[ow_T_a_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+
+        ow_T_b_3_3 = np.array(p.getMatrixFromQuaternion(b_ori)).reshape(3, 3)
+        ow_T_b_3_4 = np.c_[ow_T_b_3_3, b_pos]  # Add position to create 3x4 matrix
+        ow_T_b_4_4 = np.r_[ow_T_b_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+
+        a_T_ow_4_4 = np.linalg.inv(ow_T_a_4_4)
+        a_T_b_4_4 = np.dot(a_T_ow_4_4,ow_T_b_4_4)
+        return a_T_b_4_4
+    
+    def get_position_from_matrix44(self, a_T_b_4_4):
+        x = a_T_b_4_4[0][3]
+        y = a_T_b_4_4[1][3]
+        z = a_T_b_4_4[2][3]
+        position = [x, y, z]
+        return position
+    
+    # get quaternion from matrix
+    def get_quaternion_from_matrix(self, a_T_b_4_4):
+        rot_matrix = a_T_b_4_4[:3, :3]
+        rotation = R.from_matrix(rot_matrix)
+        quaternion = rotation.as_quat()
+        return quaternion
+    
+    def get_matrix_from_pos_ori(self, pos, ori):
+        matrix_3_3 = np.array(p.getMatrixFromQuaternion(ori)).reshape(3, 3)
+        matrix_3_4 = np.c_[matrix_3_3, pos]  # Add position to create 3x4 matrix
+        matrix_4_4 = np.r_[matrix_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+        return matrix_4_4
+        

@@ -48,17 +48,8 @@ class Create_Scene():
         self.target_obj_num = target_obj_num
         self.rob_num = rob_num
 
-        self.table_pos_1 = [0.46, -0.01, 0.710]
+        self.table_pos_1 = [0.46, -0.01, 0.702] # 0.710
 
-        self.pw_T_target_obj_opti_pose_lsit = []
-        self.pw_T_target_obj_obse_pose_lsit = []
-        self.trans_ob_list = []
-        self.rot_ob_list = []
-        self.trans_gt_list = []
-        self.rot_gt_list = []
-        self.pw_T_rob_sim_pose_list = []
-        self.pw_T_objs_not_touching_targetObjs_list = []
-        self.pw_T_objs_touching_targetObjs_list = []
         self.ros_listener = Ros_Listener()
         self.listener = tf.TransformListener()
         
@@ -73,8 +64,32 @@ class Create_Scene():
 
         self.OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_are_not_touching_target_objs_num']
         self.OBJS_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_touching_target_objs_num']
-
         
+        self.LOCATE_CAMERA_FLAG = self.parameter_info['locate_camera_flag'] # 'ar', 'opti', 'onTheHolder'
+        self.ROBOT_END_EFFECTOR = self.parameter_info['robot_end_effector'] # 'gripper', 'pump', 'pump_with_extention'
+        self.TASK_FLAG = self.parameter_info['task_flag'] # '1', '2', '3', 'basket_retrieve'
+        self.INCREMENTAL_POSE_GENERATOR_FLAG = self.parameter_info['Incremental_Pose_Generator_Flag']
+        
+        self.OBJECT_NUM = self.parameter_info['object_num']
+        
+        # need to think about when we do not know how many objects in the scene
+        # self.pw_T_target_obj_obse_pose_lsit = [[[0, 0, 0], [0, 0, 0, 1]] for _ in range(self.OBJECT_NUM)]
+        self.pw_T_target_obj_obse_pose_lsit = []
+        self.pw_T_target_obj_opti_pose_lsit = []
+        self.trans_ob_list = []
+        self.rot_ob_list = []
+        self.trans_gt_list = []
+        self.rot_gt_list = []
+        self.pw_T_rob_sim_pose_list = []
+        self.pw_T_objs_not_touching_targetObjs_list = []
+        self.pw_T_objs_touching_targetObjs_list = []
+
+    def passing_objects_pose(self, pw_T_objs_obse_list_for_init):
+        # from incremental pose generator
+        for index, value in enumerate(pw_T_objs_obse_list_for_init):
+            obse_obj = Object_Pose(self.object_name_list[index], 0, value[0], value[1], index)
+            self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)
+
     def initialize_object(self):
         # if self.gazebo_flag == True:
         #     time.sleep(0.5)
@@ -108,54 +123,57 @@ class Create_Scene():
         #         obse_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
         #         self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)
         #     return self.pw_T_target_obj_obse_pose_lsit
-        print_note_flag_list = [0] * self.target_obj_num
-        for obj_index in range(self.target_obj_num):
-            pw_T_rob_sim_4_4 = self.pw_T_rob_sim_pose_list[0].trans_matrix
-            
-            # observation
-            use_gazebo = ""
-            if self.gazebo_flag == True:
-                use_gazebo = '_noise'
-                if self.dope_flag == True:
-                    use_gazebo  = ""
-            while_time = 0
-            print("Object Name:", self.object_name_list[obj_index]+use_gazebo)
-            while True:
-                while_time = while_time + 1
-                if while_time > 1000:
-                    if print_note_flag_list[obj_index] == 0:
-                        print("WARNING: Problem happened in create_scene.py; maybe there is a problem on DOPE:", self.object_name_list[obj_index]+use_gazebo)
-                        print_note_flag_list[obj_index] = 1
-                    a = 1
-                try:
-                    (trans_ob, rot_ob) = self.listener.lookupTransform('/panda_link0', '/'+self.object_name_list[obj_index]+use_gazebo, rospy.Time(0))
-                    break
-                except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                    continue
+        if self.INCREMENTAL_POSE_GENERATOR_FLAG == True and self.TASK_FLAG == 'basket_retrieve' and self.LOCATE_CAMERA_FLAG == 'onTheHolder':#
+            print("Create_Scene.py file: Camera is on the robot! Trying to retrieve objects in the basket!")
+        else:
+            print_note_flag_list = [0] * self.target_obj_num
+            for obj_index in range(self.target_obj_num):
+                pw_T_rob_sim_4_4 = self.pw_T_rob_sim_pose_list[0].trans_matrix
                 
-            rob_T_obj_obse_pos = list(trans_ob)
-            rob_T_obj_obse_ori = list(rot_ob)
-            rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
-            rob_T_obj_obse_4_4 = self.rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3, rob_T_obj_obse_pos)
-            
-            # if self.gazebo_flag == True:
-            #     robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
-            #                          [0., 1., 0.,    0.],
-            #                          [0., 0., 1., -0.06],
-            #                          [0., 0., 0.,    1.]]
-            #     robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
-            #     rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
+                # observation
+                use_gazebo = ""
+                if self.gazebo_flag == True:
+                    use_gazebo = '_noise'
+                    if self.dope_flag == True:
+                        use_gazebo  = ""
+                while_time = 0
+                print("Object Name:", self.object_name_list[obj_index]+use_gazebo)
+                while True:
+                    while_time = while_time + 1
+                    if while_time > 1000:
+                        if print_note_flag_list[obj_index] == 0:
+                            print("WARNING: Problem happened in create_scene.py; maybe there is a problem on DOPE:", self.object_name_list[obj_index]+use_gazebo)
+                            print_note_flag_list[obj_index] = 1
+                        a = 1
+                    try:
+                        (trans_ob, rot_ob) = self.listener.lookupTransform('/panda_link0', '/'+self.object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                        break
+                    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                        continue
+                    
+                rob_T_obj_obse_pos = list(trans_ob)
+                rob_T_obj_obse_ori = list(rot_ob)
+                rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
+                rob_T_obj_obse_4_4 = self.rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3, rob_T_obj_obse_pos)
+                
+                # if self.gazebo_flag == True:
+                #     robpw_T_robga_4_4 = [[1., 0., 0.,    0.],
+                #                          [0., 1., 0.,    0.],
+                #                          [0., 0., 1., -0.06],
+                #                          [0., 0., 0.,    1.]]
+                #     robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
+                #     rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
+        
+                pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
+                pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
+                pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
 
-    
-            pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
-            pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
-            pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
-
-            obse_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
-            self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)
-            self.trans_ob_list.append(trans_ob)
-            self.rot_ob_list.append(rot_ob) # need to update
-            # print("here") 
+                obse_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
+                self.pw_T_target_obj_obse_pose_lsit[obj_index] = obse_obj
+                # self.pw_T_target_obj_obse_pose_lsit.append(obse_obj)
+                
+                self.trans_ob_list.append(trans_ob)
+                self.rot_ob_list.append(rot_ob) # need to update
         
         return self.pw_T_target_obj_obse_pose_lsit, self.trans_ob_list, self.rot_ob_list
             
@@ -168,7 +186,7 @@ class Create_Scene():
             else:
                 self.table_pos_1[2] = 0
             pw_T_rob_sim_pos = [0.0, 0.0, 0.026+self.table_pos_1[2]]
-            pw_T_rob_sim_pos = [0.0, 0.0, 0.02+self.table_pos_1[2]]
+            pw_T_rob_sim_pos = [0.0, 0.0, 0.02+self.table_pos_1[2]+0.008]
             pw_T_rob_sim_ori = [0, 0, 0, 1]
             pw_T_rob_sim_3_3 = transformations.quaternion_matrix(pw_T_rob_sim_ori)
             pw_T_rob_sim_4_4 = self.rotation_4_4_to_transformation_4_4(pw_T_rob_sim_3_3, pw_T_rob_sim_pos)

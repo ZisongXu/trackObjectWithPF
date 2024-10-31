@@ -252,7 +252,7 @@
     <origin rpy="0 0 -0.785398163397" xyz="0 0 0"/>
   </joint> -->
 
-  <joint name="panda_hand_joint" type="fixed">
+  <joint name="panda_pump_joint" type="fixed">
     <parent link="panda_link8"/>
     <child link="pump"/>
     <origin rpy="-1.5707963 0 2.3561944366" xyz="0 0 0"/>
@@ -281,8 +281,8 @@
   <link name="pump">
   	<inertial>
       <origin rpy="0 0 0" xyz="0 0 0.04"/>
-       <mass value=".81"/>
-       <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
+      <mass value=".81"/>
+      <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
     </inertial>
     <visual>
       <geometry>
@@ -432,12 +432,26 @@
        <mass value="0.0"/>
        <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
     </inertial>
-   </link>
+   </link> -->
 
-   <joint name="panda_grasptarget_hand" type="fixed">
+  <link name="panda_pumptarget">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
+    </inertial>
+  </link>
+
+  <!-- <joint name="panda_grasptarget_hand" type="fixed">
     <parent link="panda_hand"/>
     <child link="panda_grasptarget"/>
     <origin rpy="0 0 0" xyz="0 0 0.105"/>
   </joint> -->
-  
+
+  <joint name="extention_stick_pumptarget" type="fixed">
+    <parent link="extention_stick"/>
+    <child link="panda_pumptarget"/>
+    <origin rpy="0 0 0" xyz="0 0 0.0"/>
+  </joint>
+
 </robot>

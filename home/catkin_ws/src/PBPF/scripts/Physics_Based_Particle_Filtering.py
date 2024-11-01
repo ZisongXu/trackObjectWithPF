@@ -604,9 +604,6 @@ def _set_generator_sim_world():
     pw_T_pump_info_pos = pump_info[4]
     pw_T_pump_info_ori = pump_info[5]
     pw_T_pump_info_ang = p.getEulerFromQuaternion(pw_T_pump_info_ori)
-    print("pw_T_pump_info_pos:", pw_T_pump_info_pos)
-    print("pw_T_pump_info_ori:", pw_T_pump_info_ori)
-    print("pw_T_pump_info_ang:", pw_T_pump_info_ang)
     
     _pump_T_camHolder_pose_44 = compute_transformation_matrix(pw_T_pump_info_pos, pw_T_pump_info_ori, pw_T_camHolder_info_pos, pw_T_camHolder_info_ori)
     
@@ -657,7 +654,58 @@ def _get_obj_pose_from_name(object_name):
     # pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
     return camR_T_object_pos, camR_T_object_ori
 
-
+# get camera_pose
+def _get_camera_pose():
+    if LOCATE_CAMERA_FLAG == "onTheHolder": # ar/opti/onTheHolder
+        realsense_tf = '/panda_pump'
+    else:
+        print("Have not done!")
+        
+    while_loop_time = 0
+    print("Locate Camera Method:", realsense_tf)
+    while not rospy.is_shutdown():
+        while_loop_time =  while_loop_time + 1
+        # if while_loop_time > 50:
+        #     print("WARNING: ")
+        if gazebo_flag == True:
+            realsense_tf = '/realsense_camera'
+        try:
+            (trans_camera, rot_camera) = _tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
+            break
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            continue
+    
+    if realsense_tf == '/panda_pump':
+        if not isinstance(_pump_T_camRGB_pose_44, np.ndarray):
+            while True:
+                print("Error! In launch_camera.py file!")
+        rob_T_pump_pos = trans_camera
+        rob_T_pump_ori = rot_camera
+        # rob_T_pump_ang = p.getEulerFromQuaternion(rob_T_pump_ori)
+        
+        # print("rob_T_pump_pos:", rob_T_pump_pos)
+        # print("rob_T_pump_ori:", rob_T_pump_ori)
+        # print("rob_T_pump_ang:", rob_T_pump_ang)
+        
+        rob_T_pump_pose_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_pump_ori)).reshape(3, 3)
+        rob_T_pump_pose_3_4 = np.c_[rob_T_pump_pose_3_3, rob_T_pump_pos]  # Add position to create 3x4 matrix
+        rob_T_pump_pose_4_4 = np.r_[rob_T_pump_pose_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+        diff_bt_ROSModel_and_Model = np.array([[-1, 0, 0, 0],
+                                               [ 0, 0,-1, 0],
+                                               [ 0,-1, 0, 0],
+                                               [ 0, 0, 0, 1]])
+        rob_T_pump_pose_4_4 = np.dot(rob_T_pump_pose_4_4, diff_bt_ROSModel_and_Model)
+        rob_T_camRGB_tf_4_4 = np.dot(rob_T_pump_pose_4_4, _pump_T_camRGB_pose_44)
+        pw_T_camRGB_tf_4_4 = np.dot(_pw_T_rob_sim_4_4, rob_T_camRGB_tf_4_4)
+        pw_T_camRGB_tf_pos = [pw_T_camRGB_tf_4_4[0][3], pw_T_camRGB_tf_4_4[1][3], pw_T_camRGB_tf_4_4[2][3]]
+    else:
+        rob_T_camRGB_tf_pos = list(trans_camera)
+        rob_T_camRGB_tf_ori = list(rot_camera)
+        rob_T_camRGB_tf_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_camRGB_tf_ori)).reshape(3, 3)
+        rob_T_camRGB_tf_3_4 = np.c_[rob_T_camRGB_tf_3_3, rob_T_camRGB_tf_pos]  # Add position to create 3x4 matrix
+        rob_T_camRGB_tf_4_4 = np.r_[rob_T_camRGB_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+        pw_T_camRGB_tf_4_4 = np.dot(_pw_T_rob_sim_4_4, rob_T_camRGB_tf_4_4)
+        pw_T_camRGB_tf_pos = [pw_T_camRGB_tf_4_4[0][3], pw_T_camRGB_tf_4_4[1][3], pw_T_camRGB_tf_4_4[2][3]]
 
 # get camera intrinsic params
 def _get_camera_intrinsic_params(camera_info_topic_name):
@@ -819,35 +867,86 @@ def _vk_load_meshes():
         if link_index < 8:
             rob_link_id = _vk_context.load_model("assets/meshes/link"+str(link_index)+".vkdepthmesh")
         elif link_index == 8:
-            rob_link_id = _vk_context.load_model("assets/meshes/hand.vkdepthmesh")
+            if ROBOT_END_EFFECTOR == "gripper":
+                # load gripper
+                rob_link_id = _vk_context.load_model("assets/meshes/hand.vkdepthmesh")
+            elif ROBOT_END_EFFECTOR == "pump":
+                # load pump
+                rob_link_id = _vk_context.load_model("assets/meshes/pump.vkdepthmesh")
+            elif ROBOT_END_EFFECTOR == "pump_with_extention":
+                # load pump
+                rob_link_id = _vk_context.load_model("assets/meshes/pump.vkdepthmesh")
         elif link_index == 9:
-            rob_link_id = _vk_context.load_model("assets/meshes/left_finger.vkdepthmesh")
+            if ROBOT_END_EFFECTOR == "gripper":
+                # load left finger
+                rob_link_id = _vk_context.load_model("assets/meshes/left_finger.vkdepthmesh")
+            elif ROBOT_END_EFFECTOR == "pump":
+                # load camera holder
+                rob_link_id = _vk_context.load_model("assets/meshes/pump_camera_holder.vkdepthmesh")
+            elif ROBOT_END_EFFECTOR == "pump_with_extention":
+                # load camera holder
+                rob_link_id = _vk_context.load_model("assets/meshes/pump_camera_holder.vkdepthmesh")
         elif link_index == 10:
-            rob_link_id = _vk_context.load_model("assets/meshes/right_finger.vkdepthmesh")
+            if ROBOT_END_EFFECTOR == "gripper":
+                # load right finger
+                print("Gripper!")
+                rob_link_id = _vk_context.load_model("assets/meshes/right_finger.vkdepthmesh")
+            elif ROBOT_END_EFFECTOR == "pump":
+                print("Pump without extention stick!")
+            elif ROBOT_END_EFFECTOR == "pump_with_extention":
+                # load extention stick
+                print("Pump with extention stick!")
+                rob_link_id = _vk_context.load_model("assets/meshes/extention_stick.vkdepthmesh")
         vk_rob_link_id_list[link_index] = rob_link_id
     
+    vk_other_obj_info_list = []
     # table
     other_obj_id = _vk_context.load_model("assets/meshes/table.vkdepthmesh")
     vk_other_id_list.append(other_obj_id)
+    vk_other_obj_info = Object_Pose(obj_name='table', obj_id=0, pos=[0.46, -0.01, 0.702], ori=p.getQuaternionFromEuler([0,0,0]), index=0) # ori: x, y, z, w   
+    vk_other_obj_info_list.append(vk_other_obj_info)
+    
     # board
-    other_obj_id = _vk_context.load_model("assets/meshes/board.vkdepthmesh")
-    vk_other_id_list.append(other_obj_id)
+    # other_obj_id = _vk_context.load_model("assets/meshes/board.vkdepthmesh")
+    # vk_other_id_list.append(other_obj_id)
+    # vk_other_obj_info = Object_Pose(obj_name='board', obj_id=1, pos=[0.274, 0.581, 0.87575], ori=p.getQuaternionFromEuler([math.pi/2,math.pi/2,0]), index=0) # ori: x, y, z, w           
+    # vk_other_obj_info_list.append(vk_other_obj_info)
+    
     # barrier 1,2,3
     other_obj_id = _vk_context.load_model("assets/meshes/barrier.vkdepthmesh")
     vk_other_id_list.append(other_obj_id)
+    vk_other_obj_info = Object_Pose(obj_name='barrier1', obj_id=0, pos=[-0.694, 0.443, 0.895], ori=p.getQuaternionFromEuler([0,math.pi/2,0]), index=0) # ori: x, y, z, w          
+    vk_other_obj_info_list.append(vk_other_obj_info)
+    
     other_obj_id = _vk_context.load_model("assets/meshes/barrier.vkdepthmesh")
     vk_other_id_list.append(other_obj_id)
+    vk_other_obj_info = Object_Pose(obj_name='barrier2', obj_id=0, pos=[-0.694, -0.607, 0.895], ori=p.getQuaternionFromEuler([0,math.pi/2,0]), index=0) # ori: x, y, z, w          
+    vk_other_obj_info_list.append(vk_other_obj_info)
+    
     other_obj_id = _vk_context.load_model("assets/meshes/barrier.vkdepthmesh")
     vk_other_id_list.append(other_obj_id)
+    vk_other_obj_info = Object_Pose(obj_name='barrier3', obj_id=0, pos=[0.459, -0.972, 0.895], ori=p.getQuaternionFromEuler([0,math.pi/2,math.pi/2]), index=0) # ori: x, y, z, w          
+    vk_other_obj_info_list.append(vk_other_obj_info) 
+    
+    
     # pringles
     if TASK_FLAG == '1':
         other_obj_id = _vk_context.load_model("assets/meshes/pringles.vkdepthmesh")
         vk_other_id_list.append(other_obj_id)
+        vk_other_obj_info = Object_Pose(obj_name='pringles', obj_id=0, pos=[0.6652218209791124, 0.058946644391304814, 0.8277292172960276], ori=p[ 0.67280124, -0.20574896, -0.20600051, 0.68012472], index=0) # ori: x, y, z, w           
+        vk_other_obj_info_list.append(vk_other_obj_info) 
+    
+    # basket
+    if INCREMENTAL_POSE_GENERATOR_FLAG == True and TASK_FLAG == 'basket_retrieve' and LOCATE_CAMERA_FLAG == 'onTheHolder':
+        other_obj_id = _vk_context.load_model("assets/meshes/basket.vkdepthmesh")
+        vk_other_id_list.append(other_obj_id)
+        vk_other_obj_info = Object_Pose(obj_name='basket', obj_id=0, pos=_pw_T_basket_pos, ori=_pw_T_basket_ori, index=0)        
+        vk_other_obj_info_list.append(vk_other_obj_info) 
 
     # obj_id = _vk_context.load_model()
     # vk_other_id_list.append(obj_id)
-
-    return vk_obj_id_list, vk_rob_link_id_list, vk_other_id_list
+    
+    return vk_obj_id_list, vk_rob_link_id_list, vk_other_id_list, vk_other_obj_info_list
 
 # "particle setting"
 def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4, pybullet_env, par_robot_id):
@@ -924,43 +1023,65 @@ def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4, pybullet_env, par_robot
 
         # other objects
         vk_other_obj_number_ = len(_vk_other_id_list)
+        # print("vk_other_obj_number_:",vk_other_obj_number_)
+        _vk_other_obj_info_list
         
-        # table
-        table_pos_1 = [0.46, -0.01, 0.702]
-        table_ori_1 = p.getQuaternionFromEuler([0,0,0]) # x, y, z, w
-        vk_state.add_instance(_vk_other_id_list[0],
-                              table_pos_1[0], table_pos_1[1], table_pos_1[2],
-                              table_ori_1[3], table_ori_1[0], table_ori_1[1], table_ori_1[2]) # w, x, y, z
-        # board
-        board_pos_1 = [0.274, 0.581, 0.87575]
-        board_ori_1 = p.getQuaternionFromEuler([math.pi/2,math.pi/2,0]) # x, y, z, w
-        vk_state.add_instance(_vk_other_id_list[1],
-                              board_pos_1[0], board_pos_1[1], board_pos_1[2],
-                              board_ori_1[3], board_ori_1[0], board_ori_1[1], board_ori_1[2]) # w, x, y, z
-        # barrier 1,2,3
-        barrier_pos_1 = [-0.694, 0.443, 0.895]
-        barrier_ori_1 = p.getQuaternionFromEuler([0,math.pi/2,0]) # x, y, z, w
-        vk_state.add_instance(_vk_other_id_list[2],
-                              barrier_pos_1[0], barrier_pos_1[1], barrier_pos_1[2],
-                              barrier_ori_1[3], barrier_ori_1[0], barrier_ori_1[1], barrier_ori_1[2]) # w, x, y, z
-        barrier_pos_2 = [-0.694, -0.607, 0.895]
-        barrier_ori_2 = p.getQuaternionFromEuler([0,math.pi/2,0]) # x, y, z, w
-        vk_state.add_instance(_vk_other_id_list[3],
-                              barrier_pos_2[0], barrier_pos_2[1], barrier_pos_2[2],
-                              barrier_ori_2[3], barrier_ori_2[0], barrier_ori_2[1], barrier_ori_2[2]) # w, x, y, z
-        barrier_pos_3 = [0.459, -0.972, 0.895]
-        barrier_ori_3 = p.getQuaternionFromEuler([0,math.pi/2,math.pi/2]) # x, y, z, w
-        vk_state.add_instance(_vk_other_id_list[4],
-                              barrier_pos_3[0], barrier_pos_3[1], barrier_pos_3[2],
-                              barrier_ori_3[3], barrier_ori_3[0], barrier_ori_3[1], barrier_ori_3[2]) # w, x, y, z
-        # pringles
-        if TASK_FLAG == '1':
-            pringles_pos_1 = [0.6652218209791124, 0.058946644391304814, 0.8277292172960276]
-            pringles_ori_1 = [ 0.67280124, -0.20574896, -0.20600051, 0.68012472] # x, y, z, w
-            vk_state.add_instance(_vk_other_id_list[5],
-                                pringles_pos_1[0], pringles_pos_1[1], pringles_pos_1[2],
-                                pringles_ori_1[3], pringles_ori_1[0], pringles_ori_1[1], pringles_ori_1[2]) # w, x, y, z
-
+        for vk_other_obj_index in range(vk_other_obj_number_):
+            vk_other_obj_info = _vk_other_obj_info_list[vk_other_obj_index]
+            vk_other_obj_name = vk_other_obj_info.obj_name
+            print("vk_other_obj_name:", vk_other_obj_name)
+            vk_other_obj_pos = vk_other_obj_info.pos
+            vk_other_obj_ori = vk_other_obj_info.ori
+            vk_state.add_instance(_vk_other_id_list[vk_other_obj_index],
+                                  vk_other_obj_pos[0], vk_other_obj_pos[1], vk_other_obj_pos[2],
+                                  vk_other_obj_ori[3], vk_other_obj_ori[0], vk_other_obj_ori[1], vk_other_obj_ori[2]) # w, x, y, z
+                                  
+        # # table
+        # table_pos_1 = [0.46, -0.01, 0.702]
+        # table_ori_1 = p.getQuaternionFromEuler([0,0,0]) # x, y, z, w
+        # vk_state.add_instance(_vk_other_id_list[0],
+        #                       table_pos_1[0], table_pos_1[1], table_pos_1[2],
+        #                       table_ori_1[3], table_ori_1[0], table_ori_1[1], table_ori_1[2]) # w, x, y, z
+        # # board
+        # # board_pos_1 = [0.274, 0.581, 0.87575]
+        # # board_ori_1 = p.getQuaternionFromEuler([math.pi/2,math.pi/2,0]) # x, y, z, w
+        # # vk_state.add_instance(_vk_other_id_list[1],
+        # #                       board_pos_1[0], board_pos_1[1], board_pos_1[2],
+        # #                       board_ori_1[3], board_ori_1[0], board_ori_1[1], board_ori_1[2]) # w, x, y, z
+        # # barrier 1,2,3
+        # barrier_pos_1 = [-0.694, 0.443, 0.895]
+        # barrier_ori_1 = p.getQuaternionFromEuler([0,math.pi/2,0]) # x, y, z, w
+        # vk_state.add_instance(_vk_other_id_list[2],
+        #                       barrier_pos_1[0], barrier_pos_1[1], barrier_pos_1[2],
+        #                       barrier_ori_1[3], barrier_ori_1[0], barrier_ori_1[1], barrier_ori_1[2]) # w, x, y, z
+        # barrier_pos_2 = [-0.694, -0.607, 0.895]
+        # barrier_ori_2 = p.getQuaternionFromEuler([0,math.pi/2,0]) # x, y, z, w
+        # vk_state.add_instance(_vk_other_id_list[3],
+        #                       barrier_pos_2[0], barrier_pos_2[1], barrier_pos_2[2],
+        #                       barrier_ori_2[3], barrier_ori_2[0], barrier_ori_2[1], barrier_ori_2[2]) # w, x, y, z
+        # barrier_pos_3 = [0.459, -0.972, 0.895]
+        # barrier_ori_3 = p.getQuaternionFromEuler([0,math.pi/2,math.pi/2]) # x, y, z, w
+        # vk_state.add_instance(_vk_other_id_list[4],
+        #                       barrier_pos_3[0], barrier_pos_3[1], barrier_pos_3[2],
+        #                       barrier_ori_3[3], barrier_ori_3[0], barrier_ori_3[1], barrier_ori_3[2]) # w, x, y, z
+        # # pringles
+        # if TASK_FLAG == '1':
+        #     pringles_pos_1 = [0.6652218209791124, 0.058946644391304814, 0.8277292172960276]
+        #     pringles_ori_1 = [ 0.67280124, -0.20574896, -0.20600051, 0.68012472] # x, y, z, w
+        #     vk_state.add_instance(_vk_other_id_list[5],
+        #                         pringles_pos_1[0], pringles_pos_1[1], pringles_pos_1[2],
+        #                         pringles_ori_1[3], pringles_ori_1[0], pringles_ori_1[1], pringles_ori_1[2]) # w, x, y, z
+        # # basket
+        # # _pw_T_basket_pos
+        # # _pw_T_basket_ori
+        # # basket_pos_1 = [0.46, -0.01, 0.702]
+        # # basket_ori_1 = p.getQuaternionFromEuler([0,0,0]) # x, y, z, w
+        
+        # if INCREMENTAL_POSE_GENERATOR_FLAG == True and TASK_FLAG == 'basket_retrieve' and LOCATE_CAMERA_FLAG == 'onTheHolder':
+        #     vk_state.add_instance(_vk_other_id_list[0],
+        #                         _pw_T_basket_pos[0], _pw_T_basket_pos[1], _pw_T_basket_pos[2],
+        #                         _pw_T_basket_ori[3], _pw_T_basket_ori[0], _pw_T_basket_ori[1], _pw_T_basket_ori[2]) # w, x, y, 
+    
         _vk_context.add_state(vk_state)
         # vk_state: 
         # 70
@@ -1885,7 +2006,7 @@ if __name__ == '__main__':
     _sim_rob_movement(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
     rob_link_9_pose_old = p_sim.getLinkState(sim_rob_id, 9) # position = rob_link_9_pose_old[0], quaternion = rob_link_9_pose_old[1]
 
-    # ============================================================================
+    # ===========================================================================================================================================
     # initialisation of vk configuration
     print("Begin to use VK to render depth image!")
     if VK_RENDER_FLAG == True:
@@ -1903,7 +2024,7 @@ if __name__ == '__main__':
         _vk_context.set_depth_threshold(DEPTH_DIFF_VALUE_0_1_THRESHOLD)
         _vk_context.update_camera(_vk_camera)
         ## Load meshes
-        _vk_obj_id_list, _vk_rob_link_id_list, _vk_other_id_list = _vk_load_meshes()
+        _vk_obj_id_list, _vk_rob_link_id_list, _vk_other_id_list, _vk_other_obj_info_list = _vk_load_meshes()
         ## Create states
         ## state -> particle
         ## instance -> object
@@ -1926,15 +2047,13 @@ if __name__ == '__main__':
         #         print(obj_pixel_num, total_elements)
         #         print(single_obj_num_zeros)
         
-        # show vk rendered depth image
-        fig, axs = plt.subplots(2, PARTICLE_NUM)
-        for par_index in range(PARTICLE_NUM):
-            axs[0, par_index].imshow(vk_rendered_depth_image_array_list[par_index], cmap="gray")
-            axs[1, par_index].imshow(vk_rendered__mask_image_array_list[par_index], cmap="gray")
-        plt.show()
-    # ============================================================================
-
-    input("wait")
+        # # show vk rendered depth image
+        # fig, axs = plt.subplots(2, PARTICLE_NUM)
+        # for par_index in range(PARTICLE_NUM):
+        #     axs[0, par_index].imshow(vk_rendered_depth_image_array_list[par_index], cmap="gray")
+        #     axs[1, par_index].imshow(vk_rendered__mask_image_array_list[par_index])
+        # plt.show()
+    # ===========================================================================================================================================
     
     print("Welcome to Our Approach ! RUNNING MODEL: ", RUNNING_MODEL)
 
@@ -1947,7 +2066,7 @@ if __name__ == '__main__':
     outlier_dis_list = [0] * OBJECT_NUM
     outlier_ang_list = [0] * OBJECT_NUM
 
-    # ============================================================================
+    # ===========================================================================================================================================
     # set parameters
     visible_threshold_dope_is_fresh_list = [0] * OBJECT_NUM
     visible_threshold_dope_X_list = [0] * OBJECT_NUM 
@@ -2125,15 +2244,32 @@ if __name__ == '__main__':
         global_objects_outlier_by_DOPE_list = [0] * OBJECT_NUM
 
         temp_pw_T_obj_obse_objs_list = []
-        #panda robot moves in the visualization window
+        # panda robot moves in the visualization window
         _sim_rob_movement(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
+        
+        # get camera pose
+        if LOCATE_CAMERA_FLAG == 'onTheHolder':
+            _get_camera_pose()
+        
+        
+        
+        
+        
+        
+        
         if RECORD_RESULTS_FLAG == True:
             pw_T_obj_GT_pose = []
+            
         for obj_index in range(OBJECT_NUM):
             object_name = OBJECT_NAME_LIST[obj_index]
             use_gazebo = ""
             if gazebo_flag == True:
                 use_gazebo = '_noise'
+                
+            
+            
+            # Get object pose in pybullet world
+            
             try:
                 latest_obse_time = _tf_listener.getLatestCommonTime('/panda_link0', '/'+object_name+use_gazebo)
                 latest_obse_time_list[obj_index] = latest_obse_time

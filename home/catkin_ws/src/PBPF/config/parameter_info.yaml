@@ -39,7 +39,7 @@ otob_name_list:
 - cracker_obstacle
 - fish_can
 panda_robot_link_number: 11
-particle_num: 10
+particle_num: 2
 pb_render_flag: false
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0
@@ -55,7 +55,7 @@ show_particle_depth_image_to_point_cloud_flag: false
 show_ray: false
 show_particle: false
 sim_real_world_flag: true
-task_flag: 'basket_retrieve'
+task_flag: basket_retrieve
 update_style_flag: time
 use_convolution_flag: false
 version: multiray

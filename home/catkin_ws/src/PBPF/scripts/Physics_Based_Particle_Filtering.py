@@ -558,7 +558,7 @@ def new_sim_world_for_updating_condition(): # track_fk_sim_world
     return p_track_fk_env, track_fk_rob_id
 
 def _sim_rob_movement(p_sim, sim_rob_id, joint_states): # track_fk_world_rob_mv
-    print("(Main file) The end effector of the robot is "+ROBOT_END_EFFECTOR)
+    # print("(Main file) The end effector of the robot is "+ROBOT_END_EFFECTOR)
     if ROBOT_END_EFFECTOR == 'pump_with_extention':
         # pump
         num_joints = 7
@@ -639,10 +639,10 @@ def _set_generator_sim_world():
     return objects_id_list, pw_T_camRGB_pose_44
 
 # get obj pose from name
-def _get_obj_pose_from_name(object_name):
+def _get_obj_pose_in_camRGB_frame_from_name(object_name):
     # get object pose from DOPE
-    camR_T_object_pos = ROS_LISTENER.listen_2_dope_object_pose(object_name)[0]
-    camR_T_object_ori = ROS_LISTENER.listen_2_dope_object_pose(object_name)[1]
+    camRGB_T_object_pos = ROS_LISTENER.listen_2_dope_object_pose(object_name)[0]
+    camRGB_T_object_ori = ROS_LISTENER.listen_2_dope_object_pose(object_name)[1]
     # (trans_ob, rot_ob) = _tf_listener.lookupTransform('/panda_link0', '/'+object_name, rospy.Time(0))
     # rob_T_obj_obse_pos = list(trans_ob)
     # rob_T_obj_obse_ori = list(rot_ob)
@@ -652,7 +652,7 @@ def _get_obj_pose_from_name(object_name):
     # pw_T_obj_obse = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
     # pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
     # pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
-    return camR_T_object_pos, camR_T_object_ori
+    return camRGB_T_object_pos, camRGB_T_object_ori
 
 # get camera_pose
 def _get_camera_pose():
@@ -662,7 +662,6 @@ def _get_camera_pose():
         print("Have not done!")
         
     while_loop_time = 0
-    print("Locate Camera Method:", realsense_tf)
     while not rospy.is_shutdown():
         while_loop_time =  while_loop_time + 1
         # if while_loop_time > 50:
@@ -706,6 +705,10 @@ def _get_camera_pose():
         rob_T_camRGB_tf_4_4 = np.r_[rob_T_camRGB_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
         pw_T_camRGB_tf_4_4 = np.dot(_pw_T_rob_sim_4_4, rob_T_camRGB_tf_4_4)
         pw_T_camRGB_tf_pos = [pw_T_camRGB_tf_4_4[0][3], pw_T_camRGB_tf_4_4[1][3], pw_T_camRGB_tf_4_4[2][3]]
+    
+    pw_T_camD_pose_44 = np.dot(pw_T_camRGB_tf_4_4, _camRGB_T_camD_pose_4_4)
+    
+    return pw_T_camRGB_tf_4_4, pw_T_camD_pose_44
 
 # get camera intrinsic params
 def _get_camera_intrinsic_params(camera_info_topic_name):
@@ -1029,7 +1032,6 @@ def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4, pybullet_env, par_robot
         for vk_other_obj_index in range(vk_other_obj_number_):
             vk_other_obj_info = _vk_other_obj_info_list[vk_other_obj_index]
             vk_other_obj_name = vk_other_obj_info.obj_name
-            print("vk_other_obj_name:", vk_other_obj_name)
             vk_other_obj_pos = vk_other_obj_info.pos
             vk_other_obj_ori = vk_other_obj_info.ori
             vk_state.add_instance(_vk_other_id_list[vk_other_obj_index],
@@ -1483,12 +1485,10 @@ def _update_from_real_world_incrementally():
         objects_id_list, pw_T_camRGB_pose_44 = _set_generator_sim_world()
         for index, object_name in enumerate(OBJECT_NAME_LIST):
             input(f'Fixing the pose for {object_name}. Press ENTER to view.')
-            camR_T_object_pos, camR_T_object_ori = _get_obj_pose_from_name(object_name) # x, y, z, w
-            camR_T_object_pose = _get_matrix_from_pos_ori(camR_T_object_pos, camR_T_object_ori)
-            camR_T_object_pos = _get_position_from_matrix44(camR_T_object_pose)
-            camR_T_object_ori = _get_quaternion_from_matrix(camR_T_object_pose) # x, y, z, w
+            camRGB_T_object_pos, camRGB_T_object_ori = _get_obj_pose_in_camRGB_frame_from_name(object_name) # x, y, z, w
+            camRGB_T_object_pose = _get_matrix_from_pos_ori(camRGB_T_object_pos, camRGB_T_object_ori)
             
-            pw_T_obj_obse_pose_44 = np.dot(pw_T_camRGB_pose_44, camR_T_object_pose)
+            pw_T_obj_obse_pose_44 = np.dot(pw_T_camRGB_pose_44, camRGB_T_object_pose)
             pw_T_obj_obse_pos = _get_position_from_matrix44(pw_T_obj_obse_pose_44)
             pw_T_obj_obse_ori = _get_quaternion_from_matrix(pw_T_obj_obse_pose_44) # x, y, z, w
             _generator_env.resetBasePositionAndOrientation(objects_id_list[index], pw_T_obj_obse_pos, pw_T_obj_obse_ori)
@@ -1761,6 +1761,17 @@ if __name__ == '__main__':
     RESTITUTION_MEAN = 0.9
     RESTITUTION_SIGMA = 0.2
 
+    # relationship between RGB len and depth len
+    camRGB_T_camD_pos_13 = [0.015, 0.0, 0.0]
+    camRGB_T_camD_ori_14 = [0.0, 0.0, -0.008, 1] # x, y, z, w
+    # camRGB_T_camD_ori_14 = [0.001, 0.001, -0.009, 1] # x, y, z, w
+    # camRGB_T_camD_pos_13 = [0.0, 0.0, 0.0]
+    # camRGB_T_camD_ori_14 = [0.0, 0.0, -0.00, 1] # x, y, z, w
+    camRGB_T_camD_pose_3_3 = np.array(p.getMatrixFromQuaternion(camRGB_T_camD_ori_14)).reshape(3, 3)
+    camRGB_T_camD_pose_3_4 = np.c_[camRGB_T_camD_pose_3_3, camRGB_T_camD_pos_13]  # Add position to create 3x4 matrix
+    _camRGB_T_camD_pose_4_4 = np.r_[camRGB_T_camD_pose_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+
+
     PBPF_time_cosuming_list = []
     
     # multi-objects/robot list
@@ -1844,15 +1855,21 @@ if __name__ == '__main__':
     else:
         _pw_T_camD_tf_4_4 = _launch_camera.getCameraInPybulletWorldPose44(_tf_listener, _pw_T_rob_sim_4_4)
 
-    print("========================")
+    print("============================================================================")
     print("Camera depth len pose in Pybullet world (from tf):")
     print(_pw_T_camD_tf_4_4)
-    print("========================")
+    print("============================================================================")
     pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object()
-    print("trans_ob_list, rot_ob_list:")
-    print(trans_ob_list, rot_ob_list)
-    print("========================")
+    print("Object pose only for initializaiton:")
+    for index in range(len(pw_T_obj_obse_obj_list_alg)):
+        obj_name = pw_T_obj_obse_obj_list_alg[index].obj_name
+        pw_T_obj_obse_pos = pw_T_obj_obse_obj_list_alg[index].pos 
+        pw_T_obj_obse_ori = pw_T_obj_obse_obj_list_alg[index].ori
+        print("Object Name: ", obj_name, "; Object position in Pybullet World: ", pw_T_obj_obse_pos, "; Object orientation in PybullET World: ", pw_T_obj_obse_ori)
+    # print("trans_ob_list, rot_ob_list:")
+    # print(trans_ob_list, rot_ob_list)
     print("Finish initializing scene")
+    print("============================================================================")
 
     if INCREMENTAL_POSE_GENERATOR_FLAG == True and TASK_FLAG == 'basket_retrieve' and LOCATE_CAMERA_FLAG == 'onTheHolder':
         camRGB_T_camD_pos = [0.015, 0.0, 0.0]
@@ -1861,7 +1878,7 @@ if __name__ == '__main__':
         camRGB_T_camD_3_4 = np.c_[camRGB_T_camD_3_3, camRGB_T_camD_pos]  # Add position to create 3x4 matrix
         _camRGB_T_camD_4_4 = np.r_[camRGB_T_camD_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
         _pw_T_camD_tf_4_4 = np.dot(pw_T_camRGB_pose_44, _camRGB_T_camD_4_4)
-        print("========================")
+        print("============================================================================")
         print("Camera depth len pose in Pybullet world (Camera is on the robot; from PyBullet):")
         print(_pw_T_camD_tf_4_4)
     
@@ -1995,7 +2012,7 @@ if __name__ == '__main__':
     print("Camera RGB len pose in Robot world:")
     print(rob_T_camRGB_tf_4_4)
     print("Camera RGB len pose in Pybullet world:")
-    print(pw_T_camRGB_tf_pos)
+    print(pw_T_camRGB_tf_4_4)
     print("==============================================")        
     print("Finish getting pose of camera!")
     
@@ -2247,69 +2264,69 @@ if __name__ == '__main__':
         # panda robot moves in the visualization window
         _sim_rob_movement(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
         
-        # get camera pose
-        if LOCATE_CAMERA_FLAG == 'onTheHolder':
-            _get_camera_pose()
-        
-        
-        
-        
-        
-        
-        
         if RECORD_RESULTS_FLAG == True:
             pw_T_obj_GT_pose = []
-            
+        
+        # get camera pose
+        if TASK_FLAG == 'basket_retrieve' and LOCATE_CAMERA_FLAG == 'onTheHolder':
+            pw_T_camRGB_pose_44_each_loop, pw_T_camD_pose_44_each_loop = _get_camera_pose()
+                
         for obj_index in range(OBJECT_NUM):
             object_name = OBJECT_NAME_LIST[obj_index]
-            use_gazebo = ""
-            if gazebo_flag == True:
-                use_gazebo = '_noise'
+            # get objects poses through
+            if TASK_FLAG == 'basket_retrieve' and LOCATE_CAMERA_FLAG == 'onTheHolder':
+                camRGB_T_object_pos, camRGB_T_object_ori = _get_obj_pose_in_camRGB_frame_from_name(object_name) # x, y, z, w
+                camRGB_T_object_pose = _get_matrix_from_pos_ori(camRGB_T_object_pos, camRGB_T_object_ori)
                 
+                pw_T_obj_obse_pose_44 = np.dot(pw_T_camRGB_pose_44_each_loop, camRGB_T_object_pose)
+                pw_T_obj_obse_pos = _get_position_from_matrix44(pw_T_obj_obse_pose_44)
+                pw_T_obj_obse_ori = _get_quaternion_from_matrix(pw_T_obj_obse_pose_44) # x, y, z, w
             
-            
-            # Get object pose in pybullet world
-            
-            try:
-                latest_obse_time = _tf_listener.getLatestCommonTime('/panda_link0', '/'+object_name+use_gazebo)
-                latest_obse_time_list[obj_index] = latest_obse_time
-
-                # old_obse_time = latest_obse_time.to_sec()
-                # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                #     (trans_ob,rot_ob) = _tf_listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
-                #     print("obse is FRESH")
-
-                # if check_dope_work_flag_init_list[obj_index] == 0:
-                #     check_dope_work_flag_init_list[obj_index] = 1
-                #     old_obse_time_list[obj_index] = latest_obse_time_list[obj_index].to_sec()
+            else:
+                use_gazebo = ""
+                if gazebo_flag == True:
+                    use_gazebo = '_noise'              
                 
-                if (latest_obse_time_list[obj_index].to_sec() > old_obse_time_list[obj_index]):
-                    (trans_ob,rot_ob) = _tf_listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
-                    global_objects_visual_by_DOPE_list[obj_index] = 0
-                    t_after = time.time()
-                    trans_ob_list[obj_index] = trans_ob
-                    rot_ob_list[obj_index] = rot_ob
-                    # print(t_after - t_begin - 14)
-                    # print("obse is FRESH:", obj_index)
-                else:
-                    # obse has not been updating for a while
-                    global_objects_visual_by_DOPE_list[obj_index] = 1
-                    global_objects_outlier_by_DOPE_list[obj_index] = 1
-                    # print("obse is NOT fresh:", obj_index)
-                old_obse_time_list[obj_index] = latest_obse_time_list[obj_index].to_sec()
-                # break
-            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                print("Main function:", object_name, " can not find TF")
-                
-            rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
-            rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
-            rob_T_obj_obse_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_obj_obse_ori)).reshape(3, 3)
-            rob_T_obj_obse_3_4 = np.c_[rob_T_obj_obse_3_3, rob_T_obj_obse_pos]  # Add position to create 3x4 matrix
-            rob_T_obj_obse_4_4 = np.r_[rob_T_obj_obse_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+                try:
+                    latest_obse_time = _tf_listener.getLatestCommonTime('/panda_link0', '/'+object_name+use_gazebo)
+                    latest_obse_time_list[obj_index] = latest_obse_time
 
-            pw_T_obj_obse = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
-            pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
-            pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
+                    # old_obse_time = latest_obse_time.to_sec()
+                    # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
+                    #     (trans_ob,rot_ob) = _tf_listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
+                    #     print("obse is FRESH")
+
+                    # if check_dope_work_flag_init_list[obj_index] == 0:
+                    #     check_dope_work_flag_init_list[obj_index] = 1
+                    #     old_obse_time_list[obj_index] = latest_obse_time_list[obj_index].to_sec()
+                    
+                    if (latest_obse_time_list[obj_index].to_sec() > old_obse_time_list[obj_index]):
+                        (trans_ob,rot_ob) = _tf_listener.lookupTransform('/panda_link0', '/'+object_name+use_gazebo, rospy.Time(0))
+                        global_objects_visual_by_DOPE_list[obj_index] = 0
+                        t_after = time.time()
+                        trans_ob_list[obj_index] = trans_ob
+                        rot_ob_list[obj_index] = rot_ob
+                        # print(t_after - t_begin - 14)
+                        # print("obse is FRESH:", obj_index)
+                    else:
+                        # obse has not been updating for a while
+                        global_objects_visual_by_DOPE_list[obj_index] = 1
+                        global_objects_outlier_by_DOPE_list[obj_index] = 1
+                        # print("obse is NOT fresh:", obj_index)
+                    old_obse_time_list[obj_index] = latest_obse_time_list[obj_index].to_sec()
+                    # break
+                except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                    print("Main function:", object_name, " can not find TF")
+                    
+                rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
+                rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
+                rob_T_obj_obse_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_obj_obse_ori)).reshape(3, 3)
+                rob_T_obj_obse_3_4 = np.c_[rob_T_obj_obse_3_3, rob_T_obj_obse_pos]  # Add position to create 3x4 matrix
+                rob_T_obj_obse_4_4 = np.r_[rob_T_obj_obse_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+
+                pw_T_obj_obse = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
+                pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
+                pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
             
             # pw_T_esti_obj_pose_old = estimated_object_set_old_list[obj_index]
 

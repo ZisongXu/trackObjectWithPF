@@ -456,19 +456,35 @@ class SingleENV(multiprocessing.Process):
 
 
     def move_robot_JointPosition(self, joint_states):
-        num_joints = 9
-        for joint_index in range(num_joints):
-            if joint_index == 7 or joint_index == 8:
-                self.p_env.setJointMotorControl2(self.robot_id, joint_index+2,
-                                                 self.p_env.POSITION_CONTROL,
-                                                 targetPosition=joint_states[joint_index])
-            else:
-                self.p_env.setJointMotorControl2(self.robot_id, joint_index,
-                                                 self.p_env.POSITION_CONTROL,
-                                                 targetPosition=joint_states[joint_index])
+        if self.ROBOT_END_EFFECTOR == 'pump_with_extention':
+            # pump
+            num_joints = 7
+            for joint_index in range(num_joints):
+                if joint_index == 7 or joint_index == 8:
+                    self.p_env.setJointMotorControl2(self.robot_id, joint_index+2,
+                                                     self.p_env.POSITION_CONTROL,
+                                                     targetPosition=joint_states[joint_index])
+                else:
+                    self.p_env.setJointMotorControl2(self.robot_id, joint_index,
+                                                     self.p_env.POSITION_CONTROL,
+                                                     targetPosition=joint_states[joint_index])
+        else:
+            # gripper
+            num_joints = 9
+            for joint_index in range(num_joints):
+                if joint_index == 7 or joint_index == 8:
+                    self.p_env.setJointMotorControl2(self.robot_id, joint_index+2,
+                                                     self.p_env.POSITION_CONTROL,
+                                                     targetPosition=joint_states[joint_index])
+                else:
+                    self.p_env.setJointMotorControl2(self.robot_id, joint_index,
+                                                     self.p_env.POSITION_CONTROL,
+                                                     targetPosition=joint_states[joint_index])
+                    
         for time_index in range(int(self.pf_update_interval_in_sim)):
             self.p_env.stepSimulation()
         return [("done", True)]
+
 
     def compare_distance(self, par_index, pw_T_obj_obse_objects_pose_list, visual_by_DOPE_list, outlier_by_DOPE_list):
         weight =  1.0 / self.particle_num

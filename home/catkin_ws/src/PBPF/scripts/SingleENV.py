@@ -302,8 +302,20 @@ class SingleENV(multiprocessing.Process):
         real_robot_start_pos = self.pw_T_rob_sim_pose_list_alg[0].pos
         real_robot_start_ori = self.pw_T_rob_sim_pose_list_alg[0].ori
         joint_of_robot = self.pw_T_rob_sim_pose_list_alg[0].joints
-        self.robot_id = self.p_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
-                                            real_robot_start_pos, real_robot_start_ori, useFixedBase=1)
+        
+        if self.ROBOT_END_EFFECTOR == 'pump_with_extention':
+            self.robot_id = self.p_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda_pump_with_extention.urdf"), 
+                                                real_robot_start_pos, real_robot_start_ori, useFixedBase=1)
+        elif self.ROBOT_END_EFFECTOR == 'pump':
+            self.robot_id = self.p_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda_pump.urdf"), 
+                                                real_robot_start_pos, real_robot_start_ori, useFixedBase=1)
+        elif self.ROBOT_END_EFFECTOR == 'gripper':
+            self.robot_id = self.p_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"), 
+                                                real_robot_start_pos, real_robot_start_ori, useFixedBase=1)
+         
+        # self.robot_id = self.p_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
+        #                                     real_robot_start_pos, real_robot_start_ori, useFixedBase=1)
+        
         self.init_set_sim_robot_JointPosition(joint_of_robot)
         self.collision_detection_obj_id_collection.append(self.robot_id)
 
@@ -442,6 +454,8 @@ class SingleENV(multiprocessing.Process):
                     self.p_env.resetJointState(self.robot_id,
                                                joint_index,
                                                targetValue=joint_states[joint_index])
+        elif self.ROBOT_END_EFFECTOR == 'pump':
+            print("Have not done!")
         else:
             num_joints = 9
             for joint_index in range(num_joints):
@@ -468,6 +482,8 @@ class SingleENV(multiprocessing.Process):
                     self.p_env.setJointMotorControl2(self.robot_id, joint_index,
                                                      self.p_env.POSITION_CONTROL,
                                                      targetPosition=joint_states[joint_index])
+        elif self.ROBOT_END_EFFECTOR == 'pump':
+            print("Have not done!")
         else:
             # gripper
             num_joints = 9

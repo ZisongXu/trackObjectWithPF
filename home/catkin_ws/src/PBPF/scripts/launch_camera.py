@@ -56,7 +56,7 @@ class LaunchCamera():
         # depthImg = 1
         # segImg = 1
 
-        pw_T_camD_tf_4_4 = self.getCameraInPybulletWorldPose44(tf_listener, pw_T_rob_sim_4_4)
+        pw_T_camRGB_tf_4_4, pw_T_camD_tf_4_4 = self.getCameraInPybulletWorldPose44(tf_listener, pw_T_rob_sim_4_4)
         camera_eye_position = pw_T_camD_tf_4_4[:3, 3]
         camera_orientation = pw_T_camD_tf_4_4[:3, :3]
         camera_eye_position = [pw_T_camD_tf_4_4[0][3], pw_T_camD_tf_4_4[1][3], pw_T_camD_tf_4_4[2][3]] # pw_T_camD_tf_4_4[2][3]+0.05
@@ -144,7 +144,7 @@ class LaunchCamera():
         # elif self.LOCATE_CAMERA_FLAG == "onTheGripper":
         elif self.LOCATE_CAMERA_FLAG == "ar":
             realsense_tf = '/ar_tracking_camera_frame' # (do not use Optitrack)
-        elif self.LOCATE_CAMERA_FLAG == "onTheHolder":
+        elif self.LOCATE_CAMERA_FLAG == 'onTheHolder' and (self.ROBOT_END_EFFECTOR == 'pump' or self.ROBOT_END_EFFECTOR == 'pump_with_extention'):
             realsense_tf = '/panda_pump' # (do not use Optitrack)
             
         # if self.LOCATE_CAMERA_FLAG != "onTheGripper":
@@ -201,12 +201,13 @@ class LaunchCamera():
             rob_T_camRGB_tf_3_4 = np.c_[rob_T_camRGB_tf_3_3, rob_T_camRGB_tf_pos]  # Add position to create 3x4 matrix
             rob_T_camRGB_tf_4_4 = np.r_[rob_T_camRGB_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
 
+        self.pw_T_camRGB_tf_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_camRGB_tf_4_4)
         rob_T_camD_tf_4_4 = np.dot(rob_T_camRGB_tf_4_4, camRGB_T_camD_tf_4_4)
         self.pw_T_camD_tf_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_camD_tf_4_4)
         # self.pw_T_camD_tf_4_4[0][3] = self.pw_T_camD_tf_4_4[0][3] - 0.02
         # self.pw_T_camD_tf_4_4[1][3] = self.pw_T_camD_tf_4_4[1][3] - 0.02
 
-        return self.pw_T_camD_tf_4_4 # pw_T_camD_tf_4_4
+        return self.pw_T_camRGB_tf_4_4, self.pw_T_camD_tf_4_4 # pw_T_camD_tf_4_4
 
     def getFocalLength(self):
         F_x = 651.248474121094

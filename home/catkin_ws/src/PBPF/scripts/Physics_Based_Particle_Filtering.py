@@ -114,6 +114,7 @@ SIM_REAL_WORLD_FLAG = parameter_info['sim_real_world_flag']
 
 LOCATE_CAMERA_FLAG = parameter_info['locate_camera_flag'] # 'ar', 'opti', 'onTheHolder'
 ROBOT_END_EFFECTOR = parameter_info['robot_end_effector'] # 'gripper', 'pump', 'pump_with_extention'
+CAMERA_MOVE = parameter_info['camera_move'] # true/false
 
 PARTICLE_NUM = parameter_info['particle_num']
 
@@ -429,12 +430,12 @@ def _publish_par_pose_info(particle_cloud_pub):
 
         rob_par_pose.objects = rob_obj_pose_list
         rob_par_pose_list[par_index] = rob_par_pose
-        
+    
     par_list.particles = par_pose_list
     pub_par_pose.publish(par_list)
     rob_par_list.particles = rob_par_pose_list
     rob_pub_par_pose.publish(rob_par_list)
-            
+    
 def _publish_esti_pose_info(estimated_object_set):
     global _PBPF_panda_step
     # global _boss_PBPF_err_ADD_df_list
@@ -571,6 +572,8 @@ def _sim_rob_movement(p_sim, sim_rob_id, joint_states): # track_fk_world_rob_mv
                 p_sim.resetJointState(sim_rob_id,
                                     joint_index,
                                     targetValue=joint_states[joint_index])
+    elif ROBOT_END_EFFECTOR == 'pump':
+        print("Have not done!")
     else:
         # gripper
         num_joints = 9
@@ -586,37 +589,65 @@ def _sim_rob_movement(p_sim, sim_rob_id, joint_states): # track_fk_world_rob_mv
                 
 
 def _set_generator_sim_world():
-    global _pump_T_camHolder_pose_44
+    global _pw_T_basket_pos
+    global _pw_T_basket_ori
     _generator_env.setGravity(0, 0, -9.81)
     generator_plane_id = _generator_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/data/plane.urdf"))
-    generator_robot_id = _generator_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda_pump.urdf"), _pw_T_rob_pos, _pw_T_rob_ori, useFixedBase=1)
+    if ROBOT_END_EFFECTOR == 'pump_with_extention':
+        generator_robot_id = _generator_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda_pump_with_extention.urdf"), _pw_T_rob_pos, _pw_T_rob_ori, useFixedBase=1)
+    elif ROBOT_END_EFFECTOR == 'pump':
+        generator_robot_id = _generator_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda_pump.urdf"), _pw_T_rob_pos, _pw_T_rob_ori, useFixedBase=1)
+    elif ROBOT_END_EFFECTOR == 'gripper':
+        generator_robot_id = _generator_env.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"), _pw_T_rob_pos, _pw_T_rob_ori, useFixedBase=1)
+    
     table_id_1 = _generator_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), _table_pos_1, _table_ori_1)
-    basket_id = _generator_env.loadURDF(os.path.expanduser("~/project/object/others/basket.urdf"), _pw_T_basket_pos, _pw_T_basket_ori, useFixedBase=1)
+    
+    # Aim: to get the init poses of these objects
+    # print("Need to add camera pose into tf tree!")
+    opti_T_robot_pos = ROS_LISTENER.listen_2_robot_pose()[0]
+    opti_T_robot_ori = ROS_LISTENER.listen_2_robot_pose()[1]
+    opti_T_basket_pos = ROS_LISTENER.listen_2_basket_pose()[0]
+    opti_T_basket_ori = ROS_LISTENER.listen_2_basket_pose()[1]
+    rob_T_basket_pose = compute_transformation_matrix(opti_T_robot_pos, opti_T_robot_ori, opti_T_basket_pos, opti_T_basket_ori)
+    rob_T_basket_pos = _get_position_from_matrix44(rob_T_basket_pose)
+    rob_T_basket_ori = _get_quaternion_from_matrix(rob_T_basket_pose)
+    pw_T_basket_pose = np.dot(_pw_T_rob_pose, rob_T_basket_pose)
+    rot_fix_matrix = [[ 0,-1, 0, 0],
+                        [ 1, 0, 0, 0],
+                        [ 0, 0, 1, 0],
+                        [ 0, 0, 0, 1]]
+    pw_T_basket_pose = np.dot(pw_T_basket_pose, rot_fix_matrix)
+    pw_T_basket_pos = _get_position_from_matrix44(pw_T_basket_pose)
+    pw_T_basket_ori = _get_quaternion_from_matrix(pw_T_basket_pose)
+    _pw_T_basket_pos = pw_T_basket_pos
+    _pw_T_basket_ori = pw_T_basket_ori
+    basket_id = _generator_env.loadURDF(os.path.expanduser("~/project/object/others/basket.urdf"), pw_T_basket_pos, pw_T_basket_ori, useFixedBase=1)
+    
     robot_joint_states = ROS_LISTENER.current_joint_values
     _sim_rob_movement(_generator_env, generator_robot_id, robot_joint_states)
     objects_id_list = [0 for _ in range(OBJECT_NUM)]
 
-    cameraHolder_info = _generator_env.getLinkState(generator_robot_id, 9, computeForwardKinematics=True)
-    pw_T_camHolder_info_pos = cameraHolder_info[4]
-    pw_T_camHolder_info_ori = cameraHolder_info[5]
+    # cameraHolder_info = _generator_env.getLinkState(generator_robot_id, 9, computeForwardKinematics=True)
+    # pw_T_camHolder_info_pos = cameraHolder_info[4]
+    # pw_T_camHolder_info_ori = cameraHolder_info[5]
     
-    pump_info = _generator_env.getLinkState(generator_robot_id, 8, computeForwardKinematics=True)
-    pw_T_pump_info_pos = pump_info[4]
-    pw_T_pump_info_ori = pump_info[5]
-    pw_T_pump_info_ang = p.getEulerFromQuaternion(pw_T_pump_info_ori)
+    # pump_info = _generator_env.getLinkState(generator_robot_id, 8, computeForwardKinematics=True)
+    # pw_T_pump_info_pos = pump_info[4]
+    # pw_T_pump_info_ori = pump_info[5]
+    # pw_T_pump_info_ang = p.getEulerFromQuaternion(pw_T_pump_info_ori)
     
-    _pump_T_camHolder_pose_44 = compute_transformation_matrix(pw_T_pump_info_pos, pw_T_pump_info_ori, pw_T_camHolder_info_pos, pw_T_camHolder_info_ori)
+    # _pump_T_camHolder_pose_4_4 = compute_transformation_matrix(pw_T_pump_info_pos, pw_T_pump_info_ori, pw_T_camHolder_info_pos, pw_T_camHolder_info_ori)
     
-    pw_T_camHolder_pose_44 = _get_matrix_from_pos_ori(pw_T_camHolder_info_pos, pw_T_camHolder_info_ori)
-    pw_T_camRGB_pose_44 = np.dot(pw_T_camHolder_pose_44, _camHolderCenter_T_camRGB_pose_44)
+    # pw_T_camHolder_pose_4_4 = _get_matrix_from_pos_ori(pw_T_camHolder_info_pos, pw_T_camHolder_info_ori)
+    # pw_T_camRGB_pose_4_4 = np.dot(pw_T_camHolder_pose_4_4, _camHolderCenter_T_camRGB_pose_4_4)
         
-    # print("_camHolderCenter_T_camRGB_pose_44:")
-    # print(_camHolderCenter_T_camRGB_pose_44)
+    # print("_camHolderCenter_T_camRGB_pose_4_4:")
+    # print(_camHolderCenter_T_camRGB_pose_4_4)
     
-    # print("pw_T_camHolder_pose_44:")
-    # print(pw_T_camHolder_pose_44)
-    # print("pw_T_camRGB_pose_44:")
-    # print(pw_T_camRGB_pose_44)
+    # print("pw_T_camHolder_pose_4_4:")
+    # print(pw_T_camHolder_pose_4_4)
+    # print("pw_T_camRGB_pose_4_4:")
+    # print(pw_T_camRGB_pose_4_4)
     
     # joint_num = _generator_env.getNumJoints(generator_robot_id)
     # print("joint_num:", joint_num)
@@ -636,7 +667,7 @@ def _set_generator_sim_world():
         # object_id = _generator_env.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_name+"/"+gazebo_contain+obj_name+"_par_no_visual_hor.urdf"), temp_pos, temp_ori)
         object_id = _generator_env.loadURDF(os.path.expanduser("~/project/object/"+obj_name+"/"+obj_name+"_par_no_visual_hor.urdf"), temp_pos, temp_ori)
         objects_id_list[obj_index] = object_id
-    return objects_id_list, pw_T_camRGB_pose_44
+    return objects_id_list
 
 # get obj pose from name
 def _get_obj_pose_in_camRGB_frame_from_name(object_name):
@@ -655,48 +686,46 @@ def _get_obj_pose_in_camRGB_frame_from_name(object_name):
     return camRGB_T_object_pos, camRGB_T_object_ori
 
 # get camera_pose
-def _get_camera_pose():
-    if LOCATE_CAMERA_FLAG == "onTheHolder": # ar/opti/onTheHolder
-        realsense_tf = '/panda_pump'
-    else:
-        print("Have not done!")
-        
+def _get_camera_pose_from_tf():
+    
+    if OPTITRACK_FLAG == True and LOCATE_CAMERA_FLAG == "opti": # ar/opti
+        tf_child_frame = '/RealSense' # (use Optitrack)
+    elif LOCATE_CAMERA_FLAG == "ar":
+        tf_child_frame = '/ar_tracking_camera_frame' # (do not use Optitrack)
+    elif LOCATE_CAMERA_FLAG == 'onTheHolder' and (ROBOT_END_EFFECTOR == 'pump' or ROBOT_END_EFFECTOR == 'pump_with_extention'): # ar/opti/onTheHolder
+        tf_child_frame = '/panda_pump' # (do not use Optitrack)
+
     while_loop_time = 0
+    while_loop_warning_print = 0
     while not rospy.is_shutdown():
         while_loop_time =  while_loop_time + 1
-        # if while_loop_time > 50:
-        #     print("WARNING: ")
+        if while_loop_time > 1000:
+            if while_loop_warning_print == 0:
+                print("WARNING: ")
+                while_loop_warning_print = while_loop_warning_print + 1
         if gazebo_flag == True:
-            realsense_tf = '/realsense_camera'
+            tf_child_frame = '/realsense_camera'
         try:
-            (trans_camera, rot_camera) = _tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
+            (trans_camera, rot_camera) = _tf_listener.lookupTransform('/panda_link0', tf_child_frame, rospy.Time(0))
             break
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
     
-    if realsense_tf == '/panda_pump':
-        if not isinstance(_pump_T_camRGB_pose_44, np.ndarray):
-            while True:
-                print("Error! In launch_camera.py file!")
-        rob_T_pump_pos = trans_camera
-        rob_T_pump_ori = rot_camera
+    if tf_child_frame == '/panda_pump':
+        rob_T_pumpRVIZ_pos = trans_camera
+        rob_T_pumpRVIZ_ori = rot_camera
         # rob_T_pump_ang = p.getEulerFromQuaternion(rob_T_pump_ori)
         
         # print("rob_T_pump_pos:", rob_T_pump_pos)
         # print("rob_T_pump_ori:", rob_T_pump_ori)
         # print("rob_T_pump_ang:", rob_T_pump_ang)
         
-        rob_T_pump_pose_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_pump_ori)).reshape(3, 3)
-        rob_T_pump_pose_3_4 = np.c_[rob_T_pump_pose_3_3, rob_T_pump_pos]  # Add position to create 3x4 matrix
-        rob_T_pump_pose_4_4 = np.r_[rob_T_pump_pose_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
-        diff_bt_ROSModel_and_Model = np.array([[-1, 0, 0, 0],
-                                               [ 0, 0,-1, 0],
-                                               [ 0,-1, 0, 0],
-                                               [ 0, 0, 0, 1]])
-        rob_T_pump_pose_4_4 = np.dot(rob_T_pump_pose_4_4, diff_bt_ROSModel_and_Model)
-        rob_T_camRGB_tf_4_4 = np.dot(rob_T_pump_pose_4_4, _pump_T_camRGB_pose_44)
-        pw_T_camRGB_tf_4_4 = np.dot(_pw_T_rob_sim_4_4, rob_T_camRGB_tf_4_4)
-        pw_T_camRGB_tf_pos = [pw_T_camRGB_tf_4_4[0][3], pw_T_camRGB_tf_4_4[1][3], pw_T_camRGB_tf_4_4[2][3]]
+        rob_T_pumpRVIZ_pose_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_pumpRVIZ_ori)).reshape(3, 3)
+        rob_T_pumpRVIZ_pose_3_4 = np.c_[rob_T_pumpRVIZ_pose_3_3, rob_T_pumpRVIZ_pos]  # Add position to create 3x4 matrix
+        rob_T_pumpRVIZ_pose_4_4 = np.r_[rob_T_pumpRVIZ_pose_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+        
+        rob_T_camRGB_pose_4_4 = np.dot(rob_T_pumpRVIZ_pose_4_4, _pumpRVIZ_T_camRGB_pose_4_4)
+        pw_T_camRGB_tf_4_4 = np.dot(_pw_T_rob_sim_4_4, rob_T_camRGB_pose_4_4)
     else:
         rob_T_camRGB_tf_pos = list(trans_camera)
         rob_T_camRGB_tf_ori = list(rot_camera)
@@ -704,11 +733,9 @@ def _get_camera_pose():
         rob_T_camRGB_tf_3_4 = np.c_[rob_T_camRGB_tf_3_3, rob_T_camRGB_tf_pos]  # Add position to create 3x4 matrix
         rob_T_camRGB_tf_4_4 = np.r_[rob_T_camRGB_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
         pw_T_camRGB_tf_4_4 = np.dot(_pw_T_rob_sim_4_4, rob_T_camRGB_tf_4_4)
-        pw_T_camRGB_tf_pos = [pw_T_camRGB_tf_4_4[0][3], pw_T_camRGB_tf_4_4[1][3], pw_T_camRGB_tf_4_4[2][3]]
-    
-    pw_T_camD_pose_44 = np.dot(pw_T_camRGB_tf_4_4, _camRGB_T_camD_pose_4_4)
-    
-    return pw_T_camRGB_tf_4_4, pw_T_camD_pose_44
+            
+    pw_T_camD_pose_4_4 = np.dot(pw_T_camRGB_tf_4_4, _camRGB_T_camD_pose_4_4)
+    return pw_T_camRGB_tf_4_4, pw_T_camD_pose_4_4
 
 # get camera intrinsic params
 def _get_camera_intrinsic_params(camera_info_topic_name):
@@ -1479,18 +1506,19 @@ def normal_distribution(x, mean, sigma):
 
 # Incremental Pose Generator Flag 
 def _update_from_real_world_incrementally():
+    pw_T_camRGB_pose_4_4, pw_T_camD_pose_4_4 = _get_camera_pose_from_tf()
     while True:
         answer = 'empty'
         pw_T_objs_obse_list_for_init = [[[0, 0, 0], [0, 0, 0, 1]] for _ in range(OBJECT_NUM)]
-        objects_id_list, pw_T_camRGB_pose_44 = _set_generator_sim_world()
+        objects_id_list = _set_generator_sim_world()
         for index, object_name in enumerate(OBJECT_NAME_LIST):
             input(f'Fixing the pose for {object_name}. Press ENTER to view.')
             camRGB_T_object_pos, camRGB_T_object_ori = _get_obj_pose_in_camRGB_frame_from_name(object_name) # x, y, z, w
             camRGB_T_object_pose = _get_matrix_from_pos_ori(camRGB_T_object_pos, camRGB_T_object_ori)
             
-            pw_T_obj_obse_pose_44 = np.dot(pw_T_camRGB_pose_44, camRGB_T_object_pose)
-            pw_T_obj_obse_pos = _get_position_from_matrix44(pw_T_obj_obse_pose_44)
-            pw_T_obj_obse_ori = _get_quaternion_from_matrix(pw_T_obj_obse_pose_44) # x, y, z, w
+            pw_T_obj_obse_pose_4_4 = np.dot(pw_T_camRGB_pose_4_4, camRGB_T_object_pose)
+            pw_T_obj_obse_pos = _get_position_from_matrix44(pw_T_obj_obse_pose_4_4)
+            pw_T_obj_obse_ori = _get_quaternion_from_matrix(pw_T_obj_obse_pose_4_4) # x, y, z, w
             _generator_env.resetBasePositionAndOrientation(objects_id_list[index], pw_T_obj_obse_pos, pw_T_obj_obse_ori)
             
             for i in range(240):
@@ -1506,7 +1534,7 @@ def _update_from_real_world_incrementally():
             break
         else:
             _generator_env.resetSimulation()
-    return pw_T_objs_obse_list_for_init, pw_T_camRGB_pose_44
+    return pw_T_objs_obse_list_for_init
 
 
 
@@ -1761,6 +1789,8 @@ if __name__ == '__main__':
     RESTITUTION_MEAN = 0.9
     RESTITUTION_SIGMA = 0.2
 
+    # ================================================================================================================================================================
+    # fix things
     # relationship between RGB len and depth len
     camRGB_T_camD_pos_13 = [0.015, 0.0, 0.0]
     camRGB_T_camD_ori_14 = [0.0, 0.0, -0.008, 1] # x, y, z, w
@@ -1770,8 +1800,16 @@ if __name__ == '__main__':
     camRGB_T_camD_pose_3_3 = np.array(p.getMatrixFromQuaternion(camRGB_T_camD_ori_14)).reshape(3, 3)
     camRGB_T_camD_pose_3_4 = np.c_[camRGB_T_camD_pose_3_3, camRGB_T_camD_pos_13]  # Add position to create 3x4 matrix
     _camRGB_T_camD_pose_4_4 = np.r_[camRGB_T_camD_pose_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
-
-
+    
+    if SIM_REAL_WORLD_FLAG == True:
+        _table_pos_1 = [0.46, -0.01, 0.702] # 0.710
+    else:
+        _table_pos_1 = [0, 0, 0]
+    _table_ori_1 = [0, 0, 0, 1]
+    _pw_T_rob_pos = [0.0, 0.0, 0.02+_table_pos_1[2]+0.008] # robot pose
+    _pw_T_rob_ori = [0, 0, 0, 1]
+    _pw_T_rob_pose = _get_matrix_from_pos_ori(_pw_T_rob_pos, _pw_T_rob_ori)
+    # ================================================================================================================================================================
     PBPF_time_cosuming_list = []
     
     # multi-objects/robot list
@@ -1787,79 +1825,62 @@ if __name__ == '__main__':
     # build an object of class "Ros_Listener"
     ROS_LISTENER = Ros_Listener()
     _tf_listener = tf.TransformListener()
-    if INCREMENTAL_POSE_GENERATOR_FLAG == True and TASK_FLAG == 'basket_retrieve' and LOCATE_CAMERA_FLAG == 'onTheHolder':
-        print("Need to add camera pose into tf tree!")
-        opti_T_robot_pos = ROS_LISTENER.listen_2_robot_pose()[0]
-        opti_T_robot_ori = ROS_LISTENER.listen_2_robot_pose()[1]
-        opti_T_basket_pos = ROS_LISTENER.listen_2_basket_pose()[0]
-        opti_T_basket_ori = ROS_LISTENER.listen_2_basket_pose()[1]
-        rob_T_basket_pose = compute_transformation_matrix(opti_T_robot_pos, opti_T_robot_ori, opti_T_basket_pos, opti_T_basket_ori)
-        rob_T_basket_pos = _get_position_from_matrix44(rob_T_basket_pose)
-        rob_T_basket_ori = _get_quaternion_from_matrix(rob_T_basket_pose)
-        if SIM_REAL_WORLD_FLAG == True:
-            _table_pos_1 = [0.46, -0.01, 0.702] # 0.710
-        else:
-            _table_pos_1 = [0, 0, 0]
-        _table_ori_1 = [0, 0, 0, 1]
-        _pw_T_rob_pos = [0.0, 0.0, 0.02+_table_pos_1[2]+0.008] # robot pose
-        _pw_T_rob_ori = [0, 0, 0, 1]
-        _pw_T_rob_pose = _get_matrix_from_pos_ori(_pw_T_rob_pos, _pw_T_rob_ori)
-        _pw_T_basket_pose = np.dot(_pw_T_rob_pose, rob_T_basket_pose)
-        rot_fix_matrix = [[ 0,-1, 0, 0],
-                          [ 1, 0, 0, 0],
-                          [ 0, 0, 1, 0],
-                          [ 0, 0, 0, 1]]
-        _pw_T_basket_pose = np.dot(_pw_T_basket_pose, rot_fix_matrix)
-        _pw_T_basket_pos = _get_position_from_matrix44(_pw_T_basket_pose)
-        _pw_T_basket_ori = _get_quaternion_from_matrix(_pw_T_basket_pose)
-        
-        camHolderCenter_T_camHolderSq_pos = [0.0, -0.043855, -0.072988]
-        camHolderCenter_T_camHolderSq_ori = [0.0, 0.0, 0.0, 1.0]
-        camHolderCenter_T_camHolderSq_pose_44 = _get_matrix_from_pos_ori(camHolderCenter_T_camHolderSq_pos, camHolderCenter_T_camHolderSq_ori)
-        camHolderSq_T_camRGB_pos = [0.0325, -0.0125, -0.0065]
-        camHolderSq_T_camRGB_pos = [0.0325, -0.0125, -0.]
-        camHolderSq_T_camRGB_ori_44 = np.array([[-1, 0, 0, 0],
-                                                [ 0, 0,-1, 0],
-                                                [ 0,-1, 0, 0],
-                                                [ 0, 0, 0, 1]])
-        camHolderSq_T_camRGB_ori = _get_quaternion_from_matrix(camHolderSq_T_camRGB_ori_44)
-        camHolderSq_T_camRGB_pose_44 = _get_matrix_from_pos_ori(camHolderSq_T_camRGB_pos, camHolderSq_T_camRGB_ori)
-        _camHolderCenter_T_camRGB_pose_44 = np.dot(camHolderCenter_T_camHolderSq_pose_44, camHolderSq_T_camRGB_pose_44)
-        _pump_T_camHolder_pose_44 = 0
-        
-        _generator_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
-        pw_T_objs_obse_list_for_init, pw_T_camRGB_pose_44 = _update_from_real_world_incrementally()
-        _generator_env.disconnect()
-        
-        _pump_T_camHolder_pose_44
-        _pump_T_camRGB_pose_44 = np.dot(_pump_T_camHolder_pose_44, _camHolderCenter_T_camRGB_pose_44)
-        
-        # _pump_T_camHolder_pos = _get_position_from_matrix44(_pump_T_camHolder_pose_44)
-        # _pump_T_camHolder_ori = _get_quaternion_from_matrix(_pump_T_camHolder_pose_44)
-        # _pump_T_camHolder_ang = p.getEulerFromQuaternion(_pump_T_camHolder_ori)
-
+    # create scene (Init)
     create_scene = Create_Scene(OBJECT_NUM, ROBOT_NUM)
-    if INCREMENTAL_POSE_GENERATOR_FLAG == True and TASK_FLAG == 'basket_retrieve' and LOCATE_CAMERA_FLAG == 'onTheHolder':
-        create_scene.passing_objects_pose(pw_T_objs_obse_list_for_init)
-    
-    
+    # launch camera infor (Init)
     _launch_camera = LaunchCamera(WIDTH_DEPTH, HEIGHT_DEPTH, FOV_V_DEPTH)
-    
+    # get robot pose in the pybullet world
+    # We do this at the beginning because robot is the main one in the pybullet world because it is fixed!
     pw_T_rob_sim_pose_list_alg = create_scene.initialize_robot()
     print("Finish initializing robot")
     # Here, because we are using only one robot so we use [0]
     _pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
-    # get cameraDepth pose
-    if LOCATE_CAMERA_FLAG == 'onTheHolder':
-        _pw_T_camD_tf_4_4 = _launch_camera.getCameraInPybulletWorldPose44(_tf_listener, _pw_T_rob_sim_4_4, _pump_T_camRGB_pose_44)
+
+    # get pump_T_camHolder_pose
+    if LOCATE_CAMERA_FLAG == 'onTheHolder' and (ROBOT_END_EFFECTOR == 'pump' or ROBOT_END_EFFECTOR == 'pump_with_extention'):
+        rob_T_camRGB_pos = [0.536, -0.061, 0.254]
+        rob_T_camRGB_ori = [0.610, 0.636, -0.278, -0.382]
+        rob_T_camRGB_pose_4_4 = _get_matrix_from_pos_ori(rob_T_camRGB_pos, rob_T_camRGB_ori)
+        
+        rob_T_pumpRVIZ_pos = [0.549, -0.047, 0.354]
+        rob_T_pumpRVIZ_ori = [0.841, 0.014, -0.537, -0.064]
+        rob_T_pumpRVIZ_pose_4_4 = _get_matrix_from_pos_ori(rob_T_pumpRVIZ_pos, rob_T_pumpRVIZ_ori)
+        _pumpRVIZ_T_camRGB_pose_4_4 = compute_transformation_matrix(rob_T_pumpRVIZ_pos, rob_T_pumpRVIZ_ori, rob_T_camRGB_pos, rob_T_camRGB_ori)
+        pumpModel_T_pumpRVIZ = np.array([[-1, 0, 0, 0],
+                                         [ 0, 0,-1, 0],
+                                         [ 0,-1, 0, 0],
+                                         [ 0, 0, 0, 1]])
+        _pumpModel_T_camRGB_pose_4_4 = np.dot(pumpModel_T_pumpRVIZ, _pumpRVIZ_T_camRGB_pose_4_4)
+        _pumpModel_T_camD_pose_4_4 = np.dot(_pumpModel_T_camRGB_pose_4_4, _camRGB_T_camD_pose_4_4)
+        
+    # ================================================================================================================================================
+    if INCREMENTAL_POSE_GENERATOR_FLAG == True:
+        _generator_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
+        pw_T_objs_obse_list_for_init = _update_from_real_world_incrementally()
+        _generator_env.disconnect()
+    # ================================================================================================================================================
     else:
-        _pw_T_camD_tf_4_4 = _launch_camera.getCameraInPybulletWorldPose44(_tf_listener, _pw_T_rob_sim_4_4)
+        print("Normal PBPF-RGBD alg!")
+        
+    if INCREMENTAL_POSE_GENERATOR_FLAG == True:
+        create_scene.passing_objects_pose(pw_T_objs_obse_list_for_init)
+    
+    # get cameraDepth pose
+    if LOCATE_CAMERA_FLAG == 'onTheHolder':        
+        _pw_T_camRGB_tf_4_4, _pw_T_camD_tf_4_4 = _get_camera_pose_from_tf()
+    else:
+        _pw_T_camRGB_tf_4_4, _pw_T_camD_tf_4_4 = _launch_camera.getCameraInPybulletWorldPose44(_tf_listener, _pw_T_rob_sim_4_4)
 
     print("============================================================================")
+    print("Camera RGB   len pose in Pybullet world (from tf):")
+    print(_pw_T_camRGB_tf_4_4)
     print("Camera depth len pose in Pybullet world (from tf):")
     print(_pw_T_camD_tf_4_4)
     print("============================================================================")
-    pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object()
+    if LOCATE_CAMERA_FLAG == 'onTheHolder' and (ROBOT_END_EFFECTOR == 'pump' or ROBOT_END_EFFECTOR == 'pump_with_extention'):
+        pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(_pumpRVIZ_T_camRGB_pose_4_4, _pumpModel_T_camRGB_pose_4_4, _pumpModel_T_camD_pose_4_4)
+    else:
+        pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object()
     print("Object pose only for initializaiton:")
     for index in range(len(pw_T_obj_obse_obj_list_alg)):
         obj_name = pw_T_obj_obse_obj_list_alg[index].obj_name
@@ -1870,17 +1891,6 @@ if __name__ == '__main__':
     # print(trans_ob_list, rot_ob_list)
     print("Finish initializing scene")
     print("============================================================================")
-
-    if INCREMENTAL_POSE_GENERATOR_FLAG == True and TASK_FLAG == 'basket_retrieve' and LOCATE_CAMERA_FLAG == 'onTheHolder':
-        camRGB_T_camD_pos = [0.015, 0.0, 0.0]
-        camRGB_T_camD_ori = [0.0, 0.0, -0.008, 1] # x, y, z, w
-        camRGB_T_camD_3_3 = np.array(p.getMatrixFromQuaternion(camRGB_T_camD_ori)).reshape(3, 3)
-        camRGB_T_camD_3_4 = np.c_[camRGB_T_camD_3_3, camRGB_T_camD_pos]  # Add position to create 3x4 matrix
-        _camRGB_T_camD_4_4 = np.r_[camRGB_T_camD_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
-        _pw_T_camD_tf_4_4 = np.dot(pw_T_camRGB_pose_44, _camRGB_T_camD_4_4)
-        print("============================================================================")
-        print("Camera depth len pose in Pybullet world (Camera is on the robot; from PyBullet):")
-        print(_pw_T_camD_tf_4_4)
     
     # ============================================================================
     # we are not using this for now
@@ -1936,87 +1946,23 @@ if __name__ == '__main__':
         _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
 
     # ============================================================================
-
+    
     # get estimated object
     estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
 
     # publish particles/estimated object
     # first publish
     _publish_par_pose_info(_particle_cloud_pub)
+    
     if RECORD_RESULTS_FLAG == True:
         _record_t_PBPF = time.time()
         _record_time_list.append(_record_t_PBPF - _record_t_begin)
+    
     _publish_esti_pose_info(estimated_object_set)
-
+    
     # convert [obj1, obj2, ...] to list:[[[x,y,z],[x,y,z,w]], [[x,y,z],[x,y,z,w]], ...]
     # estimated_object_set_old = copy.deepcopy(estimated_object_set)
-    # estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
-    
-    # ===========================================================================================================================================
-    print("Begin to locate the pose of the camera")
-    # if VERSION == "ray" or VERSION == "multiray":
-    if OPTITRACK_FLAG == True and LOCATE_CAMERA_FLAG == "opti": # ar/opti
-        realsense_tf = '/RealSense' # (use Optitrack)
-    elif LOCATE_CAMERA_FLAG == "ar":
-        realsense_tf = '/ar_tracking_camera_frame' # (do not use Optitrack)
-    elif LOCATE_CAMERA_FLAG == "onTheHolder":
-        realsense_tf = '/panda_pump' # (do not use Optitrack)
-    
-    while_loop_time = 0
-    print("Locate Camera Method:", realsense_tf)
-    while not rospy.is_shutdown():
-        while_loop_time =  while_loop_time + 1
-        # if while_loop_time > 50:
-        #     print("WARNING: ")
-        if gazebo_flag == True:
-            realsense_tf = '/realsense_camera'
-        try:
-            (trans_camera, rot_camera) = _tf_listener.lookupTransform('/panda_link0', realsense_tf, rospy.Time(0))
-            break
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            continue
-    
-    if realsense_tf == '/panda_pump':
-        if not isinstance(_pump_T_camRGB_pose_44, np.ndarray):
-            while True:
-                print("Error! In launch_camera.py file!")
-        rob_T_pump_pos = trans_camera
-        rob_T_pump_ori = rot_camera
-        # rob_T_pump_ang = p.getEulerFromQuaternion(rob_T_pump_ori)
-        
-        # print("rob_T_pump_pos:", rob_T_pump_pos)
-        # print("rob_T_pump_ori:", rob_T_pump_ori)
-        # print("rob_T_pump_ang:", rob_T_pump_ang)
-        
-        rob_T_pump_pose_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_pump_ori)).reshape(3, 3)
-        rob_T_pump_pose_3_4 = np.c_[rob_T_pump_pose_3_3, rob_T_pump_pos]  # Add position to create 3x4 matrix
-        rob_T_pump_pose_4_4 = np.r_[rob_T_pump_pose_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
-        diff_bt_ROSModel_and_Model = np.array([[-1, 0, 0, 0],
-                                               [ 0, 0,-1, 0],
-                                               [ 0,-1, 0, 0],
-                                               [ 0, 0, 0, 1]])
-        rob_T_pump_pose_4_4 = np.dot(rob_T_pump_pose_4_4, diff_bt_ROSModel_and_Model)
-        rob_T_camRGB_tf_4_4 = np.dot(rob_T_pump_pose_4_4, _pump_T_camRGB_pose_44)
-        pw_T_camRGB_tf_4_4 = np.dot(_pw_T_rob_sim_4_4, rob_T_camRGB_tf_4_4)
-        pw_T_camRGB_tf_pos = [pw_T_camRGB_tf_4_4[0][3], pw_T_camRGB_tf_4_4[1][3], pw_T_camRGB_tf_4_4[2][3]]
-    else:
-        rob_T_camRGB_tf_pos = list(trans_camera)
-        rob_T_camRGB_tf_ori = list(rot_camera)
-        rob_T_camRGB_tf_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_camRGB_tf_ori)).reshape(3, 3)
-        rob_T_camRGB_tf_3_4 = np.c_[rob_T_camRGB_tf_3_3, rob_T_camRGB_tf_pos]  # Add position to create 3x4 matrix
-        rob_T_camRGB_tf_4_4 = np.r_[rob_T_camRGB_tf_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
-        pw_T_camRGB_tf_4_4 = np.dot(_pw_T_rob_sim_4_4, rob_T_camRGB_tf_4_4)
-        pw_T_camRGB_tf_pos = [pw_T_camRGB_tf_4_4[0][3], pw_T_camRGB_tf_4_4[1][3], pw_T_camRGB_tf_4_4[2][3]]
-
-    print("==============================================")
-    print("Camera RGB len pose in Robot world:")
-    print(rob_T_camRGB_tf_4_4)
-    print("Camera RGB len pose in Pybullet world:")
-    print(pw_T_camRGB_tf_4_4)
-    print("==============================================")        
-    print("Finish getting pose of camera!")
-    
-    # ===========================================================================================================================================      
+    # estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)    
             
     # get pose of the end-effector of the robot arm from joints of robot arm 
     p_sim, sim_rob_id = new_sim_world_for_updating_condition()
@@ -2064,12 +2010,12 @@ if __name__ == '__main__':
         #         print(obj_pixel_num, total_elements)
         #         print(single_obj_num_zeros)
         
-        # # show vk rendered depth image
-        # fig, axs = plt.subplots(2, PARTICLE_NUM)
-        # for par_index in range(PARTICLE_NUM):
-        #     axs[0, par_index].imshow(vk_rendered_depth_image_array_list[par_index], cmap="gray")
-        #     axs[1, par_index].imshow(vk_rendered__mask_image_array_list[par_index])
-        # plt.show()
+        # show vk rendered depth image
+        fig, axs = plt.subplots(2, PARTICLE_NUM)
+        for par_index in range(PARTICLE_NUM):
+            axs[0, par_index].imshow(vk_rendered_depth_image_array_list[par_index], cmap="gray")
+            axs[1, par_index].imshow(vk_rendered__mask_image_array_list[par_index])
+        plt.show()
     # ===========================================================================================================================================
     
     print("Welcome to Our Approach ! RUNNING MODEL: ", RUNNING_MODEL)
@@ -2268,19 +2214,20 @@ if __name__ == '__main__':
             pw_T_obj_GT_pose = []
         
         # get camera pose
-        if TASK_FLAG == 'basket_retrieve' and LOCATE_CAMERA_FLAG == 'onTheHolder':
-            pw_T_camRGB_pose_44_each_loop, pw_T_camD_pose_44_each_loop = _get_camera_pose()
+        # if LOCATE_CAMERA_FLAG == 'onTheHolder':
+        if CAMERA_MOVE == True:
+            pw_T_camRGB_pose_4_4_each_loop, pw_T_camD_pose_4_4_each_loop = _get_camera_pose_from_tf()
                 
         for obj_index in range(OBJECT_NUM):
             object_name = OBJECT_NAME_LIST[obj_index]
             # get objects poses through
-            if TASK_FLAG == 'basket_retrieve' and LOCATE_CAMERA_FLAG == 'onTheHolder':
+            if LOCATE_CAMERA_FLAG == 'onTheHolder':
                 camRGB_T_object_pos, camRGB_T_object_ori = _get_obj_pose_in_camRGB_frame_from_name(object_name) # x, y, z, w
                 camRGB_T_object_pose = _get_matrix_from_pos_ori(camRGB_T_object_pos, camRGB_T_object_ori)
                 
-                pw_T_obj_obse_pose_44 = np.dot(pw_T_camRGB_pose_44_each_loop, camRGB_T_object_pose)
-                pw_T_obj_obse_pos = _get_position_from_matrix44(pw_T_obj_obse_pose_44)
-                pw_T_obj_obse_ori = _get_quaternion_from_matrix(pw_T_obj_obse_pose_44) # x, y, z, w
+                pw_T_obj_obse_pose_4_4 = np.dot(pw_T_camRGB_pose_4_4_each_loop, camRGB_T_object_pose)
+                pw_T_obj_obse_pos = _get_position_from_matrix44(pw_T_obj_obse_pose_4_4)
+                pw_T_obj_obse_ori = _get_quaternion_from_matrix(pw_T_obj_obse_pose_4_4) # x, y, z, w
             
             else:
                 use_gazebo = ""

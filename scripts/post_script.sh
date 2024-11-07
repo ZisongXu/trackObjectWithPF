@@ -22,6 +22,7 @@ apt-get install -y --force-yes \
     apt-utils \
     python3-pip \
     mesa-utils \
+    libspnav-dev \
     software-properties-common \
     pciutils
 

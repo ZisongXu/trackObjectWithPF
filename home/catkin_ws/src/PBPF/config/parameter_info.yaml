@@ -19,6 +19,7 @@ gazebo_flag: false
 height: 480
 ignore_edge_pixels: false
 locate_camera_flag: onTheHolder
+camera_move: true
 multiprocessing_flag: false
 nearVal: 0.03
 object_name_list:
@@ -39,7 +40,7 @@ otob_name_list:
 - cracker_obstacle
 - fish_can
 panda_robot_link_number: 11
-particle_num: 50
+particle_num: 3
 pb_render_flag: false
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0

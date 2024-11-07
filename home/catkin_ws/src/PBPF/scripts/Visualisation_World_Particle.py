@@ -35,6 +35,7 @@ import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 import multiprocessing
+from scipy.spatial.transform import Rotation as R
 #from sksurgerycore.algorithms.averagequaternions import average_quaternions
 from quaternion_averaging import weightedAverageQuaternions
 from Particle import Particle
@@ -67,6 +68,11 @@ class Visualisation_World():
         self.object_name_list = self.parameter_info['object_name_list']
         self.SIM_REAL_WORLD_FLAG = self.parameter_info['sim_real_world_flag']
         
+        time.sleep(1)
+        
+        # get the pose of the robot
+        self.opti_T_robot_pos = self.ros_listener.listen_2_robot_pose()[0]
+        self.opti_T_robot_ori = self.ros_listener.listen_2_robot_pose()[1]
         
         self.test = False
         
@@ -96,8 +102,27 @@ class Visualisation_World():
                                                             pw_T_pringles_pos,
                                                             pw_T_pringles_ori,
                                                             useFixedBase=1)
+        elif self.task_flag == "basket_retrieve":
+            opti_T_basket_pos = self.ros_listener.listen_2_basket_pose()[0]
+            opti_T_basket_ori = self.ros_listener.listen_2_basket_pose()[1]
+            rob_T_basket_pose = compute_transformation_matrix(self.opti_T_robot_pos, self.opti_T_robot_ori, opti_T_basket_pos, opti_T_basket_ori)
 
-        if self.task_flag == "5":
+            table_pos_1 = [0.46, -0.01, 0.702] # 0.710
+            pw_T_rob_pos = [0.0, 0.0, 0.02+table_pos_1[2]+0.008] # robot pose
+            pw_T_rob_ori = [0, 0, 0, 1]
+            pw_T_rob_pose = _get_matrix_from_pos_ori(pw_T_rob_pos, pw_T_rob_ori)
+            pw_T_basket_pose = np.dot(pw_T_rob_pose, rob_T_basket_pose)
+            rot_fix_matrix = [[ 0,-1, 0, 0],
+                              [ 1, 0, 0, 0],
+                              [ 0, 0, 1, 0],
+                              [ 0, 0, 0, 1]]
+            pw_T_basket_pose = np.dot(pw_T_basket_pose, rot_fix_matrix)
+            pw_T_basket_pos = _get_position_from_matrix44(pw_T_basket_pose)
+            pw_T_basket_ori = _get_quaternion_from_matrix(pw_T_basket_pose)
+            self.basket_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/basket.urdf"),
+                                            pw_T_basket_pos, pw_T_basket_ori, useFixedBase=1)
+            
+        elif self.task_flag == "5":
             pw_T_she_pos = [0.75889274, -0.24494845, 0.33818097+0.02]
             pw_T_she_ori = [0, 0, 0, 1]
             shelves_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/shelves.urdf"),
@@ -111,12 +136,24 @@ class Visualisation_World():
             # rob_name = pw_T_rob_sim_pose_list[obj_index].obj_name
             rob_pos = pw_T_rob_sim_pose_list[rob_index].pos
             rob_ori = pw_T_rob_sim_pose_list[rob_index].ori
-            real_robot_id = p_visualisation.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
-                                                     rob_pos,
-                                                     rob_ori,
-                                                     useFixedBase=1)
+            
+            if ROBOT_END_EFFECTOR == 'pump_with_extention':
+                real_robot_id = p_visualisation.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda_pump_with_extention.urdf"), 
+                                                    rob_pos, rob_ori, useFixedBase=1)
+            elif ROBOT_END_EFFECTOR == 'pump':
+                real_robot_id = p_visualisation.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda_pump.urdf"), 
+                                                    rob_pos, rob_ori, useFixedBase=1)
+            elif ROBOT_END_EFFECTOR == 'gripper':
+                real_robot_id = p_visualisation.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"), 
+                                                    rob_pos, rob_ori, useFixedBase=1)
+         
+            # real_robot_id = p_visualisation.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"),
+            #                                          rob_pos,
+            #                                          rob_ori,
+            #                                          useFixedBase=1)
+            
             joint_pos = self.ros_listener.current_joint_values
-            self.set_real_robot_JointPosition(p_visualisation, real_robot_id, joint_pos)
+            self._sim_rob_movement(p_visualisation, real_robot_id, joint_pos)
             pw_T_rob_sim_pose_list[rob_index].obj_id = real_robot_id
             pw_T_rob_sim_pose_list[rob_index].joints = joint_pos
         self.pw_T_rob_sim_pose_list = pw_T_rob_sim_pose_list
@@ -206,21 +243,37 @@ class Visualisation_World():
             p_visualisation.stepSimulation()
             
         return trans_ob_list, rot_ob_list, trans_gt, rot_gt
-    
-    def set_real_robot_JointPosition(self, pybullet_simulation_env, robot_id, position):
-        num_joints = 9
-        for joint_index in range(num_joints):
-            if joint_index == 7 or joint_index == 8:
-                pybullet_simulation_env.setJointMotorControl2(robot_id,
-                                                              joint_index+2,
-                                                              pybullet_simulation_env.POSITION_CONTROL,
-                                                              targetPosition=position[joint_index])
-            else:
-                pybullet_simulation_env.setJointMotorControl2(robot_id,
-                                                              joint_index,
-                                                              pybullet_simulation_env.POSITION_CONTROL,
-                                                              targetPosition=position[joint_index])
         
+    def _sim_rob_movement(self, p_sim, sim_rob_id, joint_states): # track_fk_world_rob_mv
+        # print("(Main file) The end effector of the robot is "+ROBOT_END_EFFECTOR)
+        if ROBOT_END_EFFECTOR == 'pump_with_extention':
+            # pump
+            num_joints = 7
+            for joint_index in range(num_joints):
+                if joint_index == 7 or joint_index == 8:
+                    p_sim.resetJointState(sim_rob_id,
+                                        joint_index+2,
+                                        targetValue=joint_states[joint_index])
+                else:
+                    p_sim.resetJointState(sim_rob_id,
+                                        joint_index,
+                                        targetValue=joint_states[joint_index])
+        elif ROBOT_END_EFFECTOR == 'pump':
+            print("Have not done!")
+        else:
+            # gripper
+            num_joints = 9
+            for joint_index in range(num_joints):
+                if joint_index == 7 or joint_index == 8:
+                    p_sim.resetJointState(sim_rob_id,
+                                        joint_index+2,
+                                        targetValue=joint_states[joint_index])
+                else:
+                    p_sim.resetJointState(sim_rob_id,
+                                        joint_index,
+                                        targetValue=joint_states[joint_index])
+    
+    
     def display_object_in_visual_model(self, pybullet_simulation_env, object_info_list):
         obj_pos = object_info_list.pos
         obj_ori = object_info_list.ori
@@ -341,8 +394,43 @@ class Visualisation_World():
         self.p_visualisation.resetBasePositionAndOrientation(esti_obj_id,
                                                              esti_obj_pos,
                                                              esti_obj_ori)
-        
-    
+
+
+def _get_position_from_matrix44(a_T_b_4_4):
+    x = a_T_b_4_4[0][3]
+    y = a_T_b_4_4[1][3]
+    z = a_T_b_4_4[2][3]
+    position = [x, y, z]
+    return position
+
+# get obj pose from name
+def _get_obj_pose_in_camRGB_frame_from_name(object_name):
+    # get object pose from DOPE
+    camRGB_T_object_pos = visual_world.ros_listener.listen_2_dope_object_pose(object_name)[0]
+    camRGB_T_object_ori = visual_world.ros_listener.listen_2_dope_object_pose(object_name)[1]
+    # (trans_ob, rot_ob) = _tf_listener.lookupTransform('/panda_link0', '/'+object_name, rospy.Time(0))
+    # rob_T_obj_obse_pos = list(trans_ob)
+    # rob_T_obj_obse_ori = list(rot_ob)
+    # rob_T_obj_obse_3_3 = np.array(p.getMatrixFromQuaternion(rob_T_obj_obse_ori)).reshape(3, 3)
+    # rob_T_obj_obse_3_4 = np.c_[rob_T_obj_obse_3_3, rob_T_obj_obse_pos]  # Add position to create 3x4 matrix
+    # rob_T_obj_obse_4_4 = np.r_[rob_T_obj_obse_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+    # pw_T_obj_obse = np.dot(_pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
+    # pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
+    # pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
+    return camRGB_T_object_pos, camRGB_T_object_ori
+
+# get quaternion from matrix
+def _get_quaternion_from_matrix(a_T_b_4_4):
+    rot_matrix = a_T_b_4_4[:3, :3]
+    rotation = R.from_matrix(rot_matrix)
+    quaternion = rotation.as_quat()
+    return quaternion
+  
+def _get_matrix_from_pos_ori(pos, ori):
+    matrix_3_3 = np.array(p.getMatrixFromQuaternion(ori)).reshape(3, 3)
+    matrix_3_4 = np.c_[matrix_3_3, pos]  # Add position to create 3x4 matrix
+    matrix_4_4 = np.r_[matrix_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+    return matrix_4_4
 
 # add position into transformation matrix
 def rotation_4_4_to_transformation_4_4(rotation_4_4, pos):
@@ -399,6 +487,9 @@ while reset_flag == True:
         display_obse_flag = True
         object_name_list = parameter_info['object_name_list']
         task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
+        LOCATE_CAMERA_FLAG = parameter_info['locate_camera_flag'] # 'ar', 'opti', 'onTheHolder'
+        ROBOT_END_EFFECTOR = parameter_info['robot_end_effector'] # 'gripper', 'pump', 'pump_with_extention'
+        CAMERA_MOVE = parameter_info['camera_move'] # true/false
         dope_flag = parameter_info['dope_flag']
 
         OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM = parameter_info['objs_are_not_touching_target_objs_num']
@@ -420,6 +511,47 @@ while reset_flag == True:
         par_obj_id = [[]*object_num for _ in range(particle_num)]
         esti_obj_id = [0] * object_num
         # input("stop")
+        
+        
+        # get pump_T_camHolder_pose
+        if LOCATE_CAMERA_FLAG == 'onTheHolder' and (ROBOT_END_EFFECTOR == 'pump_with_extention' or ROBOT_END_EFFECTOR == 'pump'):
+            _pump_T_camHolder_pose_44 = 0
+            useless_env1 = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT, GUI_SERVER
+            pw_T_rob_pos__ = [0, 0, 0]
+            pw_T_rob_ori__ = [0, 0, 0, 1]
+            if ROBOT_END_EFFECTOR == 'pump_with_extention':
+                useless_robot_id = useless_env1.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda_pump_with_extention.urdf"), pw_T_rob_pos__, pw_T_rob_ori__, useFixedBase=1)
+            elif ROBOT_END_EFFECTOR == 'pump':
+                useless_robot_id = useless_env1.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda_pump.urdf"), pw_T_rob_pos__, pw_T_rob_ori__, useFixedBase=1)
+            elif ROBOT_END_EFFECTOR == 'gripper':
+                useless_robot_id = useless_env1.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"), pw_T_rob_pos__, pw_T_rob_ori__, useFixedBase=1)
+            cameraHolder_info = useless_env1.getLinkState(useless_robot_id, 9, computeForwardKinematics=True)
+            pw_T_camHolder_info_pos = cameraHolder_info[4]
+            pw_T_camHolder_info_ori = cameraHolder_info[5]
+            pump_info = useless_env1.getLinkState(useless_robot_id, 8, computeForwardKinematics=True)
+            pw_T_pump_info_pos = pump_info[4]
+            pw_T_pump_info_ori = pump_info[5]
+            pw_T_pump_info_ang = p.getEulerFromQuaternion(pw_T_pump_info_ori)
+            _pump_T_camHolder_pose_44 = compute_transformation_matrix(pw_T_pump_info_pos, pw_T_pump_info_ori, pw_T_camHolder_info_pos, pw_T_camHolder_info_ori)
+            useless_env1.disconnect()
+            print("Destroy useless env ONE !!!!!!!!!!!")
+            
+            camHolderCenter_T_camHolderSq_pos = [0.0, -0.043855, -0.072988]
+            camHolderCenter_T_camHolderSq_ori = [0.0, 0.0, 0.0, 1.0]
+            camHolderCenter_T_camHolderSq_pose_44 = _get_matrix_from_pos_ori(camHolderCenter_T_camHolderSq_pos, camHolderCenter_T_camHolderSq_ori)
+            camHolderSq_T_camRGB_pos = [0.0325, -0.0125, -0.0065]
+            camHolderSq_T_camRGB_pos = [0.0325, -0.0125, -0.]
+            camHolderSq_T_camRGB_ori_44 = np.array([[-1, 0, 0, 0],
+                                                    [ 0, 0,-1, 0],
+                                                    [ 0,-1, 0, 0],
+                                                    [ 0, 0, 0, 1]])
+            camHolderSq_T_camRGB_ori = _get_quaternion_from_matrix(camHolderSq_T_camRGB_ori_44)
+            camHolderSq_T_camRGB_pose_44 = _get_matrix_from_pos_ori(camHolderSq_T_camRGB_pos, camHolderSq_T_camRGB_ori)
+            _camHolderCenter_T_camRGB_pose_44 = np.dot(camHolderCenter_T_camHolderSq_pose_44, camHolderSq_T_camRGB_pose_44)
+            _pump_T_camRGB_pose_44 = np.dot(_pump_T_camHolder_pose_44, _camHolderCenter_T_camRGB_pose_44)
+            
+       
+
         while not rospy.is_shutdown():
             
             if reset_flag == False:
@@ -432,7 +564,7 @@ while reset_flag == True:
             for rob_index in range(robot_num):
                 rob_id = pw_T_rob_sim_pose_list_param[rob_index].obj_id
                 pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_param[rob_index].trans_matrix
-                visual_world.set_real_robot_JointPosition(p_visual, rob_id, joint_states)
+                visual_world._sim_rob_movement(p_visual, rob_id, joint_states)
                 
             test = False 
             if test == False:
@@ -546,30 +678,63 @@ while reset_flag == True:
                         if dope_flag == True:
                             use_gazebo  = ""
                     obse_is_fresh = True
-                    try:
-                        # latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo)
-                        # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
-                        (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
-                        # (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
-                        # (trans_ob_cTo, rot_ob_cTo) = listener_tf.lookupTransform('/camera_gt', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
-                        # (trans_ob_pTc, rot_ob_pTc) = listener_tf.lookupTransform('/panda_link0', '/camera_gt', rospy.Time(0))
-                        # (trans_ob_cTo, rot_ob_cTo) = listener_tf.lookupTransform('/camera_gt', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                    
+            
+                    if LOCATE_CAMERA_FLAG == 'onTheHolder':
+                        try:
+                            (trans_camera, rot_camera) = listener_tf.lookupTransform('/panda_link0', '/panda_pump', rospy.Time(0))
+                            
+                            rob_T_pump_pos = trans_camera
+                            rob_T_pump_ori = rot_camera   
+                            
+                            
+                        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                            print("from PBPF")
+                            print("In Visualisation_World_Particle.py: can not find "+object_name_list[obj_index]+" tf (obse)")
                         
-                        trans_ob_list[obj_index] = trans_ob
-                        rot_ob_list[obj_index] = rot_ob
+                        rob_T_pump_pose_4_4 = _get_matrix_from_pos_ori(rob_T_pump_pos, rob_T_pump_ori)
+                        diff_bt_ROSModel_and_Model = np.array([[-1, 0, 0, 0],
+                                                               [ 0, 0,-1, 0],
+                                                               [ 0,-1, 0, 0],
+                                                               [ 0, 0, 0, 1]])         
+                        rob_T_pump_pose_4_4 = np.dot(rob_T_pump_pose_4_4, diff_bt_ROSModel_and_Model)
+                        rob_T_camRGB_pose_44 = np.dot(rob_T_pump_pose_4_4, _pump_T_camRGB_pose_44)
                         
-                        obse_is_fresh = True
-                            # print("obse is FRESH")
-                        # else:
-                            # obse has not been updating for a while
-                            # obse_is_fresh = False
-                            # print("obse is NOT fresh")
-                        # break
-                    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                        print("from PBPF")
-                        print("In Visualisation_World_Particle.py: can not find "+object_name_list[obj_index]+" tf (obse)")
-                    rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
-                    rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
+                        camRGB_T_object_pos, camRGB_T_object_ori = _get_obj_pose_in_camRGB_frame_from_name(object_name_list[obj_index])
+                        camRGB_T_object_pose = _get_matrix_from_pos_ori(camRGB_T_object_pos, camRGB_T_object_ori)
+                        
+                        rob_T_obj_obse_pose_44 = np.dot(rob_T_camRGB_pose_44, camRGB_T_object_pose)  
+                        rob_T_obj_obse_pos = _get_position_from_matrix44(rob_T_obj_obse_pose_44)
+                        rob_T_obj_obse_ori = _get_quaternion_from_matrix(rob_T_obj_obse_pose_44)   
+                        
+                    else:
+                        try:
+                            # latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo)
+                            # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
+                            (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                            # (trans_ob,rot_ob) = listener_tf.lookupTransform('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                            # (trans_ob_cTo, rot_ob_cTo) = listener_tf.lookupTransform('/camera_gt', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                            # (trans_ob_pTc, rot_ob_pTc) = listener_tf.lookupTransform('/panda_link0', '/camera_gt', rospy.Time(0))
+                            # (trans_ob_cTo, rot_ob_cTo) = listener_tf.lookupTransform('/camera_gt', '/'+object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+                            
+                            trans_ob_list[obj_index] = trans_ob
+                            rot_ob_list[obj_index] = rot_ob
+                            
+                            obse_is_fresh = True
+                                # print("obse is FRESH")
+                            # else:
+                                # obse has not been updating for a while
+                                # obse_is_fresh = False
+                                # print("obse is NOT fresh")
+                            # break
+                        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                            print("from PBPF")
+                            print("In Visualisation_World_Particle.py: can not find "+object_name_list[obj_index]+" tf (obse)")
+ 
+                            
+                        rob_T_obj_obse_pos = list(trans_ob_list[obj_index])
+                        rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
+                        
                     print(object_name_list[obj_index], ": ", rob_T_obj_obse_ori)
                     rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
                     rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)

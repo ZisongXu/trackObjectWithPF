@@ -4,7 +4,7 @@
      <color rgba="0 1 0.498 1"/>
    </material>
    <material name="coral">
-     <color rgba="1 0.498 0.3137 1"/>
+     <color rgba="1 0.498 0.3137 0.5"/>
    </material>
    <link name="Ketchup">
      <visual>
@@ -14,7 +14,7 @@
        </geometry>
        <!-- <material name="light_green"/> -->
        <material name="white">
-         <color rgba="1. 1. 1. 1."/>
+         <color rgba="1. 1. 1. 0.5"/>
        </material>
        <origin xyz="0 0 0" rpy="0 0 0"/>
      </visual>

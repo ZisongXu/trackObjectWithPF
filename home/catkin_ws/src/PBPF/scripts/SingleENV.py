@@ -74,13 +74,13 @@ class SingleENV(multiprocessing.Process):
         self.objects_list = ["None"] * self.object_num
         
         self.pf_update_interval_in_sim = self.pf_update_interval_in_real / self.sim_time_step
-        self.boss_sigma_obs_pos_init = 0.05 # original value: 16cm/10CM 
+        self.boss_sigma_obs_pos_init = 0.02 # original value: 16cm/10CM/5cm 
         # self.boss_sigma_obs_pos_init = 0.09 # original value: 16cm/10CM 
         self.boss_sigma_obs_x = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
-        self.boss_sigma_obs_z = 0.02
+        self.boss_sigma_obs_z = 0.01 # original value: 2cm
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 20 # original value: 0.0216773873 * 20
-        self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
+        self.boss_sigma_obs_ang_init = 0.01 * 10 # original value: 0.0216773873 * 20/10
         
         
         
@@ -127,7 +127,7 @@ class SingleENV(multiprocessing.Process):
 
         # Motion Model Noise
         self.MOTION_MODEL_POS_NOISE = 0.005 # original value = 0.005
-        self.MOTION_MODEL_ANG_NOISE = 0.1 # original value = 0.05/0.5 
+        self.MOTION_MODEL_ANG_NOISE = 0.2 # original value = 0.05/0.5/0.1
         self.mass_flag = False
         if self.mass_flag == True:
             self.MASS_MIN_VALUE = 0.02
@@ -391,6 +391,16 @@ class SingleENV(multiprocessing.Process):
                     return [('result', True)]
         return [('result', False)]
 
+    def isAnyParticleMoving(self):
+        for obj_index in range(self.object_num):
+            # get object ID
+            obj_id = self.particle_objects_id_collection[obj_index]
+            # get velocity
+            [obj_x_vel, obj_y_vel, obj_z_vel] = self.p_env.getBaseVelocity(obj_id)
+            if any([obj_x_vel >= 0.005, obj_y_vel >= 0.005, obj_z_vel >= 0.005]):
+                return [('result', True)]
+        return [('result', False)]
+
     def motion_model(self, joint_states, par_index):
         # change object parameters
         collision_detection_obj_id_ = []
@@ -426,12 +436,12 @@ class SingleENV(multiprocessing.Process):
                 normal_x, normal_y, normal_z, pb_quat = self.collision_check(collision_detection_obj_id_,
                                                                              obj_cur_pos, obj_cur_ori,
                                                                              obj_id, obj_index, obj_pose_3_1)
-            if obj_index == 0:
-                normal_x = normal_x - 0.000
-                normal_y = normal_y - 0.000
-            elif obj_index == 1:
-                normal_x = normal_x + 0.002
-                normal_y = normal_y - 0.000
+            # if obj_index == 0:
+            #     normal_x = normal_x - 0.000
+            #     normal_y = normal_y - 0.000
+            # elif obj_index == 1:
+            #     normal_x = normal_x + 0.002
+            #     normal_y = normal_y - 0.000
             # elif obj_index == 2:
             #     normal_x = normal_x - 0.000
 

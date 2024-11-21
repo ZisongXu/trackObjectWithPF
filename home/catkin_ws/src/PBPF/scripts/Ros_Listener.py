@@ -53,7 +53,6 @@ class Ros_Listener():
         
         rospy.Subscriber('/mocap/rigid_bodies/cracker_opti/pose', PoseStamped, self.object_pose_callback_cracker, queue_size=1)
         self.object_cracker_pose = PoseStamped()
-        
         rospy.Subscriber('/dope/pose_cracker', PoseStamped, self.dope_pose_cracker, queue_size=1)
         self.dope_cracker_pose = PoseStamped()
         
@@ -62,10 +61,11 @@ class Ros_Listener():
 
         rospy.Subscriber('/mocap/rigid_bodies/Ketchup_opti/pose', PoseStamped, self.object_pose_callback_Ketchup, queue_size=1)
         self.object_Ketchup_pose = PoseStamped()
+        rospy.Subscriber('/dope/pose_Ketchup', PoseStamped, self.dope_pose_Ketchup, queue_size=1)
+        self.dope_Ketchup_pose = PoseStamped()
 
         rospy.Subscriber('/mocap/rigid_bodies/Milk_opti/pose', PoseStamped, self.object_pose_callback_Milk, queue_size=1)
         self.object_Milk_pose = PoseStamped()
-        
         rospy.Subscriber('/dope/pose_Milk', PoseStamped, self.dope_pose_Milk, queue_size=1)
         self.dope_Milk_pose = PoseStamped()
 
@@ -77,6 +77,8 @@ class Ros_Listener():
 
         rospy.Subscriber('/mocap/rigid_bodies/Parmesan_opti/pose', PoseStamped, self.object_pose_callback_Parmesan, queue_size=1)
         self.object_Parmesan_pose = PoseStamped()
+        rospy.Subscriber('/dope/pose_Parmesan', PoseStamped, self.dope_pose_Parmesan, queue_size=1)
+        self.dope_Parmesan_pose = PoseStamped()
 
         rospy.Subscriber('/mocap/rigid_bodies/SaDressing_opti/pose', PoseStamped, self.object_pose_callback_SaladDressing, queue_size=1)
         self.object_SaladDressing_pose = PoseStamped()
@@ -206,8 +208,18 @@ class Ros_Listener():
             # print(self.dope_Milk_pose)
             # print("==============")
             return self.dope_Milk_pose
-        
-        
+        elif object_flag == "Parmesan":
+            # print("==============")
+            # print("Milk: In the Ros_Listener")
+            # print(self.dope_Parmesan_pose)
+            # print("==============")
+            return self.dope_Parmesan_pose
+        elif object_flag == "Ketchup":
+            # print("==============")
+            # print("Milk: In the Ros_Listener")
+            # print(self.dope_Ketchup_pose)
+            # print("==============")
+            return self.dope_Ketchup_pose
 
     def listen_2_object_pose(self, object_flag):
         # print("what you input is:", object_flag)
@@ -323,34 +335,6 @@ class Ros_Listener():
         w_ori = data.pose.orientation.w
         self.basket_ori = [x_ori,y_ori,z_ori,w_ori]
         self.basket_pose = [self.basket_pos, self.basket_ori]
-
-    def dope_pose_cracker(self, data):
-        #pos
-        x_pos = data.pose.position.x
-        y_pos = data.pose.position.y
-        z_pos = data.pose.position.z
-        self.object_pos = [x_pos, y_pos, z_pos]
-        #ori
-        x_ori = data.pose.orientation.x
-        y_ori = data.pose.orientation.y
-        z_ori = data.pose.orientation.z
-        w_ori = data.pose.orientation.w
-        self.object_ori = [x_ori, y_ori, z_ori, w_ori]
-        self.dope_cracker_pose = [self.object_pos, self.object_ori]
-
-    def dope_pose_Milk(self, data):
-        #pos
-        x_pos = data.pose.position.x
-        y_pos = data.pose.position.y
-        z_pos = data.pose.position.z
-        self.object_pos = [x_pos, y_pos, z_pos]
-        #ori
-        x_ori = data.pose.orientation.x
-        y_ori = data.pose.orientation.y
-        z_ori = data.pose.orientation.z
-        w_ori = data.pose.orientation.w
-        self.object_ori = [x_ori, y_ori, z_ori, w_ori]
-        self.dope_Milk_pose = [self.object_pos, self.object_ori]
                 
     def object_pose_callback_cracker(self, data):
         #pos
@@ -365,7 +349,20 @@ class Ros_Listener():
         w_ori = data.pose.orientation.w
         self.object_ori = [x_ori, y_ori, z_ori, w_ori]
         self.object_cracker_pose = [self.object_pos, self.object_ori]
-
+    def dope_pose_cracker(self, data):
+        #pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.object_pos = [x_pos, y_pos, z_pos]
+        #ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.object_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.dope_cracker_pose = [self.object_pos, self.object_ori]
+        
     def object_pose_callback_gelation(self, data):
         #pos
         x_pos = data.pose.position.x
@@ -407,6 +404,19 @@ class Ros_Listener():
         w_ori = data.pose.orientation.w
         self.object_ori = [x_ori, y_ori, z_ori, w_ori]
         self.object_Ketchup_pose = [self.object_pos, self.object_ori]
+    def dope_pose_Ketchup(self, data):
+        #pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.object_pos = [x_pos, y_pos, z_pos]
+        #ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.object_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.dope_Ketchup_pose = [self.object_pos, self.object_ori]    
 
     def object_pose_callback_Milk(self, data):
         #pos
@@ -421,7 +431,20 @@ class Ros_Listener():
         w_ori = data.pose.orientation.w
         self.object_ori = [x_ori, y_ori, z_ori, w_ori]
         self.object_Milk_pose = [self.object_pos, self.object_ori]
-    
+    def dope_pose_Milk(self, data):
+        #pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.object_pos = [x_pos, y_pos, z_pos]
+        #ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.object_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.dope_Milk_pose = [self.object_pos, self.object_ori]    
+        
     def object_pose_callback_Mustard(self, data):
         #pos
         x_pos = data.pose.position.x
@@ -463,7 +486,20 @@ class Ros_Listener():
         w_ori = data.pose.orientation.w
         self.object_ori = [x_ori, y_ori, z_ori, w_ori]
         self.object_Parmesan_pose = [self.object_pos, self.object_ori]
-
+    def dope_pose_Parmesan(self, data):
+        #pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.object_pos = [x_pos, y_pos, z_pos]
+        #ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.object_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.dope_Parmesan_pose = [self.object_pos, self.object_ori]    
+        
     def object_pose_callback_SaladDressing(self, data):
         #pos
         x_pos = data.pose.position.x

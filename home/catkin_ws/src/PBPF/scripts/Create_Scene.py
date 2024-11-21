@@ -125,7 +125,8 @@ class Create_Scene():
         quaternion = rotation.as_quat()
         return quaternion
 
-    def initialize_object(self, a=0, b=0, c=0):
+    def initialize_object(self, pumpRVIZ_T_camRGB_pose_4_4_=0, pumpModel_T_camRGB_pose_4_4_=0, pumpModel_T_camD_pose_4_4_=0, pw_T_objs_obse_list_for_init_=0, trans_ob_list=0, rot_ob_list=0):
+        pw_T_objs_obse_list_for_init = pw_T_objs_obse_list_for_init_
         # if self.gazebo_flag == True:
         #     time.sleep(0.5)
         #     for obj_index in range(self.target_obj_num):
@@ -166,67 +167,75 @@ class Create_Scene():
         elif self.LOCATE_CAMERA_FLAG == 'onTheHolder' and (self.ROBOT_END_EFFECTOR == 'pump' or self.ROBOT_END_EFFECTOR == 'pump_with_extention'): # ar/opti/onTheHolder
             tf_child_frame = '/panda_pump' # (do not use Optitrack)
         
-        
         while_loop_warning_print_list = [0] * self.target_obj_num            
         for obj_index in range(self.target_obj_num):
-                
-            pw_T_rob_sim_4_4 = self.pw_T_rob_sim_pose_list[0].trans_matrix
-            # observation
-            use_gazebo = ""
-            if self.gazebo_flag == True:
-                use_gazebo = '_noise'
-            while_time = 0
-            print("Object Name:", self.object_name_list[obj_index]+use_gazebo)
-        
-            if self.OPTITRACK_FLAG == True and self.LOCATE_CAMERA_FLAG == "opti": # ar/opti
-                # may need change
-                tf_child_frame = '/'+self.object_name_list[obj_index]+use_gazebo # (use Optitrack)
-            elif self.LOCATE_CAMERA_FLAG == "ar":
-                tf_child_frame = '/'+self.object_name_list[obj_index]+use_gazebo # (do not use Optitrack)
-            elif self.LOCATE_CAMERA_FLAG == "onTheHolder": # ar/opti/onTheHolder
-                # we can not get object pose directly from tf
-                tf_child_frame = '/panda_pump' # (do not use Optitrack)                
-                
-            while True:
-                while_time = while_time + 1
-                if while_time > 1000:
-                    if while_loop_warning_print_list[obj_index] == 0:
-                        print("WARNING: Problem happened in Create_Scene.py; maybe there is a problem on DOPE:", self.object_name_list[obj_index]+use_gazebo)
-                        while_loop_warning_print_list[obj_index] = 1
-                    a = 1
-                try:
-                    (trans_ob, rot_ob) = self.TF_LISTENER.lookupTransform('/panda_link0', tf_child_frame, rospy.Time(0))
-                    break
-                except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                    continue
-            
-
-            if self.LOCATE_CAMERA_FLAG == "onTheHolder" and (self.ROBOT_END_EFFECTOR == 'pump' or self.ROBOT_END_EFFECTOR == 'pump_with_extention'): # ar/opti/onTheHolder
-                pumpRVIZ_T_camRGB_pose_4_4 = a
-                pumpModel_T_camRGB_pose_4_4 = b
-                pumpModel_T_camD_pose_4_4 = c
-
-                rob_T_pumpRVIZ_pos = list(trans_ob)
-                rob_T_pumpRVIZ_ori = list(rot_ob)
-                rob_T_pumpRVIZ_pose_4_4 = self.get_matrix_from_pos_ori(rob_T_pumpRVIZ_pos, rob_T_pumpRVIZ_ori)
-                
-                camRGB_T_object_pos, camRGB_T_object_ori = self.get_obj_pose_in_camRGB_frame_from_name(self.object_name_list[obj_index])
-                camRGB_T_object_pose_4_4 = self.get_matrix_from_pos_ori(camRGB_T_object_pos, camRGB_T_object_ori)
-                
-                rob_T_camRGB_pose_4_4 = np.dot(rob_T_pumpRVIZ_pose_4_4, pumpRVIZ_T_camRGB_pose_4_4)
-                rob_T_object_pose_4_4 = np.dot(rob_T_camRGB_pose_4_4, camRGB_T_object_pose_4_4)
-                pw_T_object_pose_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_object_pose_4_4)
-                pw_T_obj_obse_pos = self.get_position_from_matrix44(pw_T_object_pose_4_4)
-                pw_T_obj_obse_ori = self.get_quaternion_from_matrix(pw_T_object_pose_4_4)
+            # trans_ob = [10, 10, 10]
+            # rot_ob = [0, 0, 0, 1]
+            if self.INCREMENTAL_POSE_GENERATOR_FLAG == True:
+                pw_T_obj_obse_pos = pw_T_objs_obse_list_for_init[obj_index][0]
+                pw_T_obj_obse_ori = pw_T_objs_obse_list_for_init[obj_index][1]
+                trans_ob = trans_ob_list[obj_index]
+                rot_ob = rot_ob_list[obj_index]
             else:
-                rob_T_obj_obse_pos = list(trans_ob)
-                rob_T_obj_obse_ori = list(rot_ob)
-                rob_T_obj_obse_4_4 = self.get_matrix_from_pos_ori(rob_T_obj_obse_pos, rob_T_obj_obse_ori)
-        
-                pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
-                pw_T_obj_obse_pos = self.get_position_from_matrix44(pw_T_obj_obse)
-                pw_T_obj_obse_ori = self.get_quaternion_from_matrix(pw_T_obj_obse)
+                pw_T_rob_sim_4_4 = self.pw_T_rob_sim_pose_list[0].trans_matrix
+                # observation
+                use_gazebo = ""
+                if self.gazebo_flag == True:
+                    use_gazebo = '_noise'
+                while_time = 0
+                print("Object Name:", self.object_name_list[obj_index]+use_gazebo)
+            
+                if self.OPTITRACK_FLAG == True and self.LOCATE_CAMERA_FLAG == "opti": # ar/opti
+                    # may need change
+                    tf_child_frame = '/'+self.object_name_list[obj_index]+use_gazebo # (use Optitrack)
+                elif self.LOCATE_CAMERA_FLAG == "ar":
+                    tf_child_frame = '/'+self.object_name_list[obj_index]+use_gazebo # (do not use Optitrack)
+                elif self.LOCATE_CAMERA_FLAG == "onTheHolder" and (self.ROBOT_END_EFFECTOR == 'pump' or self.ROBOT_END_EFFECTOR == 'pump_with_extention'): # ar/opti/onTheHolder
+                    # we can not get object pose directly from tf
+                    tf_child_frame = '/panda_pump' # (do not use Optitrack)                
+                    
+                while True:
+                    while_time = while_time + 1
+                    if while_time > 1000:
+                        if while_loop_warning_print_list[obj_index] == 0:
+                            print("WARNING: Problem happened in Create_Scene.py; maybe there is a problem on DOPE:", self.object_name_list[obj_index]+use_gazebo)
+                            while_loop_warning_print_list[obj_index] = 1
+                        a = 1
+                    try:
+                        (trans_ob, rot_ob) = self.TF_LISTENER.lookupTransform('/panda_link0', tf_child_frame, rospy.Time(0))
+                        break
+                    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                        continue
+                
 
+                if self.LOCATE_CAMERA_FLAG == "onTheHolder" and (self.ROBOT_END_EFFECTOR == 'pump' or self.ROBOT_END_EFFECTOR == 'pump_with_extention'): # ar/opti/onTheHolder
+                    pumpRVIZ_T_camRGB_pose_4_4 = pumpRVIZ_T_camRGB_pose_4_4_
+                    pumpModel_T_camRGB_pose_4_4 = pumpModel_T_camRGB_pose_4_4_
+                    pumpModel_T_camD_pose_4_4 = pumpModel_T_camD_pose_4_4_
+
+                    rob_T_pumpRVIZ_pos = list(trans_ob)
+                    rob_T_pumpRVIZ_ori = list(rot_ob)
+                    rob_T_pumpRVIZ_pose_4_4 = self.get_matrix_from_pos_ori(rob_T_pumpRVIZ_pos, rob_T_pumpRVIZ_ori)
+                    
+                    camRGB_T_object_pos, camRGB_T_object_ori = self.get_obj_pose_in_camRGB_frame_from_name(self.object_name_list[obj_index])
+                    camRGB_T_object_pose_4_4 = self.get_matrix_from_pos_ori(camRGB_T_object_pos, camRGB_T_object_ori)
+                    
+                    rob_T_camRGB_pose_4_4 = np.dot(rob_T_pumpRVIZ_pose_4_4, pumpRVIZ_T_camRGB_pose_4_4)
+                    rob_T_object_pose_4_4 = np.dot(rob_T_camRGB_pose_4_4, camRGB_T_object_pose_4_4)
+                    pw_T_object_pose_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_object_pose_4_4)
+                    pw_T_obj_obse_pos = self.get_position_from_matrix44(pw_T_object_pose_4_4)
+                    pw_T_obj_obse_ori = self.get_quaternion_from_matrix(pw_T_object_pose_4_4)
+                else:
+                    rob_T_obj_obse_pos = list(trans_ob)
+                    rob_T_obj_obse_ori = list(rot_ob)
+                    rob_T_obj_obse_4_4 = self.get_matrix_from_pos_ori(rob_T_obj_obse_pos, rob_T_obj_obse_ori)
+            
+                    pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
+                    pw_T_obj_obse_pos = self.get_position_from_matrix44(pw_T_obj_obse)
+                    pw_T_obj_obse_ori = self.get_quaternion_from_matrix(pw_T_obj_obse)
+
+            
+            
             
             obse_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
             self.pw_T_target_obj_obse_pose_lsit[obj_index] = obse_obj

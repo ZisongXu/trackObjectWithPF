@@ -81,7 +81,8 @@ class Visualisation_World():
         rot_ob = []
         trans_gt = []
         rot_gt = []
-        
+        trans_ob_list = [0 for _ in range(self.object_num)]
+        rot_ob_list = [0 for _ in range(self.object_num)]
         # (Basic Setting
         if self.visualisation_all == True:
             p_visualisation = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
@@ -189,8 +190,9 @@ class Visualisation_World():
            
 
         # observation: target obejct pose list
-        pw_T_target_obj_obse_pose_lsit, trans_ob_list, rot_ob_list = self.create_scene.initialize_object()
-        self.pw_T_target_obj_obse_pose_lsit = pw_T_target_obj_obse_pose_lsit
+        if display_obse_flag == True:
+            pw_T_target_obj_obse_pose_lsit, trans_ob_list, rot_ob_list = self.create_scene.initialize_object()
+            self.pw_T_target_obj_obse_pose_lsit = pw_T_target_obj_obse_pose_lsit
         # print("I am here")
         
         # load other objects in the pybullet world
@@ -216,28 +218,28 @@ class Visualisation_World():
                 self.pw_T_other_obj_opti_pose_list = pw_T_other_obj_opti_pose_list
                 self.pw_T_objs_not_touching_targetObjs_list = pw_T_objs_not_touching_targetObjs_list
 
-        # load objects in the pybullet world
-#        for obj_index in range(self.object_num):
-#            obse_obj_name = pw_T_target_obj_obse_pose_lsit[obj_index].obj_name
-#            obse_obj_pos = pw_T_target_obj_obse_pose_lsit[obj_index].pos
-#            obse_obj_ori = pw_T_target_obj_obse_pose_lsit[obj_index].ori
-#            use_gazebo = ""
-#            if self.gazebo_flag == True:
-#                use_gazebo = "gazebo_"
-#            obse_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+use_gazebo+obse_obj_name+"/"+use_gazebo+obse_obj_name+"_obse_obj_with_visual_hor.urdf"),
-#                                                      obse_obj_pos,
-#                                                      obse_obj_ori)
-#            pw_T_target_obj_obse_pose_lsit[obj_index].obj_id = obse_object_id
-#            opti_obj_name = pw_T_target_obj_opti_pose_lsit[obj_index].obj_name
-#            opti_obj_pos = pw_T_target_obj_opti_pose_lsit[obj_index].pos
-#            opti_obj_ori = pw_T_target_obj_opti_pose_lsit[obj_index].ori
-#            use_gazebo = ""
-#            if self.gazebo_flag == True:
-#                use_gazebo = "gazebo_"
-#            opti_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+use_gazebo+opti_obj_name+"/"+use_gazebo+opti_obj_name+"_real_obj_with_visual_hor.urdf"),
-#                                                      opti_obj_pos,
-#                                                      opti_obj_ori)
-#            pw_T_target_obj_opti_pose_lsit[obj_index].obj_id = opti_object_id
+        # # load objects in the pybullet world
+        # for obj_index in range(self.object_num):
+        #     obse_obj_name = pw_T_target_obj_obse_pose_lsit[obj_index].obj_name
+        #     obse_obj_pos = pw_T_target_obj_obse_pose_lsit[obj_index].pos
+        #     obse_obj_ori = pw_T_target_obj_obse_pose_lsit[obj_index].ori
+        #     use_gazebo = ""
+        #     if self.gazebo_flag == True:
+        #         use_gazebo = "gazebo_"
+        #     obse_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+use_gazebo+obse_obj_name+"/"+use_gazebo+obse_obj_name+"_obse_obj_with_visual_hor.urdf"),
+        #                                               obse_obj_pos,
+        #                                               obse_obj_ori)
+        #     pw_T_target_obj_obse_pose_lsit[obj_index].obj_id = obse_object_id
+        #     opti_obj_name = pw_T_target_obj_opti_pose_lsit[obj_index].obj_name
+        #     opti_obj_pos = pw_T_target_obj_opti_pose_lsit[obj_index].pos
+        #     opti_obj_ori = pw_T_target_obj_opti_pose_lsit[obj_index].ori
+        #     use_gazebo = ""
+        #     if self.gazebo_flag == True:
+        #         use_gazebo = "gazebo_"
+        #     opti_object_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+use_gazebo+opti_obj_name+"/"+use_gazebo+opti_obj_name+"_real_obj_with_visual_hor.urdf"),
+        #                                               opti_obj_pos,
+        #                                               opti_obj_ori)
+        #     pw_T_target_obj_opti_pose_lsit[obj_index].obj_id = opti_object_id
 
         for i in range(240):
             p_visualisation.stepSimulation()
@@ -484,13 +486,14 @@ while reset_flag == True:
         if optitrack_flag == False:
             display_gt_flag = False
 
-        display_obse_flag = True
+        display_obse_flag = False
         object_name_list = parameter_info['object_name_list']
         task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
         LOCATE_CAMERA_FLAG = parameter_info['locate_camera_flag'] # 'ar', 'opti', 'onTheHolder'
         ROBOT_END_EFFECTOR = parameter_info['robot_end_effector'] # 'gripper', 'pump', 'pump_with_extention'
         CAMERA_MOVE = parameter_info['camera_move'] # true/false
         dope_flag = parameter_info['dope_flag']
+        SIM_REAL_WORLD_FLAG = parameter_info['sim_real_world_flag']
 
         OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM = parameter_info['objs_are_not_touching_target_objs_num']
         OBJS_TOUCHING_TARGET_OBJS_NUM = parameter_info['objs_touching_target_objs_num']
@@ -512,46 +515,47 @@ while reset_flag == True:
         esti_obj_id = [0] * object_num
         # input("stop")
         
+        # ================================================================================================================================================================
+        # fix things
+        # relationship between RGB len and depth len
+        camRGB_T_camD_pos_13 = [0.015, 0.0, 0.0]
+        camRGB_T_camD_ori_14 = [0.0, 0.0, -0.008, 1] # x, y, z, w
+        # camRGB_T_camD_ori_14 = [0.001, 0.001, -0.009, 1] # x, y, z, w
+        # camRGB_T_camD_pos_13 = [0.0, 0.0, 0.0]
+        # camRGB_T_camD_ori_14 = [0.0, 0.0, -0.00, 1] # x, y, z, w
+        camRGB_T_camD_pose_3_3 = np.array(p.getMatrixFromQuaternion(camRGB_T_camD_ori_14)).reshape(3, 3)
+        camRGB_T_camD_pose_3_4 = np.c_[camRGB_T_camD_pose_3_3, camRGB_T_camD_pos_13]  # Add position to create 3x4 matrix
+        _camRGB_T_camD_pose_4_4 = np.r_[camRGB_T_camD_pose_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
         
-        # get pump_T_camHolder_pose
-        if LOCATE_CAMERA_FLAG == 'onTheHolder' and (ROBOT_END_EFFECTOR == 'pump_with_extention' or ROBOT_END_EFFECTOR == 'pump'):
-            _pump_T_camHolder_pose_44 = 0
-            useless_env1 = bc.BulletClient(connection_mode=p.DIRECT) # DIRECT, GUI_SERVER
-            pw_T_rob_pos__ = [0, 0, 0]
-            pw_T_rob_ori__ = [0, 0, 0, 1]
-            if ROBOT_END_EFFECTOR == 'pump_with_extention':
-                useless_robot_id = useless_env1.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda_pump_with_extention.urdf"), pw_T_rob_pos__, pw_T_rob_ori__, useFixedBase=1)
-            elif ROBOT_END_EFFECTOR == 'pump':
-                useless_robot_id = useless_env1.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda_pump.urdf"), pw_T_rob_pos__, pw_T_rob_ori__, useFixedBase=1)
-            elif ROBOT_END_EFFECTOR == 'gripper':
-                useless_robot_id = useless_env1.loadURDF(os.path.expanduser("~/project/data/bullet3-master/examples/pybullet/gym/pybullet_data/franka_panda/panda.urdf"), pw_T_rob_pos__, pw_T_rob_ori__, useFixedBase=1)
-            cameraHolder_info = useless_env1.getLinkState(useless_robot_id, 9, computeForwardKinematics=True)
-            pw_T_camHolder_info_pos = cameraHolder_info[4]
-            pw_T_camHolder_info_ori = cameraHolder_info[5]
-            pump_info = useless_env1.getLinkState(useless_robot_id, 8, computeForwardKinematics=True)
-            pw_T_pump_info_pos = pump_info[4]
-            pw_T_pump_info_ori = pump_info[5]
-            pw_T_pump_info_ang = p.getEulerFromQuaternion(pw_T_pump_info_ori)
-            _pump_T_camHolder_pose_44 = compute_transformation_matrix(pw_T_pump_info_pos, pw_T_pump_info_ori, pw_T_camHolder_info_pos, pw_T_camHolder_info_ori)
-            useless_env1.disconnect()
-            print("Destroy useless env ONE !!!!!!!!!!!")
+        if SIM_REAL_WORLD_FLAG == True:
+            _table_pos_1 = [0.46, -0.01, 0.702] # 0.710
+        else:
+            _table_pos_1 = [0, 0, 0]
+        _table_ori_1 = [0, 0, 0, 1]
+        _pw_T_rob_pos = [0.0, 0.0, 0.02+_table_pos_1[2]+0.008] # robot pose
+        _pw_T_rob_ori = [0, 0, 0, 1]
+        _pw_T_rob_pose = _get_matrix_from_pos_ori(_pw_T_rob_pos, _pw_T_rob_ori)
+        # ================================================================================================================================================================
+        
+        # get pump_T_cam_pose
+        if LOCATE_CAMERA_FLAG == 'onTheHolder' and (ROBOT_END_EFFECTOR == 'pump' or ROBOT_END_EFFECTOR == 'pump_with_extention'):
+            rob_T_camRGB_pos = [0.536, -0.061, 0.254]
+            rob_T_camRGB_ori = [0.610, 0.636, -0.278, -0.382]
+            rob_T_camRGB_pose_4_4 = _get_matrix_from_pos_ori(rob_T_camRGB_pos, rob_T_camRGB_ori)
             
-            camHolderCenter_T_camHolderSq_pos = [0.0, -0.043855, -0.072988]
-            camHolderCenter_T_camHolderSq_ori = [0.0, 0.0, 0.0, 1.0]
-            camHolderCenter_T_camHolderSq_pose_44 = _get_matrix_from_pos_ori(camHolderCenter_T_camHolderSq_pos, camHolderCenter_T_camHolderSq_ori)
-            camHolderSq_T_camRGB_pos = [0.0325, -0.0125, -0.0065]
-            camHolderSq_T_camRGB_pos = [0.0325, -0.0125, -0.]
-            camHolderSq_T_camRGB_ori_44 = np.array([[-1, 0, 0, 0],
-                                                    [ 0, 0,-1, 0],
-                                                    [ 0,-1, 0, 0],
-                                                    [ 0, 0, 0, 1]])
-            camHolderSq_T_camRGB_ori = _get_quaternion_from_matrix(camHolderSq_T_camRGB_ori_44)
-            camHolderSq_T_camRGB_pose_44 = _get_matrix_from_pos_ori(camHolderSq_T_camRGB_pos, camHolderSq_T_camRGB_ori)
-            _camHolderCenter_T_camRGB_pose_44 = np.dot(camHolderCenter_T_camHolderSq_pose_44, camHolderSq_T_camRGB_pose_44)
-            _pump_T_camRGB_pose_44 = np.dot(_pump_T_camHolder_pose_44, _camHolderCenter_T_camRGB_pose_44)
-            
-       
-
+            rob_T_pumpRVIZ_pos = [0.549, -0.047, 0.354]
+            rob_T_pumpRVIZ_ori = [0.841, 0.014, -0.537, -0.064]
+            rob_T_pumpRVIZ_pose_4_4 = _get_matrix_from_pos_ori(rob_T_pumpRVIZ_pos, rob_T_pumpRVIZ_ori)
+            _pumpRVIZ_T_camRGB_pose_4_4 = compute_transformation_matrix(rob_T_pumpRVIZ_pos, rob_T_pumpRVIZ_ori, rob_T_camRGB_pos, rob_T_camRGB_ori)
+            _pumpRVIZ_T_camD_pose_4_4 = np.dot(_pumpRVIZ_T_camRGB_pose_4_4, _camRGB_T_camD_pose_4_4)
+            pumpModel_T_pumpRVIZ = np.array([[-1, 0, 0, 0],
+                                            [ 0, 0,-1, 0],
+                                            [ 0,-1, 0, 0],
+                                            [ 0, 0, 0, 1]])
+            _pumpModel_T_camRGB_pose_4_4 = np.dot(pumpModel_T_pumpRVIZ, _pumpRVIZ_T_camRGB_pose_4_4)
+            _pumpModel_T_camD_pose_4_4 = np.dot(_pumpModel_T_camRGB_pose_4_4, _camRGB_T_camD_pose_4_4)
+        
+        
         while not rospy.is_shutdown():
             
             if reset_flag == False:
@@ -680,25 +684,22 @@ while reset_flag == True:
                     obse_is_fresh = True
                     
             
-                    if LOCATE_CAMERA_FLAG == 'onTheHolder':
+                    if LOCATE_CAMERA_FLAG == 'onTheHolder' and (ROBOT_END_EFFECTOR == 'pump' or ROBOT_END_EFFECTOR == 'pump_with_extention'):
                         try:
                             (trans_camera, rot_camera) = listener_tf.lookupTransform('/panda_link0', '/panda_pump', rospy.Time(0))
-                            
-                            rob_T_pump_pos = trans_camera
-                            rob_T_pump_ori = rot_camera   
-                            
-                            
+                            rob_T_pumpRVIZ_pos = trans_camera
+                            rob_T_pumpRVIZ_ori = rot_camera   
                         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                             print("from PBPF")
                             print("In Visualisation_World_Particle.py: can not find "+object_name_list[obj_index]+" tf (obse)")
                         
-                        rob_T_pump_pose_4_4 = _get_matrix_from_pos_ori(rob_T_pump_pos, rob_T_pump_ori)
-                        diff_bt_ROSModel_and_Model = np.array([[-1, 0, 0, 0],
-                                                               [ 0, 0,-1, 0],
-                                                               [ 0,-1, 0, 0],
-                                                               [ 0, 0, 0, 1]])         
-                        rob_T_pump_pose_4_4 = np.dot(rob_T_pump_pose_4_4, diff_bt_ROSModel_and_Model)
-                        rob_T_camRGB_pose_44 = np.dot(rob_T_pump_pose_4_4, _pump_T_camRGB_pose_44)
+                        rob_T_pumpRVIZ_pose_4_4 = _get_matrix_from_pos_ori(rob_T_pumpRVIZ_pos, rob_T_pumpRVIZ_ori)
+                        # diff_bt_ROSModel_and_Model = np.array([[-1, 0, 0, 0],
+                        #                                        [ 0, 0,-1, 0],
+                        #                                        [ 0,-1, 0, 0],
+                        #                                        [ 0, 0, 0, 1]])         
+                        # rob_T_pump_pose_4_4 = np.dot(rob_T_pump_pose_4_4, diff_bt_ROSModel_and_Model)
+                        rob_T_camRGB_pose_44 = np.dot(rob_T_pumpRVIZ_pose_4_4, _pumpRVIZ_T_camRGB_pose_4_4)
                         
                         camRGB_T_object_pos, camRGB_T_object_ori = _get_obj_pose_in_camRGB_frame_from_name(object_name_list[obj_index])
                         camRGB_T_object_pose = _get_matrix_from_pos_ori(camRGB_T_object_pos, camRGB_T_object_ori)

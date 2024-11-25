@@ -78,7 +78,7 @@ class SingleENV(multiprocessing.Process):
         # self.boss_sigma_obs_pos_init = 0.09 # original value: 16cm/10CM 
         self.boss_sigma_obs_x = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
-        self.boss_sigma_obs_z = 0.01 # original value: 2cm
+        self.boss_sigma_obs_z = 0.002 # original value: 2cm/1cm
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 20 # original value: 0.0216773873 * 20
         self.boss_sigma_obs_ang_init = 0.01 * 10 # original value: 0.0216773873 * 20/10
         
@@ -396,8 +396,15 @@ class SingleENV(multiprocessing.Process):
             # get object ID
             obj_id = self.particle_objects_id_collection[obj_index]
             # get velocity
-            [obj_x_vel, obj_y_vel, obj_z_vel] = self.p_env.getBaseVelocity(obj_id)
-            if any([obj_x_vel >= 0.005, obj_y_vel >= 0.005, obj_z_vel >= 0.005]):
+            obj_linear_vel, obj_angular_vel = self.p_env.getBaseVelocity(obj_id)
+            obj_linear_x_vel = obj_linear_vel[0]
+            obj_linear_y_vel = obj_linear_vel[1]
+            obj_linear_z_vel = obj_linear_vel[2]
+            obj_angular_x_vel = obj_angular_vel[0]
+            obj_angular_y_vel = obj_angular_vel[1]
+            obj_angular_z_vel = obj_angular_vel[2]
+            # if any([obj_linear_x_vel >= 0.01, obj_linear_y_vel >= 0.01, obj_linear_z_vel >= 0.01, obj_angular_x_vel >= 0.1, obj_angular_y_vel >= 0.1, obj_angular_z_vel >= 0.1]):
+            if any([obj_linear_x_vel >= 0.1, obj_linear_y_vel >= 0.1, obj_linear_z_vel >= 0.1]):
                 return [('result', True)]
         return [('result', False)]
 
@@ -478,7 +485,6 @@ class SingleENV(multiprocessing.Process):
                                                joint_index,
                                                targetValue=joint_states[joint_index])
 
-
     def move_robot_JointPosition(self, joint_states):
         if self.ROBOT_END_EFFECTOR == 'pump_with_extention':
             # pump
@@ -510,7 +516,6 @@ class SingleENV(multiprocessing.Process):
         for time_index in range(int(self.pf_update_interval_in_sim)):
             self.p_env.stepSimulation()
         return [("done", True)]
-
 
     def compare_distance(self, par_index, pw_T_obj_obse_objects_pose_list, visual_by_DOPE_list, outlier_by_DOPE_list):
         weight =  1.0 / self.particle_num

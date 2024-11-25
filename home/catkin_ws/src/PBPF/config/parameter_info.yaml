@@ -1,6 +1,9 @@
 ADDMatrix_flag: true
+Incremental_Pose_Generator_Flag: true
 camera_info_topic_color: /camera/color/camera_info
 camera_info_topic_depth: /camera/depth/camera_info
+camera_model: D435i
+camera_move: true
 combine_particle_depth_mask_flag: false
 compare_depth_img_vk: true
 convolution_size: 0
@@ -19,8 +22,6 @@ gazebo_flag: false
 height: 480
 ignore_edge_pixels: false
 locate_camera_flag: ar
-camera_move: true
-camera_model: D435i
 multiprocessing_flag: false
 nearVal: 0.03
 object_name_list:
@@ -50,12 +51,13 @@ print_score_flag: false
 process_model_flag: normal
 ray_tracing_type: multiray
 record_results_flag: false
+robot_end_effector: pump_with_extention
 robot_num: 1
 run_alg_flag: PBPF
 running_model: PBPF_RGBD
+show_particle: false
 show_particle_depth_image_to_point_cloud_flag: false
 show_ray: false
-show_particle: false
 sim_real_world_flag: true
 task_flag: basket_retrieve
 update_style_flag: time
@@ -65,6 +67,3 @@ visibility_compute_separate_flag: true
 visibility_compute_vk: true
 vk_render_flag: true
 width: 848
-Incremental_Pose_Generator_Flag: true 
-robot_end_effector: pump_with_extention
-

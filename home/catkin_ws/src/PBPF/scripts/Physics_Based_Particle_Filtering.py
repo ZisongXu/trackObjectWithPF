@@ -1570,6 +1570,10 @@ def _update_from_real_world_incrementally():
             break
         else:
             _generator_env.resetSimulation()
+    for index, object_name in enumerate(OBJECT_NAME_LIST):
+        pw_T_obj_obse_pos, pw_T_obj_obse_ori = _generator_env.getBasePositionAndOrientation(objects_id_list[index])
+        pw_T_objs_obse_list_for_init[index][0] = [pw_T_obj_obse_pos[0], pw_T_obj_obse_pos[1], pw_T_obj_obse_pos[2]]
+        pw_T_objs_obse_list_for_init[index][1] = [pw_T_obj_obse_ori[0], pw_T_obj_obse_ori[1], pw_T_obj_obse_ori[2], pw_T_obj_obse_ori[3]]
     return pw_T_objs_obse_list_for_init, trans_ob_list, rot_ob_list
 
 
@@ -1906,6 +1910,7 @@ if __name__ == '__main__':
     if INCREMENTAL_POSE_GENERATOR_FLAG == True:
         _generator_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
         pw_T_objs_obse_list_for_init, trans_ob_list, rot_ob_list = _update_from_real_world_incrementally()
+        print("pw_T_objs_obse_list_for_init:", pw_T_objs_obse_list_for_init)
         _generator_env.disconnect()
     else:
         print("Normal PBPF-RGBD alg!")
@@ -1965,7 +1970,7 @@ if __name__ == '__main__':
         
     print("Finish initializing scene")
     print("============================================================================")
-    
+    input("stop!!!!!!!!!!!!!!!!!!!")
     # ============================================================================
     # we are not using this for now
     if TASK_FLAG == '4':
@@ -2443,8 +2448,8 @@ if __name__ == '__main__':
                     for env_index, single_env in _single_envs.items():
                         moving_result = wait_and_get_result_from(single_env)
                         _moving_results_list[env_index] = moving_result
-                        
-                    if (any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002)) or any(result['result'] for result in _moving_results_list):
+                    # if (any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002)) or any(result['result'] for result in _moving_results_list):
+                    if any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002):
                         t_begin_PBPF = time.time()
                         simRobot_touch_par_flag = 1
                         _particle_update_time = _particle_update_time + 1
@@ -2585,10 +2590,19 @@ if __name__ == '__main__':
 
                     else:
                         Only_update_robot_flag = True
+                        # robot arm moving
                         for env_index, single_env in _single_envs.items():
                             single_env.queue.put((SingleENV.move_robot_JointPosition, ROS_LISTENER.current_joint_values))
                         for env_index, single_env in _single_envs.items():
                             _empty_return = wait_and_get_result_from(single_env)
+                        # get particles pose
+                        for env_index, single_env in _single_envs.items():
+                            single_env.queue.put((SingleENV.get_objects_pose, env_index))
+                        for env_index, single_env in _single_envs.items():  
+                            objs_pose_info = wait_and_get_result_from(single_env)
+                            _objs_pose_info_list[env_index] = objs_pose_info
+                            _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]    
+                        _publish_par_pose_info(_particle_cloud_pub)
 
                 # estimated_object_set_old = copy.deepcopy(estimated_object_set)
                 # estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)

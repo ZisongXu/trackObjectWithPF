@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
  <robot name="myfirst">
    <material name="light_green">
-     <color rgba="0 1 0.498 1"/>
+     <color rgba="0 1 0.498 0.5"/>
    </material>
    <material name="coral">
-     <color rgba="1 0.498 0.3137 1"/>
+     <color rgba="1 0.498 0.3137 0.5"/>
    </material>
    <material name="purple">
-     <color rgba="0.68 0.55 0.90 1"/>
+     <color rgba="0.68 0.55 0.90 0.5"/>
    </material>
    <link name="Milk">
      <visual>

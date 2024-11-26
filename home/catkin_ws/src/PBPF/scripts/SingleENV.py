@@ -368,6 +368,8 @@ class SingleENV(multiprocessing.Process):
             self.objects_list[obj_index] = objPose
             
     def get_objects_pose(self, par_index):
+        for time_index in range(int(self.pf_update_interval_in_sim)):
+            self.p_env.stepSimulation()
         return_results = []
         for obj_index in range(self.object_num):
             obj_id = self.particle_objects_id_collection[obj_index]

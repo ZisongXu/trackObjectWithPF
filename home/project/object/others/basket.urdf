@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
  <robot name="myfirst">
    <material name="DimGray">
-     <color rgba="0.41176471 0.41176471 0.41176471 1"/>
+     <color rgba="0.41176471 0.41176471 0.41176471 0.3"/>
    </material>
    <material name="Silver">
      <color rgba="0.75294118 0.75294118 0.75294118 1"/>

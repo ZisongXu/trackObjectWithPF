@@ -1970,7 +1970,7 @@ if __name__ == '__main__':
         
     print("Finish initializing scene")
     print("============================================================================")
-    input("stop!!!!!!!!!!!!!!!!!!!")
+    # input("stop!!!!!!!!!!!!!!!!!!!")
     # ============================================================================
     # we are not using this for now
     if TASK_FLAG == '4':
@@ -2448,7 +2448,16 @@ if __name__ == '__main__':
                     for env_index, single_env in _single_envs.items():
                         moving_result = wait_and_get_result_from(single_env)
                         _moving_results_list[env_index] = moving_result
+                        
                     # if (any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002)) or any(result['result'] for result in _moving_results_list):
+                    #     if any(result['result'] for result in _moving_results_list):
+                    #         print("=============================")
+                    #         print("Update Because of Velocity!!!")
+                    #         print("=============================")
+                    #     if (any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002)) :
+                    #         print("-----------------------------------")
+                    #         print("Update Because of Touch and Move!!!")
+                    #         print("-----------------------------------")
                     if any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002):
                         t_begin_PBPF = time.time()
                         simRobot_touch_par_flag = 1
@@ -2589,6 +2598,7 @@ if __name__ == '__main__':
                         simRobot_touch_par_flag = 0
 
                     else:
+                        print("Just update ENV!")
                         Only_update_robot_flag = True
                         # robot arm moving
                         for env_index, single_env in _single_envs.items():

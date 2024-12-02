@@ -70,6 +70,7 @@ class SingleENV(multiprocessing.Process):
         self.opti_T_robot_ori = self.ROS_LISTENER.listen_2_robot_pose()[1]
 
         self.collision_detection_obj_id_collection = []
+        self.collision_detection_env_obj_id_collection = []
         self.particle_objects_id_collection = ["None"] * self.object_num
         self.objects_list = ["None"] * self.object_num
         
@@ -81,6 +82,11 @@ class SingleENV(multiprocessing.Process):
         self.boss_sigma_obs_z = 0.002 # original value: 2cm/1cm
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 20 # original value: 0.0216773873 * 20
         self.boss_sigma_obs_ang_init = 0.01 * 10 # original value: 0.0216773873 * 20/10
+        # self.boss_sigma_obs_x = 0
+        # self.boss_sigma_obs_y = 0
+        # self.boss_sigma_obs_z = 0
+        # # self.boss_sigma_obs_ang_init = 0.0216773873 * 20 # original value: 0.0216773873 * 20
+        # self.boss_sigma_obs_ang_init = 0
         
         
         
@@ -126,8 +132,11 @@ class SingleENV(multiprocessing.Process):
         # RESTITUTION_SIGMA = 0.2
 
         # Motion Model Noise
-        self.MOTION_MODEL_POS_NOISE = 0.005 # original value = 0.005
-        self.MOTION_MODEL_ANG_NOISE = 0.2 # original value = 0.05/0.5/0.1
+        self.MOTION_MODEL_POS_NOISE = 0.002 # original value = 0.005
+        self.MOTION_MODEL_ANG_NOISE = 0.1 # original value = 0.05/0.5/0.1
+        # self.MOTION_MODEL_POS_NOISE = 0.0 # original value = 0.005
+        # self.MOTION_MODEL_ANG_NOISE = 0.0 # original value = 0.05/0.5/0.1
+        
         self.mass_flag = False
         if self.mass_flag == True:
             self.MASS_MIN_VALUE = 0.02
@@ -266,12 +275,15 @@ class SingleENV(multiprocessing.Process):
             self.basket_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/basket.urdf"),
                                             pw_T_basket_pos, pw_T_basket_ori, useFixedBase=1)
             self.collision_detection_obj_id_collection.append(self.basket_id)
+            self.collision_detection_env_obj_id_collection.append(self.basket_id)
 
         if self.SIM_REAL_WORLD_FLAG == True:
             table_pos_1 = [0.46, -0.01, 0.702] # 0.710
             table_ori_1 = self.p_env.getQuaternionFromEuler([0,0,0])
-            table_id_1 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1)
-
+            self.table_id_1 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1, useFixedBase = 1)
+            self.collision_detection_obj_id_collection.append(self.table_id_1)
+            self.collision_detection_env_obj_id_collection.append(self.table_id_1)
+            
             barry_pos_1 = [-0.694, 0.443, 0.895]
             barry_ori_1 = self.p_env.getQuaternionFromEuler([0,math.pi/2,0])
             barry_id_1 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_1, barry_ori_1, useFixedBase = 1)
@@ -297,6 +309,7 @@ class SingleENV(multiprocessing.Process):
             self.board_id_1 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"), board_pos_1, board_ori_1, useFixedBase = 1)
 
             self.collision_detection_obj_id_collection.append(self.board_id_1)
+            self.collision_detection_env_obj_id_collection.append(self.board_id_1)
 
     def add_robot(self):
         real_robot_start_pos = self.pw_T_rob_sim_pose_list_alg[0].pos
@@ -318,6 +331,7 @@ class SingleENV(multiprocessing.Process):
         
         self.init_set_sim_robot_JointPosition(joint_of_robot)
         self.collision_detection_obj_id_collection.append(self.robot_id)
+        self.collision_detection_env_obj_id_collection.append(self.robot_id)
 
     def add_target_objects(self):
         print_object_name_flag = 0
@@ -377,10 +391,15 @@ class SingleENV(multiprocessing.Process):
             obj_name = self.OBJECT_NAME_LIST[obj_index]
             obj_tuple = (obj_name, obj_info)
             return_results.append(obj_tuple)
+            pos_ = obj_info[0]
+            ori_ = obj_info[1]
+            self.objects_list[obj_index].pos = [pos_[0], pos_[1], pos_[2]]
+            self.objects_list[obj_index].ori = [ori_[0], ori_[1], ori_[2], ori_[3]] # x, y, z, w
         return_results.append((str(par_index), self.objects_list))
         return return_results
 
-    def isAnyParticleInContact(self):
+    # only check object
+    def isAnyParticleInContact_ObjectOnly(self):
         for obj_index in range(self.object_num):
             # get object ID
             obj_id = self.particle_objects_id_collection[obj_index]
@@ -392,6 +411,23 @@ class SingleENV(multiprocessing.Process):
                 if collide_ids[t_i][1] == 8 or collide_ids[t_i][1] == 9 or collide_ids[t_i][1] == 10 or collide_ids[t_i][1] == 11:
                     return [('result', True)]
         return [('result', False)]
+
+    # check object and robot arm
+    def isAnyParticleInContact_ObjectRobot(self):
+        collision_check_id_list_ = []
+        collision_check_id_list_.append(self.robot_id)
+        for obj_index in range(self.object_num):
+            # get object ID
+            obj_id = self.particle_objects_id_collection[obj_index]
+            # check contact 
+            contacts = self.p_env.getContactPoints(bodyA=self.robot_id, 
+                                                   bodyB=obj_id)
+            for contact in contacts:
+                contact_dis = contact[8]
+                if contact_dis < 0.0:
+                    return [('result', True)]
+        return [('result', False)]
+
 
     def isAnyParticleMoving(self):
         for obj_index in range(self.object_num):
@@ -411,21 +447,26 @@ class SingleENV(multiprocessing.Process):
         return [('result', False)]
 
     def motion_model(self, joint_states, par_index):
-        # change object parameters
         collision_detection_obj_id_ = []
         return_results = []
-        for obj_index in range(self.object_num):
-            obj_id = self.objects_list[obj_index].no_visual_par_id
-            self.p_env.resetBaseVelocity(obj_id,
-                                         self.objects_list[obj_index].linearVelocity,
-                                         self.objects_list[obj_index].angularVelocity,)
-            self.change_obj_parameters(obj_id, obj_index)
+        # change object parameters velocity
+        # for obj_index in range(self.object_num):
+        #     obj_id = self.objects_list[obj_index].no_visual_par_id
+        #     self.p_env.resetBaseVelocity(obj_id,
+        #                                  self.objects_list[obj_index].linearVelocity,
+        #                                  self.objects_list[obj_index].angularVelocity,)
+        #     self.change_obj_parameters(obj_id, obj_index)
         # execute the control
         self.move_robot_JointPosition(joint_states)
+        # collision check: add robot
+        collision_detection_env_obj_id_collection_ = copy.deepcopy(self.collision_detection_env_obj_id_collection)
         # collision check: add robot
         collision_detection_obj_id_.append(self.robot_id)
         # collision check: add board
         collision_detection_obj_id_.append(self.board_id_1)
+        # collision check: add basket
+        collision_detection_obj_id_.append(self.basket_id)
+        
         # collision check
         for obj_index in range(self.object_num):
             obj_id = self.objects_list[obj_index].no_visual_par_id
@@ -440,9 +481,11 @@ class SingleENV(multiprocessing.Process):
             if self.MOTION_NOISE == True:
                 normal_x, normal_y, normal_z, pb_quat = self.add_noise_pose(obj_cur_pos, obj_cur_ori)
                 self.p_env.resetBasePositionAndOrientation(obj_id, [normal_x, normal_y, normal_z], pb_quat)
-                collision_detection_obj_id_.append(obj_id)
+                # collision_detection_obj_id_.append(obj_id)
+                collision_detection_env_obj_id_collection_.append(obj_id)
                 obj_pose_3_1 = [normal_x, normal_y, normal_z, pb_quat]
-                normal_x, normal_y, normal_z, pb_quat = self.collision_check(collision_detection_obj_id_,
+                # normal_x, normal_y, normal_z, pb_quat = self.collision_check(collision_detection_obj_id_,
+                normal_x, normal_y, normal_z, pb_quat = self.collision_check(collision_detection_env_obj_id_collection_,
                                                                              obj_cur_pos, obj_cur_ori,
                                                                              obj_id, obj_index, obj_pose_3_1)
             # if obj_index == 0:
@@ -705,7 +748,7 @@ class SingleENV(multiprocessing.Process):
                 for contact in contacts:
                     contactNormalOnBtoA = contact[7]
                     contact_dis = contact[8]
-                    if contact_dis < -0.001: # means: positive for separation, negative for penetration
+                    if contact_dis < -0.000: # means: positive for separation, negative for penetration
                         normal_x, normal_y, normal_z, pb_quat = self.add_noise_pose(obj_cur_pos, obj_cur_ori)
                         self.p_env.resetBasePositionAndOrientation(obj_id, [normal_x, normal_y, normal_z], pb_quat)
                         flag = 1

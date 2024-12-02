@@ -2278,7 +2278,7 @@ if __name__ == '__main__':
             outlier_dis_list[obj_index] = 0.05
             outlier_ang_list[obj_index] = math.pi * 1 / 4.0
     # ============================================================================
-
+    count_test = 0
     while not rospy.is_shutdown():
 
         dope_detection_flag_list = [0] * OBJECT_NUM
@@ -2438,16 +2438,17 @@ if __name__ == '__main__':
                 if run_alg_flag == "PBPF": # PBPF algorithm
                     # check robot arm and objects have collision
                     for env_index, single_env in _single_envs.items():
-                        single_env.queue.put((SingleENV.isAnyParticleInContact, ))
+                        # single_env.queue.put((SingleENV.isAnyParticleInContact_ObjectOnly, ))
+                        single_env.queue.put((SingleENV.isAnyParticleInContact_ObjectRobot, ))
                     for env_index, single_env in _single_envs.items():
                         contact_result = wait_and_get_result_from(single_env)
                         _contact_results_list[env_index] = contact_result
                     # check particle moves
-                    for env_index, single_env in _single_envs.items():
-                        single_env.queue.put((SingleENV.isAnyParticleMoving, ))
-                    for env_index, single_env in _single_envs.items():
-                        moving_result = wait_and_get_result_from(single_env)
-                        _moving_results_list[env_index] = moving_result
+                    # for env_index, single_env in _single_envs.items():
+                    #     single_env.queue.put((SingleENV.isAnyParticleMoving, ))
+                    # for env_index, single_env in _single_envs.items():
+                    #     moving_result = wait_and_get_result_from(single_env)
+                    #     _moving_results_list[env_index] = moving_result
                         
                     # if (any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002)) or any(result['result'] for result in _moving_results_list):
                     #     if any(result['result'] for result in _moving_results_list):
@@ -2598,7 +2599,8 @@ if __name__ == '__main__':
                         simRobot_touch_par_flag = 0
 
                     else:
-                        print("Just update ENV!")
+                        count_test = count_test + 1
+                        # print("Just update ENV!")
                         Only_update_robot_flag = True
                         # robot arm moving
                         for env_index, single_env in _single_envs.items():
@@ -2611,7 +2613,7 @@ if __name__ == '__main__':
                         for env_index, single_env in _single_envs.items():  
                             objs_pose_info = wait_and_get_result_from(single_env)
                             _objs_pose_info_list[env_index] = objs_pose_info
-                            _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]    
+                            _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
                         _publish_par_pose_info(_particle_cloud_pub)
 
                 # estimated_object_set_old = copy.deepcopy(estimated_object_set)

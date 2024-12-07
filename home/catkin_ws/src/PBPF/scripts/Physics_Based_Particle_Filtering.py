@@ -2278,7 +2278,8 @@ if __name__ == '__main__':
             outlier_dis_list[obj_index] = 0.05
             outlier_ang_list[obj_index] = math.pi * 1 / 4.0
     # ============================================================================
-    count_test = 0
+    _no_PF_update_count = 0
+    _first_update_flage = False
     while not rospy.is_shutdown():
 
         dope_detection_flag_list = [0] * OBJECT_NUM
@@ -2459,7 +2460,10 @@ if __name__ == '__main__':
                     #         print("-----------------------------------")
                     #         print("Update Because of Touch and Move!!!")
                     #         print("-----------------------------------")
-                    if any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002):
+                    # if (any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002) or (_no_PF_update_count > 8 and dis_robcur_robold > 0.002 and _first_update_flage)):
+                    if (any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002) or (_no_PF_update_count > 8 and dis_robcur_robold > 0.002)):
+                        _first_update_flage == True
+                        _no_PF_update_count = 0
                         t_begin_PBPF = time.time()
                         simRobot_touch_par_flag = 1
                         _particle_update_time = _particle_update_time + 1
@@ -2599,7 +2603,7 @@ if __name__ == '__main__':
                         simRobot_touch_par_flag = 0
 
                     else:
-                        count_test = count_test + 1
+                        _no_PF_update_count = _no_PF_update_count + 1
                         # print("Just update ENV!")
                         Only_update_robot_flag = True
                         # robot arm moving
@@ -2614,7 +2618,7 @@ if __name__ == '__main__':
                             objs_pose_info = wait_and_get_result_from(single_env)
                             _objs_pose_info_list[env_index] = objs_pose_info
                             _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
-                        _publish_par_pose_info(_particle_cloud_pub)
+                        # _publish_par_pose_info(_particle_cloud_pub)
 
                 # estimated_object_set_old = copy.deepcopy(estimated_object_set)
                 # estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)

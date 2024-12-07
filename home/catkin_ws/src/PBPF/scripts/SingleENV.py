@@ -82,6 +82,7 @@ class SingleENV(multiprocessing.Process):
         self.boss_sigma_obs_z = 0.002 # original value: 2cm/1cm
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 20 # original value: 0.0216773873 * 20
         self.boss_sigma_obs_ang_init = 0.01 * 10 # original value: 0.0216773873 * 20/10
+        
         # self.boss_sigma_obs_x = 0
         # self.boss_sigma_obs_y = 0
         # self.boss_sigma_obs_z = 0
@@ -132,8 +133,8 @@ class SingleENV(multiprocessing.Process):
         # RESTITUTION_SIGMA = 0.2
 
         # Motion Model Noise
-        self.MOTION_MODEL_POS_NOISE = 0.002 # original value = 0.005
-        self.MOTION_MODEL_ANG_NOISE = 0.1 # original value = 0.05/0.5/0.1
+        self.MOTION_MODEL_POS_NOISE = 0.001/2 # original value = 0.005
+        self.MOTION_MODEL_ANG_NOISE = 0.1/2 # original value = 0.05/0.5/0.1
         # self.MOTION_MODEL_POS_NOISE = 0.0 # original value = 0.005
         # self.MOTION_MODEL_ANG_NOISE = 0.0 # original value = 0.05/0.5/0.1
         
@@ -504,7 +505,6 @@ class SingleENV(multiprocessing.Process):
 
 
     def init_set_sim_robot_JointPosition(self, joint_states):
-        print("The end effector of the robot is "+self.ROBOT_END_EFFECTOR)
         if self.ROBOT_END_EFFECTOR == 'pump_with_extention':
             num_joints = 7
             for joint_index in range(num_joints):

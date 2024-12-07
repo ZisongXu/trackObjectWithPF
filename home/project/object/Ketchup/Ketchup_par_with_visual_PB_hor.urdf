@@ -6,6 +6,9 @@
    <material name="coral">
      <color rgba="1 0.498 0.3137 1"/>
    </material>
+   <material name="purple">
+     <color rgba="0.68 0.55 0.90 1."/>
+   </material>
    <link name="Ketchup">
      <visual>
        <geometry>
@@ -14,7 +17,7 @@
        </geometry>
        <!-- <material name="light_green"/> -->
        <material name="white">
-         <color rgba="1. 1. 1. 0.5"/>
+         <color rgba="1. 1. 1. 1."/>
        </material>
        <origin xyz="0 0 0" rpy="0 0 0"/>
      </visual>

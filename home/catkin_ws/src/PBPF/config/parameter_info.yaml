@@ -1,5 +1,5 @@
 ADDMatrix_flag: true
-Incremental_Pose_Generator_Flag: true
+Incremental_Pose_Generator_Flag: false
 camera_info_topic_color: /camera/color/camera_info
 camera_info_topic_depth: /camera/depth/camera_info
 camera_model: D435i
@@ -27,6 +27,8 @@ nearVal: 0.03
 object_name_list:
 - Milk
 - Ketchup
+object_detected_list:
+- Ketchup
 object_num: 2
 objs_are_not_touching_target_objs_num: 0
 objs_touching_target_objs_num: 0
@@ -42,7 +44,7 @@ otob_name_list:
 - cracker_obstacle
 - fish_can
 panda_robot_link_number: 11
-particle_num: 202
+particle_num: 250
 pb_render_flag: false
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0

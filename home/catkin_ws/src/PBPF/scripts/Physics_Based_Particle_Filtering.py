@@ -119,6 +119,7 @@ CAMERA_MOVE = parameter_info['camera_move'] # true/false
 PARTICLE_NUM = parameter_info['particle_num']
 
 OBJECT_NAME_LIST = parameter_info['object_name_list']
+OBJECT_DETECTED_LIST = parameter_info['object_detected_list']
 
 CAMERA_MODEL = parameter_info['camera_model'] # D455f/D435i
 CAMERA_INFO_TOPIC_COLOR = parameter_info['camera_info_topic_color'] # /camera/color/camera_info
@@ -1500,7 +1501,7 @@ def compare_distance_seq(particle_cloud, pw_T_obj_obse_objects_pose_list, visual
                     dis_y = abs(obj_y - obse_obj_pos[1])
                     dis_z = abs(obj_z - obse_obj_pos[2])
                     dis_xyz = math.sqrt(dis_x ** 2 + dis_y ** 2 + dis_z ** 2)
-                    weight_xyz = normal_distribution(dis_xyz, mean, BOSS_SIGMA_OBS_POS)
+                    weight_xyz = normal_distribution(dis_xyz, mean, BOSS_SIGMA_OBS_POS_LIST[obj_index])
                     # rotation weight
                     obse_obj_quat = Quaternion(x=obse_obj_ori[0], y=obse_obj_ori[1], z=obse_obj_ori[2], w=obse_obj_ori[3]) # Quaternion(): w,x,y,z
                     par_quat = Quaternion(x=obj_ori[0], y=obj_ori[1], z=obj_ori[2], w=obj_ori[3])
@@ -1511,7 +1512,7 @@ def compare_distance_seq(particle_cloud, pw_T_obj_obse_objects_pose_list, visual
                     sin_theta_over_2 = math.sqrt(err_bt_par_obse_corr_quat.x ** 2 + err_bt_par_obse_corr_quat.y ** 2 + err_bt_par_obse_corr_quat.z ** 2)
                     theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
                     theta = theta_over_2 * 2.0
-                    weight_ang = normal_distribution(theta, mean, BOSS_SIGMA_OBS_ANG)
+                    weight_ang = normal_distribution(theta, mean, BOSS_SIGMA_OBS_ANG_LIST[obj_index])
                     weight = weight_xyz * weight_ang
                     particle_cloud[par_index][obj_index].w = weight
                     weights_list[obj_index] = weight
@@ -1732,7 +1733,7 @@ if __name__ == '__main__':
     if run_alg_flag == 'CVPF':
         PARTICLE_NUM = 150
     
-    # ============================================================================
+    # ================================================================================================================================================================
     # get camera intrinsic info
     # CAMERA_INFO_TOPIC_COLOR: "/camera/color/camera_info"
     # CAMERA_INFO_TOPIC_DEPTH: "/camera/depth/camera_info"
@@ -1750,8 +1751,16 @@ if __name__ == '__main__':
     FOV_V_DEPTH = math.degrees(2 * math.atan(HEIGHT_DEPTH / (2*FY_DEPTH))) # fov: vertical / y
     
     RESOLUTION_DEPTH = (HEIGHT_DEPTH, WIDTH_DEPTH) # 480 848
-    # ============================================================================
-
+    # ================================================================================================================================================================
+    # Determine if seen all objects
+    __all_object_length = len(OBJECT_NAME_LIST)
+    _seen_object_length = len(OBJECT_DETECTED_LIST)
+    if __all_object_length == _seen_object_length:
+        SEE_ALL_OBJECTS = True
+    else: # _seen_object_length <= __all_object_length
+        SEE_ALL_OBJECTS = False
+    # ================================================================================================================================================================
+    # create publish OBJECT
     pub_DOPE_list = []
     pub_PBPF_list = []
     for obj_index in range(OBJECT_NUM):
@@ -1795,40 +1804,18 @@ if __name__ == '__main__':
     PF_UPDATE_RATE = rospy.Rate(1.0/PF_UPDATE_TIME_ONCE)
     print("PF_UPDATE_TIME_ONCE")
     print(PF_UPDATE_TIME_ONCE)
-
-    # Motion model Noise
-    POS_NOISE = 0.01 # original value = 0.005
-    ANG_NOISE = 0.1 # original value = 0.05
-    MOTION_NOISE = True
-    
+    # ================================================================================================================================================================
     # Standard deviation of computing the weight
+    BOSS_SIGMA_OBS_POS_LIST = [0.10] * __all_object_length
+    BOSS_SIGMA_OBS_ANG_LIST = [0.02*30] * __all_object_length
     for obj_index in range(OBJECT_NUM):
         object_name = OBJECT_NAME_LIST[obj_index]
         if object_name == "cracker":
-            BOSS_SIGMA_OBS_POS = 0.10
-            BOSS_SIGMA_OBS_ANG = 0.0216773873 * 30
-            POS_NOISE = 0.001 * 5.0 # 5
-            ANG_NOISE = 0.05 * 3.0 # 3.0
-            # mark
-            # POS_NOISE = 0.0
-            # ANG_NOISE = 0.0
+            BOSS_SIGMA_OBS_POS_LIST[obj_index] = 0.10
+            BOSS_SIGMA_OBS_ANG_LIST[obj_index] = 0.02 * 30
         else:
-            BOSS_SIGMA_OBS_POS = 0.10 # 0.02 need to increase
-            BOSS_SIGMA_OBS_ANG = 0.0216773873 * 10
-            POS_NOISE = 0.001 * 5.0
-            ANG_NOISE = 0.05 * 1.0 # 3.0
-            # mark
-            # POS_NOISE = 0.0
-            # ANG_NOISE = 0.0
-
-    # mark
-    MASS_MEAN = 1.750 # 0.380
-    MASS_SIGMA = 0.5
-    FRICTION_MEAN = 0.1
-    FRICTION_SIGMA = 0.3
-    RESTITUTION_MEAN = 0.9
-    RESTITUTION_SIGMA = 0.2
-
+            BOSS_SIGMA_OBS_POS_LIST[obj_index] = 0.10 # 0.02 need to increase
+            BOSS_SIGMA_OBS_ANG_LIST[obj_index] = 0.02 * 10
     # ================================================================================================================================================================
     # fix things
     # relationship between RGB len and depth len
@@ -1863,7 +1850,7 @@ if __name__ == '__main__':
     _pw_T_rob_pose = _get_matrix_from_pos_ori(_pw_T_rob_pos, _pw_T_rob_ori)
     # ================================================================================================================================================================
     PBPF_time_cosuming_list = []
-    
+    # ================================================================================================================================================================
     # multi-objects/robot list
     pw_T_rob_sim_pose_list_alg = []
     pw_T_obj_obse_obj_list_alg = []
@@ -1873,7 +1860,7 @@ if __name__ == '__main__':
     ang_std_list = [a_thresh_obse]
     print("begin to wait")
     time.sleep(0.5)
-
+    # ================================================================================================================================================================
     # build an object of class "Ros_Listener"
     ROS_LISTENER = Ros_Listener()
     _tf_listener = tf.TransformListener()
@@ -1887,7 +1874,7 @@ if __name__ == '__main__':
     print("Finish initializing robot")
     # Here, because we are using only one robot so we use [0]
     _pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
-
+    # ================================================================================================================================================================
     # get pump_T_cam_pose
     if LOCATE_CAMERA_FLAG == 'onTheHolder' and (ROBOT_END_EFFECTOR == 'pump' or ROBOT_END_EFFECTOR == 'pump_with_extention'):
         rob_T_camRGB_pos = [0.536, -0.061, 0.254]
@@ -1905,73 +1892,72 @@ if __name__ == '__main__':
                                          [ 0, 0, 0, 1]])
         _pumpModel_T_camRGB_pose_4_4 = np.dot(pumpModel_T_pumpRVIZ, _pumpRVIZ_T_camRGB_pose_4_4)
         _pumpModel_T_camD_pose_4_4 = np.dot(_pumpModel_T_camRGB_pose_4_4, _camRGB_T_camD_pose_4_4)
-        
-    # ================================================================================================================================================
+    # ================================================================================================================================================================
+    # Using Incremental Pose Generator
     if INCREMENTAL_POSE_GENERATOR_FLAG == True:
+        print("Incremental Pose Generator.")
         _generator_env = bc.BulletClient(connection_mode=p.GUI_SERVER) # DIRECT, GUI_SERVER
         pw_T_objs_obse_list_for_init, trans_ob_list, rot_ob_list = _update_from_real_world_incrementally()
         print("pw_T_objs_obse_list_for_init:", pw_T_objs_obse_list_for_init)
         _generator_env.disconnect()
     else:
-        print("Normal PBPF-RGBD alg!")
-        if TASK_FLAG == "basket_retrieve":
-            opti_T_robot_pos = ROS_LISTENER.listen_2_robot_pose()[0]
-            opti_T_robot_ori = ROS_LISTENER.listen_2_robot_pose()[1]
-            opti_T_basket_pos = ROS_LISTENER.listen_2_basket_pose()[0]
-            opti_T_basket_ori = ROS_LISTENER.listen_2_basket_pose()[1]
-            rob_T_basket_pose = compute_transformation_matrix(opti_T_robot_pos, opti_T_robot_ori, opti_T_basket_pos, opti_T_basket_ori)
-            rob_T_basket_pos = _get_position_from_matrix44(rob_T_basket_pose)
-            rob_T_basket_ori = _get_quaternion_from_matrix(rob_T_basket_pose)
-            pw_T_basket_pose = np.dot(_pw_T_rob_pose, rob_T_basket_pose)
-            rot_fix_matrix = [[ 0,-1, 0, 0],
-                                [ 1, 0, 0, 0],
-                                [ 0, 0, 1, 0],
-                                [ 0, 0, 0, 1]]
-            pw_T_basket_pose = np.dot(pw_T_basket_pose, rot_fix_matrix)
-            pw_T_basket_pos = _get_position_from_matrix44(pw_T_basket_pose)
-            pw_T_basket_ori = _get_quaternion_from_matrix(pw_T_basket_pose)
-            _pw_T_basket_pos = pw_T_basket_pos
-            _pw_T_basket_ori = pw_T_basket_ori
-        else:
-            print()
-    # ================================================================================================================================================
-        
-    # if INCREMENTAL_POSE_GENERATOR_FLAG == True:
-    #     create_scene.passing_objects_pose(pw_T_objs_obse_list_for_init)
-    
+        print("Normal Tracking Algorithm.")
+    # ================================================================================================================================================================
+    # Get Pose of Basket from OptiTrack
+    if TASK_FLAG == "basket_retrieve":
+        opti_T_robot_pos = ROS_LISTENER.listen_2_robot_pose()[0]
+        opti_T_robot_ori = ROS_LISTENER.listen_2_robot_pose()[1]
+        opti_T_basket_pos = ROS_LISTENER.listen_2_basket_pose()[0]
+        opti_T_basket_ori = ROS_LISTENER.listen_2_basket_pose()[1]
+        rob_T_basket_pose = compute_transformation_matrix(opti_T_robot_pos, opti_T_robot_ori, opti_T_basket_pos, opti_T_basket_ori)
+        rob_T_basket_pos = _get_position_from_matrix44(rob_T_basket_pose)
+        rob_T_basket_ori = _get_quaternion_from_matrix(rob_T_basket_pose)
+        pw_T_basket_pose = np.dot(_pw_T_rob_pose, rob_T_basket_pose)
+        rot_fix_matrix = [[ 0,-1, 0, 0],
+                          [ 1, 0, 0, 0],
+                          [ 0, 0, 1, 0],
+                          [ 0, 0, 0, 1]]
+        pw_T_basket_pose = np.dot(pw_T_basket_pose, rot_fix_matrix)
+        pw_T_basket_pos = _get_position_from_matrix44(pw_T_basket_pose)
+        pw_T_basket_ori = _get_quaternion_from_matrix(pw_T_basket_pose)
+        _pw_T_basket_pos = pw_T_basket_pos
+        _pw_T_basket_ori = pw_T_basket_ori
+    else:
+        print("Normal Manipulation Tasks.")
+    # ================================================================================================================================================================
     # get cameraDepth pose
     if LOCATE_CAMERA_FLAG == 'onTheHolder':        
         _pw_T_camRGB_tf_4_4, _pw_T_camD_tf_4_4 = _get_camera_pose_from_tf()
     else:
         _pw_T_camRGB_tf_4_4, _pw_T_camD_tf_4_4 = _launch_camera.getCameraInPybulletWorldPose44(_tf_listener, _pw_T_rob_sim_4_4)
-
     print("============================================================================")
     print("Camera RGB   len pose in Pybullet world (from tf):")
     print(_pw_T_camRGB_tf_4_4)
     print("Camera depth len pose in Pybullet world (from tf):")
     print(_pw_T_camD_tf_4_4)
     print("============================================================================")
+    # ================================================================================================================================================================
     if LOCATE_CAMERA_FLAG == 'onTheHolder' and (ROBOT_END_EFFECTOR == 'pump' or ROBOT_END_EFFECTOR == 'pump_with_extention'):
         if INCREMENTAL_POSE_GENERATOR_FLAG == True:
-            pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(_pumpRVIZ_T_camRGB_pose_4_4, _pumpModel_T_camRGB_pose_4_4, _pumpModel_T_camD_pose_4_4, pw_T_objs_obse_list_for_init, 0, 0)
+            pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(_pumpRVIZ_T_camRGB_pose_4_4, _pumpModel_T_camRGB_pose_4_4, _pumpModel_T_camD_pose_4_4, pw_T_objs_obse_list_for_init, 0, 0, SEE_ALL_OBJECTS)
         else:
-            pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(_pumpRVIZ_T_camRGB_pose_4_4, _pumpModel_T_camRGB_pose_4_4, _pumpModel_T_camD_pose_4_4, 0, 0)
+            pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(_pumpRVIZ_T_camRGB_pose_4_4, _pumpModel_T_camRGB_pose_4_4, _pumpModel_T_camD_pose_4_4, 0, 0, 0, SEE_ALL_OBJECTS)
     else:
         if INCREMENTAL_POSE_GENERATOR_FLAG == True:
-            pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(0, 0, 0, pw_T_objs_obse_list_for_init, trans_ob_list, rot_ob_list)
+            pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(0, 0, 0, pw_T_objs_obse_list_for_init, trans_ob_list, rot_ob_list, SEE_ALL_OBJECTS)
         else:
-            pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object()
+            pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(0, 0, 0, 0, 0, 0, SEE_ALL_OBJECTS)
+    # ================================================================================================================================================================
     print("Object pose only for initializaiton:")
-    for index in range(len(pw_T_obj_obse_obj_list_alg)):
+    for index in range(len(OBJECT_DETECTED_LIST)):
         obj_name = pw_T_obj_obse_obj_list_alg[index].obj_name
         pw_T_obj_obse_pos = pw_T_obj_obse_obj_list_alg[index].pos 
         pw_T_obj_obse_ori = pw_T_obj_obse_obj_list_alg[index].ori
+        print(index)
         print("Object Name: ", obj_name, "; Object position in Pybullet World: ", pw_T_obj_obse_pos, "; Object orientation in PybullET World: ", pw_T_obj_obse_ori)
-        
     print("Finish initializing scene")
     print("============================================================================")
-    # input("stop!!!!!!!!!!!!!!!!!!!")
-    # ============================================================================
+    # ================================================================================================================================================================
     # we are not using this for now
     if TASK_FLAG == '4':
         objs_touching_target_objs_num_ = OBJS_TOUCHING_TARGET_OBJS_NUM
@@ -1997,7 +1983,7 @@ if __name__ == '__main__':
     _objs_pose_info_list = [0] * PARTICLE_NUM
     _particle_cloud_pub = [0] * PARTICLE_NUM
     
-    # ============================================================================
+    # ================================================================================================================================================================
     # This part will return some pose results
     # [
     #  {
@@ -2023,8 +2009,7 @@ if __name__ == '__main__':
         objs_pose_info = wait_and_get_result_from(single_env)
         _objs_pose_info_list[env_index] = objs_pose_info
         _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
-
-    # ============================================================================
+    # ================================================================================================================================================================
     
     # get estimated object
     estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
@@ -2048,7 +2033,7 @@ if __name__ == '__main__':
     _sim_rob_movement(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
     rob_link_9_pose_old = p_sim.getLinkState(sim_rob_id, 9) # position = rob_link_9_pose_old[0], quaternion = rob_link_9_pose_old[1]
 
-    # ===========================================================================================================================================
+    # ================================================================================================================================================================
     # initialisation of vk configuration
     print("Begin to use VK to render depth image!")
     if VK_RENDER_FLAG == True:
@@ -2095,7 +2080,7 @@ if __name__ == '__main__':
         #     axs[0, par_index].imshow(vk_rendered_depth_image_array_list[par_index], cmap="gray")
         #     axs[1, par_index].imshow(vk_rendered__mask_image_array_list[par_index])
         # plt.show()
-    # ===========================================================================================================================================
+    # ================================================================================================================================================================
     
     print("Welcome to Our Approach ! RUNNING MODEL: ", RUNNING_MODEL)
 
@@ -2108,7 +2093,7 @@ if __name__ == '__main__':
     outlier_dis_list = [0] * OBJECT_NUM
     outlier_ang_list = [0] * OBJECT_NUM
 
-    # ===========================================================================================================================================
+    # ================================================================================================================================================================
     # set parameters
     visible_threshold_dope_is_fresh_list = [0] * OBJECT_NUM
     visible_threshold_dope_X_list = [0] * OBJECT_NUM 

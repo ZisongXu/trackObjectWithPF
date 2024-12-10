@@ -50,7 +50,7 @@ class Visualisation_World():
         self.rob_num = rob_num
         self.particle_num = particle_num
         self.p_visualisation = 0
-        self.create_scene = Create_Scene(object_num, rob_num)
+        self.create_scene = Create_Scene()
         self.ros_listener = Ros_Listener()
         self.listener = tf.TransformListener()
         self.visualisation_all = True

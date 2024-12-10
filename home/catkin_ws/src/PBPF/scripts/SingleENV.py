@@ -47,7 +47,7 @@ import yaml
 class SingleENV(multiprocessing.Process):
     def __init__(self, object_num, robot_num, particle_num,
                  pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list,
-                 update_style_flag, sim_time_step, pf_update_interval_in_real, ROS_LISTENER, 
+                 update_style_flag, sim_time_step, pf_update_interval_in_real, ROS_LISTENER, SEE_ALL_OBJECTS,
                  result_dict, daemon=True):
         super().__init__(daemon=daemon)
         self.queue = multiprocessing.Queue()
@@ -64,7 +64,8 @@ class SingleENV(multiprocessing.Process):
         self.sim_time_step = sim_time_step
         self.pf_update_interval_in_real = pf_update_interval_in_real
         self.ROS_LISTENER = ROS_LISTENER
-
+        self.SEE_ALL_OBJECTS = SEE_ALL_OBJECTS
+        
         # get the pose of the robot
         self.opti_T_robot_pos = self.ROS_LISTENER.listen_2_robot_pose()[0]
         self.opti_T_robot_ori = self.ROS_LISTENER.listen_2_robot_pose()[1]
@@ -107,6 +108,7 @@ class SingleENV(multiprocessing.Process):
         self.OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_are_not_touching_target_objs_num']
         self.OBJS_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_touching_target_objs_num']
         self.OBJECT_NAME_LIST = self.parameter_info['object_name_list']
+        self.OBJECT_DETECTED_LIST = self.parameter_info['object_detected_list']
         self.OBJECT_NUM = self.parameter_info['object_num']
         
         self.PANDA_ROBOT_LINK_NUMBER = self.parameter_info['panda_robot_link_number']
@@ -115,6 +117,8 @@ class SingleENV(multiprocessing.Process):
         self.ROBOT_END_EFFECTOR = self.parameter_info['robot_end_effector'] # 'gripper', 'pump', 'pump_with_extention'
         self.TASK_FLAG = self.parameter_info['task_flag'] # '1', '2', '3', 'basket_retrieve'
         self.INCREMENTAL_POSE_GENERATOR_FLAG = self.parameter_info['Incremental_Pose_Generator_Flag']
+        
+        self.INIT_METHOD = self.parameter_info['init_method'] # seg/depth/normal...
         
         self.MASS_MEAN_list = [1.0] * self.object_num
         self.MASS_MEAN = 1.0 # 0.380
@@ -265,16 +269,16 @@ class SingleENV(multiprocessing.Process):
             pw_T_rob_pos = [0.0, 0.0, 0.02+table_pos_1[2]+0.008] # robot pose
             pw_T_rob_ori = [0, 0, 0, 1]
             pw_T_rob_pose = self.get_matrix_from_pos_ori(pw_T_rob_pos, pw_T_rob_ori)
-            pw_T_basket_pose = np.dot(pw_T_rob_pose, rob_T_basket_pose)
+            self.pw_T_basket_pose = np.dot(pw_T_rob_pose, rob_T_basket_pose)
             rot_fix_matrix = [[ 0,-1, 0, 0],
                               [ 1, 0, 0, 0],
                               [ 0, 0, 1, 0],
                               [ 0, 0, 0, 1]]
-            pw_T_basket_pose = np.dot(pw_T_basket_pose, rot_fix_matrix)
-            pw_T_basket_pos = self.get_position_from_matrix44(pw_T_basket_pose)
-            pw_T_basket_ori = self.get_quaternion_from_matrix(pw_T_basket_pose)
+            self.pw_T_basket_pose = np.dot(self.pw_T_basket_pose, rot_fix_matrix)
+            self.pw_T_basket_pos = self.get_position_from_matrix44(self.pw_T_basket_pose)
+            self.pw_T_basket_ori = self.get_quaternion_from_matrix(self.pw_T_basket_pose)
             self.basket_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/basket.urdf"),
-                                            pw_T_basket_pos, pw_T_basket_ori, useFixedBase=1)
+                                                 self.pw_T_basket_pos, self.pw_T_basket_ori, useFixedBase=1)
             self.collision_detection_obj_id_collection.append(self.basket_id)
             self.collision_detection_env_obj_id_collection.append(self.basket_id)
 
@@ -334,57 +338,197 @@ class SingleENV(multiprocessing.Process):
         self.collision_detection_obj_id_collection.append(self.robot_id)
         self.collision_detection_env_obj_id_collection.append(self.robot_id)
 
-    def add_target_objects(self):
-        print_object_name_flag = 0
-        for obj_index in range(self.object_num):
-            obj_obse_pos = self.pw_T_obj_obse_obj_list_alg[obj_index].pos
-            obj_obse_ori = self.pw_T_obj_obse_obj_list_alg[obj_index].ori
-            obj_obse_name = self.pw_T_obj_obse_obj_list_alg[obj_index].obj_name
-            if print_object_name_flag == obj_index:
-                print_object_name_flag = print_object_name_flag + 1
-            particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
-            gazebo_contain = ""
-            if self.gazebo_flag == True:
-                gazebo_contain = "gazebo_"
-            particle_no_visual_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_obse_name+"/"+gazebo_contain+obj_obse_name+"_par_no_visual_hor.urdf"),
-                                                        particle_pos, particle_ori)
-            self.collision_detection_obj_id_collection.append(particle_no_visual_id)
-            self.particle_objects_id_collection[obj_index] = particle_no_visual_id
+    def add_target_objects(self):     
+        
+        self.UNSEEN_OBJECT_LIST = list(set(self.OBJECT_NAME_LIST) - set(self.OBJECT_DETECTED_LIST))
+        init_unseen_obj_index = 0  
+        init___seen_obj_index = 0  
+        init_unseen_obj_flag = False 
+        
+        self.task_flag
+        
+        # can see all objects
+        if len(self.UNSEEN_OBJECT_LIST) == 0: 
+            # if self.SEE_ALL_OBJECTS == True:
+            for obj_index, obj_name_ in enumerate(self.OBJECT_NAME_LIST):               
+                obj_obse_pos = self.pw_T_obj_obse_obj_list_alg[obj_index].pos
+                obj_obse_ori = self.pw_T_obj_obse_obj_list_alg[obj_index].ori
+                obj_name_ = self.pw_T_obj_obse_obj_list_alg[obj_index].obj_name
+                particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
+                gazebo_contain = ""
+                if self.gazebo_flag == True:
+                    gazebo_contain = "gazebo_"
+                particle_no_visual_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_name_+"/"+gazebo_contain+obj_name_+"_par_no_visual_hor.urdf"),
+                                                            particle_pos, particle_ori)
+                self.collision_detection_obj_id_collection.append(particle_no_visual_id)
+                self.particle_objects_id_collection[obj_index] = particle_no_visual_id
 
-            conter = 0
-            while True:
-                flag = 0
-                conter = conter + 1
-                length_collision_detection_obj_id = len(self.collision_detection_obj_id_collection)
-                for check_num in range(length_collision_detection_obj_id-1):
-                    self.p_env.stepSimulation()
-                    contacts = self.p_env.getContactPoints(bodyA=self.collision_detection_obj_id_collection[check_num], 
-                                                           bodyB=self.collision_detection_obj_id_collection[-1])
-                    for contact in contacts:
-                        contactNormalOnBtoA = contact[7]
-                        contact_dis = contact[8]
-                        if contact_dis < -0.001:
-                            par_x_ = particle_pos[0] + contactNormalOnBtoA[0]*contact_dis/2
-                            par_y_ = particle_pos[1] + contactNormalOnBtoA[1]*contact_dis/2
-                            par_z_ = particle_pos[2] + contactNormalOnBtoA[2]*contact_dis/2
-                            particle_pos = [par_x_, par_y_, par_z_]
-                            if conter > 20:
-                                print("init more than 20 times")
-                                conter = 0
-                                particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
-                            self.p_env.resetBasePositionAndOrientation(particle_no_visual_id, particle_pos, particle_ori)
-                            flag = 1
+                conter = 0
+                while True:
+                    flag = 0
+                    conter = conter + 1
+                    length_collision_detection_obj_id = len(self.collision_detection_obj_id_collection)
+                    for check_num in range(length_collision_detection_obj_id-1):
+                        self.p_env.stepSimulation()
+                        contacts = self.p_env.getContactPoints(bodyA=self.collision_detection_obj_id_collection[check_num], 
+                                                            bodyB=self.collision_detection_obj_id_collection[-1])
+                        for contact in contacts:
+                            contactNormalOnBtoA = contact[7]
+                            contact_dis = contact[8]
+                            if contact_dis < -0.001:
+                                par_x_ = particle_pos[0] + contactNormalOnBtoA[0]*contact_dis/2
+                                par_y_ = particle_pos[1] + contactNormalOnBtoA[1]*contact_dis/2
+                                par_z_ = particle_pos[2] + contactNormalOnBtoA[2]*contact_dis/2
+                                particle_pos = [par_x_, par_y_, par_z_]
+                                if conter > 20:
+                                    print("init more than 20 times")
+                                    conter = 0
+                                    particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
+                                self.p_env.resetBasePositionAndOrientation(particle_no_visual_id, particle_pos, particle_ori)
+                                flag = 1
+                                break
+                        if flag == 1:
                             break
-                    if flag == 1:
+                    if flag == 0:
                         break
-                if flag == 0:
-                    break
-            objPose = Particle(obj_obse_name, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, 0, 0, 0)
-            self.objects_list[obj_index] = objPose
+                objPose = Particle(obj_name_, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, 0, 0, 0)
+                self.objects_list[obj_index] = objPose
+                
+        # cannot see all objects
+        elif len(self.UNSEEN_OBJECT_LIST) != 0: 
+            if self.INIT_METHOD == "seg":
+                for obj_index, obj_name_ in enumerate(self.OBJECT_NAME_LIST):
+                    if obj_name_ in self.OBJECT_DETECTED_LIST:
+                        obj_obse_pos = self.pw_T_obj_obse_obj_list_alg[obj_index].pos
+                        obj_obse_ori = self.pw_T_obj_obse_obj_list_alg[obj_index].ori
+                        obj_name_ = self.pw_T_obj_obse_obj_list_alg[obj_index].obj_name
+                        particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
+                        gazebo_contain = ""
+                        if self.gazebo_flag == True:
+                            gazebo_contain = "gazebo_"
+                        particle_no_visual_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_name_+"/"+gazebo_contain+obj_name_+"_par_no_visual_hor.urdf"),
+                                                                    particle_pos, particle_ori)
+                        self.collision_detection_obj_id_collection.append(particle_no_visual_id)
+                        self.particle_objects_id_collection[obj_index] = particle_no_visual_id
+                        conter = 0
+                        while True:
+                            flag = 0
+                            conter = conter + 1
+                            length_collision_detection_obj_id = len(self.collision_detection_obj_id_collection)
+                            for check_num in range(length_collision_detection_obj_id-1):
+                                self.p_env.stepSimulation()
+                                contacts = self.p_env.getContactPoints(bodyA=self.collision_detection_obj_id_collection[check_num], 
+                                                                    bodyB=self.collision_detection_obj_id_collection[-1])
+                                for contact in contacts:
+                                    contactNormalOnBtoA = contact[7]
+                                    contact_dis = contact[8]
+                                    if contact_dis < -0.001:
+                                        par_x_ = particle_pos[0] + contactNormalOnBtoA[0]*contact_dis/2
+                                        par_y_ = particle_pos[1] + contactNormalOnBtoA[1]*contact_dis/2
+                                        par_z_ = particle_pos[2] + contactNormalOnBtoA[2]*contact_dis/2
+                                        particle_pos = [par_x_, par_y_, par_z_]
+                                        if conter > 20:
+                                            print("init more than 20 times")
+                                            conter = 0
+                                            particle_pos, particle_ori = self.generate_random_pose(obj_obse_pos, obj_obse_ori)
+                                        self.p_env.resetBasePositionAndOrientation(particle_no_visual_id, particle_pos, particle_ori)
+                                        flag = 1
+                                        break
+                                if flag == 1:
+                                    break
+                            if flag == 0:
+                                break
+                    elif obj_name_ in self.UNSEEN_OBJECT_LIST:
+                        init_unseen_obj_index = 0                     
+                        if self.task_flag == "basket_retrieve": # we need to know the area that hold the unseen object
+                            basket_width, basket_lenght, basket_height = self.get_object_shape("basket")
+                            x_w = 0.0
+                            y_l = 0.0
+                            z_h = 0.0
+                            pw_T_basket_pos_x = self.pw_T_basket_pos[0]
+                            pw_T_basket_pos_y = self.pw_T_basket_pos[1]
+                            pw_T_basket_pos_z = self.pw_T_basket_pos[2]
+                            pw_T_basketCenter_pos_x = pw_T_basket_pos_x
+                            pw_T_basketCenter_pos_y = pw_T_basket_pos_y
+                            pw_T_basketCenter_pos_z = pw_T_basket_pos_z + basket_height/2.0
+                            pw_T_basketCenter_pos = [pw_T_basketCenter_pos_x, pw_T_basketCenter_pos_y, pw_T_basketCenter_pos_z]
+                            BasketCenter_T_points_pose_4_4_list = self.getCenterTPointsList("basket")
+                            pw_T_basketPoints_pose_4_4_list = self.getPwTPointsList(BasketCenter_T_points_pose_4_4_list, pw_T_basketCenter_pos, self.pw_T_basket_ori)
+                            pw_T_basketPoints_pose_4_4_array = np.array(pw_T_basketPoints_pose_4_4_list)
+                            x_w, y_l, z_h = self.get_object_shape(self.UNSEEN_OBJECT_LIST[init_unseen_obj_index])
+                            # random_pose_results: [dir1, dir2, ...], dir1: {'transform_matrix': ..., 'pos': ..., 'ori': ...}
+                            # [{'transform_matrix': array([[ 0.99950816, -0.03124095,  0.0027295 ,  0.4964376 ],
+                            #                              [ 0.03122253,  0.99949101,  0.00654814,  0.07671522],
+                            #                              [-0.00293269, -0.0064597 ,  0.99997484,  0.79929841],
+                            #                              [ 0.        ,  0.        ,  0.        ,  1.        ]]), 
+                            #   'pos': array([0.4964376 , 0.07671522, 0.79929841]), 
+                            #   'ori': array([-0.00325238,  0.00141573,  0.01561787,  0.99987174])}]
+                            random_pose_results = self.generate_points_in_rotated_rectangular_prism(self.pw_T_basket_pose, BasketCenter_T_points_pose_4_4_list, x_w, y_l, z_h, num_points=1)
+                            # mark hard code
+                            # all_positions = [entry['pos'] for entry in random_pose_results]
+                            # all_orientations = [entry['ori'] for entry in random_pose_results]
+                            random_pose_result = random_pose_results[0]
+                            particle_pos = random_pose_result['pos']
+                            particle_ori = random_pose_result['ori']
+                            gazebo_contain = ""
+                            if self.gazebo_flag == True:
+                                gazebo_contain = "gazebo_"
+                            particle_no_visual_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_name_+"/"+gazebo_contain+obj_name_+"_par_no_visual_hor.urdf"),
+                                                                        particle_pos, particle_ori)
+                            self.collision_detection_obj_id_collection.append(particle_no_visual_id)
+                            self.particle_objects_id_collection[obj_index] = particle_no_visual_id
+                            
+                            conter = 0
+                            while True:
+                                flag = 0
+                                conter = conter + 1
+                                length_collision_detection_obj_id = len(self.collision_detection_obj_id_collection)
+                                for check_num in range(length_collision_detection_obj_id-1):
+                                    self.p_env.stepSimulation()
+                                    contacts = self.p_env.getContactPoints(bodyA=self.collision_detection_obj_id_collection[check_num], 
+                                                                           bodyB=self.collision_detection_obj_id_collection[-1])
+                                    for contact in contacts:
+                                        contactNormalOnBtoA = contact[7]
+                                        contact_dis = contact[8]
+                                        if contact_dis < -0.001:
+                                            par_x_ = particle_pos[0] + contactNormalOnBtoA[0]*contact_dis/2
+                                            par_y_ = particle_pos[1] + contactNormalOnBtoA[1]*contact_dis/2
+                                            par_z_ = particle_pos[2] + contactNormalOnBtoA[2]*contact_dis/2
+                                            particle_pos = [par_x_, par_y_, par_z_]
+                                            if conter > 20:
+                                                print("init more than 20 times")
+                                                conter = 0
+                                                random_pose_results = self.generate_points_in_rotated_rectangular_prism(self.pw_T_basket_pose, BasketCenter_T_points_pose_4_4_list, x_w, y_l, z_h, num_points=1)
+                                                random_pose_result = random_pose_results[0]
+                                                particle_pos = random_pose_result['pos']
+                                                particle_ori = random_pose_result['ori']
+                                            self.p_env.resetBasePositionAndOrientation(particle_no_visual_id, particle_pos, particle_ori)
+                                            flag = 1
+                                            break
+                                    if flag == 1:
+                                        break
+                                if flag == 0:
+                                    break      
+                        else:
+                            print("SingleENV.py: Have not done!")    
+                            input("")
+                    objPose = Particle(obj_name_, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, 0, 0, 0)
+                    self.objects_list[obj_index] = objPose
+            elif self.INIT_METHOD == "depth":
+                print("SingleENV.py: Have not done!")
+                input("")
+            elif self.INIT_METHOD == "depth":
+                print("SingleENV.py: Have not done!")
+                input("")
+            elif self.INIT_METHOD == "normal":
+                print("SingleENV.py: Have not done!")
+            
+        
+
             
     def get_objects_pose(self, par_index):
-        for time_index in range(int(self.pf_update_interval_in_sim)):
-            self.p_env.stepSimulation()
+        # for time_index in range(int(self.pf_update_interval_in_sim)):
+        #     self.p_env.stepSimulation()
         return_results = []
         for obj_index in range(self.object_num):
             obj_id = self.particle_objects_id_collection[obj_index]
@@ -823,4 +967,175 @@ class SingleENV(multiprocessing.Process):
         matrix_3_4 = np.c_[matrix_3_3, pos]  # Add position to create 3x4 matrix
         matrix_4_4 = np.r_[matrix_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
         return matrix_4_4
+    
+    def getCenterTPointsList(self, object_name):
+        center_T_points_pose_4_4_list = []
+        # if object_name == "cracker" or object_name == "gelatin":
+        if (object_name != "soup") and (object_name != "basket"):
+            if object_name == "cracker":
+                x_w = 0.159
+                y_l = 0.21243700408935547
+                z_h = 0.06
+            elif object_name == "Ketchup":
+                x_w = 0.145
+                y_l = 0.042
+                z_h = 0.061
+            elif object_name == "Milk":
+                x_w = 0.179934
+                y_l = 0.0613
+                z_h = 0.0613
+            elif object_name == "Mustard":
+                x_w = 0.14
+                y_l = 0.038
+                z_h = 0.055
+            elif object_name == "Mayo":
+                x_w = 0.1377716
+                y_l = 0.0310130
+                z_h = 0.054478
+            elif object_name == "Parmesan":
+                x_w = 0.0929022
+                y_l = 0.0592842
+                z_h = 0.0592842
+            elif object_name == "SaladDressing":
+                x_w = 0.1375274
+                y_l = 0.036266
+                z_h = 0.052722
+            else:
+                x_w = 0.0851
+                y_l = 0.0737
+                z_h = 0.0279
+            vector_list = [[1,1,1], [1,1,-1], [1,-1,1], [1,-1,-1], [-1,1,1], [-1,1,-1], [-1,-1,1], [-1,-1,-1], [1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1], [1,0.5,0.5], [1,0.5,-0.5], [1,-0.5,0.5], [1,-0.5,-0.5], [-1,0.5,0.5], [-1,0.5,-0.5], [-1,-0.5,0.5], [-1,-0.5,-0.5], [0.5,1,0.5], [0.5,1,-0.5], [-0.5,1,0.5], [-0.5,1,-0.5], [0.5,-1,0.5], [0.5,-1,-0.5], [-0.5,-1,0.5], [-0.5,-1,-0.5], [0.5,0.5,1], [0.5,-0.5,1], [-0.5,0.5,1], [-0.5,-0.5,1], [0.5,0.5,-1], [0.5,-0.5,-1], [-0.5,0.5,-1], [-0.5,-0.5,-1]]
+        elif object_name == "basket":
+            x_w = 0.345
+            y_l = 0.473
+            z_h = 0.231
+            vector_list = [[1,1,1], [1,1,-1], [1,-1,1], [1,-1,-1], [-1,1,1], [-1,1,-1], [-1,-1,1], [-1,-1,-1]]
+        else:
+            x_w = 0.032829689025878906
+            y_l = 0.032829689025878906
+            z_h = 0.099
+            r = math.sqrt(2)
+            vector_list = [[0,0,1], [0,0,-1],
+                        [r,0,1], [0,r,1], [-r,0,1], [0,-r,1], [r,r,1], [r,-r,1], [-r,r,1], [-r,-r,1],
+                        [r,0,0.5], [0,r,0.5], [-r,0,0.5], [0,-r,0.5], [r,r,0.5], [r,-r,0.5], [-r,r,0.5], [-r,-r,0.5],
+                        [r,0,0], [0,r,0], [-r,0,0], [0,-r,0], [r,r,0], [r,-r,0], [-r,r,0], [-r,-r,0],
+                        [r,0,-0.5], [0,r,-0.5], [-r,0,-0.5], [0,-r,-0.5], [r,r,-0.5], [r,-r,-0.5], [-r,r,-0.5], [-r,-r,-0.5],
+                        [r,0,-1], [0,r,-1], [-r,0,-1], [0,-r,-1], [r,r,-1], [r,-r,-1], [-r,r,-1], [-r,-r,-1]]
+        for index in range(len(vector_list)):
+            center_T_p_x_new = vector_list[index][0] * x_w/2
+            center_T_p_y_new = vector_list[index][1] * y_l/2
+            center_T_p_z_new = vector_list[index][2] * z_h/2
+            center_T_p_pos = [center_T_p_x_new, center_T_p_y_new, center_T_p_z_new]
+            center_T_p_ori = [0, 0, 0, 1] # x, y, z, w
+            # center_T_p_3_3 = transformations.quaternion_matrix(center_T_p_ori)
+            # center_T_p_4_4 = rotation_4_4_to_transformation_4_4(center_T_p_3_3, center_T_p_pos)
+            center_T_p_3_3 = np.array(p.getMatrixFromQuaternion(center_T_p_ori)).reshape(3, 3)
+            center_T_p_3_4 = np.c_[center_T_p_3_3, center_T_p_pos]  # Add position to create 3x4 matrix
+            center_T_p_4_4 = np.r_[center_T_p_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+            center_T_points_pose_4_4_list.append(center_T_p_4_4)
+        return center_T_points_pose_4_4_list
+    
+    def getPwTPointsList(self, center_T_points_pose_4_4_list, pos, ori):
+        pw_T_points_pose_4_4_list = []
+        # pw_T_center_ori_3_3 = transformations.quaternion_matrix(ori)
+        # pw_T_center_ori_4_4 = rotation_4_4_to_transformation_4_4(pw_T_center_ori_3_3, pos)
+        pw_T_center_ori_3_3 = np.array(p.getMatrixFromQuaternion(ori)).reshape(3, 3)
+        pw_T_center_ori_3_4 = np.c_[pw_T_center_ori_3_3, pos]  # Add position to create 3x4 matrix
+        pw_T_center_ori_4_4 = np.r_[pw_T_center_ori_3_4, [[0, 0, 0, 1]]]  # Convert to 4x4 homogeneous matrix
+        # mark
+        for index in range(len(center_T_points_pose_4_4_list)):
+            center_T_p_4_4 = copy.deepcopy(center_T_points_pose_4_4_list[index])
+            pw_T_p_4_4 = np.dot(pw_T_center_ori_4_4, center_T_p_4_4)
+            pw_T_points_pose_4_4_list.append(pw_T_p_4_4)
+        return pw_T_points_pose_4_4_list
         
+    def generate_points_in_rotated_rectangular_prism(self, pw_T_basket_pose, BasketCenter_T_points_pose_4_4_list, x_w, y_l, z_h, num_points=1):
+        """
+        Randomly generates uniformly distributed points in the rotated rectangular space (excluding boundaries).
+        Parameters:
+        - self.pw_T_basket_pose: transformation matrix from world coordinate system to basket center (4x4)
+        - BasketCenter_T_points_pose_4_4_list: local coordinates of 8 points (list of 4x4 matrices)
+        - x_w, y_l, z_h: Minimum boundary values (width, length, height) for the exclusion boundaries of the basket.
+        - num_points: number of points to generate, default is 1
+        Returns:
+        - transform_matrix: 4x4 transform matrix
+        - pos: position coordinate (3,)
+        - ori: quaternion (4,)
+        """
+        # Extract 8 points of the basket in the local coordinate system
+        basket_points_local = np.array([pose[:3, 3] for pose in BasketCenter_T_points_pose_4_4_list])  # Extract the panning portion
+        # Find the minimum and maximum points in the local coordinate system of the basket
+        min_corner_local = np.min(basket_points_local, axis=0)
+        max_corner_local = np.max(basket_points_local, axis=0)
+        # computational boundary
+        boundary_margin = (min(x_w, y_l, z_h)+0.01)/2.0
+        effective_min_local = min_corner_local + boundary_margin
+        effective_max_local = max_corner_local - boundary_margin
+        effective_max_local[2] = max_corner_local[2]  # Top does not exclude borders
+        # Generating random points in a local coordinate system
+        local_points = np.random.uniform(low=effective_min_local, high=effective_max_local, size=(num_points, 3))
+        # Convert local points to the world coordinate system
+        rotation_matrix = pw_T_basket_pose[:3, :3]  # Rotated matrix of world coordinates to the center of the basket
+        translation_vector = pw_T_basket_pose[:3, 3]  # Translation vector from world coordinates to the center of the basket
+        translation_vector[2] = translation_vector[2] + max_corner_local[2] # mark, do this because the coordinate center of the basket is not at the center of the basket
+        world_points = np.dot(local_points, rotation_matrix.T) + translation_vector
+        world_matrix = R.random().as_matrix()
+        # Generate results
+        results = []
+        for i in range(num_points):
+            pos = world_points[i]
+            ori = R.from_matrix(world_matrix).as_quat()  # 提取四元数
+            transform_matrix = np.eye(4)
+            transform_matrix[:3, :3] = rotation_matrix
+            transform_matrix[:3, 3] = pos
+            results.append({
+                "transform_matrix": transform_matrix,
+                "pos": pos,
+                "ori": ori
+            })
+        return results
+    
+    def get_object_shape(self, obj_name):
+        if obj_name == "cracker":
+            x_w = 0.159
+            y_l = 0.21243700408935547
+            z_h = 0.06
+        elif obj_name == "Ketchup":
+            x_w = 0.145
+            y_l = 0.042
+            z_h = 0.061
+        elif obj_name == "Milk":
+            x_w = 0.179934
+            y_l = 0.0613
+            z_h = 0.0613
+        elif obj_name == "Mustard":
+            x_w = 0.14
+            y_l = 0.038
+            z_h = 0.055
+        elif obj_name == "Mayo":
+            x_w = 0.1377716
+            y_l = 0.0310130
+            z_h = 0.054478
+        elif obj_name == "Parmesan":
+            x_w = 0.0929022
+            y_l = 0.0592842
+            z_h = 0.0592842
+        elif obj_name == "SaladDressing":
+            x_w = 0.1375274
+            y_l = 0.036266
+            z_h = 0.052722
+        elif obj_name == "basket":
+            x_w = 0.345
+            y_l = 0.473
+            z_h = 0.231
+        elif obj_name == "soup":
+            x_w = 0.032829689025878906
+            y_l = 0.032829689025878906
+            z_h = 0.099
+        # else:
+        #     x_w = 0.0851
+        #     y_l = 0.0737
+        #     z_h = 0.0279
+        return x_w, y_l, z_h
+
+    

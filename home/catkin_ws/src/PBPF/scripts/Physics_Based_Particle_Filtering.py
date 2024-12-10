@@ -120,6 +120,8 @@ PARTICLE_NUM = parameter_info['particle_num']
 
 OBJECT_NAME_LIST = parameter_info['object_name_list']
 OBJECT_DETECTED_LIST = parameter_info['object_detected_list']
+UNSEEN_OBJECT_LIST = list(set(OBJECT_NAME_LIST) - set(OBJECT_DETECTED_LIST))
+INIT_METHOD = parameter_info['init_method'] # seg/depth/normal...
 
 CAMERA_MODEL = parameter_info['camera_model'] # D455f/D435i
 CAMERA_INFO_TOPIC_COLOR = parameter_info['camera_info_topic_color'] # /camera/color/camera_info
@@ -207,12 +209,181 @@ import vkdepth
 # qdv.release();
 
 print("Launch Vkdepth successfully")
+
 # ==============================================================================================================================
 # mark
 # - gelatin
-
-# ===============================================================================================================
-
+def set_parameters():
+    global outlier_dis_list
+    global outlier_ang_list
+    global visible_threshold_dope_is_fresh_list
+    global visible_threshold_dope_X_list
+    global visible_threshold_dope_X_small_list
+    global visible_threshold_outlier_XS_list
+    global visible_threshold_outlier_S_list
+    global visible_threshold_outlier_L_list
+    global visible_threshold_outlier_XL_list
+    global visible_weight_dope_X_smaller_than_threshold_list
+    global visible_weight_dope_X_larger_than_threshold_list
+    global visible_weight_outlier_larger_than_threshold_list
+    global visible_weight_outlier_smaller_than_threshold_list
+    global x_w_list
+    global y_l_list
+    global z_h_list
+    for obj_index in range(OBJECT_NUM):
+        object_name = OBJECT_NAME_LIST[obj_index]
+        if object_name == "cracker":
+            x_w_list[obj_index] = 0.159
+            y_l_list[obj_index] = 0.21243700408935547
+            z_h_list[obj_index] = 0.06
+            visible_threshold_dope_X_list[obj_index] = 0.45 # 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.45
+            visible_threshold_outlier_S_list[obj_index] = 0.45
+            visible_threshold_outlier_L_list[obj_index] = 0.6
+            # visible_threshold_outlier_XL_list[obj_index] = 0.6
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.5
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.45 # 0.05
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.45
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 4.0
+        elif object_name == "soup":
+            x_w_list[obj_index] = 0.032829689025878906
+            y_l_list[obj_index] = 0.032829689025878906
+            z_h_list[obj_index] = 0.099
+            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.3
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.65
+            # visible_threshold_outlier_XL_list[obj_index] = 0.75
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+        elif object_name == "Ketchup":
+            x_w_list[obj_index] = 0.145
+            y_l_list[obj_index] = 0.042
+            z_h_list[obj_index] = 0.061
+            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.3
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.65
+            # visible_threshold_outlier_XL_list[obj_index] = 0.75
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+        elif object_name == "Milk":
+            x_w_list[obj_index] = 0.179934
+            y_l_list[obj_index] = 0.0613
+            z_h_list[obj_index] = 0.0613
+            visible_threshold_dope_X_list[obj_index] = 0.45 # 0.55
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.3
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.65
+            # visible_threshold_outlier_XL_list[obj_index] = 0.75
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+        elif object_name == "Mustard":
+            x_w_list[obj_index] = 0.14
+            y_l_list[obj_index] = 0.038
+            z_h_list[obj_index] = 0.055
+            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.3
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.65
+            # visible_threshold_outlier_XL_list[obj_index] = 0.75
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.50 # 0.55/0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+        elif object_name == "Mayo":
+            x_w_list[obj_index] = 0.1377716
+            y_l_list[obj_index] = 0.0310130
+            z_h_list[obj_index] = 0.054478
+            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.3
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.65
+            # visible_threshold_outlier_XL_list[obj_index] = 0.75
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+        elif object_name == "Parmesan":
+            x_w_list[obj_index] = 0.0929022
+            y_l_list[obj_index] = 0.0592842
+            z_h_list[obj_index] = 0.0592842
+            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.3
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.65
+            # visible_threshold_outlier_XL_list[obj_index] = 0.75
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.45 # 0.55/0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+        elif object_name == "SaladDressing":
+            x_w_list[obj_index] = 0.1375274
+            y_l_list[obj_index] = 0.036266
+            z_h_list[obj_index] = 0.052722
+            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            # visible_threshold_outlier_XS_list[obj_index] = 0.3
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.65
+            # visible_threshold_outlier_XL_list[obj_index] = 0.75
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
+            outlier_dis_list[obj_index] = 0.07
+            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
+        else: # gelatin
+            x_w_list[obj_index] = 0.159
+            y_l_list[obj_index] = 0.21243700408935547
+            z_h_list[obj_index] = 0.06
+            visible_threshold_dope_X_list[obj_index] = 0.95
+            visible_threshold_dope_X_small_list[obj_index] = 0
+            visible_threshold_outlier_S_list[obj_index] = 0.4
+            visible_threshold_outlier_L_list[obj_index] = 0.5
+            visible_threshold_dope_is_fresh_list[obj_index] = 0.5
+            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.75
+            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
+            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.45
+            outlier_dis_list[obj_index] = 0.05
+            outlier_ang_list[obj_index] = math.pi * 1 / 4.0
+            
 def compute_pos_err_bt_2_points(pos1, pos2):
     x1=pos1[0]
     y1=pos1[1]
@@ -1238,20 +1409,32 @@ def visibility_computing_vk(particle_cloud, RGB_weights_lists_):
     _vk_context.enqueue_render_and_download(vkdepth.VISIBILITY)
     _vk_context.wait()
     for index, particle in enumerate(particle_cloud):
+        ## Area of the unobstruced part of target objects
         part = _vk_context.part_vis_counts(index)
         part_arr = np.array(part, copy = False)
+        ## Area of the full part of target objects
         full = _vk_context.full_vis_counts(index)
         full_arr = np.array(full, copy = False)
         for obj_index in range(OBJECT_NUM):
+            ## object_{obj_index} is fully obstruced
             if full_arr[obj_index] == 0:
+                local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
+                local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
                 weight = RGB_weights_lists_[index][obj_index]
-                weight = weight * 0.1
+                if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0:
+                    weight = weight * 0.25
+                elif local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==1:
+                    weight = weight * 0.75
+                elif local_obj_visual_by_DOPE_val==1 and local_obj_outlier_by_DOPE_val==1:
+                    weight = weight
             else:
+                ## proportion of objects visible
                 visible_score = 1.0 * part_arr[obj_index] / full_arr[obj_index]
                 # weight = particle[obj_index].w
                 weight = RGB_weights_lists_[index][obj_index]
                 local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
                 local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
+                # object is visible to the camera
                 if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0:
                     # visible_score low, weight low
                     if visible_score < visible_threshold_dope_is_fresh_list[obj_index]:
@@ -1260,11 +1443,12 @@ def visibility_computing_vk(particle_cloud, RGB_weights_lists_):
                     # visible_score high, weight high
                     else:
                         weight = weight
+                # object isnot visible to the camera
                 else:
                     # visible_score<0.95 low, weight high
-                    if visible_threshold_dope_X_small_list[obj_index]<=visible_score and visible_score<=visible_threshold_dope_X_list[obj_index]:
-                        weight = visible_weight_dope_X_smaller_than_threshold_list[obj_index] * weight
-                    else:
+                    if visible_threshold_dope_X_small_list[obj_index]<=visible_score and visible_score<=visible_threshold_dope_X_list[obj_index]: # 0 <= visible_score <= threshold
+                        weight = visible_weight_dope_X_smaller_than_threshold_list[obj_index] * weight # 0.75
+                    else:                                                                                                                         # threshold <= visible_score
                         weight = visible_weight_dope_X_larger_than_threshold_list[obj_index] * weight # 0.25/0.5
             particle_cloud[index][obj_index].w = weight
     return particle_cloud
@@ -1279,15 +1463,45 @@ def compare_depth_image_vk_parallelised(real_depth_image_transferred):
     scores_0 = scores_0 / (HEIGHT_DEPTH*WIDTH_DEPTH)
     return scores_0
 
+# Use visibility score only for initialisation
+def visibility_computing_for_initialisation_vk(particle_cloud):
+    _vk_context.enqueue_render_and_download(vkdepth.VISIBILITY)
+    _vk_context.wait()
+    for index, particle in enumerate(particle_cloud): 
+        ## Area of the unobstruced part of target objects
+        part = _vk_context.part_vis_counts(index)
+        part_arr = np.array(part, copy = False)
+        ## Area of the full part of target objects
+        full = _vk_context.full_vis_counts(index)
+        full_arr = np.array(full, copy = False)
+        for obj_index in range(OBJECT_NUM):
+            part_pixel_num = part_arr[obj_index]
+            full_pixel_num = full_arr[obj_index]
+            visible_score = 1.0 * part_pixel_num / full_pixel_num
+            weight = particle_cloud[index][obj_index].w
+            if OBJECT_NAME_LIST[obj_index] in UNSEEN_OBJECT_LIST:
+                # unseen object particle is obstruced
+                if visible_score < visible_threshold_dope_X_list[obj_index]:
+                    weight = weight
+                else:
+                    weight = weight * 0.05
+            elif OBJECT_NAME_LIST[obj_index] in OBJECT_DETECTED_LIST:
+                if visible_threshold_dope_X_list[obj_index] <= visible_score:
+                    weight = weight
+                else:
+                    weight = weight * 0.05
+            particle_cloud[index][obj_index].w = weight    
+            # print(OBJECT_NAME_LIST[obj_index], visible_score, weight)
+    return particle_cloud
 
 def create_particles(object_num, robot_num, particle_num,
                      pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
                      update_style_flag, sim_time_step, boss_pf_update_interval_in_real,
-                     ROS_LISTENER):
+                     ROS_LISTENER, SEE_ALL_OBJECTS):
     manager = multiprocessing.Manager()
     single_envs_ = {i: SingleENV(object_num, robot_num, particle_num,
                                  pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
-                                 update_style_flag, sim_time_step, boss_pf_update_interval_in_real, ROS_LISTENER,
+                                 update_style_flag, sim_time_step, boss_pf_update_interval_in_real, ROS_LISTENER, SEE_ALL_OBJECTS, 
                                  manager.dict()) for i in range(particle_num)}
     for _, single_env in single_envs_.items():
         single_env.start()
@@ -1389,6 +1603,47 @@ def resample_particles_update(particle_cloud, pw_T_obj_obse_objects_pose_list_, 
             newParticles_list[index].append(particle)
     return newParticles_list
 
+def resample_particles_update_for_initialisation(particle_cloud):
+    par_num_on_obse = int(math.ceil(PARTICLE_NUM * PICK_PARTICLE_RATE))
+    par_num_for_resample = int(PARTICLE_NUM) - int(par_num_on_obse)
+    # [[], [], [], ..., []] (PARTICLE_NUM)
+    newParticles_list = [[]*OBJECT_NUM for _ in range(PARTICLE_NUM)]
+    particles_w = []
+    base_w = 0
+    base_w_list = []
+    base_w_list.append(base_w)
+    particle_array_list = []
+    for index, particle in enumerate(particle_cloud):
+        each_par_weight = 1
+        for obj_index in range(OBJECT_NUM):
+            each_par_weight = each_par_weight * particle[obj_index].w
+        particles_w.append(each_par_weight) # to compute the sum
+        base_w = base_w + each_par_weight
+        base_w_list.append(base_w)
+    w_sum = sum(particles_w)
+    r = random.uniform(0, w_sum)
+    for index in range(par_num_for_resample):
+        if w_sum > 0.00000001:
+            position = (r + index * w_sum / PARTICLE_NUM) % w_sum
+            position_index = computePosition(position, base_w_list)
+            particle_array_list.append(position_index)
+        else:
+            particle_array_list.append(index) # [45, 45, 1, 4, 6, 6, ..., 43]
+    index = -1
+    for obj_index in range(OBJECT_NUM):
+        for index, i in enumerate(particle_array_list): # particle angle 
+            particle = Particle(particle_cloud[i][obj_index].par_name,
+                                particle_cloud[index][obj_index].visual_par_id,
+                                particle_cloud[index][obj_index].no_visual_par_id,
+                                particle_cloud[i][obj_index].pos,
+                                particle_cloud[i][obj_index].ori,
+                                1.0/PARTICLE_NUM, 
+                                index,
+                                particle_cloud[i][obj_index].linearVelocity,
+                                particle_cloud[i][obj_index].angularVelocity)
+            newParticles_list[index].append(particle)
+    return newParticles_list
+    
 def normalize_score_to_0_1(score_list):
     score_list_min = min(score_list)
     score_list_array_ = np.array(score_list)
@@ -1478,7 +1733,11 @@ def compare_distance_seq(particle_cloud, pw_T_obj_obse_objects_pose_list, visual
         RGB_weights_lists[par_index] = weights_list
         for obj_index in range(OBJECT_NUM):
             particle_cloud[par_index][obj_index].w = weight
-        # at least one object is detected by camera
+    # at least one object is detected by camera
+    # visual_by_DOPE_list[index] == 0 (DOPE detects)
+    # visual_by_DOPE_list[index] == 1 (DOPE doesnot detect)
+    # outlier_by_DOPE_list[index] == 0 (good value)
+    # outlier_by_DOPE_list[index] == 1 (outlier value)
     if (sum(visual_by_DOPE_list)<OBJECT_NUM) and (sum(outlier_by_DOPE_list)<OBJECT_NUM):
         for par_index in range(PARTICLE_NUM):
             weight = 1.0/PARTICLE_NUM
@@ -1778,6 +2037,28 @@ if __name__ == '__main__':
     d_thresh_CV = 0.0002
     a_thresh_CV = 0.0010
 
+    outlier_dis_list = [0] * OBJECT_NUM
+    outlier_ang_list = [0] * OBJECT_NUM
+    visible_threshold_dope_is_fresh_list = [0] * OBJECT_NUM
+    visible_threshold_dope_X_list = [0] * OBJECT_NUM 
+    visible_threshold_dope_X_small_list = [0] * OBJECT_NUM
+    visible_threshold_outlier_XS_list = [0] * OBJECT_NUM 
+    visible_threshold_outlier_S_list = [0] * OBJECT_NUM 
+    visible_threshold_outlier_L_list = [0] * OBJECT_NUM
+    visible_threshold_outlier_XL_list = [0] * OBJECT_NUM
+    visible_weight_dope_X_smaller_than_threshold_list = [0] * OBJECT_NUM
+    visible_weight_dope_X_larger_than_threshold_list = [0] * OBJECT_NUM
+    visible_weight_outlier_larger_than_threshold_list = [0] * OBJECT_NUM
+    visible_weight_outlier_smaller_than_threshold_list = [0] * OBJECT_NUM
+    x_w_list = [0] * OBJECT_NUM
+    y_l_list = [0] * OBJECT_NUM
+    z_h_list = [0] * OBJECT_NUM
+    
+    # ================================================================================================================================================================
+    # set parameters
+    set_parameters()
+    # ================================================================================================================================================================
+    
     flag_update_num_CV = 0
     
     if run_alg_flag == "PBPF" and VERSION == "old" and USING_D_FLAG == False:
@@ -1865,7 +2146,7 @@ if __name__ == '__main__':
     ROS_LISTENER = Ros_Listener()
     _tf_listener = tf.TransformListener()
     # create scene (Init)
-    create_scene = Create_Scene(OBJECT_NUM, ROBOT_NUM)
+    create_scene = Create_Scene()
     # launch camera infor (Init)
     _launch_camera = LaunchCamera(WIDTH_DEPTH, HEIGHT_DEPTH, FOV_V_DEPTH)
     # get robot pose in the pybullet world
@@ -1939,7 +2220,7 @@ if __name__ == '__main__':
     # ================================================================================================================================================================
     if LOCATE_CAMERA_FLAG == 'onTheHolder' and (ROBOT_END_EFFECTOR == 'pump' or ROBOT_END_EFFECTOR == 'pump_with_extention'):
         if INCREMENTAL_POSE_GENERATOR_FLAG == True:
-            pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(_pumpRVIZ_T_camRGB_pose_4_4, _pumpModel_T_camRGB_pose_4_4, _pumpModel_T_camD_pose_4_4, pw_T_objs_obse_list_for_init, 0, 0, SEE_ALL_OBJECTS)
+            pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(_pumpRVIZ_T_camRGB_pose_4_4, _pumpModel_T_camRGB_pose_4_4, _pumpModel_T_camD_pose_4_4, pw_T_objs_obse_list_for_init, trans_ob_list, rot_ob_list, SEE_ALL_OBJECTS)
         else:
             pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(_pumpRVIZ_T_camRGB_pose_4_4, _pumpModel_T_camRGB_pose_4_4, _pumpModel_T_camD_pose_4_4, 0, 0, 0, SEE_ALL_OBJECTS)
     else:
@@ -1949,7 +2230,8 @@ if __name__ == '__main__':
             pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(0, 0, 0, 0, 0, 0, SEE_ALL_OBJECTS)
     # ================================================================================================================================================================
     print("Object pose only for initializaiton:")
-    for index in range(len(OBJECT_DETECTED_LIST)):
+    # for index in range(len(OBJECT_DETECTED_LIST)):
+    for index in range(len(OBJECT_NAME_LIST)):
         obj_name = pw_T_obj_obse_obj_list_alg[index].obj_name
         pw_T_obj_obse_pos = pw_T_obj_obse_obj_list_alg[index].pos 
         pw_T_obj_obse_ori = pw_T_obj_obse_obj_list_alg[index].ori
@@ -1978,12 +2260,10 @@ if __name__ == '__main__':
     _single_envs = create_particles(OBJECT_NUM, ROBOT_NUM, PARTICLE_NUM,
                                     pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
                                     UPDATE_STYLE_FLAG, SIM_TIME_STEP, BOSS_PF_UPDATE_INTERVAL_IN_REAL,
-                                    ROS_LISTENER)
-    
+                                    ROS_LISTENER, SEE_ALL_OBJECTS)
+    # ================================================================================================================================================================
     _objs_pose_info_list = [0] * PARTICLE_NUM
     _particle_cloud_pub = [0] * PARTICLE_NUM
-    
-    # ================================================================================================================================================================
     # This part will return some pose results
     # [
     #  {
@@ -2010,19 +2290,11 @@ if __name__ == '__main__':
         _objs_pose_info_list[env_index] = objs_pose_info
         _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
     # ================================================================================================================================================================
-    
-    # get estimated object
-    estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
-
-    # publish particles/estimated object
-    # first publish
-    _publish_par_pose_info(_particle_cloud_pub)
-    
+    # useless
     if RECORD_RESULTS_FLAG == True:
         _record_t_PBPF = time.time()
         _record_time_list.append(_record_t_PBPF - _record_t_begin)
-    
-    _publish_esti_pose_info(estimated_object_set)
+    # ================================================================================================================================================================
     
     # convert [obj1, obj2, ...] to list:[[[x,y,z],[x,y,z,w]], [[x,y,z],[x,y,z,w]], ...]
     # estimated_object_set_old = copy.deepcopy(estimated_object_set)
@@ -2074,14 +2346,39 @@ if __name__ == '__main__':
         #         print(obj_pixel_num, total_elements)
         #         print(single_obj_num_zeros)
         
-        # # show vk rendered depth image
+        ## show vk rendered depth image
         # fig, axs = plt.subplots(2, PARTICLE_NUM)
         # for par_index in range(PARTICLE_NUM):
         #     axs[0, par_index].imshow(vk_rendered_depth_image_array_list[par_index], cmap="gray")
         #     axs[1, par_index].imshow(vk_rendered__mask_image_array_list[par_index])
         # plt.show()
+        if INIT_METHOD == "seg":
+            print("Initial Method:"+INIT_METHOD)
+            # use visibility score 
+            if VISIBILITY_COMPUTE_VK == True:
+                _particle_cloud_pub = visibility_computing_for_initialisation_vk(_particle_cloud_pub)
+            else:
+                while True:
+                    print("Not yet implemented")
+        elif INIT_METHOD == "normal":
+            print("Initial Method:"+INIT_METHOD+". Main script: Have not done!")
+        elif INIT_METHOD == "depth":
+            print("Initial Method:"+INIT_METHOD+". Main script: Have not done!")
+    # ================================================================================================================================================================
+    # resample particles for initialisation
+    _particle_cloud_pub = resample_particles_update_for_initialisation(_particle_cloud_pub)
+    # for index, particle in enumerate(_particle_cloud_pub):
+    #     print(_particle_cloud_pub[index][0].pos)
+    # ================================================================================================================================================================
+    # get estimated object
+    estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
+    # publish particles/estimated object
+    # first publish
+    _publish_par_pose_info(_particle_cloud_pub)
+    _publish_esti_pose_info(estimated_object_set)
     # ================================================================================================================================================================
     
+    input("Debug in the main scripts!")
     print("Welcome to Our Approach ! RUNNING MODEL: ", RUNNING_MODEL)
 
     t_begin = time.time()
@@ -2089,180 +2386,7 @@ if __name__ == '__main__':
     old_obse_time_list = [0] * OBJECT_NUM
     latest_obse_time_list = [0] * OBJECT_NUM
     check_dope_work_flag_init_list = [0] * OBJECT_NUM
-    
-    outlier_dis_list = [0] * OBJECT_NUM
-    outlier_ang_list = [0] * OBJECT_NUM
 
-    # ================================================================================================================================================================
-    # set parameters
-    visible_threshold_dope_is_fresh_list = [0] * OBJECT_NUM
-    visible_threshold_dope_X_list = [0] * OBJECT_NUM 
-    visible_threshold_dope_X_small_list = [0] * OBJECT_NUM
-    visible_threshold_outlier_XS_list = [0] * OBJECT_NUM 
-    visible_threshold_outlier_S_list = [0] * OBJECT_NUM 
-    visible_threshold_outlier_L_list = [0] * OBJECT_NUM
-    visible_threshold_outlier_XL_list = [0] * OBJECT_NUM
-    visible_weight_dope_X_smaller_than_threshold_list = [0] * OBJECT_NUM
-    visible_weight_dope_X_larger_than_threshold_list = [0] * OBJECT_NUM
-    visible_weight_outlier_larger_than_threshold_list = [0] * OBJECT_NUM
-    visible_weight_outlier_smaller_than_threshold_list = [0] * OBJECT_NUM
-    x_w_list = [0] * OBJECT_NUM
-    y_l_list = [0] * OBJECT_NUM
-    z_h_list = [0] * OBJECT_NUM
-    for obj_index in range(OBJECT_NUM):
-        object_name = OBJECT_NAME_LIST[obj_index]
-        if object_name == "cracker":
-            x_w_list[obj_index] = 0.159
-            y_l_list[obj_index] = 0.21243700408935547
-            z_h_list[obj_index] = 0.06
-            visible_threshold_dope_X_list[obj_index] = 0.45 # 0.95
-            visible_threshold_dope_X_small_list[obj_index] = 0
-            # visible_threshold_outlier_XS_list[obj_index] = 0.45
-            visible_threshold_outlier_S_list[obj_index] = 0.45
-            visible_threshold_outlier_L_list[obj_index] = 0.6
-            # visible_threshold_outlier_XL_list[obj_index] = 0.6
-            visible_threshold_dope_is_fresh_list[obj_index] = 0.5
-            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.75
-            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.45 # 0.05
-            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.45
-            outlier_dis_list[obj_index] = 0.07
-            outlier_ang_list[obj_index] = math.pi * 1 / 4.0
-        elif object_name == "soup":
-            x_w_list[obj_index] = 0.032829689025878906
-            y_l_list[obj_index] = 0.032829689025878906
-            z_h_list[obj_index] = 0.099
-            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
-            visible_threshold_dope_X_small_list[obj_index] = 0
-            # visible_threshold_outlier_XS_list[obj_index] = 0.3
-            visible_threshold_outlier_S_list[obj_index] = 0.4
-            visible_threshold_outlier_L_list[obj_index] = 0.65
-            # visible_threshold_outlier_XL_list[obj_index] = 0.75
-            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
-            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
-            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
-            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
-            outlier_dis_list[obj_index] = 0.07
-            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
-        elif object_name == "Ketchup":
-            x_w_list[obj_index] = 0.145
-            y_l_list[obj_index] = 0.042
-            z_h_list[obj_index] = 0.061
-            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
-            visible_threshold_dope_X_small_list[obj_index] = 0
-            # visible_threshold_outlier_XS_list[obj_index] = 0.3
-            visible_threshold_outlier_S_list[obj_index] = 0.4
-            visible_threshold_outlier_L_list[obj_index] = 0.65
-            # visible_threshold_outlier_XL_list[obj_index] = 0.75
-            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
-            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
-            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
-            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
-            outlier_dis_list[obj_index] = 0.07
-            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
-        elif object_name == "Milk":
-            x_w_list[obj_index] = 0.179934
-            y_l_list[obj_index] = 0.0613
-            z_h_list[obj_index] = 0.0613
-            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
-            visible_threshold_dope_X_small_list[obj_index] = 0
-            # visible_threshold_outlier_XS_list[obj_index] = 0.3
-            visible_threshold_outlier_S_list[obj_index] = 0.4
-            visible_threshold_outlier_L_list[obj_index] = 0.65
-            # visible_threshold_outlier_XL_list[obj_index] = 0.75
-            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
-            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
-            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
-            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
-            outlier_dis_list[obj_index] = 0.07
-            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
-        elif object_name == "Mustard":
-            x_w_list[obj_index] = 0.14
-            y_l_list[obj_index] = 0.038
-            z_h_list[obj_index] = 0.055
-            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
-            visible_threshold_dope_X_small_list[obj_index] = 0
-            # visible_threshold_outlier_XS_list[obj_index] = 0.3
-            visible_threshold_outlier_S_list[obj_index] = 0.4
-            visible_threshold_outlier_L_list[obj_index] = 0.65
-            # visible_threshold_outlier_XL_list[obj_index] = 0.75
-            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
-            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
-            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.50 # 0.55/0.25
-            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
-            outlier_dis_list[obj_index] = 0.07
-            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
-        elif object_name == "Mayo":
-            x_w_list[obj_index] = 0.1377716
-            y_l_list[obj_index] = 0.0310130
-            z_h_list[obj_index] = 0.054478
-            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
-            visible_threshold_dope_X_small_list[obj_index] = 0
-            # visible_threshold_outlier_XS_list[obj_index] = 0.3
-            visible_threshold_outlier_S_list[obj_index] = 0.4
-            visible_threshold_outlier_L_list[obj_index] = 0.65
-            # visible_threshold_outlier_XL_list[obj_index] = 0.75
-            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
-            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
-            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
-            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
-            outlier_dis_list[obj_index] = 0.07
-            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
-        elif object_name == "Parmesan":
-            x_w_list[obj_index] = 0.0929022
-            y_l_list[obj_index] = 0.0592842
-            z_h_list[obj_index] = 0.0592842
-            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
-            visible_threshold_dope_X_small_list[obj_index] = 0
-            # visible_threshold_outlier_XS_list[obj_index] = 0.3
-            visible_threshold_outlier_S_list[obj_index] = 0.4
-            visible_threshold_outlier_L_list[obj_index] = 0.65
-            # visible_threshold_outlier_XL_list[obj_index] = 0.75
-            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
-            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
-            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.45 # 0.55/0.25
-            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
-            outlier_dis_list[obj_index] = 0.07
-            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
-        elif object_name == "SaladDressing":
-            x_w_list[obj_index] = 0.1375274
-            y_l_list[obj_index] = 0.036266
-            z_h_list[obj_index] = 0.052722
-            visible_threshold_dope_X_list[obj_index] = 0.55 # 0.95
-            visible_threshold_dope_X_small_list[obj_index] = 0
-            # visible_threshold_outlier_XS_list[obj_index] = 0.3
-            visible_threshold_outlier_S_list[obj_index] = 0.4
-            visible_threshold_outlier_L_list[obj_index] = 0.65
-            # visible_threshold_outlier_XL_list[obj_index] = 0.75
-            visible_threshold_dope_is_fresh_list[obj_index] = 0.6
-            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.6 # 0.6/0.75
-            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.55 # 0.55/0.25
-            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.55
-            outlier_dis_list[obj_index] = 0.07
-            outlier_ang_list[obj_index] = math.pi * 1 / 2.0
-        else: # gelatin
-            x_w_list[obj_index] = 0.159
-            y_l_list[obj_index] = 0.21243700408935547
-            z_h_list[obj_index] = 0.06
-            visible_threshold_dope_X_list[obj_index] = 0.95
-            visible_threshold_dope_X_small_list[obj_index] = 0
-            visible_threshold_outlier_S_list[obj_index] = 0.4
-            visible_threshold_outlier_L_list[obj_index] = 0.5
-            visible_threshold_dope_is_fresh_list[obj_index] = 0.5
-            visible_weight_dope_X_smaller_than_threshold_list[obj_index] = 0.75
-            visible_weight_dope_X_larger_than_threshold_list[obj_index] = 0.25
-            visible_weight_outlier_larger_than_threshold_list[obj_index] = 0.25
-            visible_weight_outlier_smaller_than_threshold_list[obj_index] = 0.45
-            outlier_dis_list[obj_index] = 0.05
-            outlier_ang_list[obj_index] = math.pi * 1 / 4.0
-    # ============================================================================
     _no_PF_update_count = 0
     _first_update_flage = False
     while not rospy.is_shutdown():

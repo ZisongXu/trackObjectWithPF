@@ -541,6 +541,7 @@ class SingleENV(multiprocessing.Process):
             self.objects_list[obj_index].pos = [pos_[0], pos_[1], pos_[2]]
             self.objects_list[obj_index].ori = [ori_[0], ori_[1], ori_[2], ori_[3]] # x, y, z, w
         return_results.append((str(par_index), self.objects_list))
+        self.p_env.disconnect()
         return return_results
 
     # only check object

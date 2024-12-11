@@ -2255,7 +2255,7 @@ if __name__ == '__main__':
         pw_T_objs_not_touching_targetObjs = create_scene.initialize_other_objects_not_touching(objs_not_touching_target_objs_num_, objs_not_touching_target_objs_name_list)
     # ============================================================================
 
-    # cpu 
+    # first time run the multiprocessing cpu multi
     # create 70 "objects" of SingleENV class 
     _single_envs = create_particles(OBJECT_NUM, ROBOT_NUM, PARTICLE_NUM,
                                     pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 

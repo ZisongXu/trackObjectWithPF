@@ -118,7 +118,7 @@ class SingleENV(multiprocessing.Process):
         self.TASK_FLAG = self.parameter_info['task_flag'] # '1', '2', '3', 'basket_retrieve'
         self.INCREMENTAL_POSE_GENERATOR_FLAG = self.parameter_info['Incremental_Pose_Generator_Flag']
         
-        self.INIT_METHOD = self.parameter_info['init_method'] # seg/depth/normal...
+        self.INIT_METHOD = self.parameter_info['init_method'] # ViDe/Vi/De/normal...
         
         self.MASS_MEAN_list = [1.0] * self.object_num
         self.MASS_MEAN = 1.0 # 0.380
@@ -338,15 +338,8 @@ class SingleENV(multiprocessing.Process):
         self.collision_detection_obj_id_collection.append(self.robot_id)
         self.collision_detection_env_obj_id_collection.append(self.robot_id)
 
-    def add_target_objects(self):     
-        
+    def add_target_objects(self):             
         self.UNSEEN_OBJECT_LIST = list(set(self.OBJECT_NAME_LIST) - set(self.OBJECT_DETECTED_LIST))
-        init_unseen_obj_index = 0  
-        init___seen_obj_index = 0  
-        init_unseen_obj_flag = False 
-        
-        self.task_flag
-        
         # can see all objects
         if len(self.UNSEEN_OBJECT_LIST) == 0: 
             # if self.SEE_ALL_OBJECTS == True:
@@ -391,12 +384,12 @@ class SingleENV(multiprocessing.Process):
                             break
                     if flag == 0:
                         break
-                objPose = Particle(obj_name_, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, 0, 0, 0)
+                objPose = Particle(obj_name_, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, 0, obj_index, 0, 0)
                 self.objects_list[obj_index] = objPose
                 
         # cannot see all objects
         elif len(self.UNSEEN_OBJECT_LIST) != 0: 
-            if self.INIT_METHOD == "seg":
+            if self.INIT_METHOD == "Vi":
                 for obj_index, obj_name_ in enumerate(self.OBJECT_NAME_LIST):
                     if obj_name_ in self.OBJECT_DETECTED_LIST:
                         obj_obse_pos = self.pw_T_obj_obse_obj_list_alg[obj_index].pos
@@ -438,38 +431,30 @@ class SingleENV(multiprocessing.Process):
                                     break
                             if flag == 0:
                                 break
-                    elif obj_name_ in self.UNSEEN_OBJECT_LIST:
-                        init_unseen_obj_index = 0                     
+                    elif obj_name_ in self.UNSEEN_OBJECT_LIST:               
                         if self.task_flag == "basket_retrieve": # we need to know the area that hold the unseen object
                             basket_width, basket_lenght, basket_height = self.get_object_shape("basket")
-                            x_w = 0.0
-                            y_l = 0.0
-                            z_h = 0.0
-                            pw_T_basket_pos_x = self.pw_T_basket_pos[0]
-                            pw_T_basket_pos_y = self.pw_T_basket_pos[1]
-                            pw_T_basket_pos_z = self.pw_T_basket_pos[2]
-                            pw_T_basketCenter_pos_x = pw_T_basket_pos_x
-                            pw_T_basketCenter_pos_y = pw_T_basket_pos_y
-                            pw_T_basketCenter_pos_z = pw_T_basket_pos_z + basket_height/2.0
+                            x_w,y_l,z_h = 0.0,0.0,0.0
+                            pw_T_basketCenter_pos_x = self.pw_T_basket_pos[0]
+                            pw_T_basketCenter_pos_y = self.pw_T_basket_pos[1]
+                            pw_T_basketCenter_pos_z = self.pw_T_basket_pos[2] + basket_height/2.0
                             pw_T_basketCenter_pos = [pw_T_basketCenter_pos_x, pw_T_basketCenter_pos_y, pw_T_basketCenter_pos_z]
                             BasketCenter_T_points_pose_4_4_list = self.getCenterTPointsList("basket")
-                            pw_T_basketPoints_pose_4_4_list = self.getPwTPointsList(BasketCenter_T_points_pose_4_4_list, pw_T_basketCenter_pos, self.pw_T_basket_ori)
-                            pw_T_basketPoints_pose_4_4_array = np.array(pw_T_basketPoints_pose_4_4_list)
-                            x_w, y_l, z_h = self.get_object_shape(self.UNSEEN_OBJECT_LIST[init_unseen_obj_index])
-                            # random_pose_results: [dir1, dir2, ...], dir1: {'transform_matrix': ..., 'pos': ..., 'ori': ...}
+                            x_w, y_l, z_h = self.get_object_shape(obj_name_)
+                            # pw_T_randomPoint_pose_results: [dir1, dir2, ...], dir1: {'transform_matrix': ..., 'pos': ..., 'ori': ...}
                             # [{'transform_matrix': array([[ 0.99950816, -0.03124095,  0.0027295 ,  0.4964376 ],
                             #                              [ 0.03122253,  0.99949101,  0.00654814,  0.07671522],
                             #                              [-0.00293269, -0.0064597 ,  0.99997484,  0.79929841],
                             #                              [ 0.        ,  0.        ,  0.        ,  1.        ]]), 
                             #   'pos': array([0.4964376 , 0.07671522, 0.79929841]), 
                             #   'ori': array([-0.00325238,  0.00141573,  0.01561787,  0.99987174])}]
-                            random_pose_results = self.generate_points_in_rotated_rectangular_prism(self.pw_T_basket_pose, BasketCenter_T_points_pose_4_4_list, x_w, y_l, z_h, num_points=1)
+                            pw_T_randomPoint_pose_results = self.generate_points_in_rotated_rectangular_prism(self.pw_T_basket_pose, BasketCenter_T_points_pose_4_4_list, x_w, y_l, z_h, num_points=1)
                             # mark hard code
-                            # all_positions = [entry['pos'] for entry in random_pose_results]
-                            # all_orientations = [entry['ori'] for entry in random_pose_results]
-                            random_pose_result = random_pose_results[0]
-                            particle_pos = random_pose_result['pos']
-                            particle_ori = random_pose_result['ori']
+                            # all_positions = [entry['pos'] for entry in pw_T_randomPoint_pose_results]
+                            # all_orientations = [entry['ori'] for entry in pw_T_randomPoint_pose_results]
+                            pw_T_randomPoint_pose_result = pw_T_randomPoint_pose_results[0]
+                            particle_pos = pw_T_randomPoint_pose_result['pos']
+                            particle_ori = pw_T_randomPoint_pose_result['ori']
                             gazebo_contain = ""
                             if self.gazebo_flag == True:
                                 gazebo_contain = "gazebo_"
@@ -498,10 +483,10 @@ class SingleENV(multiprocessing.Process):
                                             if conter > 20:
                                                 print("init more than 20 times")
                                                 conter = 0
-                                                random_pose_results = self.generate_points_in_rotated_rectangular_prism(self.pw_T_basket_pose, BasketCenter_T_points_pose_4_4_list, x_w, y_l, z_h, num_points=1)
-                                                random_pose_result = random_pose_results[0]
-                                                particle_pos = random_pose_result['pos']
-                                                particle_ori = random_pose_result['ori']
+                                                pw_T_randomPoint_pose_results = self.generate_points_in_rotated_rectangular_prism(self.pw_T_basket_pose, BasketCenter_T_points_pose_4_4_list, x_w, y_l, z_h, num_points=1)
+                                                pw_T_randomPoint_pose_result = pw_T_randomPoint_pose_results[0]
+                                                particle_pos = pw_T_randomPoint_pose_result['pos']
+                                                particle_ori = pw_T_randomPoint_pose_result['ori']
                                             self.p_env.resetBasePositionAndOrientation(particle_no_visual_id, particle_pos, particle_ori)
                                             flag = 1
                                             break
@@ -512,9 +497,9 @@ class SingleENV(multiprocessing.Process):
                         else:
                             print("SingleENV.py: Have not done!")    
                             input("")
-                    objPose = Particle(obj_name_, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, 0, 0, 0)
+                    objPose = Particle(obj_name_, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, 0, obj_index, 0, 0)
                     self.objects_list[obj_index] = objPose
-            elif self.INIT_METHOD == "depth":
+            elif self.INIT_METHOD == "De":
                 print("SingleENV.py: Have not done!")
                 input("")
             elif self.INIT_METHOD == "depth":
@@ -541,7 +526,7 @@ class SingleENV(multiprocessing.Process):
             self.objects_list[obj_index].pos = [pos_[0], pos_[1], pos_[2]]
             self.objects_list[obj_index].ori = [ori_[0], ori_[1], ori_[2], ori_[3]] # x, y, z, w
         return_results.append((str(par_index), self.objects_list))
-        self.p_env.disconnect()
+        # self.p_env.disconnect()
         return return_results
 
     # only check object
@@ -1079,8 +1064,8 @@ class SingleENV(multiprocessing.Process):
         # Generating random points in a local coordinate system
         local_points = np.random.uniform(low=effective_min_local, high=effective_max_local, size=(num_points, 3))
         # Convert local points to the world coordinate system
-        rotation_matrix = pw_T_basket_pose[:3, :3]  # Rotated matrix of world coordinates to the center of the basket
-        translation_vector = pw_T_basket_pose[:3, 3]  # Translation vector from world coordinates to the center of the basket
+        rotation_matrix = copy.deepcopy(pw_T_basket_pose[:3, :3])  # Rotated matrix of world coordinates to the center of the basket
+        translation_vector = copy.deepcopy(pw_T_basket_pose[:3, 3])  # Translation vector from world coordinates to the center of the basket
         translation_vector[2] = translation_vector[2] + max_corner_local[2] # mark, do this because the coordinate center of the basket is not at the center of the basket
         world_points = np.dot(local_points, rotation_matrix.T) + translation_vector
         world_matrix = R.random().as_matrix()

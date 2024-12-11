@@ -44,7 +44,8 @@ otob_name_list:
 - cracker_obstacle
 - fish_can
 panda_robot_link_number: 11
-particle_num: 300
+particle_num: 200
+particle_num_for_obs: 1023
 pb_render_flag: false
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0
@@ -69,4 +70,5 @@ visibility_compute_separate_flag: true
 visibility_compute_vk: true
 vk_render_flag: true
 width: 848
-init_method: "seg"
+init_method: "Vi"
+

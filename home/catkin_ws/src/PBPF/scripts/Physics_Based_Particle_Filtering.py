@@ -67,6 +67,7 @@ from Ros_Listener import Ros_Listener
 from Particle import Particle
 from InitialSimulationModel import InitialSimulationModel
 from SingleENV import SingleENV
+from InitLargeNumPar import InitLargeNumPar
 from Realworld import Realworld
 from Visualisation_World import Visualisation_World
 from Create_Scene import Create_Scene
@@ -117,11 +118,12 @@ ROBOT_END_EFFECTOR = parameter_info['robot_end_effector'] # 'gripper', 'pump', '
 CAMERA_MOVE = parameter_info['camera_move'] # true/false
 
 PARTICLE_NUM = parameter_info['particle_num']
+PARTICLE_NUM_FOR_OBS = parameter_info['particle_num_for_obs']
 
 OBJECT_NAME_LIST = parameter_info['object_name_list']
 OBJECT_DETECTED_LIST = parameter_info['object_detected_list']
 UNSEEN_OBJECT_LIST = list(set(OBJECT_NAME_LIST) - set(OBJECT_DETECTED_LIST))
-INIT_METHOD = parameter_info['init_method'] # seg/depth/normal...
+INIT_METHOD = parameter_info['init_method'] # # ViDe/Vi/De/normal...
 
 CAMERA_MODEL = parameter_info['camera_model'] # D455f/D435i
 CAMERA_INFO_TOPIC_COLOR = parameter_info['camera_info_topic_color'] # /camera/color/camera_info
@@ -470,6 +472,7 @@ def compute_transformation_matrix(a_pos, a_ori, b_pos, b_ori):
 def get_item_pos(pybullet_env, item_id):
     item_info = pybullet_env.getBasePositionAndOrientation(item_id)
     return item_info[0],item_info[1]
+
 # random values generated from a Gaussian distribution
 def take_easy_gaussian_value(mean, sigma):
     normal = random.normalvariate(mean, sigma)
@@ -542,9 +545,10 @@ def _get_matrix_from_pos_ori(pos, ori):
 
 def _publish_par_pose_info(particle_cloud_pub):
     global _par_panda_step
-    par_pose_list = list(range(PARTICLE_NUM))
-    rob_par_pose_list = list(range(PARTICLE_NUM))
-    for par_index in range(PARTICLE_NUM):
+    paricle_num_ = len(particle_cloud_pub)
+    par_pose_list = list(range(paricle_num_))
+    rob_par_pose_list = list(range(paricle_num_))
+    for par_index in range(paricle_num_):
         par_pose = particle_pose()
         par_pose.particles = par_index
         rob_par_pose = particle_pose()
@@ -1167,8 +1171,12 @@ def _vk_load_meshes():
 # "particle setting"
 def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4, pybullet_env, par_robot_id):
     global _vk_context
-    vk_state_list = [0] * PARTICLE_NUM
-    parNum_times_objNum = PARTICLE_NUM * OBJECT_NUM
+    if PARTICLE_NUM_FOR_OBS == PARTICLE_NUM:
+        vk_state_list = [0] * PARTICLE_NUM
+        parNum_times_objNum = PARTICLE_NUM * OBJECT_NUM
+    elif PARTICLE_NUM_FOR_OBS > PARTICLE_NUM:
+        vk_state_list = [0] * PARTICLE_NUM_FOR_OBS
+        parNum_times_objNum = PARTICLE_NUM_FOR_OBS * OBJECT_NUM
     vk_single_obj_state_list = [0] * parNum_times_objNum
     pw_T_camVk_4_4_ = copy.deepcopy(pw_T_camVk_4_4)
     camVk_T_pw_4_4_ = np.linalg.inv(pw_T_camVk_4_4_)
@@ -1416,22 +1424,23 @@ def visibility_computing_vk(particle_cloud, RGB_weights_lists_):
         full = _vk_context.full_vis_counts(index)
         full_arr = np.array(full, copy = False)
         for obj_index in range(OBJECT_NUM):
-            ## object_{obj_index} is fully obstruced
+            ## object_{obj_index} disappearance
+            weight = RGB_weights_lists_[index][obj_index]
             if full_arr[obj_index] == 0:
-                local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
-                local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
-                weight = RGB_weights_lists_[index][obj_index]
-                if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0:
-                    weight = weight * 0.25
-                elif local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==1:
-                    weight = weight * 0.75
-                elif local_obj_visual_by_DOPE_val==1 and local_obj_outlier_by_DOPE_val==1:
-                    weight = weight
+                # local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
+                # local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
+                # weight = RGB_weights_lists_[index][obj_index]
+                # if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0:
+                #     weight = weight * 0.25
+                # elif local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==1:
+                #     weight = weight * 0.75
+                # elif local_obj_visual_by_DOPE_val==1 and local_obj_outlier_by_DOPE_val==1:
+                #     weight = weight
+                weight = 0.1 * weight
             else:
                 ## proportion of objects visible
                 visible_score = 1.0 * part_arr[obj_index] / full_arr[obj_index]
                 # weight = particle[obj_index].w
-                weight = RGB_weights_lists_[index][obj_index]
                 local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
                 local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
                 # object is visible to the camera
@@ -1477,19 +1486,23 @@ def visibility_computing_for_initialisation_vk(particle_cloud):
         for obj_index in range(OBJECT_NUM):
             part_pixel_num = part_arr[obj_index]
             full_pixel_num = full_arr[obj_index]
-            visible_score = 1.0 * part_pixel_num / full_pixel_num
             weight = particle_cloud[index][obj_index].w
             if OBJECT_NAME_LIST[obj_index] in UNSEEN_OBJECT_LIST:
-                # unseen object particle is obstruced
-                if visible_score < visible_threshold_dope_X_list[obj_index]:
-                    weight = weight
+                if full_pixel_num == 0:
+                    weight = weight * 0.0001
                 else:
-                    weight = weight * 0.001
+                    visible_score = 1.0 * part_pixel_num / full_pixel_num
+                    # unseen object particle is obstruced
+                    if visible_score < visible_threshold_dope_X_list[obj_index]:
+                        weight = weight
+                    else:
+                        weight = weight * 0.0 # 0.001
             elif OBJECT_NAME_LIST[obj_index] in OBJECT_DETECTED_LIST:
+                visible_score = 1.0 * part_pixel_num / full_pixel_num
                 if visible_threshold_dope_X_list[obj_index] <= visible_score:
                     weight = weight
                 else:
-                    weight = weight * 0.001
+                    weight = weight * 0.0 # 0.001
             particle_cloud[index][obj_index].w = weight    
             # print(OBJECT_NAME_LIST[obj_index], visible_score, weight)
     return particle_cloud
@@ -1532,11 +1545,12 @@ def depthImageRealTransfer(depth_image_real):
     return cv_image
 
 def resample_particles_update(particle_cloud, pw_T_obj_obse_objects_pose_list_, D_scores_list_):
-    par_num_on_obse = int(math.ceil(PARTICLE_NUM * PICK_PARTICLE_RATE))
-    par_num_for_resample = int(PARTICLE_NUM) - int(par_num_on_obse)
+    particle_num_ = len(particle_cloud)
+    par_num_on_obse = int(math.ceil(particle_num_ * PICK_PARTICLE_RATE))
+    par_num_for_resample = int(particle_num_) - int(par_num_on_obse)
 
-    # [[], [], [], ..., []] (PARTICLE_NUM)
-    newParticles_list = [[]*OBJECT_NUM for _ in range(PARTICLE_NUM)]
+    # [[], [], [], ..., []] (particle_num_)
+    newParticles_list = [[]*OBJECT_NUM for _ in range(particle_num_)]
 
     particles_w = []
     base_w = 0
@@ -1545,7 +1559,7 @@ def resample_particles_update(particle_cloud, pw_T_obj_obse_objects_pose_list_, 
     particle_array_list = []
 
     # mark
-    weight_depth_img_array_ = [1] * PARTICLE_NUM
+    weight_depth_img_array_ = [1] * particle_num_
     if USING_D_FLAG == True:
         if DEPTH_DIFF_VALUE_0_1_FLAG == True:
             # score_that_particle_get: high->high weight; low->low weight
@@ -1567,7 +1581,7 @@ def resample_particles_update(particle_cloud, pw_T_obj_obse_objects_pose_list_, 
 
     for index in range(par_num_for_resample):
         if w_sum > 0.00000001:
-            position = (r + index * w_sum / PARTICLE_NUM) % w_sum
+            position = (r + index * w_sum / particle_num_) % w_sum
             position_index = computePosition(position, base_w_list)
             particle_array_list.append(position_index)
         else:
@@ -1580,8 +1594,9 @@ def resample_particles_update(particle_cloud, pw_T_obj_obse_objects_pose_list_, 
                                 particle_cloud[index][obj_index].no_visual_par_id,
                                 particle_cloud[i][obj_index].pos,
                                 particle_cloud[i][obj_index].ori,
-                                1.0/PARTICLE_NUM, 
+                                1.0/particle_num_, 
                                 index,
+                                obj_index,
                                 particle_cloud[i][obj_index].linearVelocity,
                                 particle_cloud[i][obj_index].angularVelocity)
             newParticles_list[index].append(particle)
@@ -1596,18 +1611,20 @@ def resample_particles_update(particle_cloud, pw_T_obj_obse_objects_pose_list_, 
                                 particle_cloud[index][obj_index].no_visual_par_id,
                                 obse_obj_pos,
                                 obse_obj_ori,
-                                1.0/PARTICLE_NUM, 
+                                1.0/particle_num_, 
                                 index,
+                                obj_index,
                                 particle_cloud[index_leftover][obj_index].linearVelocity,
                                 particle_cloud[index_leftover][obj_index].angularVelocity)
             newParticles_list[index].append(particle)
     return newParticles_list
 
-def resample_particles_update_for_initialisation(particle_cloud):
-    par_num_on_obse = int(math.ceil(PARTICLE_NUM * PICK_PARTICLE_RATE))
-    par_num_for_resample = int(PARTICLE_NUM) - int(par_num_on_obse)
-    # [[], [], [], ..., []] (PARTICLE_NUM)
-    newParticles_list = [[]*OBJECT_NUM for _ in range(PARTICLE_NUM)]
+def resample_particles_update_for_initialisation(particle_cloud): 
+    particle_num_ = len(particle_cloud)
+    par_num_on_obse = int(math.ceil(particle_num_ * PICK_PARTICLE_RATE))
+    par_num_for_resample = int(particle_num_) - int(par_num_on_obse)
+    # [[], [], [], ..., []] (particle_num_)
+    newParticles_list = [[]*OBJECT_NUM for _ in range(particle_num_)]
     particles_w = []
     base_w = 0
     base_w_list = []
@@ -1624,7 +1641,7 @@ def resample_particles_update_for_initialisation(particle_cloud):
     r = random.uniform(0, w_sum)
     for index in range(par_num_for_resample):
         if w_sum > 0.00000001:
-            position = (r + index * w_sum / PARTICLE_NUM) % w_sum
+            position = (r + index * w_sum / particle_num_) % w_sum
             position_index = computePosition(position, base_w_list)
             particle_array_list.append(position_index)
         else:
@@ -1637,13 +1654,64 @@ def resample_particles_update_for_initialisation(particle_cloud):
                                 particle_cloud[index][obj_index].no_visual_par_id,
                                 particle_cloud[i][obj_index].pos,
                                 particle_cloud[i][obj_index].ori,
-                                1.0/PARTICLE_NUM, 
+                                1.0/particle_num_, 
                                 index,
+                                obj_index,
                                 particle_cloud[i][obj_index].linearVelocity,
                                 particle_cloud[i][obj_index].angularVelocity)
             newParticles_list[index].append(particle)
     return newParticles_list
+
+def sort_particles_update_for_initialisation(particle_cloud): 
+    particle_num_ = len(particle_cloud)
+    whole_weight_list = [0] * particle_num_
+    for par_index, particle in enumerate(particle_cloud):
+        each_par_weight = 1
+        for obj_index in range(OBJECT_NUM):
+            each_par_weight = each_par_weight * particle[obj_index].w
+        whole_weight_list[par_index] = each_par_weight
+    print(whole_weight_list)
+    result_indices = get_top_values_indices(whole_weight_list, PARTICLE_NUM)
+    result_num_ = len(result_indices)
+    newParticles_list = [[]*OBJECT_NUM for _ in range(result_num_)]  
+    for index_index, par_index in enumerate(result_indices):
+        for obj_index in range(OBJECT_NUM):
+            particle = Particle(particle_cloud[par_index][obj_index].par_name,
+                                particle_cloud[index_index][obj_index].visual_par_id,
+                                particle_cloud[index_index][obj_index].no_visual_par_id,
+                                particle_cloud[par_index][obj_index].pos,
+                                particle_cloud[par_index][obj_index].ori,
+                                1.0/result_num_, 
+                                index_index,
+                                obj_index,
+                                particle_cloud[par_index][obj_index].linearVelocity,
+                                particle_cloud[par_index][obj_index].angularVelocity)
+            newParticles_list[index_index].append(particle)
+    return newParticles_list
+        
     
+def get_top_values_indices(input_list, top_n):
+    # 对列表进行排序并保留索引
+    sorted_indices = sorted(range(len(input_list)), key=lambda i: input_list[i], reverse=True)
+    sorted_list = [input_list[i] for i in sorted_indices]
+ 
+    # 提取前 n 个值，同时处理重复值的情况
+    # top_values = sorted_list[:top_n]
+    # min_value_in_top = top_values[-1]  # 第 n 个值
+    # top_indices = [i for i in sorted_indices if input_list[i] >= min_value_in_top]
+    
+    top_indices = []
+    count = 0
+    for idx in sorted_indices:
+        top_indices.append(idx)
+        count += 1
+        if count == top_n:
+            break
+        
+    return top_indices            
+     
+        
+         
 def normalize_score_to_0_1(score_list):
     score_list_min = min(score_list)
     score_list_array_ = np.array(score_list)
@@ -2147,6 +2215,7 @@ if __name__ == '__main__':
     _tf_listener = tf.TransformListener()
     # create scene (Init)
     create_scene = Create_Scene()
+    init_large_num_paricle = InitLargeNumPar()
     # launch camera infor (Init)
     _launch_camera = LaunchCamera(WIDTH_DEPTH, HEIGHT_DEPTH, FOV_V_DEPTH)
     # get robot pose in the pybullet world
@@ -2253,17 +2322,35 @@ if __name__ == '__main__':
         objs_not_touching_target_objs_num_ = 0
         objs_not_touching_target_objs_name_list = ["pringles"]
         pw_T_objs_not_touching_targetObjs = create_scene.initialize_other_objects_not_touching(objs_not_touching_target_objs_num_, objs_not_touching_target_objs_name_list)
-    # ============================================================================
-
-    # first time run the multiprocessing cpu multi
-    # create 70 "objects" of SingleENV class 
-    _single_envs = create_particles(OBJECT_NUM, ROBOT_NUM, PARTICLE_NUM,
-                                    pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
-                                    UPDATE_STYLE_FLAG, SIM_TIME_STEP, BOSS_PF_UPDATE_INTERVAL_IN_REAL,
-                                    ROS_LISTENER, SEE_ALL_OBJECTS)
     # ================================================================================================================================================================
     _objs_pose_info_list = [0] * PARTICLE_NUM
     _particle_cloud_pub = [0] * PARTICLE_NUM
+    # ================================================================================================================================================================
+    # first time run the multiprocessing cpu multi
+    # create 70 "objects" of SingleENV class 
+    if PARTICLE_NUM_FOR_OBS == PARTICLE_NUM:
+        # initial particles in multiprocessing
+        _single_envs = create_particles(OBJECT_NUM, ROBOT_NUM, PARTICLE_NUM,
+                                        pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
+                                        UPDATE_STYLE_FLAG, SIM_TIME_STEP, BOSS_PF_UPDATE_INTERVAL_IN_REAL,
+                                        ROS_LISTENER, SEE_ALL_OBJECTS)
+        # get particles/objects pose from multiprocessing
+        for env_index, single_env in _single_envs.items():
+            single_env.queue.put((SingleENV.get_objects_pose, env_index))
+        for env_index, single_env in _single_envs.items():  
+            objs_pose_info = wait_and_get_result_from(single_env)
+            _objs_pose_info_list[env_index] = objs_pose_info
+            _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
+    # init large number of the particle and then use
+    elif PARTICLE_NUM_FOR_OBS > PARTICLE_NUM:
+        if TASK_FLAG == "basket_retrieve":
+            init_large_num_paricle.passing_data(pw_T_obj_obse_obj_list_alg, pw_T_basket_pose)
+        else:
+            init_large_num_paricle.passing_data(pw_T_obj_obse_obj_list_alg)
+        _particle_cloud_pub = init_large_num_paricle.init_particle_cloud()
+
+    # ================================================================================================================================================================
+
     # This part will return some pose results
     # [
     #  {
@@ -2283,12 +2370,6 @@ if __name__ == '__main__':
     #  },
     #  ......
     # ]
-    for env_index, single_env in _single_envs.items():
-        single_env.queue.put((SingleENV.get_objects_pose, env_index))
-    for env_index, single_env in _single_envs.items():  
-        objs_pose_info = wait_and_get_result_from(single_env)
-        _objs_pose_info_list[env_index] = objs_pose_info
-        _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
     # ================================================================================================================================================================
     # useless
     if RECORD_RESULTS_FLAG == True:
@@ -2352,7 +2433,8 @@ if __name__ == '__main__':
         #     axs[0, par_index].imshow(vk_rendered_depth_image_array_list[par_index], cmap="gray")
         #     axs[1, par_index].imshow(vk_rendered__mask_image_array_list[par_index])
         # plt.show()
-        if INIT_METHOD == "seg":
+        
+        if INIT_METHOD == "Vi":
             print("Initial Method:"+INIT_METHOD)
             # use visibility score 
             if VISIBILITY_COMPUTE_VK == True:
@@ -2366,7 +2448,8 @@ if __name__ == '__main__':
             print("Initial Method:"+INIT_METHOD+". Main script: Have not done!")
     # ================================================================================================================================================================
     # resample particles for initialisation
-    _particle_cloud_pub = resample_particles_update_for_initialisation(_particle_cloud_pub)
+    # _particle_cloud_pub = resample_particles_update_for_initialisation(_particle_cloud_pub)
+    _particle_cloud_pub = sort_particles_update_for_initialisation(_particle_cloud_pub)
     # for index, particle in enumerate(_particle_cloud_pub):
     #     print(_particle_cloud_pub[index][0].pos)
     # ================================================================================================================================================================

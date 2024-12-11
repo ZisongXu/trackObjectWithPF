@@ -45,10 +45,7 @@ import yaml
 
 #Class of initialize the real world model
 class Visualisation_World():
-    def __init__(self, object_num=0, rob_num=1, particle_num=0):
-        self.object_num = object_num
-        self.rob_num = rob_num
-        self.particle_num = particle_num
+    def __init__(self):
         self.p_visualisation = 0
         self.create_scene = Create_Scene()
         self.ros_listener = Ros_Listener()
@@ -59,6 +56,12 @@ class Visualisation_World():
         self.gazebo_flag = self.parameter_info['gazebo_flag']
         self.task_flag = self.parameter_info['task_flag']
         self.optitrack_flag = self.parameter_info['optitrack_flag']
+        
+        self.object_num = self.parameter_info['object_num']
+        self.particle_num = self.parameter_info['particle_num']
+        self.particle_num_for_obs = self.parameter_info['particle_num_for_obs']
+        self.rob_num = self.parameter_info['robot_num']
+        
         self.pw_T_rob_sim_pose_list = []
         self.pw_T_target_obj_obse_pose_lsit = []
         self.pw_T_target_obj_opti_pose_lsit = []
@@ -473,6 +476,7 @@ while reset_flag == True:
         robot_num = 1
         
         particle_num = parameter_info['particle_num']
+        particle_num_for_obs = parameter_info['particle_num_for_obs']
         optitrack_flag = parameter_info['optitrack_flag']
         
         init_gt_obj_flag = 0
@@ -498,7 +502,7 @@ while reset_flag == True:
         OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM = parameter_info['objs_are_not_touching_target_objs_num']
         OBJS_TOUCHING_TARGET_OBJS_NUM = parameter_info['objs_touching_target_objs_num']
 
-        visual_world = Visualisation_World(object_num, robot_num, particle_num)
+        visual_world = Visualisation_World()
         trans_ob_list, rot_ob_list, trans_gt, rot_gt = visual_world.initialize_visual_world_pybullet_env(task_flag)
         
         # print("I am here")
@@ -511,7 +515,11 @@ while reset_flag == True:
         pw_T_other_obj_opti_pose_list_param = visual_world.pw_T_other_obj_opti_pose_list
         pw_T_objs_not_touching_targetObjs_list_param = visual_world.pw_T_objs_not_touching_targetObjs_list
         
-        par_obj_id = [[]*object_num for _ in range(particle_num)]
+        if particle_num == particle_num_for_obs:
+            par_obj_id = [[]*object_num for _ in range(particle_num)]
+        elif particle_num_for_obs > particle_num:
+            par_obj_id = [[]*object_num for _ in range(particle_num_for_obs)]
+            
         esti_obj_id = [0] * object_num
         # input("stop")
         
@@ -838,15 +846,28 @@ while reset_flag == True:
                         for obj_index in range(object_num):
                             if obj_index == object_num - 1:
                                 init_par_flag = 1
-                            for par_index in range(particle_num):
+                            # if particle_num_for_obs == particle_num:
+                            particle_num_ = len(particles_states_list.particles)
+                            for par_index in range(particle_num_):
                                 visual_world.init_display_particle(particles_states_list.particles[par_index].objects[obj_index])
                                 obj_visual_id = particles_states_list.particles[par_index].objects[obj_index].id
                                 par_obj_id[par_index].append(obj_visual_id)
+                            # elif particle_num_for_obs > particle_num:
+                            #     for par_index in range(particle_num_for_obs):
+                            #         visual_world.init_display_particle(particles_states_list.particles[par_index].objects[obj_index])
+                            #         obj_visual_id = particles_states_list.particles[par_index].objects[obj_index].id
+                            #         par_obj_id[par_index].append(obj_visual_id)
                     else:
                         for obj_index in range(object_num):
-                            for par_index in range(particle_num):
+                            # if particle_num_for_obs == particle_num:
+                            particle_num_ = len(particles_states_list.particles)
+                            for par_index in range(particle_num_):
                                 particles_states_list.particles[par_index].objects[obj_index].id = par_obj_id[par_index][obj_index]
                                 visual_world.display_particle_in_visual_model(particles_states_list.particles[par_index].objects[obj_index])
+                            # elif particle_num_for_obs > particle_num:
+                            #     for par_index in range(particle_num_for_obs):
+                            #         particles_states_list.particles[par_index].objects[obj_index].id = par_obj_id[par_index][obj_index]
+                            #         visual_world.display_particle_in_visual_model(particles_states_list.particles[par_index].objects[obj_index])
                         
             # display estimates object
             if display_esti_flag == True:

@@ -1484,12 +1484,12 @@ def visibility_computing_for_initialisation_vk(particle_cloud):
                 if visible_score < visible_threshold_dope_X_list[obj_index]:
                     weight = weight
                 else:
-                    weight = weight * 0.01
+                    weight = weight * 0.001
             elif OBJECT_NAME_LIST[obj_index] in OBJECT_DETECTED_LIST:
                 if visible_threshold_dope_X_list[obj_index] <= visible_score:
                     weight = weight
                 else:
-                    weight = weight * 0.01
+                    weight = weight * 0.001
             particle_cloud[index][obj_index].w = weight    
             # print(OBJECT_NAME_LIST[obj_index], visible_score, weight)
     return particle_cloud

@@ -1072,7 +1072,10 @@ class SingleENV(multiprocessing.Process):
         boundary_margin = (min(x_w, y_l, z_h)+0.01)/2.0
         effective_min_local = min_corner_local + boundary_margin
         effective_max_local = max_corner_local - boundary_margin
-        effective_max_local[2] = max_corner_local[2]  # Top does not exclude borders
+        effective_min_local[1] = 0  # Top does not exclude borders
+        # effective_max_local[2] = max_corner_local[2]  # Top does not exclude borders
+        # print(effective_min_local)
+        # print(effective_max_local)
         # Generating random points in a local coordinate system
         local_points = np.random.uniform(low=effective_min_local, high=effective_max_local, size=(num_points, 3))
         # Convert local points to the world coordinate system

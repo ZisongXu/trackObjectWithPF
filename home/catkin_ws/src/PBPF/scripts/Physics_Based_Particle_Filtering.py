@@ -1524,6 +1524,23 @@ def create_particles(object_num, robot_num, particle_num,
     print()
     return single_envs_
 
+def set_particles(object_num, robot_num, particle_num,
+                     pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
+                     update_style_flag, sim_time_step, boss_pf_update_interval_in_real,
+                     ROS_LISTENER, SEE_ALL_OBJECTS):
+    manager = multiprocessing.Manager()
+    single_envs_ = {i: SingleENV(object_num, robot_num, particle_num,
+                                 pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
+                                 update_style_flag, sim_time_step, boss_pf_update_interval_in_real, ROS_LISTENER, SEE_ALL_OBJECTS, 
+                                 manager.dict()) for i in range(particle_num)}
+    for _, single_env in single_envs_.items():
+        single_env.start()
+        single_env.queue.put((SingleENV.dummy,))
+    for _, single_env in single_envs_.items():
+        wait_and_get_result_from(single_env)
+    print()
+    return single_envs_
+
 def wait_and_get_result_from(single_env):
     while True:
         with single_env.lock:
@@ -1670,7 +1687,7 @@ def sort_particles_update_for_initialisation(particle_cloud):
         for obj_index in range(OBJECT_NUM):
             each_par_weight = each_par_weight * particle[obj_index].w
         whole_weight_list[par_index] = each_par_weight
-    print(whole_weight_list)
+    # print(whole_weight_list)
     result_indices = get_top_values_indices(whole_weight_list, PARTICLE_NUM)
     result_num_ = len(result_indices)
     newParticles_list = [[]*OBJECT_NUM for _ in range(result_num_)]  
@@ -2461,7 +2478,30 @@ if __name__ == '__main__':
     _publish_esti_pose_info(estimated_object_set)
     # ================================================================================================================================================================
     
-    input("Debug in the main scripts!")
+    if PARTICLE_NUM_FOR_OBS == PARTICLE_NUM:
+        pass
+    elif PARTICLE_NUM_FOR_OBS > PARTICLE_NUM:
+        # initial particles in multiprocessing
+        _single_envs = set_particles(OBJECT_NUM, ROBOT_NUM, PARTICLE_NUM,
+                                     pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
+                                     UPDATE_STYLE_FLAG, SIM_TIME_STEP, BOSS_PF_UPDATE_INTERVAL_IN_REAL,
+                                     ROS_LISTENER, SEE_ALL_OBJECTS)
+        # set particles/objects pose from multiprocessing
+        # if
+        # _particle_cloud_pub[env_index]
+        for env_index, single_env in _single_envs.items():
+            single_env.queue.put((SingleENV.set_target_objects, _particle_cloud_pub[env_index]))
+        for _, single_env in _single_envs.items():
+            wait_and_get_result_from(single_env)
+        # get particles/objects pose from multiprocessing
+        # for env_index, single_env in _single_envs.items():
+        #     single_env.queue.put((SingleENV.get_objects_pose, env_index))
+        # for env_index, single_env in _single_envs.items():  
+        #     objs_pose_info = wait_and_get_result_from(single_env)
+        #     _objs_pose_info_list[env_index] = objs_pose_info
+        #     _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
+
+    # input("Debug in the main scripts!")
     print("Welcome to Our Approach ! RUNNING MODEL: ", RUNNING_MODEL)
 
     t_begin = time.time()

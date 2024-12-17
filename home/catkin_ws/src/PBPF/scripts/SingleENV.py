@@ -111,6 +111,9 @@ class SingleENV(multiprocessing.Process):
         self.OBJECT_DETECTED_LIST = self.parameter_info['object_detected_list']
         self.OBJECT_NUM = self.parameter_info['object_num']
         
+        self.PARTICLE_NUM = self.parameter_info['particle_num']
+        self.PARTICLE_NUM_FOR_OBS = self.parameter_info['particle_num_for_obs']
+
         self.PANDA_ROBOT_LINK_NUMBER = self.parameter_info['panda_robot_link_number']
         
         self.LOCATE_CAMERA_FLAG = self.parameter_info['locate_camera_flag'] # 'ar', 'opti', 'onTheHolder'
@@ -251,7 +254,11 @@ class SingleENV(multiprocessing.Process):
         
         self.add_robot()
         self.add_static_obstacles()
-        self.add_target_objects()
+        if self.PARTICLE_NUM_FOR_OBS == self.PARTICLE_NUM:
+            self.add_target_objects()
+        elif self.PARTICLE_NUM_FOR_OBS > self.PARTICLE_NUM:
+            pass
+
 
     def add_static_obstacles(self):
         plane_id = self.p_env.loadURDF("plane.urdf")
@@ -337,6 +344,23 @@ class SingleENV(multiprocessing.Process):
         self.init_set_sim_robot_JointPosition(joint_of_robot)
         self.collision_detection_obj_id_collection.append(self.robot_id)
         self.collision_detection_env_obj_id_collection.append(self.robot_id)
+
+    def set_target_objects(self, single_particle):
+        for obj_index, obj_name_ in enumerate(self.OBJECT_NAME_LIST):
+            self.objects_list[obj_index] = single_particle[obj_index]
+            particle_pos = copy.deepcopy(single_particle[obj_index].pos)
+            particle_ori = copy.deepcopy(single_particle[obj_index].ori)
+            gazebo_contain = ""
+            if self.gazebo_flag == True:
+                gazebo_contain = "gazebo_"
+            particle_no_visual_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_name_+"/"+gazebo_contain+obj_name_+"_par_no_visual_hor.urdf"),
+                                                        particle_pos, particle_ori)
+            single_particle[obj_index].no_visual_par_id = particle_no_visual_id
+
+            self.collision_detection_obj_id_collection.append(particle_no_visual_id)
+            self.particle_objects_id_collection[obj_index] = particle_no_visual_id
+        self.set_particle_in_each_sim_env(single_particle)
+        return [('success', True)]
 
     def add_target_objects(self):             
         self.UNSEEN_OBJECT_LIST = list(set(self.OBJECT_NAME_LIST) - set(self.OBJECT_DETECTED_LIST))
@@ -507,9 +531,6 @@ class SingleENV(multiprocessing.Process):
                 input("")
             elif self.INIT_METHOD == "normal":
                 print("SingleENV.py: Have not done!")
-            
-        
-
             
     def get_objects_pose(self, par_index):
         # for time_index in range(int(self.pf_update_interval_in_sim)):

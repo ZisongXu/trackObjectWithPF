@@ -899,7 +899,8 @@ class SingleENV(multiprocessing.Process):
                 for contact in contacts:
                     contactNormalOnBtoA = contact[7]
                     contact_dis = contact[8]
-                    if contact_dis < -0.000: # means: positive for separation, negative for penetration
+                    if contact_dis < -0.020: # means: positive for separation, negative for penetration
+                    # if contact_dis < -0.000: # means: positive for separation, negative for penetration
                         normal_x, normal_y, normal_z, pb_quat = self.add_noise_pose(obj_cur_pos, obj_cur_ori)
                         self.p_env.resetBasePositionAndOrientation(obj_id, [normal_x, normal_y, normal_z], pb_quat)
                         flag = 1

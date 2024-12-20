@@ -119,10 +119,12 @@ CAMERA_MOVE = parameter_info['camera_move'] # true/false
 
 PARTICLE_NUM = parameter_info['particle_num']
 PARTICLE_NUM_FOR_OBS = parameter_info['particle_num_for_obs']
+PARTICLE_EXPLOSION_IN_OBSMODEL = parameter_info['particle_explosion_in_obsModel']
 
 OBJECT_NAME_LIST = parameter_info['object_name_list']
 OBJECT_DETECTED_LIST = parameter_info['object_detected_list']
 UNSEEN_OBJECT_LIST = list(set(OBJECT_NAME_LIST) - set(OBJECT_DETECTED_LIST))
+
 INIT_METHOD = parameter_info['init_method'] # # ViDe/Vi/De/normal...
 ADVANCE_RESAMPLE = parameter_info['advance_resample'] # # True/False
 
@@ -136,7 +138,7 @@ FARVAL = parameter_info['farVal'] # 57.86
 DEPTH_IMAGE_CUT_FLAG = parameter_info['depth_image_cut_flag'] 
 PERSP_TO_ORTHO_FLAG = parameter_info['persp_to_ortho_flag'] 
 ORTHO_TO_PERSP_FLAG = parameter_info['ortho_to_persp_flag'] 
-DEPTH_DIFF_VALUE_0_1_FLAG = parameter_info['depth_diff_value_0_1_flag'] 
+DEPTH_DIFF_VALUE_METHOD = parameter_info['depth_diff_value_method'] # "binary_0_1"
 DEPTH_DIFF_VALUE_0_1_THRESHOLD = parameter_info['depth_diff_value_0_1_threshold'] 
 DEPTH_DIFF_VALUE_0_1_ALPHA = parameter_info['depth_diff_value_0_1_alpha'] 
 DEPTH_MASK_FLAG = parameter_info['depth_mask_flag'] 
@@ -145,9 +147,7 @@ COMBINE_PARTICLE_DEPTH_MASK_FLAG = parameter_info['combine_particle_depth_mask_f
 SHOW_PARTICLE_DEPTH_IMAGE_TO_POINT_CLOUD_FLAG = parameter_info['show_particle_depth_image_to_point_cloud_flag'] 
 IGNORE_EDGE_PIXELS = parameter_info['ignore_edge_pixels'] 
 
-COMPARE_DEPTH_IMG_VK = parameter_info['compare_depth_img_vk']
 VISIBILITY_COMPUTE_SEPARATE_FLAG = parameter_info['visibility_compute_separate_flag']
-VISIBILITY_COMPUTE_VK = parameter_info['visibility_compute_vk']
 PROCESS_MODEL_FLAG = parameter_info['process_model_flag'] # thread/multiprocess/normal
 
 RECORD_RESULTS_FLAG = parameter_info['record_results_flag'] 
@@ -155,17 +155,21 @@ PRINT_FLAG = parameter_info['print_flag']
 
 PRINT_SCORE_FLAG = parameter_info['print_score_flag'] 
 SHOW_RAY = parameter_info['show_ray']
-VK_RENDER_FLAG = parameter_info['vk_render_flag']
-PB_RENDER_FLAG = parameter_info['pb_render_flag']
+
+RENDER_DEPTH_SOFTWARE = parameter_info['render_depth_software'] # vk/pb
+RENDER_VISIBILITY_SOFTWARE = parameter_info['render_visibility_software'] # vk/pb
+
 PANDA_ROBOT_LINK_NUMBER = parameter_info['panda_robot_link_number']
 DRAW_WIREFRAME_FLAG = parameter_info['draw_wireframe_flag']
 
 INCREMENTAL_POSE_GENERATOR_FLAG = parameter_info['Incremental_Pose_Generator_Flag']
 
+VK_RESET_TEST_FLAG = parameter_info['vk_reset_test_flag']
 
-if VK_RENDER_FLAG == True:
+
+if RENDER_DEPTH_SOFTWARE == "vk":
     print("I am using Vulkan to generate Depth Image")
-if PB_RENDER_FLAG == True: 
+elif RENDER_DEPTH_SOFTWARE == "pb": 
     print("I am using Pybullet to generate Depth Image")
 SIM_TIME_STEP = 1.0/100
 
@@ -399,6 +403,7 @@ def compute_pos_err_bt_2_points(pos1, pos2):
     z_d = z1-z2
     distance = math.sqrt(x_d ** 2 + y_d ** 2 + z_d ** 2)
     return distance
+
 # compute the angle distance between two objects
 def compute_ang_err_bt_2_points(object1_ori, object2_ori):
     #[x, y, z, w]
@@ -406,16 +411,24 @@ def compute_ang_err_bt_2_points(object1_ori, object2_ori):
     obj2_ori = copy.deepcopy(object2_ori)
     obj1_ori_quat = quaternion_correction(obj1_ori) # x,y,z,w
     obj2_ori_quat = quaternion_correction(obj2_ori) # x,y,z,w
+    norm1 = np.linalg.norm(obj1_ori_quat)
+    norm2 = np.linalg.norm(obj1_ori_quat)
 
-    #[w, x, y, z]
+    if math.isnan(norm1) or math.isnan(norm2):
+        raise ValueError("Input quaternion has zero norm.")
+
+    # [w, x, y, z]
     obj1_quat = Quaternion(x = obj1_ori_quat[0], y = obj1_ori_quat[1], z = obj1_ori_quat[2], w = obj1_ori_quat[3]) # Quaternion(): w,x,y,z
     obj2_quat = Quaternion(x = obj2_ori_quat[0], y = obj2_ori_quat[1], z = obj2_ori_quat[2], w = obj2_ori_quat[3]) # Quaternion(): w,x,y,z
+    # [w, x, y, z]
     diff_bt_o1_o2 = obj2_quat * obj1_quat.inverse
     cos_theta_over_2 = diff_bt_o1_o2.w
     sin_theta_over_2 = math.sqrt(diff_bt_o1_o2.x ** 2 + diff_bt_o1_o2.y ** 2 + diff_bt_o1_o2.z ** 2)
     theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
     theta = theta_over_2 * 2
     theta = abs(theta)
+    # cos_theta_over_2 = np.clip(cos_theta_over_2, -1.0, 1.0)
+    # theta = 2 * np.arccos(cos_theta_over_2)
     return theta
 
 def compute_diff_bt_two_pose(obj_index, particle_cloud_pub, pw_T_obj_obse_pose_new):
@@ -487,11 +500,14 @@ def angle_correction(angle):
         angle = angle + 2 * math.pi
     angle = abs(angle)
     return angle
+
 # make sure all quaternions all between -pi and +pi
 def quaternion_correction(quaternion): # x,y,z,w
     new_quat = Quaternion(x=quaternion[0], y=quaternion[1], z=quaternion[2], w=quaternion[3]) # w,x,y,z
     cos_theta_over_2 = new_quat.w
     sin_theta_over_2 = math.sqrt(new_quat.x ** 2 + new_quat.y ** 2 + new_quat.z ** 2)
+    if sin_theta_over_2 == 0:
+        return quaternion
     theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
     theta = theta_over_2 * 2.0
     while theta >= math.pi:
@@ -987,6 +1003,7 @@ def _compute_estimate_pos_of_object(particle_cloud):
     return esti_objs_cloud
 
 
+# ================================================================================================================================================================
 def _vk_config_setting():
     depth_img_height = RESOLUTION_DEPTH[0] # 480
     depth_img_width = RESOLUTION_DEPTH[1] # 848
@@ -1248,7 +1265,6 @@ def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4, pybullet_env, par_robot
         # other objects
         vk_other_obj_number_ = len(_vk_other_id_list)
         # print("vk_other_obj_number_:",vk_other_obj_number_)
-        _vk_other_obj_info_list
         
         for vk_other_obj_index in range(vk_other_obj_number_):
             vk_other_obj_info = _vk_other_obj_info_list[vk_other_obj_index]
@@ -1347,13 +1363,14 @@ def _vk_depth_image_getting():
 def _vk_get_rendered_depth_image_parallelised(particle_cloud, links_info):
     # vk mark 
     ## Update particle pose->update depth image
-    _vk_update_depth_image(_vk_state_list, _vk_single_obj_state_list, particle_cloud, links_info)
+    # _vk_update_env_states(_vk_state_list, _vk_single_obj_state_list, particle_cloud, links_info)
     ## Render and Download
-    _vk_context.enqueue_render_and_download(vkdepth.DEPTH | vkdepth.MASK)
+    # _vk_context.enqueue_render_and_download(vkdepth.DEPTH | vkdepth.MASK)
+    _vk_context.enqueue_render_and_download(vkdepth.DEPTH)
     ## Waiting for rendering and download
     _vk_context.wait()
     ## Get Depth image
-    vk_rendered_depth_image_array_list_, vk_rendered__mask_image_array_list_, vk_single_obj_rendered__mask_image_array_list_ = _vk_depth_image_getting()
+    # vk_rendered_depth_image_array_list_, vk_rendered__mask_image_array_list_, vk_single_obj_rendered__mask_image_array_list_ = _vk_depth_image_getting()
     # ============================================================================
     # fig, axs = plt.subplots(1, PARTICLE_NUM)
     # for par_index in range(PARTICLE_NUM):
@@ -1365,16 +1382,17 @@ def _vk_get_rendered_depth_image_parallelised(particle_cloud, links_info):
     #     imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+img_name, vk_rendered_depth_image_array_list_[index], cmap='gray')
     #     # imsave(os.path.expanduser("~/catkin_ws/src/PBPF/scripts/img_debug/")+real_depth_img_name, self.real_depth_image_transferred, cmap='gray')
     # ============================================================================
-    return vk_rendered_depth_image_array_list_, vk_rendered__mask_image_array_list_, vk_single_obj_rendered__mask_image_array_list_
+    # return vk_rendered_depth_image_array_list_, vk_rendered__mask_image_array_list_, vk_single_obj_rendered__mask_image_array_list_
 
 # update vk rendered depth image
-def _vk_update_depth_image(vk_state_list, vk_single_obj_state_list, vk_particle_cloud, all_links_info):
+def _vk_update_env_states(vk_state_list, vk_single_obj_state_list, vk_particle_cloud, all_links_info):
     for index, particle in enumerate(vk_particle_cloud):
         objs_states = np.array(vk_state_list[index].view(), copy = False)
         
         if LOCATE_CAMERA_FLAG == "onTheHolder":
             print("waiting for writing")
-            input("Error in the _vk_update_depth_image function!")
+            print("Error_Index: 1")
+            input("Error in the _vk_update_env_states function!")
         for obj_index in range(OBJECT_NUM):
             objs_states[obj_index, 1] = particle[obj_index].pos[0] # x_pos
             objs_states[obj_index, 2] = particle[obj_index].pos[1] # y_pos
@@ -1414,30 +1432,25 @@ def _vk_update_depth_image(vk_state_list, vk_single_obj_state_list, vk_particle_
             objs_states[OBJECT_NUM+rob_link_index, 6] = y_ori # y_ori
             objs_states[OBJECT_NUM+rob_link_index, 7] = z_ori # z_ori
 
-def _visibility_computing_vk(particle_cloud, RGB_weights_lists_):
+def _visibility_computing_vk(particle_cloud):
     _vk_context.enqueue_render_and_download(vkdepth.VISIBILITY)
     _vk_context.wait()
-    for index, particle in enumerate(particle_cloud):
+    par_num_ = len(particle_cloud)
+    RGB_V_weights_lists = [[1]*OBJECT_NUM for _ in range(par_num_)]
+    temp_weights_lists_ = [[1]*OBJECT_NUM for _ in range(par_num_)]
+    for par_index in range(par_num_):
         ## Area of the unobstruced part of target objects
-        part = _vk_context.part_vis_counts(index)
+        part = _vk_context.part_vis_counts(par_index)
         part_arr = np.array(part, copy = False)
         ## Area of the full part of target objects
-        full = _vk_context.full_vis_counts(index)
+        full = _vk_context.full_vis_counts(par_index)
         full_arr = np.array(full, copy = False)
         for obj_index in range(OBJECT_NUM):
             ## object_{obj_index} disappearance
-            weight = RGB_weights_lists_[index][obj_index]
+            weight_vis = temp_weights_lists_[par_index][obj_index]
             if full_arr[obj_index] == 0:
-                # local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
-                # local_obj_outlier_by_DOPE_val = global_objects_outlier_by_DOPE_list[obj_index]
-                # weight = RGB_weights_lists_[index][obj_index]
-                # if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0:
-                #     weight = weight * 0.25
-                # elif local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==1:
-                #     weight = weight * 0.75
-                # elif local_obj_visual_by_DOPE_val==1 and local_obj_outlier_by_DOPE_val==1:
-                #     weight = weight
-                weight = 0.1 * weight
+                ## Remember this is full_arr, it means no particles in the camera view.
+                weight = 0.1 * weight_vis
             else:
                 ## proportion of objects visible
                 visible_score = 1.0 * part_arr[obj_index] / full_arr[obj_index]
@@ -1448,20 +1461,21 @@ def _visibility_computing_vk(particle_cloud, RGB_weights_lists_):
                 if local_obj_visual_by_DOPE_val==0 and local_obj_outlier_by_DOPE_val==0:
                     # visible_score low, weight low
                     if visible_score < visible_threshold_dope_is_fresh_list[obj_index]:
-                        weight = weight / 3.0
-                        weight = weight * visible_score
+                        weight = weight_vis / 3.0
+                        weight = weight_vis * visible_score
                     # visible_score high, weight high
                     else:
-                        weight = weight
+                        weight = weight_vis
                 # object isnot visible to the camera
                 else:
                     # visible_score<0.95 low, weight high
                     if visible_threshold_dope_X_small_list[obj_index]<=visible_score and visible_score<=visible_threshold_dope_X_list[obj_index]: # 0 <= visible_score <= threshold
-                        weight = visible_weight_dope_X_smaller_than_threshold_list[obj_index] * weight # 0.75
+                        weight = visible_weight_dope_X_smaller_than_threshold_list[obj_index] * weight_vis # 0.75
                     else:                                                                                                                         # threshold <= visible_score
-                        weight = visible_weight_dope_X_larger_than_threshold_list[obj_index] * weight # 0.25/0.5
-            particle_cloud[index][obj_index].w = weight
-    return particle_cloud
+                        weight = visible_weight_dope_X_larger_than_threshold_list[obj_index] * weight_vis # 0.25/0.5
+            particle_cloud[par_index][obj_index].w = weight
+            RGB_V_weights_lists[par_index][obj_index] = weight
+    return particle_cloud, RGB_V_weights_lists
 
 # compare depth image
 def _compare_depth_image_vk_parallelised(real_depth_image_transferred):
@@ -1475,37 +1489,44 @@ def _compare_depth_image_vk_parallelised(real_depth_image_transferred):
 
 # In the initial phase, we need to resample the particles before we start the simulation.
 def _resample_particles_inAdvance_vk(particle_cloud):
+    par_num_ = len(particle_cloud)
+    DEPTH_weight_array_ = np.array([1] * par_num_)
+    RGB_V_weights_lists_ = [[1]*OBJECT_NUM for _ in range(par_num_)]
+
     if INIT_METHOD == "Vi":
-        particle_cloud = _visibility_computing_for_initialisation_vk(particle_cloud)
+        RGB_V_weights_lists_ = _visibility_computing_for_initialisation_vk(particle_cloud)
     elif INIT_METHOD == "De":
-        particle_cloud = _depth_image_for_initialisation_vk(particle_cloud)
+        DEPTH_weight_array_ = _depth_image_for_initialisation_vk(particle_cloud)
     elif INIT_METHOD == "ViDe":
-        particle_cloud = _depth_image_for_initialisation_vk(particle_cloud)
-        particle_cloud = _visibility_computing_for_initialisation_vk(particle_cloud)
+        DEPTH_weight_array_ = _depth_image_for_initialisation_vk(particle_cloud)
+        RGB_V_weights_lists_ = _visibility_computing_for_initialisation_vk(particle_cloud)
+
     #  resample particles for initialisation
     ## normal resample particles for initialisation
-    # particle_cloud = resample_particles_update_for_initialisation(particle_cloud)
+    # particle_cloud = resample_particles_update_for_initialisation(particle_cloud, DEPTH_weight_array_, RGB_V_weights_lists_)
     ## there are more particles than needed for the physics simulation,
-    particle_cloud = sort_particles_update_for_initialisation(particle_cloud)
+    particle_cloud = sort_particles_update_for_initialisation(particle_cloud, DEPTH_weight_array_, RGB_V_weights_lists_)
     # for index, particle in enumerate(particle_cloud):
     #     print(particle_cloud[index][0].pos)
     return particle_cloud
 
 # Use visibility score only for initialisation
 def _visibility_computing_for_initialisation_vk(particle_cloud):
+    par_num_ = len(particle_cloud)
+    RGB_V_weights_lists_ = [[1]*OBJECT_NUM for _ in range(par_num_)]
     _vk_context.enqueue_render_and_download(vkdepth.VISIBILITY)
     _vk_context.wait()
-    for index, particle in enumerate(particle_cloud): 
+    for par_index, particle in enumerate(particle_cloud): 
         ## Area of the unobstruced part of target objects
-        part = _vk_context.part_vis_counts(index)
+        part = _vk_context.part_vis_counts(par_index)
         part_arr = np.array(part, copy = False)
         ## Area of the full part of target objects
-        full = _vk_context.full_vis_counts(index)
+        full = _vk_context.full_vis_counts(par_index)
         full_arr = np.array(full, copy = False)
         for obj_index in range(OBJECT_NUM):
             part_pixel_num = part_arr[obj_index]
             full_pixel_num = full_arr[obj_index]
-            weight = particle_cloud[index][obj_index].w
+            weight = particle_cloud[par_index][obj_index].w
             if OBJECT_NAME_LIST[obj_index] in UNSEEN_OBJECT_LIST:
                 if full_pixel_num == 0:
                     weight = weight * 0.0001
@@ -1522,21 +1543,32 @@ def _visibility_computing_for_initialisation_vk(particle_cloud):
                     weight = weight
                 else:
                     weight = weight * 0.0 # 0.001
-            particle_cloud[index][obj_index].w = weight    
+            particle_cloud[par_index][obj_index].w = weight    
             # print(OBJECT_NAME_LIST[obj_index], visible_score, weight)
-    return particle_cloud
+            RGB_V_weights_lists_[par_index][obj_index] = weight
+    return RGB_V_weights_lists_
 
 # Use depth image only for initialisation
 def _depth_image_for_initialisation_vk(particle_cloud):
     real_depth_image_transferred_, real_depth_image_transferred_jax_ = get_real_depth_image()
     D_scores_list_ = _compare_depth_image_vk_parallelised(real_depth_image_transferred_)
-    weight_depth_img_array_ = normalize_score_to_0_1(D_scores_list_)
-    for par_index, particle in enumerate(particle_cloud): 
-        each_par_weight = 1.0 * weight_depth_img_array_[par_index]
-        for obj_index in range(OBJECT_NUM):
-            each_par_weight = each_par_weight * particle[obj_index].w
-            particle[obj_index].w = each_par_weight    
-    return particle_cloud
+    if DEPTH_DIFF_VALUE_METHOD == "binary_0_1":
+        DEPTH_weight_array_ = normalize_score_to_0_1(D_scores_list_)
+    else:
+        print("Error_Index: 9")
+        input("Stop! Have not done! Please press Ctrl-c!")
+
+    # for par_index, particle in enumerate(particle_cloud): 
+    #     each_par_weight = 1.0 * DEPTH_weight_array_[par_index]
+    #     for obj_index in range(OBJECT_NUM):
+    #         each_par_weight = each_par_weight * particle[obj_index].w
+    #         particle[obj_index].w = each_par_weight    
+    return DEPTH_weight_array_
+
+def reset_all_states_vk():
+    _vk_context.reset_all_states()
+    return True
+# ================================================================================================================================================================
 
 def create_particles(object_num, robot_num, particle_num,
                      pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
@@ -1592,13 +1624,13 @@ def depthImageRealTransfer(depth_image_real):
     cv_image = cv_image / 1000
     return cv_image
 
-def resample_particles_update(particle_cloud, pw_T_obj_obse_objects_pose_list_, D_scores_list_):
-    particle_num_ = len(particle_cloud)
-    par_num_on_obse = int(math.ceil(particle_num_ * PICK_PARTICLE_RATE))
-    par_num_for_resample = int(particle_num_) - int(par_num_on_obse)
+def resample_particles_update(particle_cloud, pw_T_obj_obse_objects_pose_list_, DEPTH_weights_lists_, RGB_D_weights_lists_, RGB_V_weights_lists_):
+    par_num_ = len(particle_cloud)
+    par_num_on_obse = int(math.ceil(par_num_ * PICK_PARTICLE_RATE))
+    par_num_for_resample = int(par_num_) - int(par_num_on_obse)
 
-    # [[], [], [], ..., []] (particle_num_)
-    newParticles_list = [[]*OBJECT_NUM for _ in range(particle_num_)]
+    # [[], [], [], ..., []] (par_num_)
+    newParticles_list = [[]*OBJECT_NUM for _ in range(par_num_)]
 
     particles_w = []
     base_w = 0
@@ -1606,120 +1638,113 @@ def resample_particles_update(particle_cloud, pw_T_obj_obse_objects_pose_list_, 
     base_w_list.append(base_w)
     particle_array_list = []
 
-    # mark
-    weight_depth_img_array_ = [1] * particle_num_
-    if USING_D_FLAG == True:
-        if DEPTH_DIFF_VALUE_0_1_FLAG == True:
-            # score_that_particle_get: high->high weight; low->low weight
-            weight_depth_img_array_ = normalize_score_to_0_1(D_scores_list_)
-        else:
-            while True:
-                print("Not yet implemented")
-    for index, particle in enumerate(particle_cloud):
+    for par_index, particle in enumerate(particle_cloud):
         each_par_weight = 1
         for obj_index in range(OBJECT_NUM):
-            each_par_weight = each_par_weight * particle[obj_index].w
-        if USING_D_FLAG == True:
-            each_par_weight = each_par_weight * weight_depth_img_array_[index]
+            each_par_weight = RGB_D_weights_lists_[par_index][obj_index] * RGB_V_weights_lists_[par_index][obj_index]
+        each_par_weight = each_par_weight * DEPTH_weights_lists_[par_index]
         particles_w.append(each_par_weight) # to compute the sum
         base_w = base_w + each_par_weight
         base_w_list.append(base_w)
+
+    ## resample
     w_sum = sum(particles_w)
     r = random.uniform(0, w_sum)
-
-    for index in range(par_num_for_resample):
+    for par_index in range(par_num_for_resample):
         if w_sum > 0.00000001:
-            position = (r + index * w_sum / particle_num_) % w_sum
+            position = (r + par_index * w_sum / par_num_) % w_sum
             position_index = computePosition(position, base_w_list)
             particle_array_list.append(position_index)
         else:
-            particle_array_list.append(index) # [45, 45, 1, 4, 6, 6, ..., 43]
-    index = -1
+            particle_array_list.append(par_index) # [45, 45, 1, 4, 6, 6, ..., 43]
+    index_index = -1
+    ## assign values to particles
     for obj_index in range(OBJECT_NUM):
-        for index, i in enumerate(particle_array_list): # particle angle 
-            particle = Particle(particle_cloud[i][obj_index].par_name,
-                                particle_cloud[index][obj_index].visual_par_id,
-                                particle_cloud[index][obj_index].no_visual_par_id,
-                                particle_cloud[i][obj_index].pos,
-                                particle_cloud[i][obj_index].ori,
-                                1.0/particle_num_, 
-                                index,
+        for index_index, par_index in enumerate(particle_array_list): # particle angle 
+            particle = Particle(particle_cloud[par_index][obj_index].par_name,
+                                particle_cloud[index_index][obj_index].visual_par_id,
+                                particle_cloud[index_index][obj_index].no_visual_par_id,
+                                particle_cloud[par_index][obj_index].pos,
+                                particle_cloud[par_index][obj_index].ori,
+                                1.0/par_num_, 
+                                index_index,
                                 obj_index,
-                                particle_cloud[i][obj_index].linearVelocity,
-                                particle_cloud[i][obj_index].angularVelocity)
-            newParticles_list[index].append(particle)
+                                particle_cloud[par_index][obj_index].linearVelocity,
+                                particle_cloud[par_index][obj_index].angularVelocity)
+            newParticles_list[index_index].append(particle)
 
         # only work when "local_pick_particle_rate != 0"
         obse_obj_pos = pw_T_obj_obse_objects_pose_list_[obj_index].pos
         obse_obj_ori = pw_T_obj_obse_objects_pose_list_[obj_index].ori # pybullet x,y,z,w
         for index_leftover in range(par_num_on_obse):
-            index = index + 1
+            index_index = index_index + 1
             particle = Particle(particle_cloud[index_leftover][obj_index].par_name,
-                                particle_cloud[index][obj_index].visual_par_id,
-                                particle_cloud[index][obj_index].no_visual_par_id,
+                                particle_cloud[index_index][obj_index].visual_par_id,
+                                particle_cloud[index_index][obj_index].no_visual_par_id,
                                 obse_obj_pos,
                                 obse_obj_ori,
-                                1.0/particle_num_, 
-                                index,
+                                1.0/par_num_, 
+                                index_index,
                                 obj_index,
                                 particle_cloud[index_leftover][obj_index].linearVelocity,
                                 particle_cloud[index_leftover][obj_index].angularVelocity)
-            newParticles_list[index].append(particle)
+            newParticles_list[index_index].append(particle)
     return newParticles_list
 
-def resample_particles_update_for_initialisation(particle_cloud): 
-    particle_num_ = len(particle_cloud)
-    par_num_on_obse = int(math.ceil(particle_num_ * PICK_PARTICLE_RATE))
-    par_num_for_resample = int(particle_num_) - int(par_num_on_obse)
-    # [[], [], [], ..., []] (particle_num_)
-    newParticles_list = [[]*OBJECT_NUM for _ in range(particle_num_)]
+def resample_particles_update_for_initialisation(particle_cloud, DEPTH_weight_array_, RGB_V_weights_lists_): 
+    par_num_ = len(particle_cloud)
+    # par_num_on_obse = int(math.ceil(par_num_ * PICK_PARTICLE_RATE))
+    # par_num_for_resample = int(par_num_) - int(par_num_on_obse)
+    # [[], [], [], ..., []] (par_num_)
+    newParticles_list = [[]*OBJECT_NUM for _ in range(par_num_)]
     particles_w = []
     base_w = 0
     base_w_list = []
     base_w_list.append(base_w)
     particle_array_list = []
-    for index, particle in enumerate(particle_cloud):
-        each_par_weight = 1
+    for par_index, particle in enumerate(particle_cloud):
+        each_par_weight = DEPTH_weight_array_[par_index]
         for obj_index in range(OBJECT_NUM):
-            each_par_weight = each_par_weight * particle[obj_index].w
+            each_par_weight = each_par_weight * RGB_V_weights_lists_[par_index][obj_index]
         particles_w.append(each_par_weight) # to compute the sum
         base_w = base_w + each_par_weight
         base_w_list.append(base_w)
+    ## resample
     w_sum = sum(particles_w)
     r = random.uniform(0, w_sum)
-    for index in range(par_num_for_resample):
+    for par_index in range(par_num_):
         if w_sum > 0.00000001:
-            position = (r + index * w_sum / particle_num_) % w_sum
+            position = (r + par_index * w_sum / par_num_) % w_sum
             position_index = computePosition(position, base_w_list)
             particle_array_list.append(position_index)
         else:
-            particle_array_list.append(index) # [45, 45, 1, 4, 6, 6, ..., 43]
-    index = -1
+            particle_array_list.append(par_index) # [45, 45, 1, 4, 6, 6, ..., 43]
+    ## assign values to particles
     for obj_index in range(OBJECT_NUM):
-        for index, i in enumerate(particle_array_list): # particle angle 
-            particle = Particle(particle_cloud[i][obj_index].par_name,
-                                particle_cloud[index][obj_index].visual_par_id,
-                                particle_cloud[index][obj_index].no_visual_par_id,
-                                particle_cloud[i][obj_index].pos,
-                                particle_cloud[i][obj_index].ori,
-                                1.0/particle_num_, 
-                                index,
+        for index_index, ipar_index in enumerate(particle_array_list): # particle angle 
+            particle = Particle(particle_cloud[par_index][obj_index].par_name,
+                                particle_cloud[index_index][obj_index].visual_par_id,
+                                particle_cloud[index_index][obj_index].no_visual_par_id,
+                                particle_cloud[par_index][obj_index].pos,
+                                particle_cloud[par_index][obj_index].ori,
+                                1.0/par_num_, 
+                                index_index,
                                 obj_index,
-                                particle_cloud[i][obj_index].linearVelocity,
-                                particle_cloud[i][obj_index].angularVelocity)
-            newParticles_list[index].append(particle)
+                                particle_cloud[par_index][obj_index].linearVelocity,
+                                particle_cloud[par_index][obj_index].angularVelocity)
+            newParticles_list[index_index].append(particle)
     return newParticles_list
 
-def sort_particles_update_for_initialisation(particle_cloud): 
-    particle_num_ = len(particle_cloud)
-    whole_weight_list = [0] * particle_num_
+def sort_particles_update_for_initialisation(particle_cloud, DEPTH_weight_array_, RGB_weights_lists_): 
+    par_num_ = len(particle_cloud)
+    whole_weight_list = [0] * par_num_
     for par_index, particle in enumerate(particle_cloud):
-        each_par_weight = 1
+        each_par_weight = DEPTH_weight_array_[par_index]
         for obj_index in range(OBJECT_NUM):
-            each_par_weight = each_par_weight * particle[obj_index].w
+            each_par_weight = each_par_weight * RGB_weights_lists_[par_index][obj_index]
         whole_weight_list[par_index] = each_par_weight
-    # print(whole_weight_list)
-    result_indices = get_top_values_indices(whole_weight_list, PARTICLE_NUM)
+    ### pay attention please, "PARTICLE_NUM" means how many particles do we need in the pybullet env
+    result_indices = get_top_values_indices(whole_weight_list, PARTICLE_NUM) 
     result_num_ = len(result_indices)
     newParticles_list = [[]*OBJECT_NUM for _ in range(result_num_)]  
     for index_index, par_index in enumerate(result_indices):
@@ -1758,16 +1783,18 @@ def get_top_values_indices(input_list, top_n):
     return top_indices            
          
 def normalize_score_to_0_1(score_list):
+    par_num_ = len(score_list)
     score_list_min = min(score_list)
     score_list_array_ = np.array(score_list)
     score_list_array_sub = score_list_array_ - score_list_min
     if score_list_array_sub.ndim == 1:
         print("Dimension of score list is 1")
     else:
+        print("Error_Index: 2")
         input("Error: depth_value_difference_list_array_sub.ndim should be 1! Please check the code and press Crtl-C")
     score_list_array_sub_sum = sum(score_list_array_sub)
     if score_list_array_sub_sum == 0:
-        score_list_array_sub_sum_over = np.full(PARTICLE_NUM, 1/PARTICLE_NUM)
+        score_list_array_sub_sum_over = np.full(par_num_, 1/par_num_)
     else:
         score_list_array_sub_sum_over = score_list_array_sub / score_list_array_sub_sum * 1 # 20
     return score_list_array_sub_sum_over
@@ -1839,24 +1866,20 @@ def compute_std(mean_pose, particle_cloud):
     return dis_std, ang_std
 
 def compare_distance_seq(particle_cloud, pw_T_obj_obse_objects_pose_list, visual_by_DOPE_list, outlier_by_DOPE_list):
-    weight = 1.0/PARTICLE_NUM
-    RGB_weights_lists = [0] * PARTICLE_NUM
-    weights_list = [weight] * OBJECT_NUM
-    for par_index in range(PARTICLE_NUM):
-        RGB_weights_lists[par_index] = weights_list
+    par_num = len(particle_cloud)
+    weight_normal = 1.0/par_num
+    RGB_D_weights_lists = [[1]*OBJECT_NUM for _ in range(particle_num_for_obsModel)]
+    for par_index in range(par_num):
         for obj_index in range(OBJECT_NUM):
-            particle_cloud[par_index][obj_index].w = weight
-    # at least one object is detected by camera
-    # visual_by_DOPE_list[index] == 0 (DOPE detects)
-    # visual_by_DOPE_list[index] == 1 (DOPE doesnot detect)
-    # outlier_by_DOPE_list[index] == 0 (good value)
-    # outlier_by_DOPE_list[index] == 1 (outlier value)
+            particle_cloud[par_index][obj_index].w = weight_normal
+    ## at least one object is detected by camera
+    ## visual_by_DOPE_list[index] == 0 (DOPE detects)
+    ## visual_by_DOPE_list[index] == 1 (DOPE doesnot detect)
+    ## outlier_by_DOPE_list[index] == 0 (good value)
+    ## outlier_by_DOPE_list[index] == 1 (outlier value)
     if (sum(visual_by_DOPE_list)<OBJECT_NUM) and (sum(outlier_by_DOPE_list)<OBJECT_NUM):
-        for par_index in range(PARTICLE_NUM):
-            weight = 1.0/PARTICLE_NUM
-            weights_list = [weight] * OBJECT_NUM
+        for par_index in range(par_num):
             for obj_index in range(OBJECT_NUM):
-                weight = 1.0/PARTICLE_NUM
                 obj_visual = visual_by_DOPE_list[obj_index]
                 obj_outlier = outlier_by_DOPE_list[obj_index]
                 if obj_visual==0 and obj_outlier==0:
@@ -1885,14 +1908,19 @@ def compare_distance_seq(particle_cloud, pw_T_obj_obse_objects_pose_list, visual
                     theta_over_2 = math.atan2(sin_theta_over_2, cos_theta_over_2)
                     theta = theta_over_2 * 2.0
                     weight_ang = normal_distribution(theta, mean, BOSS_SIGMA_OBS_ANG_LIST[obj_index])
-                    weight = weight_xyz * weight_ang
-                    particle_cloud[par_index][obj_index].w = weight
-                    weights_list[obj_index] = weight
+                    weight_dis = weight_xyz * weight_ang
+                    particle_cloud[par_index][obj_index].w = weight_dis
+                    RGB_D_weights_lists[par_index][obj_index] = weight_dis
                 else:
-                    particle_cloud[par_index][obj_index].w = weight
-                    weights_list[obj_index] = weight
-            RGB_weights_lists[par_index] = weights_list
-    return RGB_weights_lists, particle_cloud
+                    particle_cloud[par_index][obj_index].w = weight_normal
+                    RGB_D_weights_lists[par_index][obj_index] = weight_normal
+    ## all the objects are not detected by camera (PE system)    
+    else:
+        for par_index in range(par_num):
+            for obj_index in range(OBJECT_NUM):
+                particle_cloud[par_index][obj_index].w = weight_normal
+                RGB_D_weights_lists[par_index][obj_index] = weight_normal
+    return RGB_D_weights_lists, particle_cloud
 
 def normal_distribution(x, mean, sigma):
     return sigma * np.exp(-1*((x-mean)**2)/(2*(sigma**2)))/(math.sqrt(2*np.pi)* sigma)
@@ -2183,11 +2211,11 @@ if __name__ == '__main__':
         print("2: RUNNING_MODEL:", RUNNING_MODEL)
         BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.25 # original value = 0.16
         PF_UPDATE_TIME_ONCE = BOSS_PF_UPDATE_INTERVAL_IN_REAL # 70 particles -> 2s
-    elif RUNNING_MODEL == "PBPF_RGBD" and VK_RENDER_FLAG == True:
+    elif RUNNING_MODEL == "PBPF_RGBD" and RENDER_DEPTH_SOFTWARE == "vk":
         print("3: RUNNING_MODEL (VK):", RUNNING_MODEL)
         BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.25 # original value = 0.16 
         PF_UPDATE_TIME_ONCE = BOSS_PF_UPDATE_INTERVAL_IN_REAL # 70 particles -> 35s
-    elif RUNNING_MODEL == "PBPF_RGBD" and PB_RENDER_FLAG == True:
+    elif RUNNING_MODEL == "PBPF_RGBD" and RENDER_DEPTH_SOFTWARE == "pb":
         print("3: RUNNING_MODEL (PB):", RUNNING_MODEL)
         BOSS_PF_UPDATE_INTERVAL_IN_REAL = 0.25 # original value = 0.16 
         PF_UPDATE_TIME_ONCE = BOSS_PF_UPDATE_INTERVAL_IN_REAL # 70 particles -> 35s
@@ -2228,6 +2256,7 @@ if __name__ == '__main__':
         camRGB_T_camD_ori_14 = [-0.001, 0.002, 0.000, 1.000] # x, y, z, w
         # camRGB_T_camD_ori_14 = [0.001, 0.001, -0.009, 1] # x, y, z, w
     else:
+        print("Error_Index: 3")
         input("Error! in Physics_Based_Particle_Filtering.py file!")
         
     camRGB_T_camD_pose_3_3 = np.array(p.getMatrixFromQuaternion(camRGB_T_camD_ori_14)).reshape(3, 3)
@@ -2350,7 +2379,7 @@ if __name__ == '__main__':
         pw_T_obj_obse_pos = pw_T_obj_obse_obj_list_alg[index].pos 
         pw_T_obj_obse_ori = pw_T_obj_obse_obj_list_alg[index].ori
         print(index)
-        print("Object Name: ", obj_name, "; Object position in Pybullet World: ", pw_T_obj_obse_pos, "; Object orientation in PybullET World: ", pw_T_obj_obse_ori)
+        print("Object Name: ", obj_name, "; Object position in Pybullet World: ", pw_T_obj_obse_pos, "; Object orientation in Pybullet World: ", pw_T_obj_obse_ori)
     print("Finish initializing scene")
     print("============================================================================")
     # ================================================================================================================================================================
@@ -2434,7 +2463,7 @@ if __name__ == '__main__':
     # ================================================================================================================================================================
     # initialisation of vk configuration
     print("Begin to use VK to render depth image!")
-    if VK_RENDER_FLAG == True:
+    if RENDER_DEPTH_SOFTWARE == "vk":
         print("Begin initializing vulkon...")
         _camD_T_camVk_4_4 = np.array([[1, 0, 0, 0],
                                       [0,-1, 0, 0],
@@ -2482,14 +2511,15 @@ if __name__ == '__main__':
         if ADVANCE_RESAMPLE == True:
             print("Need to resample in advance!")
             # use visibility score 
-            if VISIBILITY_COMPUTE_VK == True:
+            if RENDER_VISIBILITY_SOFTWARE == "vk":
                 _particle_cloud_pub = _resample_particles_inAdvance_vk(_particle_cloud_pub)
             else:
                 while True:
                     print("Not yet implemented")
         elif ADVANCE_RESAMPLE == False:
             print("Normal Method!")
-
+    elif RENDER_DEPTH_SOFTWARE == "pb":
+        pass
     # ================================================================================================================================================================
     # get estimated object
     estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
@@ -2498,7 +2528,12 @@ if __name__ == '__main__':
     _publish_par_pose_info(_particle_cloud_pub)
     _publish_esti_pose_info(estimated_object_set)
     # ================================================================================================================================================================
-    
+
+    if VK_RESET_TEST_FLAG == True:
+        reset_flag = reset_all_states_vk()
+        print("Reset all vk states!")
+        _vk_state_list, _vk_single_obj_state_list = _vk_state_setting(_particle_cloud_pub, _pw_T_camVk_4_4, p_sim, sim_rob_id)
+
     if PARTICLE_NUM_FOR_OBS == PARTICLE_NUM:
         pass
     elif PARTICLE_NUM_FOR_OBS > PARTICLE_NUM:
@@ -2618,8 +2653,9 @@ if __name__ == '__main__':
             minDis_obseCur_parOld, minAng_obseCur_parOld = compute_diff_bt_two_pose(obj_index, _particle_cloud_pub, pw_T_obj_obse_pose_new)            
 
             if run_alg_flag == "PBPF":
-                # if dis_obseCur_estiOld > dis_std_list[obj_index] or ang_obseCur_estiOld > ang_std_list[obj_index]
-                # "dis_std_list": the mean distance value from each PARTICLE to the OBSE pose
+                ## mark
+                ## if dis_obseCur_estiOld > dis_std_list[obj_index] or ang_obseCur_estiOld > ang_std_list[obj_index]
+                ## "dis_std_list": the mean distance value from each PARTICLE to the OBSE pose
                 if minDis_obseCur_parOld > outlier_dis_list[obj_index] or minAng_obseCur_parOld > outlier_ang_list[obj_index]:
                     global_objects_outlier_by_DOPE_list[obj_index] = 1
 
@@ -2676,7 +2712,7 @@ if __name__ == '__main__':
         rob_link_9_ang_cur = p_sim.getEulerFromQuaternion(rob_link_9_pose_cur[1])
         
         dis_robcur_robold = compute_pos_err_bt_2_points(rob_link_9_pose_cur[0], rob_link_9_pose_old[0])
-                
+        
         # update according to the pose
         if UPDATE_STYLE_FLAG == "pose":
             while True:
@@ -2735,8 +2771,9 @@ if __name__ == '__main__':
                         print(global_objects_outlier_by_DOPE_list)
                         print("-------------------------------------")
 
-
+                    ###########################################################################################################
                     # I. Motion Model #########################################################################################
+                    ###########################################################################################################
                     t_before_motion_model = time.time()
                     for env_index, single_env in _single_envs.items():
                         single_env.queue.put((SingleENV.motion_model, ROS_LISTENER.current_joint_values, env_index))
@@ -2749,17 +2786,27 @@ if __name__ == '__main__':
                         print("--------------------------------------------------------")
                         print("Motion model cost time:", t_after_motion_model - t_before_motion_model)
                         print("--------------------------------------------------------")
+                    ###########################################################################################################
+                    ####################################### Motion Model Finished #############################################
+                    ###########################################################################################################
+                    par_num_after_motion_model = len(_particle_cloud_pub)
+                    if PARTICLE_EXPLOSION_IN_OBSMODEL == True:
+                        particle_num_for_obsModel = PARTICLE_NUM_FOR_OBS
+                        # pass
+                    else:
+                        particle_num_for_obsModel = par_num_after_motion_model
+                        # pass
 
 
+                    ###########################################################################################################
                     # II. Observation Model ###################################################################################
-                    # A. observation model (DEPTH)
-                    _D_scores_list = []
+                    ###########################################################################################################
                     t_before_observation_model = time.time()
-                    # if USING_D_FLAG == True:
-                    _real_depth_image_transferred, _real_depth_image_transferred_jax = get_real_depth_image()
-                    # a. Render Depth Image ###############################################################################
-                    t_before_render = time.time()
-                    if VK_RENDER_FLAG == True and PB_RENDER_FLAG == False:
+                    _DEPTH_weights_lists = [1] * particle_num_for_obsModel
+                    _RGB_D_weights_lists = [[1]*OBJECT_NUM for _ in range(particle_num_for_obsModel)]
+                    _RGB_V_weights_lists = [[1]*OBJECT_NUM for _ in range(particle_num_for_obsModel)]
+                    ###############################################################################
+                    if RENDER_DEPTH_SOFTWARE == "vk":
                         # get robot links pose
                         for env_index, single_env in _single_envs.items():
                             single_env.queue.put((SingleENV.getLinkStates, ))
@@ -2767,51 +2814,82 @@ if __name__ == '__main__':
                             _links_info = wait_and_get_result_from(single_env)
                         # here, all the links_info should be the same, so I can only get the last one!
                         _links_info = _links_info["links_info"]
-                        _vk_get_rendered_depth_image_parallelised(_particle_cloud_pub, _links_info)
-                    t_after_render = time.time()
-                    if PRINT_FLAG == True:
-                        print("--------------------------------------------------------")
-                        print("Render cost time:", t_after_render - t_before_render)
-                        print("--------------------------------------------------------")
-                    # b. Compare Depth Image ############################################################################## 
-                    t_before_compare = time.time()
-                    if COMPARE_DEPTH_IMG_VK == True:
-                        _D_scores_list = _compare_depth_image_vk_parallelised(_real_depth_image_transferred)
-                        if USING_D_FLAG != True:
-                            _D_scores_list = []
-                    t_after_compare = time.time()
-                    if PRINT_FLAG == True:
-                        print("--------------------------------------------------------")
-                        print("Compare image cost time:", t_after_compare - t_before_compare)
-                        print("--------------------------------------------------------")
-
+                        ## Update vk env states
+                        _vk_update_env_states(_vk_state_list, _vk_single_obj_state_list, _particle_cloud_pub, _links_info)
+                    else:
+                        print("Error_Index: 4")
+                        input("Stop! Have not done! Please press Ctrl-c!")
+                        pass
+                    ###############################################################################
+                    ###############################################################################
+                    # A. observation model (DEPTH)
+                    if USING_D_FLAG == True:
+                        _real_depth_image_transferred, _real_depth_image_transferred_jax = get_real_depth_image()
+                        #######################################################################################################
+                        # a. Render Depth Image ###############################################################################
+                        #######################################################################################################
+                        t_before_render = time.time()
+                        if RENDER_DEPTH_SOFTWARE == "vk":
+                            ## generate vk rendered depth images
+                            _vk_get_rendered_depth_image_parallelised(_particle_cloud_pub, _links_info)
+                        elif RENDER_DEPTH_SOFTWARE == "pb":
+                            print("Error_Index: 5")
+                            input("Stop! Have not done! Please press Ctrl-c!")
+                        t_after_render = time.time()
+                        if PRINT_FLAG == True:
+                            print("--------------------------------------------------------")
+                            print("Render cost time:", t_after_render - t_before_render)
+                            print("--------------------------------------------------------")
+                        #######################################################################################################
+                        # b. Compare Depth Image ############################################################################## 
+                        #######################################################################################################
+                        t_before_compare = time.time()
+                        if RENDER_DEPTH_SOFTWARE == "vk":
+                            _D_scores_list = _compare_depth_image_vk_parallelised(_real_depth_image_transferred)
+                            if DEPTH_DIFF_VALUE_METHOD == "binary_0_1":
+                                _DEPTH_weights_lists = normalize_score_to_0_1(_D_scores_list)
+                            else:
+                                print("Error_Index: 6")
+                                input("Stop! Have not done! Please press Ctrl-c!")
+                        elif RENDER_DEPTH_SOFTWARE == "pb":
+                            print("Error_Index: 7")
+                            input("Stop! Have not done! Please press Ctrl-c!")
+                        t_after_compare = time.time()
+                        if PRINT_FLAG == True:
+                            print("--------------------------------------------------------")
+                            print("Compare image cost time:", t_after_compare - t_before_compare)
+                            print("--------------------------------------------------------")
+                    ###############################################################################
+                    ###############################################################################
                     # B. observation model (RGB)
-                    _RGB_weights_lists = [0] * PARTICLE_NUM
                     if USING_RGB_FLAG == True:
+                        #######################################################################################################
                         # a. Compare Distance #################################################################################
+                        #######################################################################################################
                         t_before_RGB = time.time()
                         compare_distance_method = "seq" # seq/multi
                         if compare_distance_method == "seq":
-                            _RGB_weights_lists, test_particle_cloud_pub = compare_distance_seq(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list)
+                            _RGB_D_weights_lists, _particle_cloud_pub = compare_distance_seq(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list)
                         elif compare_distance_method == "multi":
                             for env_index, single_env in _single_envs.items():
                                 single_env.queue.put((SingleENV.compare_distance, env_index, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list))
                             for env_index, single_env in _single_envs.items():
-                                _RGB_weights_list = wait_and_get_result_from(single_env)
-                                _RGB_weights_lists[env_index] = _RGB_weights_list[str(env_index)]
+                                _RGB_D_weights_list = wait_and_get_result_from(single_env)
+                                _RGB_D_weights_lists[env_index] = _RGB_D_weights_list[str(env_index)]
                         t_after_RGB = time.time()
                         if PRINT_FLAG == True:
                             print("--------------------------------------------------------")
                             print("Compare distance cost time:", t_after_RGB - t_before_RGB)
                             print("--------------------------------------------------------")
+                        #######################################################################################################
                         # b. Visibility Score #################################################################################
+                        #######################################################################################################
                         t_before_Vis = time.time()
-                        if VISIBILITY_COMPUTE_VK == True:
-                            new_particle_cloud = _visibility_computing_vk(_particle_cloud_pub, _RGB_weights_lists)
-                            _particle_cloud_pub = copy.deepcopy(new_particle_cloud)
+                        if RENDER_VISIBILITY_SOFTWARE == "vk":
+                            _particle_cloud_pub, _RGB_V_weights_lists = _visibility_computing_vk(_particle_cloud_pub)
                         else:
-                            while True:
-                                print("Not yet implemented")
+                            print("Error_Index: 8")
+                            input("Stop! Have not done! Please press Ctrl-c!")
                         t_after_Vis = time.time()
                         if PRINT_FLAG == True:
                             print("--------------------------------------------------------")
@@ -2823,11 +2901,13 @@ if __name__ == '__main__':
                         print("--------------------------------------------------------")
                         print("Observation model cost time:", t_after_observation_model - t_before_observation_model)
                         print("--------------------------------------------------------")
-                    
+                    ###########################################################################################################
+                    ##################################### Observation Model Finished ##########################################
+                    ###########################################################################################################
+
 
                     # III. Resampling #########################################################################################
-                    new_particle_cloud = resample_particles_update(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, _D_scores_list)
-                    _particle_cloud_pub = copy.deepcopy(new_particle_cloud)
+                    _particle_cloud_pub = resample_particles_update(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, _DEPTH_weights_lists, _RGB_D_weights_lists, _RGB_V_weights_lists)
                     for env_index, single_env in _single_envs.items():
                         single_env.queue.put((SingleENV.set_particle_in_each_sim_env, _particle_cloud_pub[env_index]))
                     for env_index, single_env in _single_envs.items():
@@ -2842,8 +2922,8 @@ if __name__ == '__main__':
                         _record_t_PBPF = time.time()
                         _record_time_list.append(_record_t_PBPF - _record_t_begin)
                     if SHOW_RAY == True:
-                        while True:
-                            print("Not yet implemented")
+                        print("Error_Index: 10")
+                        input("Stop! Have not done! Please press Ctrl-c!")
 
                     ###########################################################################################################
                     ###########################################################################################################
@@ -2857,7 +2937,7 @@ if __name__ == '__main__':
                         print("Time consuming:", t_finish_PBPF - t_begin_PBPF)
                         print("Mean value:", np.mean(PBPF_time_cosuming_list))
                     simRobot_touch_par_flag = 0
-
+                    # ================================================================================================================================================================
                     # else:
                     #     _no_PF_update_count = _no_PF_update_count + 1
                     #     print("Just update ENV!")
@@ -2896,4 +2976,40 @@ if __name__ == '__main__':
         p_par_env_list[i].disconnect()
 
 
+# correct the quaternion_correction 
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
 
+##### change pbpf alg
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################

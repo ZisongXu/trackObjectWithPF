@@ -5,11 +5,10 @@ camera_info_topic_depth: /camera/depth/camera_info
 camera_model: D435i
 camera_move: true
 combine_particle_depth_mask_flag: false
-compare_depth_img_vk: true
 convolution_size: 0
 debug_depth_img_flag: false
 depth_diff_value_0_1_alpha: 0.8
-depth_diff_value_0_1_flag: true
+depth_diff_value_method: binary_0_1
 depth_diff_value_0_1_threshold: 0.03
 depth_image_cut_flag: false
 depth_mask_flag: false
@@ -44,9 +43,9 @@ otob_name_list:
 - cracker_obstacle
 - fish_can
 panda_robot_link_number: 11
-particle_num: 200
-particle_num_for_obs: 1023
-pb_render_flag: false
+particle_num: 10
+particle_num_for_obs: 20
+particle_explosion_in_obsModel: false
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0
 print_flag: false
@@ -67,9 +66,10 @@ update_style_flag: time
 use_convolution_flag: false
 version: multiray
 visibility_compute_separate_flag: true
-visibility_compute_vk: true
-vk_render_flag: true
+render_depth_software: vk
+render_visibility_software: vk
 width: 848
 init_method: "ViDe"
 advance_resample: true
+vk_reset_test_flag: true
 

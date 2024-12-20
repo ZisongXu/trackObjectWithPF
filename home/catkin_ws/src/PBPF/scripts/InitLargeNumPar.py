@@ -52,7 +52,7 @@ class InitLargeNumPar():
         self.task_flag = self.parameter_info['task_flag'] # '1', '2', '3', 'basket_retrieve'
         self.SIM_REAL_WORLD_FLAG = self.parameter_info['sim_real_world_flag']
         self.SHOW_PARTICLE = self.parameter_info['show_particle'] 
-        self.VK_RENDER_FLAG = self.parameter_info['vk_render_flag'] 
+        self.RENDER_DEPTH_SOFTWARE = self.parameter_info['render_depth_software'] # vk/pd
         self.OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_are_not_touching_target_objs_num']
         self.OBJS_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_touching_target_objs_num']
         ## object name list
@@ -74,11 +74,14 @@ class InitLargeNumPar():
     def passing_data(self, pw_T_obj_obse_obj_list_alg=0, pw_T_basket_pose=0):
         ## passing self.data
         self.pw_T_obj_obse_obj_list_alg = pw_T_obj_obse_obj_list_alg
-        self.pw_T_basket_pose = pw_T_basket_pose
+        if self.task_flag == "basket_retrieve":
+            self.pw_T_basket_pose = pw_T_basket_pose
+            self.pw_T_basket_pos = self.get_position_from_matrix44(self.pw_T_basket_pose)
+            self.pw_T_basket_ori = self.get_quaternion_from_matrix(self.pw_T_basket_pose)
+        else:
+            pass
         ## create new self.data
         self.particle_cloud = [0] * self.PARTICLE_NUM_FOR_OBS
-        self.pw_T_basket_pos = self.get_position_from_matrix44(self.pw_T_basket_pose)
-        self.pw_T_basket_ori = self.get_quaternion_from_matrix(self.pw_T_basket_pose)
         ## noise for initialization
         self.boss_sigma_obs_pos_init = 0.02 # original value: 16cm/10CM/5cm 
         self.boss_sigma_obs_x = self.boss_sigma_obs_pos_init / math.sqrt(2)
@@ -88,38 +91,42 @@ class InitLargeNumPar():
         self.boss_sigma_obs_ang_init = 0.01 * 10 # original value: 0.0216773873 * 20/10
         
     def init_particle_cloud(self):
-        for par_index in range(self.PARTICLE_NUM_FOR_OBS):
-            objects_list = ["None"] * len(self.OBJECT_NAME_LIST)
-            for obj_index in range(len(self.OBJECT_NAME_LIST)):
-                obj_name = self.pw_T_obj_obse_obj_list_alg[obj_index].obj_name
-                pw_T_obj_obse_pos = self.pw_T_obj_obse_obj_list_alg[obj_index].pos 
-                pw_T_obj_obse_ori = self.pw_T_obj_obse_obj_list_alg[obj_index].ori
-                if obj_name in self.OBJECT_DETECTED_LIST:
-                    particle_pos, particle_ori = self.generate_random_pose(pw_T_obj_obse_pos, pw_T_obj_obse_ori)
-                    objInfo = Particle(obj_name, 0, 0, particle_pos, particle_ori, 1.0/self.PARTICLE_NUM_FOR_OBS, par_index, obj_index, 0, 0)
-                elif obj_name in self.UNSEEN_OBJECT_LIST:
-                    objInfo = 0
-                    if self.task_flag == "basket_retrieve": # we need to know the area that hold the unseen object
-                        basket_width, basket_lenght, basket_height = self.get_object_shape("basket")
-                        x_w,y_l,z_h = 0.0,0.0,0.0
-                        pw_T_basketCenter_pos_x = self.pw_T_basket_pos[0]
-                        pw_T_basketCenter_pos_y = self.pw_T_basket_pos[1]
-                        pw_T_basketCenter_pos_z = self.pw_T_basket_pos[2] + basket_height/2.0
-                        pw_T_basketCenter_pos = [pw_T_basketCenter_pos_x, pw_T_basketCenter_pos_y, pw_T_basketCenter_pos_z]
-                        BasketCenter_T_points_pose_4_4_list = self.getCenterTPointsList("basket")
-                        x_w, y_l, z_h = self.get_object_shape(obj_name)
-                        pw_T_randomPoint_pose_results = self.generate_points_in_rotated_rectangular_prism(self.pw_T_basket_pose, BasketCenter_T_points_pose_4_4_list, x_w, y_l, z_h, num_points=1)
-                        ## mark hard code
-                        pw_T_randomPoint_pose_result = pw_T_randomPoint_pose_results[0]
-                        particle_pos = pw_T_randomPoint_pose_result['pos']
-                        particle_ori = pw_T_randomPoint_pose_result['ori']
-                        # print(particle_pos)
+        if self.task_flag == "basket_retrieve":
+            for par_index in range(self.PARTICLE_NUM_FOR_OBS):
+                objects_list = ["None"] * len(self.OBJECT_NAME_LIST)
+                for obj_index in range(len(self.OBJECT_NAME_LIST)):
+                    obj_name = self.pw_T_obj_obse_obj_list_alg[obj_index].obj_name
+                    pw_T_obj_obse_pos = self.pw_T_obj_obse_obj_list_alg[obj_index].pos 
+                    pw_T_obj_obse_ori = self.pw_T_obj_obse_obj_list_alg[obj_index].ori
+                    if obj_name in self.OBJECT_DETECTED_LIST:
+                        particle_pos, particle_ori = self.generate_random_pose(pw_T_obj_obse_pos, pw_T_obj_obse_ori)
                         objInfo = Particle(obj_name, 0, 0, particle_pos, particle_ori, 1.0/self.PARTICLE_NUM_FOR_OBS, par_index, obj_index, 0, 0)
-                    else:
-                        while True:
-                            print("InitLargeNumPar.py: init_particle_cloud()")
-                objects_list[obj_index] = objInfo
-            self.particle_cloud[par_index] = objects_list
+                    elif obj_name in self.UNSEEN_OBJECT_LIST:
+                        objInfo = 0
+                        if self.task_flag == "basket_retrieve": # we need to know the area that hold the unseen object
+                            basket_width, basket_lenght, basket_height = self.get_object_shape("basket")
+                            x_w,y_l,z_h = 0.0,0.0,0.0
+                            pw_T_basketCenter_pos_x = self.pw_T_basket_pos[0]
+                            pw_T_basketCenter_pos_y = self.pw_T_basket_pos[1]
+                            pw_T_basketCenter_pos_z = self.pw_T_basket_pos[2] + basket_height/2.0
+                            pw_T_basketCenter_pos = [pw_T_basketCenter_pos_x, pw_T_basketCenter_pos_y, pw_T_basketCenter_pos_z]
+                            BasketCenter_T_points_pose_4_4_list = self.getCenterTPointsList("basket")
+                            x_w, y_l, z_h = self.get_object_shape(obj_name)
+                            pw_T_randomPoint_pose_results = self.generate_points_in_rotated_rectangular_prism(self.pw_T_basket_pose, BasketCenter_T_points_pose_4_4_list, x_w, y_l, z_h, num_points=1)
+                            ## mark hard code
+                            pw_T_randomPoint_pose_result = pw_T_randomPoint_pose_results[0]
+                            particle_pos = pw_T_randomPoint_pose_result['pos']
+                            particle_ori = pw_T_randomPoint_pose_result['ori']
+                            # print(particle_pos)
+                            objInfo = Particle(obj_name, 0, 0, particle_pos, particle_ori, 1.0/self.PARTICLE_NUM_FOR_OBS, par_index, obj_index, 0, 0)
+                        else:
+                            while True:
+                                print("InitLargeNumPar.py: init_particle_cloud()")
+                    objects_list[obj_index] = objInfo
+                self.particle_cloud[par_index] = objects_list
+        else:
+            print("Have not done! Need to stop (InitLargeNumPar.py; init_particle_cloud().)")
+            pass
         return self.particle_cloud
                 
     def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):

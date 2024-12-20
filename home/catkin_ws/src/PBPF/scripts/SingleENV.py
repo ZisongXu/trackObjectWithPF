@@ -104,7 +104,7 @@ class SingleENV(multiprocessing.Process):
         self.task_flag = self.parameter_info['task_flag'] # '1', '2', '3', 'basket_retrieve'
         self.SIM_REAL_WORLD_FLAG = self.parameter_info['sim_real_world_flag']
         self.SHOW_PARTICLE = self.parameter_info['show_particle'] 
-        self.VK_RENDER_FLAG = self.parameter_info['vk_render_flag'] 
+        self.RENDER_DEPTH_SOFTWARE = self.parameter_info['render_depth_software'] # vk/pd
         self.OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_are_not_touching_target_objs_num']
         self.OBJS_TOUCHING_TARGET_OBJS_NUM = self.parameter_info['objs_touching_target_objs_num']
         self.OBJECT_NAME_LIST = self.parameter_info['object_name_list']
@@ -868,6 +868,8 @@ class SingleENV(multiprocessing.Process):
         new_quat = Quaternion(x=quaternion[0], y=quaternion[1], z=quaternion[2], w=quaternion[3]) # w,x,y,z
         cos_theta_over_2 = new_quat.w
         sin_theta_over_2 = math.sqrt(new_quat.x ** 2 + new_quat.y ** 2 + new_quat.z ** 2)
+        if sin_theta_over_2 == 0:
+            return quaternion
         theta_over_2 = math.atan2(sin_theta_over_2,cos_theta_over_2)
         theta = theta_over_2 * 2.0
         while theta >= math.pi:

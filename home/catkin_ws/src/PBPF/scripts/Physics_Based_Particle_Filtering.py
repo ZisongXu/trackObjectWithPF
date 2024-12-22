@@ -1776,12 +1776,10 @@ def get_top_values_indices(input_list, top_n):
     # 对列表进行排序并保留索引
     sorted_indices = sorted(range(len(input_list)), key=lambda i: input_list[i], reverse=True)
     sorted_list = [input_list[i] for i in sorted_indices]
- 
     # 提取前 n 个值，同时处理重复值的情况
     # top_values = sorted_list[:top_n]
     # min_value_in_top = top_values[-1]  # 第 n 个值
     # top_indices = [i for i in sorted_indices if input_list[i] >= min_value_in_top]
-    
     top_indices = []
     count = 0
     for idx in sorted_indices:
@@ -1789,9 +1787,18 @@ def get_top_values_indices(input_list, top_n):
         count += 1
         if count == top_n:
             break
-        
     return top_indices            
-         
+
+# (1000,3) -> (333,333,334)/(334,333,332)
+# (1000,7) -> (143,143,143,142,143,143,143)/(143,142,143,143,143,143,143)
+def divide_and_shuffle(total, n):
+   base = total // n
+   remainder = total % n
+   result = [base + 1] * remainder + [base] * (n - remainder)
+   random.shuffle(result)
+   return result
+
+
 def normalize_score_to_0_1(score_list):
     par_num_ = len(score_list)
     score_list_min = min(score_list)
@@ -2567,7 +2574,7 @@ if __name__ == '__main__':
         while True:
             NEED_CYCLE = False
             # Indicates how many objects are in a good pose at the corresponding particle/list index
-            good_par_index_list = [0] * par_temp_num_
+            all_par_good_index_list = [0] * par_temp_num_
             # Indicates the number of seen objects to be determined
             seen_obj_temp_index = 0
             # step simulation
@@ -2599,23 +2606,15 @@ if __name__ == '__main__':
                         two_points_dis = compute_pos_err_bt_2_points(pw_T_obj_obse_pos, pw_T_parObj_obse_pos)
                         two_points_ang = compute_ang_err_bt_2_points(pw_T_obj_obse_ori, pw_T_parObj_obse_ori)   
                         # if (two_points_dis > (BOSS_SIGMA_OBS_POS_INIT*math.sqrt(2))) or (two_points_ang > BOSS_SIGMA_OBS_ANG_INIT):
-                        if (two_points_dis > 0.035) or (two_points_ang > BOSS_SIGMA_OBS_ANG_INIT):
-                            # print("Bad:")
-                            # print("two_points_dis:", two_points_dis)
-                            # print("two_points_ang:", two_points_ang)
-                            # print("==============================")
+                        if (two_points_dis > 0.03*math.sqrt(2)) or (two_points_ang > 0.2):
                             # seen object is bad, number flag + 1
                             obj_bad_init_num = obj_bad_init_num + 1
                         else:
-                            # print("Good:")
-                            # print("two_points_dis:", two_points_dis)
-                            # print("two_points_ang:", two_points_ang)
-                            # print("==============================")
                             # good init
                             obj_good_init_num = obj_good_init_num + 1
                             # record index of the good object
                             # Add 1 to the corresponding particle index, indicating that the seen object has a good pose on this particle
-                            good_par_index_list[par_index] =  good_par_index_list[par_index] + 1
+                            all_par_good_index_list[par_index] =  all_par_good_index_list[par_index] + 1
                         if obj_bad_init_num  > int(par_num__*INIT_CYCLE_RATE):
                             # bad init reaches a certain number
                             NEED_CYCLE = True
@@ -2629,14 +2628,13 @@ if __name__ == '__main__':
                         else:
                             # good init
                             pass
-
                     if NEED_CYCLE == True:
                         if INIT_CYCLE_METHOD == "all_cycle":
                             print("Prepare to re-cycle!")
                             break
                         elif INIT_CYCLE_METHOD == "part_cycle":
                             # we need to know how many seen particles are good and record their index to use these good pose do next initialization 
-                            if seen_obj_temp_index not in good_par_index_list:
+                            if seen_obj_temp_index not in all_par_good_index_list:
                                 # it means that after a round of comparison, no seen object in any particle is in a good pose, so re-initialize directly
                                 break
                             else:
@@ -2648,22 +2646,44 @@ if __name__ == '__main__':
             if NEED_CYCLE == True:
                 # re-initialization
                 if INIT_CYCLE_METHOD == "all_cycle":
-                    print("Init large number particles poses")
+                    print("Init large number particles poses: all_cycle")
+                    print("Before init:", len(_particle_cloud_pub))
                     _particle_cloud_pub = init_large_num_paricle.init_particle_cloud()
-                    if RENDER_DEPTH_SOFTWARE == "vk":
-                        print("Reset all vk states!")
-                        reset_flag = reset_all_states_vk()
-                        print("Set vk env!")
-                        print(len(_particle_cloud_pub))
-                        _vk_state_list, _vk_single_obj_state_list = _vk_state_setting(_particle_cloud_pub, _pw_T_camVk_4_4, p_sim, sim_rob_id)
-                        print("resample")
-                        _particle_cloud_pub = _resample_particles_inAdvance_vk(_particle_cloud_pub)
-                        print(len(_particle_cloud_pub))
-                    elif RENDER_DEPTH_SOFTWARE == "pb":
-                        print("Error_Index: 11")
-                        input("Stop! Have not done! Please press Ctrl-c!")
+                    print("After init:", len(_particle_cloud_pub))
                 elif INIT_CYCLE_METHOD == "part_cycle":
-                    pass
+                    all_par_good_index_array = np.array(all_par_good_index_list)
+                    par_good_index_array = np.where(all_par_good_index_array == 2)[0]
+                    par_good_num = len(par_good_index_array)
+                    if par_good_num == 0:
+                        print("Init large number particles poses: part_cycle")
+                        print("No good particle, need to initialization all particles!")
+                        _particle_cloud_pub = init_large_num_paricle.init_particle_cloud()
+                    else:
+                        pw_T_obj_obse_par_list_init = [[0]*OBJECT_NUM for _ in range(par_good_num)]
+                        for good_par_index in range(par_good_num):
+                            for obj_index, obj_name in enumerate(OBJECT_NAME_LIST):
+                                if obj_name in OBJECT_DETECTED_LIST:
+                                    pw_T_obj_obse_pos = pw_T_obj_obse_obj_list_init[obj_index].pos 
+                                    pw_T_obj_obse_ori = pw_T_obj_obse_obj_list_init[obj_index].ori
+                                elif obj_name in UNSEEN_OBJECT_LIST:
+                                    pw_T_obj_obse_pos = _particle_cloud_pub[par_good_index_array[good_par_index]].pos
+                                    pw_T_obj_obse_ori = _particle_cloud_pub[par_good_index_array[good_par_index]].ori
+                                obse_obj = Object_Pose(obj_name, 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
+                                pw_T_obj_obse_par_list_init[good_par_index][obj_index] = obse_obj
+                        init_num_of_each_good_par_list = divide_and_shuffle(PARTICLE_NUM_FOR_OBS, par_good_num)
+                        _particle_cloud_pub = init_large_num_paricle.init_particle_cloud_part(pw_T_obj_obse_par_list_init, init_num_of_each_good_par_list)
+                if RENDER_DEPTH_SOFTWARE == "vk":
+                    print("Reset all vk states!")
+                    reset_flag = reset_all_states_vk()
+                    print("Set vk env!")
+                    print(len(_particle_cloud_pub))
+                    _vk_state_list, _vk_single_obj_state_list = _vk_state_setting(_particle_cloud_pub, _pw_T_camVk_4_4, p_sim, sim_rob_id)
+                    print("resample")
+                    _particle_cloud_pub = _resample_particles_inAdvance_vk(_particle_cloud_pub)
+                    print(len(_particle_cloud_pub))
+                elif RENDER_DEPTH_SOFTWARE == "pb":
+                    print("Error_Index: 11")
+                    input("Stop! Have not done! Please press Ctrl-c!")
                 # set particles/objects pose from multiprocessing
                 print("set particles in CPU")
                 for env_index, single_env in _single_envs.items():

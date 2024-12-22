@@ -130,7 +130,27 @@ class InitLargeNumPar():
         else:
             input("Have not done! Need to stop (InitLargeNumPar.py; init_particle_cloud().)")
         return self.particle_cloud
-                
+        
+    def init_particle_cloud_part(self, pw_T_obj_obse_par_list_init, init_num_of_each_good_par_list):
+        par_index = 0
+        if self.task_flag == "basket_retrieve":
+            for good_par_index in range(init_num_of_each_good_par_list):
+                par_num = init_num_of_each_good_par_list[good_par_index]
+                for par_index in range(par_num):
+                    objects_list = ["None"] * len(self.OBJECT_NAME_LIST)
+                    for obj_index in range(len(self.OBJECT_NAME_LIST)):
+                        obj_name = pw_T_obj_obse_par_list_init[good_par_index][obj_index].obj_name
+                        pw_T_obj_obse_pos = pw_T_obj_obse_par_list_init[good_par_index][obj_index].pos 
+                        pw_T_obj_obse_ori = pw_T_obj_obse_par_list_init[good_par_index][obj_index].ori
+                        particle_pos, particle_ori = self.generate_random_pose(pw_T_obj_obse_pos, pw_T_obj_obse_ori)
+                        objInfo = Particle(obj_name, 0, 0, particle_pos, particle_ori, 1.0/self.PARTICLE_NUM_FOR_OBS, par_index, obj_index, 0, 0)
+                        objects_list[obj_index] = objInfo
+                self.particle_cloud[par_index] = objects_list
+                par_index = par_index + 1
+        else:
+            input("Have not done! Need to stop (InitLargeNumPar.py; init_particle_cloud_part().)")
+        return self.particle_cloud
+
     def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):
         quat = pw_T_obj_obse_ori # x,y,z,w
         quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3]) # w,x,y,z

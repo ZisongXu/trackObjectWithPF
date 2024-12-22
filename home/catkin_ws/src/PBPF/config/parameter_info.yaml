@@ -43,8 +43,8 @@ otob_name_list:
 - cracker_obstacle
 - fish_can
 panda_robot_link_number: 11
-particle_num: 200
-particle_num_for_obs: 800
+particle_num: 10
+particle_num_for_obs: 20
 particle_explosion_in_obsModel: false
 persp_to_ortho_flag: false
 pick_particle_rate: 0.0
@@ -70,7 +70,7 @@ render_depth_software: vk
 render_visibility_software: vk
 width: 848
 init_method: "ViDe"
-init_cycle_method: all_cycle
+init_cycle_method: part_cycle
 init_cycle_flag: true
 init_cycle_rate: 0.95
 advance_resample: true

@@ -76,28 +76,7 @@ class SingleENV(multiprocessing.Process):
         self.objects_list = ["None"] * self.object_num
         
         self.pf_update_interval_in_sim = self.pf_update_interval_in_real / self.sim_time_step
-        self.boss_sigma_obs_pos_init = 0.02 # original value: 16cm/10CM/5cm 
-        # self.boss_sigma_obs_pos_init = 0.09 # original value: 16cm/10CM 
-        self.boss_sigma_obs_x = self.boss_sigma_obs_pos_init / math.sqrt(2)
-        self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
-        self.boss_sigma_obs_z = 0.002 # original value: 2cm/1cm
-        # self.boss_sigma_obs_ang_init = 0.0216773873 * 20 # original value: 0.0216773873 * 20
-        self.boss_sigma_obs_ang_init = 0.01 * 10 # original value: 0.0216773873 * 20/10
-        
-        # self.boss_sigma_obs_x = 0
-        # self.boss_sigma_obs_y = 0
-        # self.boss_sigma_obs_z = 0
-        # # self.boss_sigma_obs_ang_init = 0.0216773873 * 20 # original value: 0.0216773873 * 20
-        # self.boss_sigma_obs_ang_init = 0
-        
-        
-        
-        # mark
-        # self.boss_sigma_obs_x = 0
-        # self.boss_sigma_obs_y = 0
-        # self.boss_sigma_obs_z = 0
-        # self.boss_sigma_obs_ang_init = 0
-        
+           
         with open(os.path.expanduser("~/catkin_ws/src/PBPF/config/parameter_info.yaml"), 'r') as file:
             self.parameter_info = yaml.safe_load(file)
         self.gazebo_flag = self.parameter_info['gazebo_flag']
@@ -123,6 +102,18 @@ class SingleENV(multiprocessing.Process):
         
         self.INIT_METHOD = self.parameter_info['init_method'] # ViDe/Vi/De/normal...
         
+
+        self.BOSS_SIGMA_OBS_POS_INIT = self.parameter_info['boss_sigma_obs_pos_init'] # original value: 16cm/10CM/5cm 
+        self.BOSS_SIGMA_OBS_X = self.BOSS_SIGMA_OBS_POS_INIT / math.sqrt(2)
+        self.BOSS_SIGMA_OBS_Y = self.BOSS_SIGMA_OBS_POS_INIT / math.sqrt(2)
+        self.BOSS_SIGMA_OBS_Z = self.parameter_info['boss_sigma_obs_z'] # original value: 2cm/1cm
+        self.BOSS_SIGMA_OBS_ANG_INIT = self.parameter_info['boss_sigma_obs_ang_init'] # original value: 0.0216773873 * 20/10
+        ## mark
+        # self.BOSS_SIGMA_OBS_X = 0
+        # self.BOSS_SIGMA_OBS_Y = 0
+        # self.BOSS_SIGMA_OBS_Z = 0
+        # self.BOSS_SIGMA_OBS_ANG_INIT = 0
+
         self.MASS_MEAN_list = [1.0] * self.object_num
         self.MASS_MEAN = 1.0 # 0.380
         self.MASS_SIGMA_list = [0.5] * self.object_num
@@ -345,7 +336,7 @@ class SingleENV(multiprocessing.Process):
         self.collision_detection_obj_id_collection.append(self.robot_id)
         self.collision_detection_env_obj_id_collection.append(self.robot_id)
 
-    def set_target_objects(self, single_particle):
+    def load_target_objects(self, single_particle):
         for obj_index, obj_name_ in enumerate(self.OBJECT_NAME_LIST):
             self.objects_list[obj_index] = single_particle[obj_index]
             particle_pos = copy.deepcopy(single_particle[obj_index].pos)
@@ -549,6 +540,11 @@ class SingleENV(multiprocessing.Process):
         return_results.append((str(par_index), self.objects_list))
         # self.p_env.disconnect()
         return return_results
+
+    def step_simulation(self):
+        for time_index in range(int(self.pf_update_interval_in_sim)):
+            self.p_env.stepSimulation()
+        return [('result', True)]
 
     # only check object
     def isAnyParticleInContact_ObjectOnly(self):
@@ -767,14 +763,14 @@ class SingleENV(multiprocessing.Process):
     def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):
         quat = pw_T_obj_obse_ori # x,y,z,w
         quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3]) # w,x,y,z
-        x = self.add_noise_to_init_par(pw_T_obj_obse_pos[0], self.boss_sigma_obs_x)
-        y = self.add_noise_to_init_par(pw_T_obj_obse_pos[1], self.boss_sigma_obs_y)
-        z = self.add_noise_to_init_par(pw_T_obj_obse_pos[2], self.boss_sigma_obs_z)
+        x = self.add_noise_to_init_par(pw_T_obj_obse_pos[0], self.BOSS_SIGMA_OBS_X)
+        y = self.add_noise_to_init_par(pw_T_obj_obse_pos[1], self.BOSS_SIGMA_OBS_Y)
+        z = self.add_noise_to_init_par(pw_T_obj_obse_pos[2], self.BOSS_SIGMA_OBS_Z)
         random_dir = random.uniform(0, 2*math.pi)
         z_axis = random.uniform(-1,1)
         x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
         y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
-        angle_noise = self.add_noise_to_init_par(0, self.boss_sigma_obs_ang_init)
+        angle_noise = self.add_noise_to_init_par(0, self.BOSS_SIGMA_OBS_ANG_INIT)
         w_quat = math.cos(angle_noise/2.0)
         x_quat = math.sin(angle_noise/2.0) * x_axis
         y_quat = math.sin(angle_noise/2.0) * y_axis

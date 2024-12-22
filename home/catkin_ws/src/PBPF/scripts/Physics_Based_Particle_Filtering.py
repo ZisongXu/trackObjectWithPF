@@ -125,7 +125,11 @@ OBJECT_NAME_LIST = parameter_info['object_name_list']
 OBJECT_DETECTED_LIST = parameter_info['object_detected_list']
 UNSEEN_OBJECT_LIST = list(set(OBJECT_NAME_LIST) - set(OBJECT_DETECTED_LIST))
 
-INIT_METHOD = parameter_info['init_method'] # # ViDe/Vi/De/normal...
+INIT_METHOD = parameter_info['init_method'] ## ViDe/Vi/De/normal.../ViDe_c/Vi_c/De_c/normal
+INIT_CYCLE_FLAG = parameter_info['init_cycle_flag'] ## True
+INIT_CYCLE_METHOD = parameter_info['init_cycle_method'] ## None/all_cycle/part_cycle
+INIT_CYCLE_RATE = parameter_info['init_cycle_rate'] ## 0.7
+
 ADVANCE_RESAMPLE = parameter_info['advance_resample'] # # True/False
 
 CAMERA_MODEL = parameter_info['camera_model'] # D455f/D435i
@@ -166,6 +170,11 @@ INCREMENTAL_POSE_GENERATOR_FLAG = parameter_info['Incremental_Pose_Generator_Fla
 
 VK_RESET_TEST_FLAG = parameter_info['vk_reset_test_flag']
 
+BOSS_SIGMA_OBS_POS_INIT = parameter_info['boss_sigma_obs_pos_init'] # original value: 16cm/10CM/5cm 
+BOSS_SIGMA_OBS_X = BOSS_SIGMA_OBS_POS_INIT / math.sqrt(2)
+BOSS_SIGMA_OBS_Y = BOSS_SIGMA_OBS_POS_INIT / math.sqrt(2)
+BOSS_SIGMA_OBS_Z = parameter_info['boss_sigma_obs_z'] # original value: 2cm/1cm
+BOSS_SIGMA_OBS_ANG_INIT = parameter_info['boss_sigma_obs_ang_init'] # original value: 0.0216773873 * 20/10
 
 if RENDER_DEPTH_SOFTWARE == "vk":
     print("I am using Vulkan to generate Depth Image")
@@ -1571,12 +1580,12 @@ def reset_all_states_vk():
 # ================================================================================================================================================================
 
 def create_particles(object_num, robot_num, particle_num,
-                     pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
+                     pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_init, pw_T_objs_touching_targetObjs_list, 
                      update_style_flag, sim_time_step, boss_pf_update_interval_in_real,
                      ROS_LISTENER, SEE_ALL_OBJECTS):
     manager = multiprocessing.Manager()
     single_envs_ = {i: SingleENV(object_num, robot_num, particle_num,
-                                 pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
+                                 pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_init, pw_T_objs_touching_targetObjs_list, 
                                  update_style_flag, sim_time_step, boss_pf_update_interval_in_real, ROS_LISTENER, SEE_ALL_OBJECTS, 
                                  manager.dict()) for i in range(particle_num)}
     for _, single_env in single_envs_.items():
@@ -1588,12 +1597,12 @@ def create_particles(object_num, robot_num, particle_num,
     return single_envs_
 
 def set_particles(object_num, robot_num, particle_num,
-                     pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
+                     pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_init, pw_T_objs_touching_targetObjs_list, 
                      update_style_flag, sim_time_step, boss_pf_update_interval_in_real,
                      ROS_LISTENER, SEE_ALL_OBJECTS):
     manager = multiprocessing.Manager()
     single_envs_ = {i: SingleENV(object_num, robot_num, particle_num,
-                                 pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
+                                 pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_init, pw_T_objs_touching_targetObjs_list, 
                                  update_style_flag, sim_time_step, boss_pf_update_interval_in_real, ROS_LISTENER, SEE_ALL_OBJECTS, 
                                  manager.dict()) for i in range(particle_num)}
     for _, single_env in single_envs_.items():
@@ -1613,6 +1622,7 @@ def wait_and_get_result_from(single_env):
                 return result
         time.sleep(0.00001)
 
+# ================================================================================================================================================================
 def get_real_depth_image():
     depth_image_real = ROS_LISTENER.depth_image # persp
     real_depth_image_transferred = depthImageRealTransfer(depth_image_real) # persp
@@ -2276,7 +2286,7 @@ if __name__ == '__main__':
     # ================================================================================================================================================================
     # multi-objects/robot list
     pw_T_rob_sim_pose_list_alg = []
-    pw_T_obj_obse_obj_list_alg = []
+    pw_T_obj_obse_obj_list_init = []
     pw_T_objs_touching_targetObjs_list = []
     # need to change
     dis_std_list = [d_thresh_obse]
@@ -2363,22 +2373,22 @@ if __name__ == '__main__':
     # ================================================================================================================================================================
     if LOCATE_CAMERA_FLAG == 'onTheHolder' and (ROBOT_END_EFFECTOR == 'pump' or ROBOT_END_EFFECTOR == 'pump_with_extention'):
         if INCREMENTAL_POSE_GENERATOR_FLAG == True:
-            pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(_pumpRVIZ_T_camRGB_pose_4_4, _pumpModel_T_camRGB_pose_4_4, _pumpModel_T_camD_pose_4_4, pw_T_objs_obse_list_for_init, trans_ob_list, rot_ob_list, SEE_ALL_OBJECTS)
+            pw_T_obj_obse_obj_list_init, trans_ob_list, rot_ob_list = create_scene.initialize_object(_pumpRVIZ_T_camRGB_pose_4_4, _pumpModel_T_camRGB_pose_4_4, _pumpModel_T_camD_pose_4_4, pw_T_objs_obse_list_for_init, trans_ob_list, rot_ob_list, SEE_ALL_OBJECTS)
         else:
-            pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(_pumpRVIZ_T_camRGB_pose_4_4, _pumpModel_T_camRGB_pose_4_4, _pumpModel_T_camD_pose_4_4, 0, 0, 0, SEE_ALL_OBJECTS)
+            pw_T_obj_obse_obj_list_init, trans_ob_list, rot_ob_list = create_scene.initialize_object(_pumpRVIZ_T_camRGB_pose_4_4, _pumpModel_T_camRGB_pose_4_4, _pumpModel_T_camD_pose_4_4, 0, 0, 0, SEE_ALL_OBJECTS)
     else:
         if INCREMENTAL_POSE_GENERATOR_FLAG == True:
-            pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(0, 0, 0, pw_T_objs_obse_list_for_init, trans_ob_list, rot_ob_list, SEE_ALL_OBJECTS)
+            pw_T_obj_obse_obj_list_init, trans_ob_list, rot_ob_list = create_scene.initialize_object(0, 0, 0, pw_T_objs_obse_list_for_init, trans_ob_list, rot_ob_list, SEE_ALL_OBJECTS)
         else:
-            pw_T_obj_obse_obj_list_alg, trans_ob_list, rot_ob_list = create_scene.initialize_object(0, 0, 0, 0, 0, 0, SEE_ALL_OBJECTS)
+            pw_T_obj_obse_obj_list_init, trans_ob_list, rot_ob_list = create_scene.initialize_object(0, 0, 0, 0, 0, 0, SEE_ALL_OBJECTS)
     # ================================================================================================================================================================
     print("Object pose only for initializaiton:")
     # for index in range(len(OBJECT_DETECTED_LIST)):
-    for index in range(len(OBJECT_NAME_LIST)):
-        obj_name = pw_T_obj_obse_obj_list_alg[index].obj_name
-        pw_T_obj_obse_pos = pw_T_obj_obse_obj_list_alg[index].pos 
-        pw_T_obj_obse_ori = pw_T_obj_obse_obj_list_alg[index].ori
-        print(index)
+    for obj_index in range(len(OBJECT_NAME_LIST)):
+        obj_name = pw_T_obj_obse_obj_list_init[obj_index].obj_name
+        pw_T_obj_obse_pos = pw_T_obj_obse_obj_list_init[obj_index].pos 
+        pw_T_obj_obse_ori = pw_T_obj_obse_obj_list_init[obj_index].ori
+        print(obj_index)
         print("Object Name: ", obj_name, "; Object position in Pybullet World: ", pw_T_obj_obse_pos, "; Object orientation in Pybullet World: ", pw_T_obj_obse_ori)
     print("Finish initializing scene")
     print("============================================================================")
@@ -2405,7 +2415,7 @@ if __name__ == '__main__':
     if PARTICLE_NUM_FOR_OBS == PARTICLE_NUM:
         # initial particles in multiprocessing
         _single_envs = create_particles(OBJECT_NUM, ROBOT_NUM, PARTICLE_NUM,
-                                        pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
+                                        pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_init, pw_T_objs_touching_targetObjs_list, 
                                         UPDATE_STYLE_FLAG, SIM_TIME_STEP, BOSS_PF_UPDATE_INTERVAL_IN_REAL,
                                         ROS_LISTENER, SEE_ALL_OBJECTS)
         # get particles/objects pose from multiprocessing
@@ -2418,9 +2428,9 @@ if __name__ == '__main__':
     # init large number of the particle and then use
     elif PARTICLE_NUM_FOR_OBS > PARTICLE_NUM:
         if TASK_FLAG == "basket_retrieve":
-            init_large_num_paricle.passing_data(pw_T_obj_obse_obj_list_alg, pw_T_basket_pose)
+            init_large_num_paricle.passing_data(pw_T_obj_obse_obj_list_init, pw_T_basket_pose)
         else:
-            init_large_num_paricle.passing_data(pw_T_obj_obse_obj_list_alg)
+            init_large_num_paricle.passing_data(pw_T_obj_obse_obj_list_init)
         _particle_cloud_pub = init_large_num_paricle.init_particle_cloud()
 
     # ================================================================================================================================================================
@@ -2528,25 +2538,19 @@ if __name__ == '__main__':
     _publish_par_pose_info(_particle_cloud_pub)
     _publish_esti_pose_info(estimated_object_set)
     # ================================================================================================================================================================
-
-    if VK_RESET_TEST_FLAG == True:
-        reset_flag = reset_all_states_vk()
-        print("Reset all vk states!")
-        _vk_state_list, _vk_single_obj_state_list = _vk_state_setting(_particle_cloud_pub, _pw_T_camVk_4_4, p_sim, sim_rob_id)
-
     if PARTICLE_NUM_FOR_OBS == PARTICLE_NUM:
         pass
     elif PARTICLE_NUM_FOR_OBS > PARTICLE_NUM:
         # initial particles in multiprocessing
         _single_envs = set_particles(OBJECT_NUM, ROBOT_NUM, PARTICLE_NUM,
-                                     pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
+                                     pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_init, pw_T_objs_touching_targetObjs_list, 
                                      UPDATE_STYLE_FLAG, SIM_TIME_STEP, BOSS_PF_UPDATE_INTERVAL_IN_REAL,
                                      ROS_LISTENER, SEE_ALL_OBJECTS)
-        # set particles/objects pose from multiprocessing
+        # first set/load particles/objects pose from multiprocessing
         # if
         # _particle_cloud_pub[env_index]
         for env_index, single_env in _single_envs.items():
-            single_env.queue.put((SingleENV.set_target_objects, _particle_cloud_pub[env_index]))
+            single_env.queue.put((SingleENV.load_target_objects, _particle_cloud_pub[env_index]))
         for _, single_env in _single_envs.items():
             wait_and_get_result_from(single_env)
         # get particles/objects pose from multiprocessing
@@ -2556,10 +2560,146 @@ if __name__ == '__main__':
         #     objs_pose_info = wait_and_get_result_from(single_env)
         #     _objs_pose_info_list[env_index] = objs_pose_info
         #     _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
+    # ================================================================================================================================================================
+    if INIT_CYCLE_FLAG == True:
+        par_temp_num_ = len(_particle_cloud_pub)
+        seen_obj_temp_num = len(OBJECT_DETECTED_LIST)
+        while True:
+            NEED_CYCLE = False
+            # Indicates how many objects are in a good pose at the corresponding particle/list index
+            good_par_index_list = [0] * par_temp_num_
+            # Indicates the number of seen objects to be determined
+            seen_obj_temp_index = 0
+            # step simulation
+            for env_index, single_env in _single_envs.items():
+                single_env.queue.put((SingleENV.step_simulation, ))
+            for env_index, single_env in _single_envs.items():
+                _empty_return = wait_and_get_result_from(single_env)
+            # get particles pose
+            for env_index, single_env in _single_envs.items():
+                single_env.queue.put((SingleENV.get_objects_pose, env_index))
+            for env_index, single_env in _single_envs.items():  
+                objs_pose_info = wait_and_get_result_from(single_env)
+                _objs_pose_info_list[env_index] = objs_pose_info
+                _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
+            # publish particles pose
+            _publish_par_pose_info(_particle_cloud_pub)
+            par_num__ = len(_particle_cloud_pub)
+            # check particles pose
+            for obj_index, obj_name in enumerate(OBJECT_NAME_LIST):
+                if obj_name in OBJECT_DETECTED_LIST:
+                    seen_obj_temp_index = seen_obj_temp_index + 1
+                    obj_bad_init_num = 0
+                    obj_good_init_num = 0
+                    for par_index in range(len(_particle_cloud_pub)):
+                        pw_T_obj_obse_pos = pw_T_obj_obse_obj_list_init[obj_index].pos 
+                        pw_T_obj_obse_ori = pw_T_obj_obse_obj_list_init[obj_index].ori
+                        pw_T_parObj_obse_pos = _particle_cloud_pub[par_index][obj_index].pos
+                        pw_T_parObj_obse_ori = _particle_cloud_pub[par_index][obj_index].ori
+                        two_points_dis = compute_pos_err_bt_2_points(pw_T_obj_obse_pos, pw_T_parObj_obse_pos)
+                        two_points_ang = compute_ang_err_bt_2_points(pw_T_obj_obse_ori, pw_T_parObj_obse_ori)   
+                        # if (two_points_dis > (BOSS_SIGMA_OBS_POS_INIT*math.sqrt(2))) or (two_points_ang > BOSS_SIGMA_OBS_ANG_INIT):
+                        if (two_points_dis > 0.035) or (two_points_ang > BOSS_SIGMA_OBS_ANG_INIT):
+                            # print("Bad:")
+                            # print("two_points_dis:", two_points_dis)
+                            # print("two_points_ang:", two_points_ang)
+                            # print("==============================")
+                            # seen object is bad, number flag + 1
+                            obj_bad_init_num = obj_bad_init_num + 1
+                        else:
+                            # print("Good:")
+                            # print("two_points_dis:", two_points_dis)
+                            # print("two_points_ang:", two_points_ang)
+                            # print("==============================")
+                            # good init
+                            obj_good_init_num = obj_good_init_num + 1
+                            # record index of the good object
+                            # Add 1 to the corresponding particle index, indicating that the seen object has a good pose on this particle
+                            good_par_index_list[par_index] =  good_par_index_list[par_index] + 1
+                        if obj_bad_init_num  > int(par_num__*INIT_CYCLE_RATE):
+                            # bad init reaches a certain number
+                            NEED_CYCLE = True
+                            print("First set NEED_CYCLE -> True!")
+                            if INIT_CYCLE_METHOD == "all_cycle":
+                                pass
+                                # break
+                            elif INIT_CYCLE_METHOD == "part_cycle":
+                                # we need to know how many seen particles are good and record their index to use these good pose do next initialization 
+                                pass
+                        else:
+                            # good init
+                            pass
+
+                    if NEED_CYCLE == True:
+                        if INIT_CYCLE_METHOD == "all_cycle":
+                            print("Prepare to re-cycle!")
+                            break
+                        elif INIT_CYCLE_METHOD == "part_cycle":
+                            # we need to know how many seen particles are good and record their index to use these good pose do next initialization 
+                            if seen_obj_temp_index not in good_par_index_list:
+                                # it means that after a round of comparison, no seen object in any particle is in a good pose, so re-initialize directly
+                                break
+                            else:
+                                pass
+                    else:
+                        pass
+                else:
+                    pass
+            if NEED_CYCLE == True:
+                # re-initialization
+                if INIT_CYCLE_METHOD == "all_cycle":
+                    print("Init large number particles poses")
+                    _particle_cloud_pub = init_large_num_paricle.init_particle_cloud()
+                    if RENDER_DEPTH_SOFTWARE == "vk":
+                        print("Reset all vk states!")
+                        reset_flag = reset_all_states_vk()
+                        print("Set vk env!")
+                        print(len(_particle_cloud_pub))
+                        _vk_state_list, _vk_single_obj_state_list = _vk_state_setting(_particle_cloud_pub, _pw_T_camVk_4_4, p_sim, sim_rob_id)
+                        print("resample")
+                        _particle_cloud_pub = _resample_particles_inAdvance_vk(_particle_cloud_pub)
+                        print(len(_particle_cloud_pub))
+                    elif RENDER_DEPTH_SOFTWARE == "pb":
+                        print("Error_Index: 11")
+                        input("Stop! Have not done! Please press Ctrl-c!")
+                elif INIT_CYCLE_METHOD == "part_cycle":
+                    pass
+                # set particles/objects pose from multiprocessing
+                print("set particles in CPU")
+                for env_index, single_env in _single_envs.items():
+                    single_env.queue.put((SingleENV.set_particle_in_each_sim_env, _particle_cloud_pub[env_index]))
+                for _, single_env in _single_envs.items():
+                    wait_and_get_result_from(single_env)
+                # step simulation
+                print("Step simulation in CPU")
+                for env_index, single_env in _single_envs.items():
+                    single_env.queue.put((SingleENV.step_simulation, ))
+                for env_index, single_env in _single_envs.items():
+                    _empty_return = wait_and_get_result_from(single_env)
+                # publish particles pose
+                _publish_par_pose_info(_particle_cloud_pub)
+                par_num__ = len(_particle_cloud_pub)
+            else:
+                # all objects have good initialization
+                break
+            print("obj_bad_init_num:", obj_bad_init_num)
+            print("obj_good_init_num:", obj_good_init_num)
+            input("Debug!!!")
+    else:
+        pass
+    # ================================================================================================================================================================
+
+
+    if VK_RESET_TEST_FLAG == True:
+        reset_flag = reset_all_states_vk()
+        print("Reset all vk states!")
+        _vk_state_list, _vk_single_obj_state_list = _vk_state_setting(_particle_cloud_pub, _pw_T_camVk_4_4, p_sim, sim_rob_id)
+    else:
+        pass
 
     # input("Debug in the main scripts!")
     print("Welcome to Our Approach ! RUNNING MODEL: ", RUNNING_MODEL)
-
+    input()
     t_begin = time.time()
 
     old_obse_time_list = [0] * OBJECT_NUM
@@ -2712,7 +2852,7 @@ if __name__ == '__main__':
         rob_link_9_ang_cur = p_sim.getEulerFromQuaternion(rob_link_9_pose_cur[1])
         
         dis_robcur_robold = compute_pos_err_bt_2_points(rob_link_9_pose_cur[0], rob_link_9_pose_old[0])
-        
+
         # update according to the pose
         if UPDATE_STYLE_FLAG == "pose":
             while True:
@@ -2975,41 +3115,3 @@ if __name__ == '__main__':
     for i in range(par_length):
         p_par_env_list[i].disconnect()
 
-
-# correct the quaternion_correction 
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-
-##### change pbpf alg
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################

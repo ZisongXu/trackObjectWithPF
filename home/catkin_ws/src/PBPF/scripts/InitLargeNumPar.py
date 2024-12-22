@@ -70,6 +70,17 @@ class InitLargeNumPar():
         # particles number
         self.PARTICLE_NUM = self.parameter_info['particle_num'] # ViDe/Vi/De/normal...
         self.PARTICLE_NUM_FOR_OBS = self.parameter_info['particle_num_for_obs'] # ViDe/Vi/De/normal...
+        ## noise for initialization
+        self.BOSS_SIGMA_OBS_POS_INIT = self.parameter_info['boss_sigma_obs_pos_init'] # original value: 16cm/10CM/5cm 
+        self.BOSS_SIGMA_OBS_X = self.BOSS_SIGMA_OBS_POS_INIT / math.sqrt(2)
+        self.BOSS_SIGMA_OBS_Y = self.BOSS_SIGMA_OBS_POS_INIT / math.sqrt(2)
+        self.BOSS_SIGMA_OBS_Z = self.parameter_info['boss_sigma_obs_z'] # original value: 2cm/1cm
+        self.BOSS_SIGMA_OBS_ANG_INIT = self.parameter_info['boss_sigma_obs_ang_init'] # original value: 0.0216773873 * 20/10
+        ## mark
+        # self.BOSS_SIGMA_OBS_X = 0
+        # self.BOSS_SIGMA_OBS_Y = 0
+        # self.BOSS_SIGMA_OBS_Z = 0
+        # self.BOSS_SIGMA_OBS_ANG_INIT = 0
 
     def passing_data(self, pw_T_obj_obse_obj_list_alg=0, pw_T_basket_pose=0):
         ## passing self.data
@@ -82,13 +93,6 @@ class InitLargeNumPar():
             pass
         ## create new self.data
         self.particle_cloud = [0] * self.PARTICLE_NUM_FOR_OBS
-        ## noise for initialization
-        self.boss_sigma_obs_pos_init = 0.02 # original value: 16cm/10CM/5cm 
-        self.boss_sigma_obs_x = self.boss_sigma_obs_pos_init / math.sqrt(2)
-        self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
-        self.boss_sigma_obs_z = 0.002 # original value: 2cm/1cm
-        # self.boss_sigma_obs_ang_init = 0.0216773873 * 20 # original value: 0.0216773873 * 20
-        self.boss_sigma_obs_ang_init = 0.01 * 10 # original value: 0.0216773873 * 20/10
         
     def init_particle_cloud(self):
         if self.task_flag == "basket_retrieve":
@@ -120,26 +124,24 @@ class InitLargeNumPar():
                             # print(particle_pos)
                             objInfo = Particle(obj_name, 0, 0, particle_pos, particle_ori, 1.0/self.PARTICLE_NUM_FOR_OBS, par_index, obj_index, 0, 0)
                         else:
-                            while True:
-                                print("InitLargeNumPar.py: init_particle_cloud()")
+                            input("InitLargeNumPar.py: init_particle_cloud()")
                     objects_list[obj_index] = objInfo
                 self.particle_cloud[par_index] = objects_list
         else:
-            print("Have not done! Need to stop (InitLargeNumPar.py; init_particle_cloud().)")
-            pass
+            input("Have not done! Need to stop (InitLargeNumPar.py; init_particle_cloud().)")
         return self.particle_cloud
                 
     def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):
         quat = pw_T_obj_obse_ori # x,y,z,w
         quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3]) # w,x,y,z
-        x = self.add_noise_to_init_par(pw_T_obj_obse_pos[0], self.boss_sigma_obs_x)
-        y = self.add_noise_to_init_par(pw_T_obj_obse_pos[1], self.boss_sigma_obs_y)
-        z = self.add_noise_to_init_par(pw_T_obj_obse_pos[2], self.boss_sigma_obs_z)
+        x = self.add_noise_to_init_par(pw_T_obj_obse_pos[0], self.BOSS_SIGMA_OBS_X)
+        y = self.add_noise_to_init_par(pw_T_obj_obse_pos[1], self.BOSS_SIGMA_OBS_Y)
+        z = self.add_noise_to_init_par(pw_T_obj_obse_pos[2], self.BOSS_SIGMA_OBS_Z)
         random_dir = random.uniform(0, 2*math.pi)
         z_axis = random.uniform(-1,1)
         x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
         y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
-        angle_noise = self.add_noise_to_init_par(0, self.boss_sigma_obs_ang_init)
+        angle_noise = self.add_noise_to_init_par(0, self.BOSS_SIGMA_OBS_ANG_INIT)
         w_quat = math.cos(angle_noise/2.0)
         x_quat = math.sin(angle_noise/2.0) * x_axis
         y_quat = math.sin(angle_noise/2.0) * y_axis

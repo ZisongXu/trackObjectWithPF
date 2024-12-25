@@ -24,10 +24,10 @@ locate_camera_flag: ar
 multiprocessing_flag: false
 nearVal: 0.03
 object_name_list:
-- cracker
 - Milk
+- Ketchup
 object_detected_list:
-- Milk
+- Ketchup
 object_num: 2
 objs_are_not_touching_target_objs_num: 0
 objs_touching_target_objs_num: 0
@@ -75,7 +75,7 @@ init_cycle_flag: true
 init_cycle_rate: 0.95
 advance_resample: true
 vk_reset_test_flag: true
-boss_sigma_obs_pos_init: 0.02
+boss_sigma_obs_pos_init: 0.015
 boss_sigma_obs_z: 0.002
 boss_sigma_obs_ang_init: 0.1
 

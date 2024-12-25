@@ -143,10 +143,11 @@ class InitLargeNumPar():
                         obj_name = pw_T_obj_obse_par_list_init[good_par_index][obj_index].obj_name
                         pw_T_obj_obse_pos = pw_T_obj_obse_par_list_init[good_par_index][obj_index].pos 
                         pw_T_obj_obse_ori = pw_T_obj_obse_par_list_init[good_par_index][obj_index].ori
-                        if obj_name in self.OBJECT_DETECTED_LIST:
-                            particle_pos, particle_ori = self.generate_random_pose(pw_T_obj_obse_pos, pw_T_obj_obse_ori)
-                        elif obj_name in self.UNSEEN_OBJECT_LIST:
-                            particle_pos, particle_ori = self.generate_random_pose_addZnoise(pw_T_obj_obse_pos, pw_T_obj_obse_ori)
+                        particle_pos, particle_ori = self.generate_random_pose(pw_T_obj_obse_pos, pw_T_obj_obse_ori)
+                        # if obj_name in self.OBJECT_DETECTED_LIST:
+                        #     particle_pos, particle_ori = self.generate_random_pose(pw_T_obj_obse_pos, pw_T_obj_obse_ori)
+                        # elif obj_name in self.UNSEEN_OBJECT_LIST:
+                        #     particle_pos, particle_ori = self.generate_random_pose_addZnoise(pw_T_obj_obse_pos, pw_T_obj_obse_ori)
                         objInfo = Particle(obj_name, 0, 0, particle_pos, particle_ori, 1.0/self.PARTICLE_NUM_FOR_OBS, par_index, obj_index, 0, 0)
                         objects_list[obj_index] = objInfo
                     self.particle_cloud[par_index_all] = objects_list

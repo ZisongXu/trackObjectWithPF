@@ -93,6 +93,7 @@ class InitLargeNumPar():
             pass
         ## create new self.data
         self.particle_cloud = [0] * self.PARTICLE_NUM_FOR_OBS
+        self.BOSS_SIGMA_OBS_Z_ANG_INIT = 2 * math.pi
         
     def init_particle_cloud(self):
         if self.task_flag == "basket_retrieve":
@@ -132,9 +133,9 @@ class InitLargeNumPar():
         return self.particle_cloud
         
     def init_particle_cloud_part(self, pw_T_obj_obse_par_list_init, init_num_of_each_good_par_list):
-        par_index = 0
+        par_index_all = 0
         if self.task_flag == "basket_retrieve":
-            for good_par_index in range(init_num_of_each_good_par_list):
+            for good_par_index in range(len(init_num_of_each_good_par_list)):
                 par_num = init_num_of_each_good_par_list[good_par_index]
                 for par_index in range(par_num):
                     objects_list = ["None"] * len(self.OBJECT_NAME_LIST)
@@ -142,11 +143,14 @@ class InitLargeNumPar():
                         obj_name = pw_T_obj_obse_par_list_init[good_par_index][obj_index].obj_name
                         pw_T_obj_obse_pos = pw_T_obj_obse_par_list_init[good_par_index][obj_index].pos 
                         pw_T_obj_obse_ori = pw_T_obj_obse_par_list_init[good_par_index][obj_index].ori
-                        particle_pos, particle_ori = self.generate_random_pose(pw_T_obj_obse_pos, pw_T_obj_obse_ori)
+                        if obj_name in self.OBJECT_DETECTED_LIST:
+                            particle_pos, particle_ori = self.generate_random_pose(pw_T_obj_obse_pos, pw_T_obj_obse_ori)
+                        elif obj_name in self.UNSEEN_OBJECT_LIST:
+                            particle_pos, particle_ori = self.generate_random_pose_addZnoise(pw_T_obj_obse_pos, pw_T_obj_obse_ori)
                         objInfo = Particle(obj_name, 0, 0, particle_pos, particle_ori, 1.0/self.PARTICLE_NUM_FOR_OBS, par_index, obj_index, 0, 0)
                         objects_list[obj_index] = objInfo
-                self.particle_cloud[par_index] = objects_list
-                par_index = par_index + 1
+                    self.particle_cloud[par_index_all] = objects_list
+                    par_index_all = par_index_all + 1
         else:
             input("Have not done! Need to stop (InitLargeNumPar.py; init_particle_cloud_part().)")
         return self.particle_cloud
@@ -166,10 +170,39 @@ class InitLargeNumPar():
         x_quat = math.sin(angle_noise/2.0) * x_axis
         y_quat = math.sin(angle_noise/2.0) * y_axis
         z_quat = math.sin(angle_noise/2.0) * z_axis
-        ###nois_quat(w,x,y,z); new_quat(w,x,y,z)
-        nois_quat = Quaternion(x=x_quat, y=y_quat, z=z_quat, w=w_quat)
-        new_quat = nois_quat * quat_QuatStyle
+        ###noise_quat(w,x,y,z); new_quat(w,x,y,z)
+        noise_quat = Quaternion(x=x_quat, y=y_quat, z=z_quat, w=w_quat)
+        new_quat = noise_quat * quat_QuatStyle
         ###pb_quat(x,y,z,w)
+        pb_quat = [new_quat[1], new_quat[2], new_quat[3], new_quat[0]]
+        return [x, y, z], pb_quat
+
+    def generate_random_pose_addZnoise(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):
+        quat = pw_T_obj_obse_ori # x,y,z,w
+        quat_QuatStyle = Quaternion(x=quat[0],y=quat[1],z=quat[2],w=quat[3]) # w,x,y,z
+        x = self.add_noise_to_init_par(pw_T_obj_obse_pos[0], self.BOSS_SIGMA_OBS_X)
+        y = self.add_noise_to_init_par(pw_T_obj_obse_pos[1], self.BOSS_SIGMA_OBS_Y)
+        z = self.add_noise_to_init_par(pw_T_obj_obse_pos[2], self.BOSS_SIGMA_OBS_Z)
+        random_dir = random.uniform(0, 2*math.pi)
+        z_axis = random.uniform(-1,1)
+        x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
+        y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
+        angle_noise = self.add_noise_to_init_par(0, self.BOSS_SIGMA_OBS_ANG_INIT)
+        w_quat = math.cos(angle_noise/2.0)
+        x_quat = math.sin(angle_noise/2.0) * x_axis
+        y_quat = math.sin(angle_noise/2.0) * y_axis
+        z_quat = math.sin(angle_noise/2.0) * z_axis
+        ### noise_quat(w,x,y,z); new_quat(w,x,y,z)
+        noise_quat = Quaternion(x=x_quat, y=y_quat, z=z_quat, w=w_quat)
+        new_quat = noise_quat * quat_QuatStyle
+        ## additional z noise
+        z_angle_noise = self.add_noise_to_init_par(0, self.BOSS_SIGMA_OBS_Z_ANG_INIT)
+        z_w = math.cos(z_angle_noise/2.0)
+        z_z = math.sin(z_angle_noise/2.0)
+        ### z_noise_quat(w,x,y,z); new_quat(w,x,y,z)
+        z_noise_quat = Quaternion(x=0, y=0, z=z_z, w=z_w)
+        new_quat = z_noise_quat * new_quat
+        ### pb_quat(x,y,z,w)
         pb_quat = [new_quat[1], new_quat[2], new_quat[3], new_quat[0]]
         return [x, y, z], pb_quat
     

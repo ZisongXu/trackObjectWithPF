@@ -2620,8 +2620,8 @@ if __name__ == '__main__':
                             NEED_CYCLE = True
                             print("First set NEED_CYCLE -> True!")
                             if INIT_CYCLE_METHOD == "all_cycle":
-                                pass
-                                # break
+                                # pass
+                                break
                             elif INIT_CYCLE_METHOD == "part_cycle":
                                 # we need to know how many seen particles are good and record their index to use these good pose do next initialization 
                                 pass
@@ -2652,7 +2652,8 @@ if __name__ == '__main__':
                     print("After init:", len(_particle_cloud_pub))
                 elif INIT_CYCLE_METHOD == "part_cycle":
                     all_par_good_index_array = np.array(all_par_good_index_list)
-                    par_good_index_array = np.where(all_par_good_index_array == 2)[0]
+                    # Find the index of the good particles
+                    par_good_index_array = np.where(all_par_good_index_array == len(OBJECT_DETECTED_LIST))[0]
                     par_good_num = len(par_good_index_array)
                     if par_good_num == 0:
                         print("Init large number particles poses: part_cycle")
@@ -2666,10 +2667,11 @@ if __name__ == '__main__':
                                     pw_T_obj_obse_pos = pw_T_obj_obse_obj_list_init[obj_index].pos 
                                     pw_T_obj_obse_ori = pw_T_obj_obse_obj_list_init[obj_index].ori
                                 elif obj_name in UNSEEN_OBJECT_LIST:
-                                    pw_T_obj_obse_pos = _particle_cloud_pub[par_good_index_array[good_par_index]].pos
-                                    pw_T_obj_obse_ori = _particle_cloud_pub[par_good_index_array[good_par_index]].ori
+                                    pw_T_obj_obse_pos = _particle_cloud_pub[par_good_index_array[good_par_index]][obj_index].pos
+                                    pw_T_obj_obse_ori = _particle_cloud_pub[par_good_index_array[good_par_index]][obj_index].ori
                                 obse_obj = Object_Pose(obj_name, 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
                                 pw_T_obj_obse_par_list_init[good_par_index][obj_index] = obse_obj
+                        # distribute all particles according to the number of good particles
                         init_num_of_each_good_par_list = divide_and_shuffle(PARTICLE_NUM_FOR_OBS, par_good_num)
                         _particle_cloud_pub = init_large_num_paricle.init_particle_cloud_part(pw_T_obj_obse_par_list_init, init_num_of_each_good_par_list)
                 if RENDER_DEPTH_SOFTWARE == "vk":

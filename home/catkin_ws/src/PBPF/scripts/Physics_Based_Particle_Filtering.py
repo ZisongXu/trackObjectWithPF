@@ -120,6 +120,8 @@ CAMERA_MOVE = parameter_info['camera_move'] # true/false
 PARTICLE_NUM = parameter_info['particle_num']
 PARTICLE_NUM_FOR_OBS = parameter_info['particle_num_for_obs']
 PARTICLE_EXPLOSION_IN_OBSMODEL = parameter_info['particle_explosion_in_obsModel']
+TRUST_OBSDATA = parameter_info['trust_obsData']
+PICK_PARTICLE_RATE_BEFORE_OBSMODEL = parameter_info['pick_particle_rate_before_obsModel']
 
 OBJECT_NAME_LIST = parameter_info['object_name_list']
 OBJECT_DETECTED_LIST = parameter_info['object_detected_list']
@@ -168,7 +170,7 @@ DRAW_WIREFRAME_FLAG = parameter_info['draw_wireframe_flag']
 
 INCREMENTAL_POSE_GENERATOR_FLAG = parameter_info['Incremental_Pose_Generator_Flag']
 
-VK_RESET_TEST_FLAG = parameter_info['vk_reset_test_flag']
+VK_RESET_FOR_INIT = parameter_info['vk_reset_for_init']
 
 BOSS_SIGMA_OBS_POS_INIT = parameter_info['boss_sigma_obs_pos_init'] # original value: 16cm/10CM/5cm 
 BOSS_SIGMA_OBS_X = BOSS_SIGMA_OBS_POS_INIT / math.sqrt(2)
@@ -1885,7 +1887,7 @@ def compute_std(mean_pose, particle_cloud):
 def compare_distance_seq(particle_cloud, pw_T_obj_obse_objects_pose_list, visual_by_DOPE_list, outlier_by_DOPE_list):
     par_num = len(particle_cloud)
     weight_normal = 1.0/par_num
-    RGB_D_weights_lists = [[1]*OBJECT_NUM for _ in range(particle_num_for_obsModel)]
+    RGB_D_weights_lists = [[1]*OBJECT_NUM for _ in range(par_num)]
     for par_index in range(par_num):
         for obj_index in range(OBJECT_NUM):
             particle_cloud[par_index][obj_index].w = weight_normal
@@ -2592,6 +2594,7 @@ if __name__ == '__main__':
             # publish particles pose
             _publish_par_pose_info(_particle_cloud_pub)
             par_num__ = len(_particle_cloud_pub)
+            # input("After step simulation!")
             # check particles pose
             for obj_index, obj_name in enumerate(OBJECT_NAME_LIST):
                 if obj_name in OBJECT_DETECTED_LIST:
@@ -2606,7 +2609,8 @@ if __name__ == '__main__':
                         two_points_dis = compute_pos_err_bt_2_points(pw_T_obj_obse_pos, pw_T_parObj_obse_pos)
                         two_points_ang = compute_ang_err_bt_2_points(pw_T_obj_obse_ori, pw_T_parObj_obse_ori)   
                         # if (two_points_dis > (BOSS_SIGMA_OBS_POS_INIT*math.sqrt(2))) or (two_points_ang > BOSS_SIGMA_OBS_ANG_INIT):
-                        if (two_points_dis > 0.03*math.sqrt(2)) or (two_points_ang > 0.2):
+                        # if (two_points_dis > 0.035*math.sqrt(2)) or (two_points_ang > 0.2):
+                        if abs(pw_T_obj_obse_pos[2]-pw_T_parObj_obse_pos[2]) > 0.03 or (two_points_ang > 0.2):
                             # seen object is bad, number flag + 1
                             obj_bad_init_num = obj_bad_init_num + 1
                         else:
@@ -2672,6 +2676,7 @@ if __name__ == '__main__':
                                 obse_obj = Object_Pose(obj_name, 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
                                 pw_T_obj_obse_par_list_init[good_par_index][obj_index] = obse_obj
                         # distribute all particles according to the number of good particles
+                        # [143,143,143,142,143,143,143]/[143,142,143,143,143,143,143]
                         init_num_of_each_good_par_list = divide_and_shuffle(PARTICLE_NUM_FOR_OBS, par_good_num)
                         _particle_cloud_pub = init_large_num_paricle.init_particle_cloud_part(pw_T_obj_obse_par_list_init, init_num_of_each_good_par_list)
                 if RENDER_DEPTH_SOFTWARE == "vk":
@@ -2706,13 +2711,13 @@ if __name__ == '__main__':
                 break
             print("obj_bad_init_num:", obj_bad_init_num)
             print("obj_good_init_num:", obj_good_init_num)
-            input("Debug!!!")
+            # input("Debug!!!")
     else:
         pass
     # ================================================================================================================================================================
 
 
-    if VK_RESET_TEST_FLAG == True:
+    if VK_RESET_FOR_INIT == True:
         reset_flag = reset_all_states_vk()
         print("Reset all vk states!")
         _vk_state_list, _vk_single_obj_state_list = _vk_state_setting(_particle_cloud_pub, _pw_T_camVk_4_4, p_sim, sim_rob_id)
@@ -2721,7 +2726,7 @@ if __name__ == '__main__':
 
     # input("Debug in the main scripts!")
     print("Welcome to Our Approach ! RUNNING MODEL: ", RUNNING_MODEL)
-    input()
+    
     t_begin = time.time()
 
     old_obse_time_list = [0] * OBJECT_NUM
@@ -2914,209 +2919,243 @@ if __name__ == '__main__':
                     # if (any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002) or (_no_PF_update_count > 8 and dis_robcur_robold > 0.002 and _first_update_flage)):
                     
                     # ================================================================================================================================================================
-                    # if (any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002) or (_no_PF_update_count > 8 and dis_robcur_robold > 0.002)):
+                    if (any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002) or (_no_PF_update_count > 8 and dis_robcur_robold > 0.002)):
+                        print("PBPF-update!")
+                        _first_update_flage == True
+                        _no_PF_update_count = 0
+                        t_begin_PBPF = time.time()
+                        simRobot_touch_par_flag = 1
+                        _particle_update_time = _particle_update_time + 1
+                        if PRINT_FLAG == True:
+                            print("Run ", RUNNING_MODEL, "; Repeat time:", REPEAT_TIME, "; Particle Update Time:", _particle_update_time)
+                        _pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
+                        # execute PBPF algorithm movement
+                        if PRINT_FLAG == True:
+                            print("-------------------------------------")
+                            print("global_objects_visual_by_DOPE_list: -")
+                            print(global_objects_visual_by_DOPE_list)
+                            print("global_objects_outlier_by_DOPE_list:-")
+                            print(global_objects_outlier_by_DOPE_list)
+                            print("-------------------------------------")
 
-                    _first_update_flage == True
-                    _no_PF_update_count = 0
-                    t_begin_PBPF = time.time()
-                    simRobot_touch_par_flag = 1
-                    _particle_update_time = _particle_update_time + 1
-                    if PRINT_FLAG == True:
-                        print("Run ", RUNNING_MODEL, "; Repeat time:", REPEAT_TIME, "; Particle Update Time:", _particle_update_time)
-                    _pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
-                    # execute PBPF algorithm movement
-                    if PRINT_FLAG == True:
-                        print("-------------------------------------")
-                        print("global_objects_visual_by_DOPE_list: -")
-                        print(global_objects_visual_by_DOPE_list)
-                        print("global_objects_outlier_by_DOPE_list:-")
-                        print(global_objects_outlier_by_DOPE_list)
-                        print("-------------------------------------")
-
-                    ###########################################################################################################
-                    # I. Motion Model #########################################################################################
-                    ###########################################################################################################
-                    t_before_motion_model = time.time()
-                    for env_index, single_env in _single_envs.items():
-                        single_env.queue.put((SingleENV.motion_model, ROS_LISTENER.current_joint_values, env_index))
-                    for env_index, single_env in _single_envs.items():
-                        objs_pose_info = wait_and_get_result_from(single_env)
-                        _objs_pose_info_list[env_index] = objs_pose_info
-                        _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
-                    t_after_motion_model = time.time()
-                    if PRINT_FLAG == True:
-                        print("--------------------------------------------------------")
-                        print("Motion model cost time:", t_after_motion_model - t_before_motion_model)
-                        print("--------------------------------------------------------")
-                    ###########################################################################################################
-                    ####################################### Motion Model Finished #############################################
-                    ###########################################################################################################
-                    par_num_after_motion_model = len(_particle_cloud_pub)
-                    if PARTICLE_EXPLOSION_IN_OBSMODEL == True:
-                        particle_num_for_obsModel = PARTICLE_NUM_FOR_OBS
-                        # pass
-                    else:
-                        particle_num_for_obsModel = par_num_after_motion_model
-                        # pass
-
-
-                    ###########################################################################################################
-                    # II. Observation Model ###################################################################################
-                    ###########################################################################################################
-                    t_before_observation_model = time.time()
-                    _DEPTH_weights_lists = [1] * particle_num_for_obsModel
-                    _RGB_D_weights_lists = [[1]*OBJECT_NUM for _ in range(particle_num_for_obsModel)]
-                    _RGB_V_weights_lists = [[1]*OBJECT_NUM for _ in range(particle_num_for_obsModel)]
-                    ###############################################################################
-                    if RENDER_DEPTH_SOFTWARE == "vk":
-                        # get robot links pose
+                        ###########################################################################################################
+                        # I. Motion Model #########################################################################################
+                        ###########################################################################################################
+                        t_before_motion_model = time.time()
                         for env_index, single_env in _single_envs.items():
-                            single_env.queue.put((SingleENV.getLinkStates, ))
+                            single_env.queue.put((SingleENV.motion_model, ROS_LISTENER.current_joint_values, env_index))
                         for env_index, single_env in _single_envs.items():
-                            _links_info = wait_and_get_result_from(single_env)
-                        # here, all the links_info should be the same, so I can only get the last one!
-                        _links_info = _links_info["links_info"]
-                        ## Update vk env states
-                        _vk_update_env_states(_vk_state_list, _vk_single_obj_state_list, _particle_cloud_pub, _links_info)
-                    else:
-                        print("Error_Index: 4")
-                        input("Stop! Have not done! Please press Ctrl-c!")
-                        pass
-                    ###############################################################################
-                    ###############################################################################
-                    # A. observation model (DEPTH)
-                    if USING_D_FLAG == True:
-                        _real_depth_image_transferred, _real_depth_image_transferred_jax = get_real_depth_image()
-                        #######################################################################################################
-                        # a. Render Depth Image ###############################################################################
-                        #######################################################################################################
-                        t_before_render = time.time()
-                        if RENDER_DEPTH_SOFTWARE == "vk":
-                            ## generate vk rendered depth images
-                            _vk_get_rendered_depth_image_parallelised(_particle_cloud_pub, _links_info)
-                        elif RENDER_DEPTH_SOFTWARE == "pb":
-                            print("Error_Index: 5")
-                            input("Stop! Have not done! Please press Ctrl-c!")
-                        t_after_render = time.time()
+                            objs_pose_info = wait_and_get_result_from(single_env)
+                            _objs_pose_info_list[env_index] = objs_pose_info
+                            _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
+                        t_after_motion_model = time.time()
                         if PRINT_FLAG == True:
                             print("--------------------------------------------------------")
-                            print("Render cost time:", t_after_render - t_before_render)
+                            print("Motion model cost time:", t_after_motion_model - t_before_motion_model)
                             print("--------------------------------------------------------")
-                        #######################################################################################################
-                        # b. Compare Depth Image ############################################################################## 
-                        #######################################################################################################
-                        t_before_compare = time.time()
-                        if RENDER_DEPTH_SOFTWARE == "vk":
-                            _D_scores_list = _compare_depth_image_vk_parallelised(_real_depth_image_transferred)
-                            if DEPTH_DIFF_VALUE_METHOD == "binary_0_1":
-                                _DEPTH_weights_lists = normalize_score_to_0_1(_D_scores_list)
-                            else:
-                                print("Error_Index: 6")
+                        ###########################################################################################################
+                        ####################################### Motion Model Finished #############################################
+                        ###########################################################################################################
+                        par_num_after_motion_model = len(_particle_cloud_pub)
+                        if PARTICLE_EXPLOSION_IN_OBSMODEL == True:
+                            particle_num_for_obsModel = PARTICLE_NUM_FOR_OBS
+                            t_before_spread_particle = time.time()
+                            _particle_cloud_pub = init_large_num_paricle.spread_particle(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list)
+                            t_after_spread_particle = time.time()
+                            if PRINT_FLAG == True:
+                                print("--------------------------------------------------------")
+                                print("Spread particle cost time:", t_after_spread_particle - t_before_spread_particle)
+                                print("--------------------------------------------------------")
+                            if RENDER_DEPTH_SOFTWARE == "vk":
+                                t_before_reset_vk_env = time.time()
+                                reset_flag = reset_all_states_vk()
+                                t_after_reset_vk_env = time.time()
+                                if PRINT_FLAG == True:
+                                    print("--------------------------------------------------------")
+                                    print("Reset vk env cost time:", t_after_reset_vk_env - t_before_reset_vk_env)
+                                    print("--------------------------------------------------------")
+                                t_before_setting_vk_env = time.time()
+                                _vk_state_list, _vk_single_obj_state_list = _vk_state_setting(_particle_cloud_pub, _pw_T_camVk_4_4, p_sim, sim_rob_id)
+                                t_after_setting_vk_env = time.time()
+                                if PRINT_FLAG == True:
+                                    print("--------------------------------------------------------")
+                                    print("Setting vk env cost time:", t_after_setting_vk_env - t_before_setting_vk_env)
+                                    print("--------------------------------------------------------")
+                            elif RENDER_DEPTH_SOFTWARE == "pb":
+                                print("Error_Index: 12")
                                 input("Stop! Have not done! Please press Ctrl-c!")
-                        elif RENDER_DEPTH_SOFTWARE == "pb":
-                            print("Error_Index: 7")
-                            input("Stop! Have not done! Please press Ctrl-c!")
-                        t_after_compare = time.time()
-                        if PRINT_FLAG == True:
-                            print("--------------------------------------------------------")
-                            print("Compare image cost time:", t_after_compare - t_before_compare)
-                            print("--------------------------------------------------------")
-                    ###############################################################################
-                    ###############################################################################
-                    # B. observation model (RGB)
-                    if USING_RGB_FLAG == True:
-                        #######################################################################################################
-                        # a. Compare Distance #################################################################################
-                        #######################################################################################################
-                        t_before_RGB = time.time()
-                        compare_distance_method = "seq" # seq/multi
-                        if compare_distance_method == "seq":
-                            _RGB_D_weights_lists, _particle_cloud_pub = compare_distance_seq(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list)
-                        elif compare_distance_method == "multi":
-                            for env_index, single_env in _single_envs.items():
-                                single_env.queue.put((SingleENV.compare_distance, env_index, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list))
-                            for env_index, single_env in _single_envs.items():
-                                _RGB_D_weights_list = wait_and_get_result_from(single_env)
-                                _RGB_D_weights_lists[env_index] = _RGB_D_weights_list[str(env_index)]
-                        t_after_RGB = time.time()
-                        if PRINT_FLAG == True:
-                            print("--------------------------------------------------------")
-                            print("Compare distance cost time:", t_after_RGB - t_before_RGB)
-                            print("--------------------------------------------------------")
-                        #######################################################################################################
-                        # b. Visibility Score #################################################################################
-                        #######################################################################################################
-                        t_before_Vis = time.time()
-                        if RENDER_VISIBILITY_SOFTWARE == "vk":
-                            _particle_cloud_pub, _RGB_V_weights_lists = _visibility_computing_vk(_particle_cloud_pub)
                         else:
-                            print("Error_Index: 8")
+                            particle_num_for_obsModel = par_num_after_motion_model
+                            # pass
+
+                        ###########################################################################################################
+                        # II. Observation Model ###################################################################################
+                        ###########################################################################################################
+                        t_before_observation_model = time.time()
+                        _DEPTH_weights_lists = [1] * particle_num_for_obsModel
+                        _RGB_D_weights_lists = [[1]*OBJECT_NUM for _ in range(particle_num_for_obsModel)]
+                        _RGB_V_weights_lists = [[1]*OBJECT_NUM for _ in range(particle_num_for_obsModel)]
+                        ###############################################################################
+                        if RENDER_DEPTH_SOFTWARE == "vk":
+                            # get robot links pose
+                            for env_index, single_env in _single_envs.items():
+                                single_env.queue.put((SingleENV.getLinkStates, ))
+                            for env_index, single_env in _single_envs.items():
+                                _links_info = wait_and_get_result_from(single_env)
+                            # here, all the links_info should be the same, so I can only get the last one!
+                            _links_info = _links_info["links_info"]
+                            ## Update vk env states
+                            t_before_update_vk_env = time.time()
+                            _vk_update_env_states(_vk_state_list, _vk_single_obj_state_list, _particle_cloud_pub, _links_info)
+                            t_after_update_vk_env = time.time()
+                            if PRINT_FLAG == True:
+                                print("--------------------------------------------------------")
+                                print("Update vk env cost time:", t_after_update_vk_env - t_before_update_vk_env)
+                                print("--------------------------------------------------------")
+                        elif RENDER_DEPTH_SOFTWARE == "pb":
+                            print("Error_Index: 4")
                             input("Stop! Have not done! Please press Ctrl-c!")
-                        t_after_Vis = time.time()
+                            pass
+                        ###############################################################################
+                        ###############################################################################
+                        # A. observation model (DEPTH)
+                        if USING_D_FLAG == True:
+                            _real_depth_image_transferred, _real_depth_image_transferred_jax = get_real_depth_image()
+                            #######################################################################################################
+                            # a. Render Depth Image ###############################################################################
+                            #######################################################################################################
+                            t_before_render = time.time()
+                            if RENDER_DEPTH_SOFTWARE == "vk":
+                                ## generate vk rendered depth images
+                                _vk_get_rendered_depth_image_parallelised(_particle_cloud_pub, _links_info)
+                            elif RENDER_DEPTH_SOFTWARE == "pb":
+                                print("Error_Index: 5")
+                                input("Stop! Have not done! Please press Ctrl-c!")
+                            t_after_render = time.time()
+                            if PRINT_FLAG == True:
+                                print("--------------------------------------------------------")
+                                print("Render cost time:", t_after_render - t_before_render)
+                                print("--------------------------------------------------------")
+                            #######################################################################################################
+                            # b. Compare Depth Image ############################################################################## 
+                            #######################################################################################################
+                            t_before_compare = time.time()
+                            if RENDER_DEPTH_SOFTWARE == "vk":
+                                _D_scores_list = _compare_depth_image_vk_parallelised(_real_depth_image_transferred)
+                                if DEPTH_DIFF_VALUE_METHOD == "binary_0_1":
+                                    _DEPTH_weights_lists = normalize_score_to_0_1(_D_scores_list)
+                                else:
+                                    print("Error_Index: 6")
+                                    input("Stop! Have not done! Please press Ctrl-c!")
+                            elif RENDER_DEPTH_SOFTWARE == "pb":
+                                print("Error_Index: 7")
+                                input("Stop! Have not done! Please press Ctrl-c!")
+                            t_after_compare = time.time()
+                            if PRINT_FLAG == True:
+                                print("--------------------------------------------------------")
+                                print("Compare image cost time:", t_after_compare - t_before_compare)
+                                print("--------------------------------------------------------")
+                        ###############################################################################
+                        ###############################################################################
+                        # B. observation model (RGB)
+                        if USING_RGB_FLAG == True:
+                            #######################################################################################################
+                            # a. Compare Distance #################################################################################
+                            #######################################################################################################
+                            if TRUST_OBSDATA == False:
+                                pass
+                            else:
+                                t_before_RGB = time.time()
+                                compare_distance_method = "seq" # seq/multi
+                                if compare_distance_method == "seq":
+                                    _RGB_D_weights_lists, _particle_cloud_pub = compare_distance_seq(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list)
+                                elif compare_distance_method == "multi":
+                                    for env_index, single_env in _single_envs.items():
+                                        single_env.queue.put((SingleENV.compare_distance, env_index, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list))
+                                    for env_index, single_env in _single_envs.items():
+                                        _RGB_D_weights_list = wait_and_get_result_from(single_env)
+                                        _RGB_D_weights_lists[env_index] = _RGB_D_weights_list[str(env_index)]
+                                t_after_RGB = time.time()
+                                if PRINT_FLAG == True:
+                                    print("--------------------------------------------------------")
+                                    print("Compare distance cost time:", t_after_RGB - t_before_RGB)
+                                    print("--------------------------------------------------------")
+                            #######################################################################################################
+                            # b. Visibility Score #################################################################################
+                            #######################################################################################################
+                            t_before_Vis = time.time()
+                            if RENDER_VISIBILITY_SOFTWARE == "vk":
+                                _particle_cloud_pub, _RGB_V_weights_lists = _visibility_computing_vk(_particle_cloud_pub)
+                            else:
+                                print("Error_Index: 8")
+                                input("Stop! Have not done! Please press Ctrl-c!")
+                            t_after_Vis = time.time()
+                            if PRINT_FLAG == True:
+                                print("--------------------------------------------------------")
+                                print("Compute visibility score cost time:", t_after_Vis - t_before_Vis)
+                                print("--------------------------------------------------------")
+                            t_after_Vis = time.time()
+                        t_after_observation_model = time.time()
                         if PRINT_FLAG == True:
                             print("--------------------------------------------------------")
-                            print("Compute visibility score cost time:", t_after_Vis - t_before_Vis)
+                            print("Observation model cost time:", t_after_observation_model - t_before_observation_model)
                             print("--------------------------------------------------------")
-                        t_after_Vis = time.time()
-                    t_after_observation_model = time.time()
-                    if PRINT_FLAG == True:
-                        print("--------------------------------------------------------")
-                        print("Observation model cost time:", t_after_observation_model - t_before_observation_model)
-                        print("--------------------------------------------------------")
-                    ###########################################################################################################
-                    ##################################### Observation Model Finished ##########################################
-                    ###########################################################################################################
+                        ###########################################################################################################
+                        ##################################### Observation Model Finished ##########################################
+                        ###########################################################################################################
 
 
-                    # III. Resampling #########################################################################################
-                    _particle_cloud_pub = resample_particles_update(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, _DEPTH_weights_lists, _RGB_D_weights_lists, _RGB_V_weights_lists)
-                    for env_index, single_env in _single_envs.items():
-                        single_env.queue.put((SingleENV.set_particle_in_each_sim_env, _particle_cloud_pub[env_index]))
-                    for env_index, single_env in _single_envs.items():
-                        _empty_return = wait_and_get_result_from(single_env)
-                    estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
-                    _publish_par_pose_info(_particle_cloud_pub)
-                    _publish_esti_pose_info(estimated_object_set)
+                        # III. Resampling #########################################################################################
+                        # _particle_cloud_pub = resample_particles_update(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, _DEPTH_weights_lists, _RGB_D_weights_lists, _RGB_V_weights_lists)
+                        _particle_cloud_pub = sort_particles_update_for_initialisation(_particle_cloud_pub, _DEPTH_weights_lists, _RGB_V_weights_lists)
 
-                    if RECORD_RESULTS_FLAG == True:
-                        _record_obse_pose_list.append(_pw_T_obj_obse_objects_pose_list)
-                        _record_GT_pose_list.append(pw_T_obj_GT_pose)
-                        _record_t_PBPF = time.time()
-                        _record_time_list.append(_record_t_PBPF - _record_t_begin)
-                    if SHOW_RAY == True:
-                        print("Error_Index: 10")
-                        input("Stop! Have not done! Please press Ctrl-c!")
+                        for env_index, single_env in _single_envs.items():
+                            single_env.queue.put((SingleENV.set_particle_in_each_sim_env, _particle_cloud_pub[env_index]))
+                        for env_index, single_env in _single_envs.items():
+                            _empty_return = wait_and_get_result_from(single_env)
+                        estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
+                        _publish_par_pose_info(_particle_cloud_pub)
+                        _publish_esti_pose_info(estimated_object_set)
 
-                    ###########################################################################################################
-                    ###########################################################################################################
-                    ################################## One Particle Filtering Update Finished #################################
-                    ###########################################################################################################
-                    ###########################################################################################################
-                    rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
-                    t_finish_PBPF = time.time()
-                    PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
-                    if PRINT_FLAG == True:
-                        print("Time consuming:", t_finish_PBPF - t_begin_PBPF)
-                        print("Mean value:", np.mean(PBPF_time_cosuming_list))
-                    simRobot_touch_par_flag = 0
+                        if RECORD_RESULTS_FLAG == True:
+                            _record_obse_pose_list.append(_pw_T_obj_obse_objects_pose_list)
+                            _record_GT_pose_list.append(pw_T_obj_GT_pose)
+                            _record_t_PBPF = time.time()
+                            _record_time_list.append(_record_t_PBPF - _record_t_begin)
+                        if SHOW_RAY == True:
+                            print("Error_Index: 10")
+                            input("Stop! Have not done! Please press Ctrl-c!")
+
+                        ###########################################################################################################
+                        ###########################################################################################################
+                        ################################## One Particle Filtering Update Finished #################################
+                        ###########################################################################################################
+                        ###########################################################################################################
+                        rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
+                        t_finish_PBPF = time.time()
+                        PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
+                        if PRINT_FLAG == True:
+                            print("Time consuming:", t_finish_PBPF - t_begin_PBPF)
+                            print("Mean value:", np.mean(PBPF_time_cosuming_list))
+                        simRobot_touch_par_flag = 0
                     # ================================================================================================================================================================
-                    # else:
-                    #     _no_PF_update_count = _no_PF_update_count + 1
-                    #     print("Just update ENV!")
-                    #     Only_update_robot_flag = True
-                    #     # robot arm moving
-                    #     for env_index, single_env in _single_envs.items():
-                    #         single_env.queue.put((SingleENV.move_robot_JointPosition, ROS_LISTENER.current_joint_values))
-                    #     for env_index, single_env in _single_envs.items():
-                    #         _empty_return = wait_and_get_result_from(single_env)
-                    #     # get particles pose
-                    #     for env_index, single_env in _single_envs.items():
-                    #         single_env.queue.put((SingleENV.get_objects_pose, env_index))
-                    #     for env_index, single_env in _single_envs.items():  
-                    #         objs_pose_info = wait_and_get_result_from(single_env)
-                    #         _objs_pose_info_list[env_index] = objs_pose_info
-                    #         _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
-                    #     _publish_par_pose_info(_particle_cloud_pub)
+                    else:
+                        _no_PF_update_count = _no_PF_update_count + 1
+                        print("Just update ENV!")
+                        Only_update_robot_flag = True
+                        # robot arm moving
+                        for env_index, single_env in _single_envs.items():
+                            single_env.queue.put((SingleENV.move_robot_JointPosition, ROS_LISTENER.current_joint_values))
+                        for env_index, single_env in _single_envs.items():
+                            _empty_return = wait_and_get_result_from(single_env)
+                        # get particles pose
+                        for env_index, single_env in _single_envs.items():
+                            single_env.queue.put((SingleENV.get_objects_pose, env_index))
+                        for env_index, single_env in _single_envs.items():  
+                            objs_pose_info = wait_and_get_result_from(single_env)
+                            _objs_pose_info_list[env_index] = objs_pose_info
+                            _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
+                        _publish_par_pose_info(_particle_cloud_pub)
                 # ================================================================================================================================================================
 
                 # estimated_object_set_old = copy.deepcopy(estimated_object_set)
@@ -3137,3 +3176,7 @@ if __name__ == '__main__':
     for i in range(par_length):
         p_par_env_list[i].disconnect()
 
+
+##############################################################################################
+##############################################################################################
+# big change

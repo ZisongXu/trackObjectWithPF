@@ -68,8 +68,9 @@ class InitLargeNumPar():
         self.INCREMENTAL_POSE_GENERATOR_FLAG = self.parameter_info['Incremental_Pose_Generator_Flag']
         self.INIT_METHOD = self.parameter_info['init_method'] # ViDe/Vi/De/normal...
         # particles number
-        self.PARTICLE_NUM = self.parameter_info['particle_num'] # ViDe/Vi/De/normal...
-        self.PARTICLE_NUM_FOR_OBS = self.parameter_info['particle_num_for_obs'] # ViDe/Vi/De/normal...
+        self.PARTICLE_NUM = self.parameter_info['particle_num'] # small
+        self.PARTICLE_NUM_FOR_OBS = self.parameter_info['particle_num_for_obs'] # large
+        self.PICK_PARTICLE_RATE_BEFORE_OBSMODEL = self.parameter_info['pick_particle_rate_before_obsModel'] # large
         ## noise for initialization
         self.BOSS_SIGMA_OBS_POS_INIT = self.parameter_info['boss_sigma_obs_pos_init'] # original value: 16cm/10CM/5cm 
         self.BOSS_SIGMA_OBS_X = self.BOSS_SIGMA_OBS_POS_INIT / math.sqrt(2)
@@ -94,6 +95,11 @@ class InitLargeNumPar():
         ## create new self.data
         self.particle_cloud = [0] * self.PARTICLE_NUM_FOR_OBS
         self.BOSS_SIGMA_OBS_Z_ANG_INIT = 2 * math.pi
+        # Motion Model Noise
+        self.MOTION_MODEL_POS_NOISE = 0.001/2 # original value = 0.005
+        self.MOTION_MODEL_ANG_NOISE = 0.1/2 # original value = 0.05/0.5/0.1
+        # self.MOTION_MODEL_POS_NOISE = 0.0 # original value = 0.005
+        # self.MOTION_MODEL_ANG_NOISE = 0.0 # original value = 0.05/0.5/0.1
         
     def init_particle_cloud(self):
         if self.task_flag == "basket_retrieve":
@@ -135,6 +141,7 @@ class InitLargeNumPar():
     def init_particle_cloud_part(self, pw_T_obj_obse_par_list_init, init_num_of_each_good_par_list):
         par_index_all = 0
         if self.task_flag == "basket_retrieve":
+            # [143,143,143,142,143,143,143]/[143,142,143,143,143,143,143]
             for good_par_index in range(len(init_num_of_each_good_par_list)):
                 par_num = init_num_of_each_good_par_list[good_par_index]
                 for par_index in range(par_num):
@@ -154,6 +161,43 @@ class InitLargeNumPar():
                     par_index_all = par_index_all + 1
         else:
             input("Have not done! Need to stop (InitLargeNumPar.py; init_particle_cloud_part().)")
+        return self.particle_cloud
+
+    def spread_particle(self, particle_cloud, pw_T_obj_obse_objects_pose_list):
+        obs_particle_num = int(self.PARTICLE_NUM_FOR_OBS * self.PICK_PARTICLE_RATE_BEFORE_OBSMODEL)
+        rest_particle_num = self.PARTICLE_NUM_FOR_OBS - obs_particle_num
+        par_num_ = len(particle_cloud)
+        # A list consisting of the number of particles assigned to each particle after expansion.
+        # For example, if there are 200 particles in the motion model, 
+        # the number of particles will be expanded to 1000, 
+        # so that each particle will be assigned 4 additional particles: [5, 5, 5, 5, 5, ..., 5, 5, 5, 5]
+        par_num_after_assign_list = self.divide_and_shuffle(rest_particle_num, par_num_)
+        all_par_index = 0
+        # particles around obsData
+        for obs_par_index in range(obs_particle_num):
+            objects_list = ["None"] * len(self.OBJECT_NAME_LIST)
+            for obj_index in range(len(pw_T_obj_obse_objects_pose_list)):
+                obj_pos = pw_T_obj_obse_objects_pose_list[obj_index].pos
+                obj_ori = pw_T_obj_obse_objects_pose_list[obj_index].ori
+                normal_x, normal_y, normal_z, pb_quat = self.add_noise_pose(obj_pos, obj_ori)
+                objInfo = Particle(self.OBJECT_NAME_LIST[obj_index], 0, 0, [normal_x, normal_y, normal_z], pb_quat, 1.0/self.PARTICLE_NUM_FOR_OBS, all_par_index, obj_index, 0, 0)
+                objects_list[obj_index] = objInfo
+            self.particle_cloud[all_par_index] = objects_list
+            all_par_index = all_par_index + 1
+        # particles around physics particles
+        # [5, 5, 5, 5, 5, ..., 5, 5, 5, 5]: 200 set
+        for set_index in range(len(par_num_after_assign_list)):
+            set_par_num = par_num_after_assign_list[set_index]
+            for par_index in range(set_par_num):
+                objects_list = ["None"] * len(self.OBJECT_NAME_LIST)
+                for obj_index in range(len(pw_T_obj_obse_objects_pose_list)):
+                    obj_pos = particle_cloud[set_index][obj_index].pos
+                    obj_ori = particle_cloud[set_index][obj_index].ori
+                    normal_x, normal_y, normal_z, pb_quat = self.add_noise_pose(obj_pos, obj_ori)
+                    objInfo = Particle(self.OBJECT_NAME_LIST[obj_index], 0, 0, [normal_x, normal_y, normal_z], pb_quat, 1.0/self.PARTICLE_NUM_FOR_OBS, all_par_index, obj_index, 0, 0)
+                    objects_list[obj_index] = objInfo
+                self.particle_cloud[all_par_index] = objects_list
+                all_par_index = all_par_index + 1
         return self.particle_cloud
 
     def generate_random_pose(self, pw_T_obj_obse_pos, pw_T_obj_obse_ori):
@@ -404,3 +448,51 @@ class InitLargeNumPar():
     def take_easy_gaussian_value(self, mean, sigma):
         normal = random.normalvariate(mean, sigma)
         return normal
+
+    # (1000,3) -> (333,333,334)/(334,333,332)
+    # (1000,7) -> (143,143,143,142,143,143,143)/(143,142,143,143,143,143,143)
+    def divide_and_shuffle(self, total, n):
+        base = total // n
+        remainder = total % n
+        result = [base + 1] * remainder + [base] * (n - remainder)
+        random.shuffle(result)
+        return result
+
+    # add noise
+    def add_noise_pose(self, obj_pos, obj_ori): # obj_pos: x,y,z; obj_ori: x,y,z,w
+        # add noise to pos of object
+        normal_x = self.add_noise_2_par(obj_pos[0])
+        normal_y = self.add_noise_2_par(obj_pos[1])
+        normal_z = self.add_noise_2_par(obj_pos[2])
+        # add noise to ang of object
+        quat_QuatStyle = Quaternion(x=obj_ori[0], y=obj_ori[1], z=obj_ori[2], w=obj_ori[3])# w,x,y,z
+        random_dir = random.uniform(0, 2*math.pi)
+        z_axis = random.uniform(-1,1)
+        x_axis = math.cos(random_dir) * math.sqrt(1 - z_axis ** 2)
+        y_axis = math.sin(random_dir) * math.sqrt(1 - z_axis ** 2)
+        angle_noise = self.add_noise_2_ang(0)
+        w_quat = math.cos(angle_noise/2.0)
+        x_quat = math.sin(angle_noise/2.0) * x_axis
+        y_quat = math.sin(angle_noise/2.0) * y_axis
+        z_quat = math.sin(angle_noise/2.0) * z_axis
+        ###nois_quat(w,x,y,z); new_quat(w,x,y,z)
+        nois_quat = Quaternion(x=x_quat, y=y_quat, z=z_quat, w=w_quat)
+        new_quat = nois_quat * quat_QuatStyle
+        ###pb_quat(x,y,z,w); pb_quat(x,y,z,w)
+        pb_quat = [new_quat[1],new_quat[2],new_quat[3],new_quat[0]]
+        new_angle = p.getEulerFromQuaternion(pb_quat)
+        pb_quat = p.getQuaternionFromEuler(new_angle)
+        # pipe.send()
+        return normal_x, normal_y, normal_z, pb_quat
+
+    def add_noise_2_par(self, current_pos):
+        mean = current_pos
+        sigma = self.MOTION_MODEL_POS_NOISE
+        new_pos_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
+        return new_pos_is_added_noise
+
+    def add_noise_2_ang(self, cur_angle):
+        mean = cur_angle
+        sigma = self.MOTION_MODEL_ANG_NOISE
+        new_ang_is_added_noise = self.take_easy_gaussian_value(mean, sigma)
+        return new_ang_is_added_noise

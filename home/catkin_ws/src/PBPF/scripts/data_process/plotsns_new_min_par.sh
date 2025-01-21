@@ -4,7 +4,8 @@
 # declare -a objectNames=("cracker" "Ketchup")
 # declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a objectNames=("soup" "Parmesan" "Milk")
-declare -a objectNames=("cracker" "soup" "Parmesan")
+# declare -a objectNames=("Milk" "Parmesan")
+declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
 # declare -a objectNames=("Mustard" "SaladDressing")
 # declare -a objectNames=("cracker" "Ketchup" "Milk")
 # declare -a objectNames=("cracker" "soup")
@@ -20,7 +21,7 @@ declare -a sceneNames=("scene2")
 # declare -a objectNames=("cracker" "Mayo" "Milk")
 # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
 
-declare -a particleNumbers=(70)
+declare -a particleNumbers=(50)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 
@@ -45,7 +46,7 @@ do
 					# INTER_DATA_PID=$!
 					# sleep 5
 
-						python3 plotsns_new_min_par.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${update_style}" "${ang_and_pos}" &
+						# python3 plotsns_new_min_par.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${update_style}" "${ang_and_pos}" &
 						python3 plotsns_new_avg_par.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${update_style}" "${ang_and_pos}" &
 					# PLOT_PID=$!
 					# sleep 100

@@ -122,7 +122,7 @@ class Visualisation_World():
         self.pw_T_rob_sim_pose_list = pw_T_rob_sim_pose_list
         if self.SIM_REAL_WORLD_FLAG == True:
             table_pos_1 = [0.46, -0.01, 0.710]
-            table_pos_1 = [0.46, -0.01, 0.700]
+            table_pos_1 = [0.46, -0.01, 0.702]
             table_ori_1 = p_visualisation.getQuaternionFromEuler([0,0,0])
             table_id_1 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1, useFixedBase = 1)
 
@@ -572,6 +572,7 @@ while reset_flag == True:
                     rob_T_obj_obse_ori = list(rot_ob_list[obj_index])
                     rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
                     rob_T_obj_obse_4_4 = rotation_4_4_to_transformation_4_4(rob_T_obj_obse_3_3,rob_T_obj_obse_pos)
+                    print()
                     # print("rob_T_obj_obse_pos")
                     # print(rob_T_obj_obse_pos)
                     pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
@@ -643,25 +644,25 @@ while reset_flag == True:
                 visual_world.display_object_in_visual_model(p_visual, pw_T_objs_not_touching_targetObjs_list_param[obj_index])
             
             # display particles
-    #        if display_par_flag == True:
-    #            particles_states_list = visual_world.ros_listener.listen_2_pars_states()
-    #            print("particles_states_list:", particles_states_list)
-    #            for obj_index in range(object_num):
-    #                if len(particles_states_list.particles) == 0:
-    #                    par_list_not_pub = 0
-    #                    print("Do not publish particle information to /par_list")
-    #                else:
-    #                    if init_par_flag == 0:
-    #                        if obj_index == object_num - 1:
-    #                            init_par_flag = 1
-    #                        for par_index in range(particle_num):
-    #                            visual_world.init_display_particle(particles_states_list.particles[par_index].objects[obj_index])
-    #                            obj_visual_id = particles_states_list.particles[par_index].objects[obj_index].id
-    #                            par_obj_id[par_index].append(obj_visual_id)
-    #                    else:
-    #                        for par_index in range(particle_num):
-    #                            particles_states_list.particles[par_index].objects[obj_index].id = par_obj_id[par_index][obj_index]
-    #                            visual_world.display_particle_in_visual_model(particles_states_list.particles[par_index].objects[obj_index])
+            # if display_par_flag == True:
+            #     particles_states_list = visual_world.ros_listener.listen_2_pars_states()
+            #     print("particles_states_list:", particles_states_list)
+            #     for obj_index in range(object_num):
+            #         if len(particles_states_list.particles) == 0:
+            #             par_list_not_pub = 0
+            #             print("Do not publish particle information to /par_list")
+            #         else:
+            #             if init_par_flag == 0:
+            #                 if obj_index == object_num - 1:
+            #                     init_par_flag = 1
+            #                 for par_index in range(particle_num):
+            #                     visual_world.init_display_particle(particles_states_list.particles[par_index].objects[obj_index])
+            #                     obj_visual_id = particles_states_list.particles[par_index].objects[obj_index].id
+            #                     par_obj_id[par_index].append(obj_visual_id)
+            #             else:
+            #                 for par_index in range(particle_num):
+            #                     particles_states_list.particles[par_index].objects[obj_index].id = par_obj_id[par_index][obj_index]
+            #                     visual_world.display_particle_in_visual_model(particles_states_list.particles[par_index].objects[obj_index])
             if display_par_flag == True:
                 particles_states_list = visual_world.ros_listener.listen_2_pars_states()
                 if len(particles_states_list.particles) == 0:

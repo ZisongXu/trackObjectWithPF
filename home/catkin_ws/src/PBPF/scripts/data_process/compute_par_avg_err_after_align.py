@@ -164,6 +164,7 @@ def computeADDS(pw_T_points_pose_4_4_list_1, pw_T_points_pose_4_4_list_2):
     return average_distance
 
 def _compute_estimate_pos_of_object_and_find_which_particle_is_closed(particle_cloud_pos_list, particle_cloud_ori_list):
+    ## compute mean
     w = 1.0/float(particle_num)
     esti_objs_cloud = []
     # remenber after resampling weight of each particle is the same
@@ -198,11 +199,13 @@ def _compute_estimate_pos_of_object_and_find_which_particle_is_closed(particle_c
     ###################################
     est_obj_pose = [esti_obj_pos, esti_obj_ori]
     err_distance_list = []
+    ## find the closest particle to the mean, and record
     for index in range(int(particle_num)):
         par_pos = [particle_cloud_pos_list[index][0], particle_cloud_pos_list[index][1], particle_cloud_pos_list[index][2]]
         par_ori = quaternion_correction(particle_cloud_ori_list[index])
         err_distance = ADDMatrixBtTwoObjects(object_name, par_pos, par_ori, esti_obj_pos, esti_obj_ori)
         err_distance_list.append(err_distance)
+    ## find the min distance
     min_value = min(err_distance_list)
     min_index = err_distance_list.index(min_value)
     min_par_pose = [[particle_cloud_pos_list[min_index][0], particle_cloud_pos_list[min_index][1], particle_cloud_pos_list[min_index][2]], quaternion_correction(particle_cloud_ori_list[min_index])]
@@ -264,6 +267,8 @@ repeat_time = sys.argv[5]
 run_alg_flag = sys.argv[6] # "obse" "PBPF" "GT"
 ang_and_pos = sys.argv[7] # pos/ang/ADD/ADDS
 runVersion = sys.argv[8] # "PBPF_RGBD" "PBPF_RGB" "PBPF_D"
+MASS_marker = sys.argv[9] # obj_name
+FRICTION_marker = sys.argv[10] # obj_name
 
 file_path_par = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/results/particles/")
 file_path_GT = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/results/")
@@ -272,15 +277,16 @@ file_path_GT = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/results/")
 file_name_list = []
 for par_index in range(int(particle_num)):
     par_index_name = par_index
-    file_name = "Time_aligned_"+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+update_style_flag+'_'+run_alg_flag+'_pose_'+runVersion+'_'+str(par_index_name)+'_'+object_name+'.csv'
+    # Time_aligned_50_scene1_rosbag1_repeat9_time_PBPF_pose_PBPF_RGBD_mC_fA_49_Parmesan
+    file_name = "Time_aligned_"+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+update_style_flag+'_'+run_alg_flag+'_pose_'+runVersion+'_'+MASS_marker+'_'+FRICTION_marker+'_'+str(par_index_name)+'_'+object_name+'.csv'
     file_name_list.append(file_name)
 
 # Time_aligned_70_scene1_rosbag1_repeat0_Mayo_time_GT_pose_PBPF_D.csv
 # GT_file_name = "Time_aligned_"+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_GT_pose_'+runVersion+'.csv'
-GT_file_name = "Time_aligned_"+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_GT_pose_'+runVersion+'.csv'
+GT_file_name = "Time_aligned_"+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_GT_pose_'+runVersion+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
 
 # load data
-columns_names = ['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name']
+columns_names = ['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name','mass','friction']
 data_list = []
 for par_index in range(int(particle_num)):
     data = pd.read_csv(file_path_par+file_name_list[par_index], names=columns_names, header=None)
@@ -332,7 +338,7 @@ for par_index in range(int(particle_num)):
     ori_combined = [(row1, row2) for row1, row2 in zip(ori_data_list[par_index].values.tolist(), ori_data_GT.values.tolist())]
     ori_combined_list.append(ori_combined)
 
-existing_columns = ['step','time','alg','obj','scene','particle_num','ray_type','obj_name']
+existing_columns = ['step','time','alg','obj','scene','particle_num','ray_type','obj_name','mass','friction']
 new_err_data = data_list[0][existing_columns].copy()
 new_err_data['alg'] = runVersion+'_par_avg'
 new_err_data[ang_and_pos] = pd.Series(dtype='float64')

@@ -53,8 +53,8 @@ import pandas as pd
 import multiprocessing
 from multiprocessing import Process
 import yaml
-import jax.numpy as jnp
-from jax import jit
+# import jax.numpy as jnp
+# from jax import jit
 import heapq
 from collections import namedtuple
 from scipy.spatial.transform import Rotation as R
@@ -151,6 +151,10 @@ PB_RENDER_FLAG = parameter_info['pb_render_flag']
 PANDA_ROBOT_LINK_NUMBER = parameter_info['panda_robot_link_number']
 DRAW_WIREFRAME_FLAG = parameter_info['draw_wireframe_flag']
 
+MASS_marker = parameter_info['MASS_marker']
+FRICTION_marker = parameter_info['FRICTION_marker']
+
+
 if VK_RENDER_FLAG == True:
     print("I am using Vulkan to generate Depth Image")
 if PB_RENDER_FLAG == True: 
@@ -165,25 +169,25 @@ _record_obse_pose_first_flag = 0
 _record_time_list = []
 _record_GT_time_list = []
 
-_boss_obse_err_ADD_df_list = []
+_boss_obse_err_ADD_df_list = [0]*OBJECT_NUM
 _obse_panda_step = 0
-_boss_PBPF_err_ADD_df_list = []
+_boss_PBPF_err_ADD_df_list = [0]*OBJECT_NUM
 _PBPF_panda_step = 0
-_boss_GT_err_ADD_df_list = []
+_boss_GT_err_ADD_df_list = [0]*OBJECT_NUM
 _GT_panda_step = 0
-_boss_par_err_ADD_df_list = []
+_boss_par_err_ADD_df_list = [0]*PARTICLE_NUM
 _par_panda_step = 0
 
 for obj_index in range(OBJECT_NUM):
-    _boss_obse_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name'],index=[])
-    _boss_PBPF_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name'],index=[])
-    _boss_GT_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name'],index=[])
-    _boss_obse_err_ADD_df_list.append(_boss_obse_err_ADD_df)
-    _boss_PBPF_err_ADD_df_list.append(_boss_PBPF_err_ADD_df)
-    _boss_GT_err_ADD_df_list.append(_boss_GT_err_ADD_df)
+    _boss_obse_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name','mass','friction'],index=[])
+    _boss_PBPF_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name','mass','friction'],index=[])
+    _boss_GT_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name','mass','friction'],index=[])
+    _boss_obse_err_ADD_df_list[obj_index] = _boss_obse_err_ADD_df
+    _boss_PBPF_err_ADD_df_list[obj_index] = _boss_PBPF_err_ADD_df
+    _boss_GT_err_ADD_df_list[obj_index] = _boss_GT_err_ADD_df
 for par_index in range(PARTICLE_NUM):
-    _boss_par_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name'],index=[])
-    _boss_par_err_ADD_df_list.append(_boss_par_err_ADD_df)
+    _boss_par_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name','mass','friction'],index=[])
+    _boss_par_err_ADD_df_list[par_index] = _boss_par_err_ADD_df
 
 
 
@@ -376,7 +380,7 @@ def _publish_par_pose_info(particle_cloud_pub):
                 obj_scene = obj_info.par_name+"_scene"+str(TASK_FLAG)
                 _record_t = time.time()
                 # x, y, z ,w
-                _boss_par_err_ADD_df_list[par_index].loc[_par_panda_step] = [_par_panda_step, _record_t - _record_t_begin, obj_info.pos[0], obj_info.pos[1], obj_info.pos[2], obj_info.ori[0], obj_info.ori[1], obj_info.ori[2], obj_info.ori[3], RUNNING_MODEL, obj_name, scene, PARTICLE_NUM, VERSION, obj_name]
+                _boss_par_err_ADD_df_list[par_index].loc[_par_panda_step] = [_par_panda_step, _record_t - _record_t_begin, obj_info.pos[0], obj_info.pos[1], obj_info.pos[2], obj_info.ori[0], obj_info.ori[1], obj_info.ori[2], obj_info.ori[3], RUNNING_MODEL, obj_name, scene, PARTICLE_NUM, VERSION, obj_name, MASS_marker, FRICTION_marker]
                 _par_panda_step = _par_panda_step + 1
     
             pw_T_par_pos = [obj_info.pos[0], obj_info.pos[1], obj_info.pos[2]]
@@ -449,7 +453,8 @@ def _publish_esti_pose_info(estimated_object_set):
             obj_name = esti_obj_info.obj_name
             _record_t = time.time()
             # x, y, z ,w
-            _boss_PBPF_err_ADD_df_list[obj_index].loc[_PBPF_panda_step] = [_PBPF_panda_step, _record_t - _record_t_begin, esti_obj_info.pos[0], esti_obj_info.pos[1], esti_obj_info.pos[2], esti_obj_info.ori[0], esti_obj_info.ori[1], esti_obj_info.ori[2], esti_obj_info.ori[3], RUNNING_MODEL, obj, scene, PARTICLE_NUM, VERSION, obj_name]
+            _boss_PBPF_err_ADD_df_list[obj_index].loc[_PBPF_panda_step] = [_PBPF_panda_step, _record_t - _record_t_begin, esti_obj_info.pos[0], esti_obj_info.pos[1], esti_obj_info.pos[2], esti_obj_info.ori[0], esti_obj_info.ori[1], esti_obj_info.ori[2], esti_obj_info.ori[3], RUNNING_MODEL, obj, scene, PARTICLE_NUM, VERSION, obj_name, MASS_marker, FRICTION_marker]                                    
+
     
     _PBPF_panda_step = _PBPF_panda_step + 1
 
@@ -1040,8 +1045,8 @@ def wait_and_get_result_from(single_env):
 def get_real_depth_image():
     depth_image_real = ROS_LISTENER.depth_image # persp
     real_depth_image_transferred = depthImageRealTransfer(depth_image_real) # persp
-    real_depth_image_transferred_jax = jnp.array(real_depth_image_transferred) # persp
-    return real_depth_image_transferred, real_depth_image_transferred_jax
+    # real_depth_image_transferred_jax = jnp.array(real_depth_image_transferred) # persp
+    return real_depth_image_transferred
 
 def depthImageRealTransfer(depth_image_real):
     cv_image = BRIDGE.imgmsg_to_cv2(depth_image_real,"16UC1")
@@ -1121,6 +1126,7 @@ def resample_particles_update(particle_cloud, pw_T_obj_obse_objects_pose_list_, 
     return newParticles_list
 
 def normalize_score_to_0_1(score_list):
+    par_num_ = len(score_list)
     score_list_min = min(score_list)
     score_list_array_ = np.array(score_list)
     score_list_array_sub = score_list_array_ - score_list_min
@@ -1129,7 +1135,10 @@ def normalize_score_to_0_1(score_list):
     else:
         input("Error: depth_value_difference_list_array_sub.ndim should be 1! Please check the code and press Crtl-C")
     score_list_array_sub_sum = sum(score_list_array_sub)
-    score_list_array_sub_sum_over = score_list_array_sub / score_list_array_sub_sum * 1 # 20
+    if score_list_array_sub_sum == 0:
+        score_list_array_sub_sum_over = np.full(par_num_, 1/par_num_)
+    else:
+        score_list_array_sub_sum_over = score_list_array_sub / score_list_array_sub_sum * 1 # 20
     return score_list_array_sub_sum_over
     # return score_list_array_sub
 
@@ -1329,26 +1338,25 @@ def signal_handler(sig, frame):
             file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/')
             obj_name = OBJECT_NAME_LIST[obj_index]
 
-            file_name_PBPF_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+'.csv'
-            file_name_obse_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_obse_pose_'+RUNNING_MODEL+'.csv'
-            file_name_GT_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_GT_pose_'+RUNNING_MODEL+'.csv'
-
+            file_name_PBPF_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
+            file_name_obse_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_obse_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
+            file_name_GT_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_GT_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
+            # if _boss_PBPF_err_ADD_df_list[obj_index].empty:
+            #     print(OBJECT_NAME_LIST[obj_index]+" is empty !")
             _boss_PBPF_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_PBPF_ADD,index=0,header=0,mode='w')
-            
             _boss_obse_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_obse_ADD,index=0,header=0,mode='w')
             _boss_GT_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_GT_ADD,index=0,header=0,mode='w')
             # print("write "+obj_name+" PBPF file: "+RUNNING_MODEL)
             # print("write "+obj_name+" obse file: "+RUNNING_MODEL)
             # print("write "+obj_name+" GT file: "+RUNNING_MODEL)
 
-        # print("write Particle file (should include all objects): "+RUNNING_MODEL)
-        for par_index in range(PARTICLE_NUM):
-            file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/'+OBJECT_NAME_LIST[0]+'/')
-            # file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/')
-            file_name_par_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+"_"+str(par_index)+'.csv'
-            
-            _boss_par_err_ADD_df_list[par_index].to_csv(file_save_path+file_name_par_ADD,index=0,header=0,mode='w')
-            
+            # print("write Particle file (should include all objects): "+RUNNING_MODEL)
+            for par_index in range(PARTICLE_NUM):
+                file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/'+OBJECT_NAME_LIST[obj_index]+'/')
+                # file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/')
+                file_name_par_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+"_"+str(par_index)+'.csv'
+                _boss_par_err_ADD_df_list[par_index].to_csv(file_save_path+file_name_par_ADD,index=0,header=0,mode='w')
+                
     
     # print("")
     # print(" -------------------------------------------- ")
@@ -1962,9 +1970,11 @@ if __name__ == '__main__':
                 obj_scene = obj_name+"_scene"+str(TASK_FLAG)
                 _record_t = time.time()
                 # x, y, z ,w
-                _boss_GT_err_ADD_df_list[obj_index].loc[_GT_panda_step] = [_GT_panda_step, _record_t - _record_t_begin, pw_T_obj_opti_pos[0], pw_T_obj_opti_pos[1], pw_T_obj_opti_pos[2], pw_T_obj_opti_ori[0], pw_T_obj_opti_ori[1], pw_T_obj_opti_ori[2], pw_T_obj_opti_ori[3], 'GT', obj, scene, PARTICLE_NUM, VERSION, obj_name]
-                _boss_obse_err_ADD_df_list[obj_index].loc[_obse_panda_step] = [_obse_panda_step, _record_t - _record_t_begin, pw_T_obj_obse_pos[0], pw_T_obj_obse_pos[1], pw_T_obj_obse_pos[2], pw_T_obj_obse_ori[0], pw_T_obj_obse_ori[1], pw_T_obj_obse_ori[2], pw_T_obj_obse_ori[3], 'DOPE', obj, scene, PARTICLE_NUM, VERSION, obj_name]      
+                _boss_GT_err_ADD_df_list[obj_index].loc[_GT_panda_step] = [_GT_panda_step, _record_t - _record_t_begin, pw_T_obj_opti_pos[0], pw_T_obj_opti_pos[1], pw_T_obj_opti_pos[2], pw_T_obj_opti_ori[0], pw_T_obj_opti_ori[1], pw_T_obj_opti_ori[2], pw_T_obj_opti_ori[3], 'GT', obj, scene, PARTICLE_NUM, VERSION, obj_name, MASS_marker, FRICTION_marker]
+                _boss_obse_err_ADD_df_list[obj_index].loc[_obse_panda_step] = [_obse_panda_step, _record_t - _record_t_begin, pw_T_obj_obse_pos[0], pw_T_obj_obse_pos[1], pw_T_obj_obse_pos[2], pw_T_obj_obse_ori[0], pw_T_obj_obse_ori[1], pw_T_obj_obse_ori[2], pw_T_obj_obse_ori[3], 'DOPE', obj, scene, PARTICLE_NUM, VERSION, obj_name, MASS_marker, FRICTION_marker]      
 
+                # if obj_index == 0:
+                #     print(pw_T_obj_obse_pos[1])
         _GT_panda_step = _GT_panda_step + 1
         _obse_panda_step = _obse_panda_step + 1
 
@@ -2036,7 +2046,8 @@ if __name__ == '__main__':
                         _D_scores_list = []
                         t_before_observation_model = time.time()
                         # if USING_D_FLAG == True:
-                        _real_depth_image_transferred, _real_depth_image_transferred_jax = get_real_depth_image()
+                        # _real_depth_image_transferred, _real_depth_image_transferred_jax = get_real_depth_image()
+                        _real_depth_image_transferred = get_real_depth_image()
                         # a. Render Depth Image ###############################################################################
                         t_before_render = time.time()
                         if VK_RENDER_FLAG == True and PB_RENDER_FLAG == False:
@@ -2144,6 +2155,14 @@ if __name__ == '__main__':
                             single_env.queue.put((SingleENV.move_robot_JointPosition, ROS_LISTENER.current_joint_values))
                         for env_index, single_env in _single_envs.items():
                             _empty_return = wait_and_get_result_from(single_env)
+                        # get particles pose
+                        for env_index, single_env in _single_envs.items():
+                            single_env.queue.put((SingleENV.get_objects_pose, env_index))
+                        for env_index, single_env in _single_envs.items():  
+                            objs_pose_info = wait_and_get_result_from(single_env)
+                            _objs_pose_info_list[env_index] = objs_pose_info
+                            _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
+                        _publish_par_pose_info(_particle_cloud_pub)
 
                 # estimated_object_set_old = copy.deepcopy(estimated_object_set)
                 # estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)

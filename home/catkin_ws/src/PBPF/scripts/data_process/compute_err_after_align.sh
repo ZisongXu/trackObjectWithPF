@@ -15,15 +15,15 @@
 # declare -a objectNames=("Parmesan" "soup")
 # declare -a objectNames=("soup" "Parmesan" "Milk")
 # declare -a objectNames=("Mayo")
-declare -a objectNames=("cracker" "soup" "Parmesan")
+declare -a objectNames=("Milk" "Parmesan")
 # declare -a objectNames=("Mustard" "SaladDressing")
 # declare -a objectNames=("Mayo" "Milk")
 # declare -a objectNames=("Ketchup")
 # declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a sceneNames=("scene2")
+declare -a sceneNames=("scene1")
 
-declare -a particleNumbers=(70)
+declare -a particleNumbers=(50)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 # declare -a runAlgFlags=("PBPF" "obse" "FOUD")
@@ -38,7 +38,12 @@ declare -a runAlgFlags=("FOUD" "DiffDOPE" "DiffDOPET")
 declare -a Ang_and_Pos=("ADD" "ADDS")
 declare -a update_style_flag=("time") # "time" "pose"
 # declare -a runVersions=("depth_img" "multiray")
-declare -a runVersions=("PBPF_RGBD" "PBPF_RGB" "PBPF_D")
+# declare -a runVersions=("PBPF_RGBD" "PBPF_RGB" "PBPF_D")
+declare -a runVersions=("PBPF_RGBD")
+# declare -a massMarkers=("mA" "mB" "mC")
+declare -a massMarkers=("mA")
+declare -a frictionMarkers=("fA" "fB" "fC" "fD")
+# declare -a frictionMarkers=("fA")
 
 for ang_and_pos in "${Ang_and_Pos[@]}"
 do
@@ -66,15 +71,20 @@ do
 						# 	# for repeat in {1..10}
 						for ((repeat=0;repeat<=0;repeat++));
 						do
-							for runVersion in "${runVersions[@]}"
+							for massMarker in "${massMarkers[@]}"
 							do
-								python3 compute_err_after_align.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" &
-								DATA_PRO_PID=$!
+								for frictionMarker in "${frictionMarkers[@]}"
+								do
+									for runVersion in "${runVersions[@]}"
+									do
+										python3 compute_err_after_align.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" "${massMarker}" "${frictionMarker}" &
+										DATA_PRO_PID=$!
 
-								sleep 1
+										sleep 1
+									done
+								done
 							done
 						done
-						# done
 					done
 				done
 			done

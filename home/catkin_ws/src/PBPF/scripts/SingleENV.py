@@ -97,12 +97,25 @@ class SingleENV(multiprocessing.Process):
         self.OBJECT_NUM = self.parameter_info['object_num']
         
         self.PANDA_ROBOT_LINK_NUMBER = self.parameter_info['panda_robot_link_number']
+        self.MASS_marker = self.parameter_info['MASS_marker']
+        self.FRICTION_marker = self.parameter_info['FRICTION_marker']
+
         self.MASS_MEAN_list = [1.0] * self.object_num
         self.MASS_MEAN = 1.0 # 0.380
         self.MASS_SIGMA_list = [0.5] * self.object_num
         self.MASS_SIGMA = 0.5 # 0.5
         self.MASS_MIN_VALUE = 0.05
+
         self.FRICTION_MEAN = 0.1
+        if self.FRICTION_marker == 'fA':
+            self.FRICTION_MEAN = 0.1
+        elif self.FRICTION_marker == 'fB':
+            self.FRICTION_MEAN = 1
+        elif self.FRICTION_marker == 'fC':
+            self.FRICTION_MEAN = 10
+        elif self.FRICTION_marker == 'fD':
+            self.FRICTION_MEAN = 100
+
         self.FRICTION_SIGMA = 0.3
         self.RESTITUTION_MEAN = 0.9
         self.RESTITUTION_SIGMA = 0.2 # 0.2
@@ -113,10 +126,14 @@ class SingleENV(multiprocessing.Process):
         # RESTITUTION_MEAN = 0.9
         # RESTITUTION_SIGMA = 0.2
 
+
+# - Parmesan
+# - Milk
+
         # Motion Model Noise
         self.MOTION_MODEL_POS_NOISE = 0.005 # original value = 0.005
-        self.MOTION_MODEL_ANG_NOISE = 0.1 # original value = 0.05/0.5 
-        self.mass_flag = False
+        self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5 
+        self.mass_flag = True
         if self.mass_flag == True:
             self.MASS_MIN_VALUE = 0.02
             for obj_num_index in range(self.object_num):
@@ -127,6 +144,7 @@ class SingleENV(multiprocessing.Process):
                     self.MASS_SIGMA_list[obj_num_index] = mass_sigma
                 elif self.OBJECT_NAME_LIST[obj_num_index] == "Parmesan":
                     mass = 0.035
+                    # mass = 100
                     self.MASS_MEAN_list[obj_num_index] = mass
                     mass_sigma = 0.1
                     self.MASS_SIGMA_list[obj_num_index] = mass_sigma
@@ -137,6 +155,7 @@ class SingleENV(multiprocessing.Process):
                     self.MASS_SIGMA_list[obj_num_index] = mass_sigma
                 elif self.OBJECT_NAME_LIST[obj_num_index] == "Milk":
                     mass = 0.04
+                    # mass = 100
                     self.MASS_MEAN_list[obj_num_index] = mass
                     mass_sigma = 0.1
                     self.MASS_SIGMA_list[obj_num_index] = mass_sigma
@@ -235,9 +254,9 @@ class SingleENV(multiprocessing.Process):
             pringles_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/pringles.urdf"),
                                               pw_T_pringles_pos, pw_T_pringles_ori, useFixedBase=1)
         if self.SIM_REAL_WORLD_FLAG == True:
-            table_pos_1 = [0.46, -0.01, 0.710]
+            table_pos_1 = [0.46, -0.01, 0.702] # 0.710
             table_ori_1 = self.p_env.getQuaternionFromEuler([0,0,0])
-            table_id_1 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1)
+            table_id_1 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1, useFixedBase = 1)
 
             barry_pos_1 = [-0.694, 0.443, 0.895]
             barry_ori_1 = self.p_env.getQuaternionFromEuler([0,math.pi/2,0])
@@ -321,16 +340,23 @@ class SingleENV(multiprocessing.Process):
                     break
             objPose = Particle(obj_obse_name, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, 0, 0, 0)
             self.objects_list[obj_index] = objPose
-            
+
     def get_objects_pose(self, par_index):
+        # for time_index in range(int(self.pf_update_interval_in_sim)):
+        #     self.p_env.stepSimulation()
         return_results = []
         for obj_index in range(self.object_num):
             obj_id = self.particle_objects_id_collection[obj_index]
-            obj_info = self.p_env.getBasePositionAndOrientation(obj_id)
+            obj_info = self.p_env.getBasePositionAndOrientation(obj_id)    
             obj_name = self.OBJECT_NAME_LIST[obj_index]
             obj_tuple = (obj_name, obj_info)
             return_results.append(obj_tuple)
+            pos_ = obj_info[0]
+            ori_ = obj_info[1]
+            self.objects_list[obj_index].pos = [pos_[0], pos_[1], pos_[2]]
+            self.objects_list[obj_index].ori = [ori_[0], ori_[1], ori_[2], ori_[3]] # x, y, z, w
         return_results.append((str(par_index), self.objects_list))
+        # self.p_env.disconnect()
         return return_results
 
     def isAnyParticleInContact(self):
@@ -352,6 +378,7 @@ class SingleENV(multiprocessing.Process):
         return_results = []
         for obj_index in range(self.object_num):
             obj_id = self.objects_list[obj_index].no_visual_par_id
+            # self.p_env.resetBaseVelocity(obj_id, 0, 0)
             self.p_env.resetBaseVelocity(obj_id,
                                          self.objects_list[obj_index].linearVelocity,
                                          self.objects_list[obj_index].angularVelocity,)
@@ -382,10 +409,10 @@ class SingleENV(multiprocessing.Process):
                                                                              obj_cur_pos, obj_cur_ori,
                                                                              obj_id, obj_index, obj_pose_3_1)
             if obj_index == 0:
-                normal_x = normal_x - 0.000
+                normal_x = normal_x - 0.002
                 normal_y = normal_y - 0.000
             elif obj_index == 1:
-                normal_x = normal_x + 0.002
+                normal_x = normal_x + 0.000
                 normal_y = normal_y - 0.000
             # elif obj_index == 2:
             #     normal_x = normal_x - 0.000
@@ -609,7 +636,9 @@ class SingleENV(multiprocessing.Process):
                 for contact in contacts:
                     contactNormalOnBtoA = contact[7]
                     contact_dis = contact[8]
-                    if contact_dis < -0.001: # means: positive for separation, negative for penetration
+                    # if contact_dis < -0.001: # means: positive for separation, negative for penetration
+                    # if contact_dis < -0.02: # means: positive for separation, negative for penetration
+                    if contact_dis < -0.0005: # means: positive for separation, negative for penetration
                         normal_x, normal_y, normal_z, pb_quat = self.add_noise_pose(obj_cur_pos, obj_cur_ori)
                         self.p_env.resetBasePositionAndOrientation(obj_id, [normal_x, normal_y, normal_z], pb_quat)
                         flag = 1

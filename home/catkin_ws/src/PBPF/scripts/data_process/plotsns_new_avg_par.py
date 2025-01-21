@@ -87,39 +87,39 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
         x_xlim = 100 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Mayo" and rosbag_flag == "1":
-        x_range_max = 105 # 28, 129, 265
-        x_range_unit = 11 # 2, 6, 25, 125
+        x_range_max = 120 # 28, 129, 265
+        x_range_unit = 12 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 105 # 28
+        x_xlim = 120 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Milk" and rosbag_flag == "1":
-        x_range_max = 100 # 28, 129, 265
-        x_range_unit = 10 # 2, 6, 25, 125
-        y_range_max = 0.5 # 0.5
-        y_range_unit = 0.05 # 0.04
-        x_xlim = 100 # 28
-        y_ylim = 0.5 # 0.5
+        x_range_max = 85 # 28, 129, 265
+        x_range_unit = 9 # 2, 6, 25, 125
+        y_range_max = 0.10 # 0.5
+        y_range_unit = 0.01 # 0.04
+        x_xlim = 85 # 28
+        y_ylim = 0.1 # 0.5
     if object_name == "Mustard" and rosbag_flag == "1":
-        x_range_max = 115 # 28, 129, 265
+        x_range_max = 120 # 28, 129, 265
         x_range_unit = 12 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 115 # 28
+        x_xlim = 120 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "Parmesan" and rosbag_flag == "1":
-        x_range_max = 95 # 28, 129, 265
-        x_range_unit = 10 # 2, 6, 25, 125
-        y_range_max = 0.5 # 0.5
-        y_range_unit = 0.05 # 0.04
-        x_xlim = 95 # 28
-        y_ylim = 0.5 # 0.5
+        x_range_max = 85 # 28, 129, 265
+        x_range_unit = 9 # 2, 6, 25, 125
+        y_range_max = 0.1 # 0.5
+        y_range_unit = 0.01 # 0.04
+        x_xlim = 85 # 28
+        y_ylim = 0.1 # 0.5
     if object_name == "SaladDressing" and rosbag_flag == "1":
-        x_range_max = 115 # 28, 129, 265
+        x_range_max = 120 # 28, 129, 265
         x_range_unit = 12 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
         y_range_unit = 0.05 # 0.04
-        x_xlim = 115 # 28
+        x_xlim = 120 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "soup" and rosbag_flag == "1":
         x_range_max = 95 # 28, 129, 265
@@ -136,9 +136,9 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
 
     print(dataset_ADD)
     if ang_and_pos == "ADD":
-        dataset_ADD.columns=["index","time","alg","obj","scene","particle_num","ray_type","obj_name","ADD Error (m)"]
+        dataset_ADD.columns=["index","time","alg","obj","scene","particle_num","ray_type","obj_name", "mass", "friction","ADD Error (m)"]
     if ang_and_pos == "ADDS":
-        dataset_ADD.columns=["index","time","alg","obj","scene","particle_num","ray_type","obj_name","ADDS Error (m)"]
+        dataset_ADD.columns=["index","time","alg","obj","scene","particle_num","ray_type","obj_name", "mass", "friction","ADDS Error (m)"]
     print(pd.__version__)
     print(sns.__version__)
     print(matplotlib.__version__)
@@ -152,15 +152,29 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
         "Diff-DOPE-Tracking": "#EDB11A",
     }
 
+    color_map = {
+        "mA": "#614099",
+        "mB": "#EE4431",
+        "mC": "#369F2D",
+    }
+
+    color_map = {
+        "fA": "#614099",
+        "fB": "#EE4431",
+        "fC": "#369F2D",
+        "fD": "#4995C6",
+    }
     # print("Before")
     # print(dataset_ADD)
     # dataset_ADD = dataset_ADD.to_numpy()[:,np.newaxis]
     # print("After")
     # print(dataset_ADD)
     if ang_and_pos == "ADD":
-        figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADD Error (m)", hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
+        # figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADD Error (m)", hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
+        figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADD Error (m)", hue='friction', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
     if ang_and_pos == "ADDS":
-        figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADDS Error (m)", hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
+        # figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADDS Error (m)", hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
+        figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADDS Error (m)", hue='friction', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
     # figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADD Matrix Error (m)", palette=['y', 'g', 'r'], hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5)
     # figure_ADD = sns.lineplot(data=dataset_ADD, x=1, y=2, hue=3, errorbar=('ci', 95), legend=False, linewidth = 0.5)
     figure_ADD.set(xlabel = None, ylabel = None)

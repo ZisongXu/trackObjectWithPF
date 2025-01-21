@@ -8,8 +8,9 @@
 # declare -a objectNames=("SaladDressing" "Mustard")
 # declare -a objectNames=("Mayo" "Milk")
 # declare -a objectNames=("cracker" "Ketchup")
-declare -a objectNames=("cracker")
-# declare -a objectNames=("Mustard" "SaladDressing")
+# declare -a objectNames=("cracker")
+# declare -a objectNames=("Parmesan")
+declare -a objectNames=("SaladDressing")
 # declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing")
 # declare -a sceneNames=("scene1" "scene2")
 declare -a sceneNames=("scene2")
@@ -18,7 +19,7 @@ declare -a sceneNames=("scene2")
 # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
 
 
-declare -a particleNumbers=(70)
+declare -a particleNumbers=(50)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("PBPF")
@@ -26,8 +27,12 @@ declare -a runAlgFlags=("PBPF")
 declare -a Ang_and_Pos=("ADD")
 declare -a update_style_flag=("time") # "time" "pose"
 # declare -a runVersions=("depth_img" "multiray")
-declare -a runVersions=("PBPF_D" "PBPF_RGB" "PBPF_RGBD")
-# declare -a runVersions=("PBPF_RGBD")
+# declare -a runVersions=("PBPF_D" "PBPF_RGB" "PBPF_RGBD")
+declare -a runVersions=("PBPF_RGBD")
+# declare -a massMarkers=("mA" "mB" "mC")
+declare -a massMarkers=("mA")
+declare -a frictionMarkers=("fA" "fB" "fC" "fD")
+# declare -a frictionMarkers=("fA")
 
 for objectName in "${objectNames[@]}"
 do
@@ -48,16 +53,22 @@ do
 					for ((rosbag=1;rosbag<=1;rosbag++)); 
 					do
 						# for repeat in {1..10}
-						for ((repeat=0;repeat<=0;repeat++));
+						for ((repeat=0;repeat<=9;repeat++));
 						do
-							for runVersion in "${runVersions[@]}"
+							for massMarker in "${massMarkers[@]}"
 							do
-								for ((par_index=0;par_index<${particleNumber};par_index++)); 
+								for frictionMarker in "${frictionMarkers[@]}"
 								do
-									python3 split_data.py "${particleNumber}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${runVersion}" "${par_index}" "${objectName}"&
-									DATA_PRO_PID=$!
+									for runVersion in "${runVersions[@]}"
+									do
+										for ((par_index=0;par_index<${particleNumber};par_index++)); 
+										do
+											python3 split_data.py "${particleNumber}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${runVersion}" "${par_index}" "${objectName}" "${massMarker}" "${frictionMarker}" &
+											DATA_PRO_PID=$!
 
-									sleep 0.1
+											sleep 0.1
+										done
+									done
 								done
 							done
 						done

@@ -228,16 +228,18 @@ repeat_time = sys.argv[5]
 run_alg_flag = sys.argv[6] # ("PBPF" "obse" "FOUD")
 ang_and_pos = sys.argv[7] # pos/ang/ADD/ADDS
 runVersion = sys.argv[8] # "PBPF_RGBD" "PBPF_RGB" "PBPF_D"
+MASS_marker = sys.argv[9] # obj_name
+FRICTION_marker = sys.argv[10] # obj_name
 
 file_path = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/results/")
 # Time_aligned_10_scene1_rosbag1_repeat0_cracker_time_GT_pose_PBPF_RGBD.csv
 # Time_aligned_10_scene1_rosbag1_repeat0_cracker_time_obse_pose_PBPF_RGBD.csv
 # Time_aligned_10_scene1_rosbag1_repeat0_cracker_time_PBPF_pose_PBPF_RGBD.csv
-file_name = "Time_aligned_"+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_'+run_alg_flag+'_pose_'+runVersion+'.csv'
+file_name = "Time_aligned_"+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_'+run_alg_flag+'_pose_'+runVersion+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
 # GT_file_name = "Time_aligned_"+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_GT_pose_'+runVersion+'.csv'
-GT_file_name = "Time_aligned_"+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_GT_pose_'+runVersion+'.csv'
+GT_file_name = "Time_aligned_"+str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_GT_pose_'+runVersion+'_'+MASS_marker+'_'+FRICTION_marker'.csv'
 
-columns_names = ['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name']
+columns_names = ['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name','mass','friction']
 data = pd.read_csv(file_path+file_name, names=columns_names, header=None)
 data_GT = pd.read_csv(file_path+GT_file_name, names=columns_names, header=None)
 
@@ -271,7 +273,7 @@ ori_data = pos_ori_data[ori_columns]
 ori_data_GT = pos_ori_data_GT[ori_columns] 
 ori_combined = [(row1, row2) for row1, row2 in zip(ori_data.values.tolist(), ori_data_GT.values.tolist())]
 
-existing_columns = ['step','time','alg','obj','scene','particle_num','ray_type','obj_name']
+existing_columns = ['step','time','alg','obj','scene','particle_num','ray_type','obj_name','mass','friction']
 new_err_data = data[existing_columns].copy()
 new_err_data[ang_and_pos] = pd.Series(dtype='float64')
 

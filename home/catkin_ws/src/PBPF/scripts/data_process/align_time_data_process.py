@@ -50,12 +50,15 @@ repeat_time = sys.argv[5]
 run_alg_flag = sys.argv[6] # PBPF
 ang_and_pos = sys.argv[7] # pos/ang
 runVersion = sys.argv[8] # multiray/ang
+MASS_marker = sys.argv[9] # obj_name
+FRICTION_marker = sys.argv[10] # obj_name
 
 # 10_scene1_rosbag1_repeat0_cracker_time_GT_pose_PBPF_RGBD
 # 10_scene1_rosbag1_repeat0_cracker_time_obse_pose_PBPF_RGBD
 # 10_scene1_rosbag1_repeat0_cracker_time_PBPF_pose_PBPF_RGBD
 # 70_scene1_rosbag1_repeat0_cracker_time_FOUD_pose_PBPF_RGBD
-file_name = str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_'+run_alg_flag+'_pose_'+runVersion
+# 50_scene1_rosbag1_repeat0_Milk_time_GT_pose_PBPF_RGBD_mA_fA
+file_name = str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_'+run_alg_flag+'_pose_'+runVersion+'_'+MASS_marker+'_'+FRICTION_marker
 
 
 flag_pos = True
@@ -79,19 +82,19 @@ if object_name == "Ketchup" and rosbag_flag == "1":
     prepare_time = 100 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Mayo" and rosbag_flag == "1":
-    prepare_time = 105 * 100
+    prepare_time = 120 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Milk" and rosbag_flag == "1":
-    prepare_time = 100 * 100
+    prepare_time = 85 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Mustard" and rosbag_flag == "1":
-    prepare_time = 115 * 100
+    prepare_time = 120 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Parmesan" and rosbag_flag == "1":
-    prepare_time = 95 * 100
+    prepare_time = 85 * 100
     rosbag_slowdown_rate = 1
 if object_name == "SaladDressing" and rosbag_flag == "1":
-    prepare_time = 115 * 100
+    prepare_time = 120 * 100
     rosbag_slowdown_rate = 1
 if object_name == "soup" and rosbag_flag == "1":
     prepare_time = 95 * 100
@@ -126,10 +129,10 @@ def angle_correction(angle):
 # print("Ready to integrate the data of "+ang_and_pos)
 dataset = pd.read_csv(save_file_path+file_name+'.csv', header=None)
 # dataset.columns=["index","time","error","alg","obj_scene","particle_num","ray_type"]
-dataset.columns=['index','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type', 'obj_name']
+dataset.columns=['index','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type', 'obj_name', 'mass', 'friction']
 # dataset.time = dataset.time - 4.3
 datasetcopy = copy.deepcopy(dataset)
-newdataset = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type', 'obj_name'],index=[])
+newdataset = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type', 'obj_name', 'mass', 'friction'],index=[])
 timestep_list = []
 # for timestep in range(prepare_time):
 for timestep in range(int(prepare_time/rosbag_slowdown_rate)):
@@ -170,7 +173,9 @@ for i in range(int(prepare_time/rosbag_slowdown_rate)):
                              datasetcopy.loc[newdata.idxmin(),'scene'],
                              datasetcopy.loc[newdata.idxmin(),'particle_num'],
                              datasetcopy.loc[newdata.idxmin(),'ray_type'],
-                             datasetcopy.loc[newdata.idxmin(),'obj_name']]
+                             datasetcopy.loc[newdata.idxmin(),'obj_name'],
+                             datasetcopy.loc[newdata.idxmin(),'mass'],
+                             datasetcopy.loc[newdata.idxmin(),'friction']]
 # print(newdataset.time)
 # print(str(particle_num)+'_'+object_name+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+run_alg_flag+'_'+ang_and_pos)
 print("Done")

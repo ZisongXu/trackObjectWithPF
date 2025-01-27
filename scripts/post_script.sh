@@ -23,6 +23,8 @@ apt-get install -y --force-yes \
     python3-pip \
     mesa-utils \
     software-properties-common \
+    htop \
+    nvtop \
     pciutils
 
 add-apt-repository ppa:ubuntu-toolchain-r/test -y

@@ -30,11 +30,11 @@ declare -a update_style_flag=("time") # "time" "pose"
 # declare -a runVersions=("PBPF_D" "PBPF_RGB" "PBPF_RGBD")
 declare -a runVersions=("PBPF_RGBD")
 # declare -a massMarkers=("mA" "mB" "mC" "mD")
-declare -a massMarkers=("mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
+# declare -a massMarkers=("mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
 # declare -a massMarkers=("mAN" "mBN" "mCN" "mDN")
-# declare -a massMarkers=("mA")
-# declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
-declare -a frictionMarkers=("fA")
+declare -a massMarkers=("mA")
+declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
+# declare -a frictionMarkers=("fA")
 
 for objectName in "${objectNames[@]}"
 do
@@ -55,7 +55,7 @@ do
 					for ((rosbag=1;rosbag<=1;rosbag++)); 
 					do
 						# for repeat in {1..10}
-						for ((repeat=0;repeat<=9;repeat++));
+						for ((repeat=0;repeat<=1;repeat++));
 						do
 							for massMarker in "${massMarkers[@]}"
 							do

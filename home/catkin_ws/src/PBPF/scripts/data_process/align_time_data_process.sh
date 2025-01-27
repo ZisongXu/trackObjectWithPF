@@ -37,9 +37,9 @@ declare -a massMarkers=("mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
 # declare -a massMarkers=("mA" "mB" "mC" "mD")
 # declare -a massMarkers=("mA")
 # declare -a frictionMarkers=("fA" "fB" "fC" "fD")
-declare -a frictionMarkers=("fA")
-# declare -a massMarkers=("mA")
-# declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
+# declare -a frictionMarkers=("fA")
+declare -a massMarkers=("mA")
+declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
 
 for ang_and_pos in "${Ang_and_Pos[@]}"
 do
@@ -60,7 +60,7 @@ do
 					for ((rosbag=1;rosbag<=1;rosbag++)); 
 					do
 						# for repeat in {1..10}
-						for ((repeat=0;repeat<=9;repeat++));
+						for ((repeat=0;repeat<=1;repeat++));
 						do
 							for massMarker in "${massMarkers[@]}"
 							do

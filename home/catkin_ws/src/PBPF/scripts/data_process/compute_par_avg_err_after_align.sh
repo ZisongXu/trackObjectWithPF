@@ -11,8 +11,8 @@
 # declare -a objectNames=("Parmesan" "soup")
 # declare -a objectNames=("cracker" "SaladDressing")
 # declare -a objectNames=("soup" "Parmesan" "Milk")
-declare -a objectNames=("Milk" "Parmesan")
-# declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
+# declare -a objectNames=("Milk" "Parmesan")
+declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
 # declare -a objectNames=("Mustard" "SaladDressing")
 # declare -a objectNames=("Parmesan" "Mustard")
 # declare -a objectNames=("Mayo" "Milk")
@@ -81,7 +81,8 @@ do
 										python3 compute_par_avg_err_after_align.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" "${massMarker}" "${frictionMarker}" &
 										DATA_PRO_PID=$!
 
-										sleep 100
+										# sleep 100
+										sleep 1
 									done
 								done
 							done

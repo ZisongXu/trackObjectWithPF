@@ -44,9 +44,9 @@ declare -a runVersions=("PBPF_RGBD")
 declare -a massMarkers=("mAN" "mBN" "mCN" "mDN")
 # declare -a massMarkers=("mA")
 # declare -a frictionMarkers=("fA" "fB" "fC" "fD")
-declare -a frictionMarkers=("fA")
-# declare -a massMarkers=("mA")
-# declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
+# declare -a frictionMarkers=("fA")
+declare -a massMarkers=("mA")
+declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
 
 for ang_and_pos in "${Ang_and_Pos[@]}"
 do
@@ -67,7 +67,7 @@ do
 					for ((rosbag=1;rosbag<=1;rosbag++)); 
 					do
 						# for repeat in {1..10}
-						for ((repeat=0;repeat<=9;repeat++));
+						for ((repeat=0;repeat<=1;repeat++));
 						do
 							for massMarker in "${massMarkers[@]}"
 							do
@@ -80,8 +80,9 @@ do
 											python3 align_time_par_data_process.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" "${par_index}" "${massMarker}" "${frictionMarker}" &
 											DATA_PRO_PID=$!
 
+											sleep 0.5
 											# sleep 1.5 # 2obj 50par
-											sleep 2.5 
+											# sleep 2.5 
 										done
 									done
 								done

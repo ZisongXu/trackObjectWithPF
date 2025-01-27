@@ -74,6 +74,7 @@ class SingleENV(multiprocessing.Process):
         self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_z = 0.02
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 20 # original value: 0.0216773873 * 20
+        # self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
         self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
         
         
@@ -100,22 +101,12 @@ class SingleENV(multiprocessing.Process):
         self.MASS_marker = self.parameter_info['MASS_marker']
         self.FRICTION_marker = self.parameter_info['FRICTION_marker']
 
-        self.MASS_MEAN_list = [1.0] * self.object_num
+        self.MASS_MEAN_list = [0.5] * self.object_num
         self.MASS_MEAN = 1.0 # 0.380
         self.MASS_SIGMA_list = [0.5] * self.object_num
         self.MASS_SIGMA = 0.5 # 0.5
         self.MASS_MIN_VALUE = 0.05
-
         self.FRICTION_MEAN = 0.1
-        if self.FRICTION_marker == 'fA':
-            self.FRICTION_MEAN = 0.1
-        elif self.FRICTION_marker == 'fB':
-            self.FRICTION_MEAN = 1
-        elif self.FRICTION_marker == 'fC':
-            self.FRICTION_MEAN = 10
-        elif self.FRICTION_marker == 'fD':
-            self.FRICTION_MEAN = 100
-
         self.FRICTION_SIGMA = 0.3
         self.RESTITUTION_MEAN = 0.9
         self.RESTITUTION_SIGMA = 0.2 # 0.2
@@ -127,13 +118,68 @@ class SingleENV(multiprocessing.Process):
         # RESTITUTION_SIGMA = 0.2
 
 
+        # Motion Model Noise
+        self.MOTION_MODEL_POS_NOISE = 0.003 # original value = 0.005
+        self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5 
+        # self.MOTION_MODEL_POS_NOISE = 0.0 # original value = 0.005
+
+        self.MOTION_NOISE = True
+        self.MASS_NOISE = True
+        self.FRICTION_NOISE = True
+
+        if self.MASS_marker == 'mAN' or self.MASS_marker == 'mBN' or self.MASS_marker == 'mCN' or self.MASS_marker == 'mDN':
+            self.MOTION_NOISE = True
+            self.MASS_NOISE = True
+            self.FRICTION_NOISE = True
+        if self.MASS_marker == 'mA' or self.MASS_marker == 'mB' or self.MASS_marker == 'mC' or self.MASS_marker == 'mD':
+            self.MOTION_NOISE = False
+            self.MASS_NOISE = False
+            self.FRICTION_NOISE = False
+                
+        # if self.FRICTION_marker == 'fA' or self.FRICTION_marker == 'fB' or self.FRICTION_marker == 'fC' or self.FRICTION_marker == 'fD':
+        #     self.MOTION_NOISE = False
+        #     self.MASS_NOISE = False
+        #     self.FRICTION_NOISE = False
+
+        # if self.FRICTION_marker == 'fAN' or self.FRICTION_marker == 'fBN' or self.FRICTION_marker == 'fCN' or self.FRICTION_marker == 'fDN':
+        #     self.MOTION_NOISE = True
+        #     self.MASS_NOISE = True
+        #     self.FRICTION_NOISE = True
+
+
+        self.MASS_MEAN_list = [0.5] * self.object_num
+        if self.MASS_marker == 'mA' or self.MASS_marker == 'mAN':
+            self.MASS_MEAN_list = [0.5] * self.object_num
+        elif self.MASS_marker == 'mB' or self.MASS_marker == 'mBN':
+            self.MASS_MEAN_list = [1.0] * self.object_num
+        elif self.MASS_marker == 'mC' or self.MASS_marker == 'mCN':
+            self.MASS_MEAN_list = [5.0] * self.object_num
+        elif self.MASS_marker == 'mD' or self.MASS_marker == 'mDN':
+            self.MASS_MEAN_list = [10.0] * self.object_num
+
+        if self.FRICTION_marker == 'fA' or self.FRICTION_marker == 'fAN':
+            self.FRICTION_MEAN = 0.1
+        elif self.FRICTION_marker == 'fB' or self.FRICTION_marker == 'fBN':
+            self.FRICTION_MEAN = 0.5
+        elif self.FRICTION_marker == 'fC' or self.FRICTION_marker == 'fCN':
+            self.FRICTION_MEAN = 0.75
+        elif self.FRICTION_marker == 'fD' or self.FRICTION_marker == 'fDN':
+            self.FRICTION_MEAN = 1
+
+        if self.MASS_NOISE == False:
+            self.MASS_SIGMA_list = [0.0] * self.object_num
+        if self.FRICTION_NOISE ==False:
+            self.FRICTION_SIGMA = 0
+
+
 # - Parmesan
 # - Milk
+# - SaladDressing
+# - Mustard
+# - Mayo
 
-        # Motion Model Noise
-        self.MOTION_MODEL_POS_NOISE = 0.005 # original value = 0.005
-        self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5 
-        self.mass_flag = True
+        # self.MOTION_MODEL_ANG_NOISE = 0.0 # original value = 0.05/0.5 
+        self.mass_flag = False
         if self.mass_flag == True:
             self.MASS_MIN_VALUE = 0.02
             for obj_num_index in range(self.object_num):
@@ -198,8 +244,6 @@ class SingleENV(multiprocessing.Process):
             #         mass = 1.5
             #         self.MASS_MEAN_list[index] = mass
             #         self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05
-        
-        self.MOTION_NOISE = True
 
 
         # Observation Model
@@ -338,6 +382,10 @@ class SingleENV(multiprocessing.Process):
                         break
                 if flag == 0:
                     break
+            particle_ang = self.p_env.getEulerFromQuaternion(particle_ori)
+            particle_ang_z = particle_ang[2]
+            particle_ang = [0, 0, particle_ang_z]
+            particle_ori = self.p_env.getQuaternionFromEuler(particle_ang)
             objPose = Particle(obj_obse_name, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, 0, 0, 0)
             self.objects_list[obj_index] = objPose
 
@@ -409,13 +457,13 @@ class SingleENV(multiprocessing.Process):
                                                                              obj_cur_pos, obj_cur_ori,
                                                                              obj_id, obj_index, obj_pose_3_1)
             if obj_index == 0:
-                normal_x = normal_x - 0.002
+                normal_x = normal_x + 0.0000
                 normal_y = normal_y - 0.000
             elif obj_index == 1:
-                normal_x = normal_x + 0.000
-                normal_y = normal_y - 0.000
-            # elif obj_index == 2:
-            #     normal_x = normal_x - 0.000
+                normal_x = normal_x - 0.0000
+                normal_y = normal_y + 0.0000
+            elif obj_index == 2:
+                normal_x = normal_x - 0.0001
 
             self.update_object_pose_PB(obj_index, normal_x, normal_y, normal_z, pb_quat, linearVelocity, angularVelocity)
         self.p_env.stepSimulation()

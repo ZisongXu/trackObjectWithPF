@@ -29,7 +29,7 @@ declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
 declare -a sceneNames=("scene2")
 
 
-declare -a particleNumbers=(50)
+declare -a particleNumbers=(40)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("PBPF")
@@ -39,10 +39,14 @@ declare -a update_style_flag=("time") # "time" "pose"
 # declare -a runVersions=("depth_img" "multiray")
 # declare -a runVersions=("PBPF_RGBD" "PBPF_RGB" "PBPF_D")
 declare -a runVersions=("PBPF_RGBD")
-# declare -a massMarkers=("mA" "mB" "mC")
-declare -a massMarkers=("mA")
-declare -a frictionMarkers=("fA" "fB" "fC" "fD")
-# declare -a frictionMarkers=("fA")
+# declare -a massMarkers=("mA" "mB" "mC" "mD")
+# declare -a massMarkers=("mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
+declare -a massMarkers=("mAN" "mBN" "mCN" "mDN")
+# declare -a massMarkers=("mA")
+# declare -a frictionMarkers=("fA" "fB" "fC" "fD")
+declare -a frictionMarkers=("fA")
+# declare -a massMarkers=("mA")
+# declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
 
 for ang_and_pos in "${Ang_and_Pos[@]}"
 do
@@ -76,7 +80,8 @@ do
 											python3 align_time_par_data_process.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" "${par_index}" "${massMarker}" "${frictionMarker}" &
 											DATA_PRO_PID=$!
 
-											sleep 2
+											# sleep 1.5 # 2obj 50par
+											sleep 2.5 
 										done
 									done
 								done

@@ -19,7 +19,7 @@ declare -a sceneNames=("scene2")
 # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
 
 
-declare -a particleNumbers=(50)
+declare -a particleNumbers=(40)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("PBPF")
@@ -29,10 +29,12 @@ declare -a update_style_flag=("time") # "time" "pose"
 # declare -a runVersions=("depth_img" "multiray")
 # declare -a runVersions=("PBPF_D" "PBPF_RGB" "PBPF_RGBD")
 declare -a runVersions=("PBPF_RGBD")
-# declare -a massMarkers=("mA" "mB" "mC")
-declare -a massMarkers=("mA")
-declare -a frictionMarkers=("fA" "fB" "fC" "fD")
-# declare -a frictionMarkers=("fA")
+# declare -a massMarkers=("mA" "mB" "mC" "mD")
+declare -a massMarkers=("mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
+# declare -a massMarkers=("mAN" "mBN" "mCN" "mDN")
+# declare -a massMarkers=("mA")
+# declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
+declare -a frictionMarkers=("fA")
 
 for objectName in "${objectNames[@]}"
 do

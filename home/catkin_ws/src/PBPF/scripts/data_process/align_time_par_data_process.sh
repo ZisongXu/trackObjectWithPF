@@ -41,7 +41,7 @@ declare -a update_style_flag=("time") # "time" "pose"
 declare -a runVersions=("PBPF_RGBD")
 # declare -a massMarkers=("mA" "mB" "mC" "mD")
 # declare -a massMarkers=("mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
-declare -a massMarkers=("mAN" "mBN" "mCN" "mDN")
+# declare -a massMarkers=("mAN" "mBN" "mCN" "mDN")
 # declare -a massMarkers=("mA")
 # declare -a frictionMarkers=("fA" "fB" "fC" "fD")
 # declare -a frictionMarkers=("fA")
@@ -80,7 +80,7 @@ do
 											python3 align_time_par_data_process.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" "${par_index}" "${massMarker}" "${frictionMarker}" &
 											DATA_PRO_PID=$!
 
-											sleep 0.5
+											sleep 1.5
 											# sleep 1.5 # 2obj 50par
 											# sleep 2.5 
 										done

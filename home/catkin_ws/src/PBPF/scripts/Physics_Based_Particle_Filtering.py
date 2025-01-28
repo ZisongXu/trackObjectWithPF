@@ -1647,6 +1647,7 @@ if __name__ == '__main__':
         ## Setup vk_camera
         _vk_camera, _pw_T_camVk_4_4 = _vk_camera_setting(_pw_T_camD_tf_4_4, _camD_T_camVk_4_4)
         ## create context
+        # _vk_context = vkdepth.initialize(_vk_config)
         _vk_context = vkdepth.initialize(_vk_config)
         _vk_context.set_depth_threshold(DEPTH_DIFF_VALUE_0_1_THRESHOLD)
         _vk_context.update_camera(_vk_camera)

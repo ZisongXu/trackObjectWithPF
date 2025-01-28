@@ -42,6 +42,14 @@ from Particle import Particle
 from Object_Pose import Object_Pose
 import yaml
 
+# - Parmesan
+# - Milk
+# - SaladDressing
+# - Mustard
+# - Mayo
+# - cracker
+# - soup
+
 #Class of initialize the simulation model
 class SingleENV(multiprocessing.Process):
     def __init__(self, object_num, robot_num, particle_num,
@@ -127,24 +135,24 @@ class SingleENV(multiprocessing.Process):
         self.MASS_NOISE = True
         self.FRICTION_NOISE = True
 
-        # if self.MASS_marker == 'mAN' or self.MASS_marker == 'mBN' or self.MASS_marker == 'mCN' or self.MASS_marker == 'mDN':
-        #     self.MOTION_NOISE = True
-        #     self.MASS_NOISE = True
-        #     self.FRICTION_NOISE = True
-        # if self.MASS_marker == 'mA' or self.MASS_marker == 'mB' or self.MASS_marker == 'mC' or self.MASS_marker == 'mD':
-        #     self.MOTION_NOISE = False
-        #     self.MASS_NOISE = False
-        #     self.FRICTION_NOISE = False
-                
-        if self.FRICTION_marker == 'fA' or self.FRICTION_marker == 'fB' or self.FRICTION_marker == 'fC' or self.FRICTION_marker == 'fD':
-            self.MOTION_NOISE = False
-            self.MASS_NOISE = False
-            self.FRICTION_NOISE = False
-
-        if self.FRICTION_marker == 'fAN' or self.FRICTION_marker == 'fBN' or self.FRICTION_marker == 'fCN' or self.FRICTION_marker == 'fDN':
+        if self.MASS_marker == 'mAN' or self.MASS_marker == 'mBN' or self.MASS_marker == 'mCN' or self.MASS_marker == 'mDN':
             self.MOTION_NOISE = True
             self.MASS_NOISE = True
             self.FRICTION_NOISE = True
+        if self.MASS_marker == 'mA' or self.MASS_marker == 'mB' or self.MASS_marker == 'mC' or self.MASS_marker == 'mD':
+            self.MOTION_NOISE = False
+            self.MASS_NOISE = False
+            self.FRICTION_NOISE = False
+                
+        # if self.FRICTION_marker == 'fA' or self.FRICTION_marker == 'fB' or self.FRICTION_marker == 'fC' or self.FRICTION_marker == 'fD':
+        #     self.MOTION_NOISE = False
+        #     self.MASS_NOISE = False
+        #     self.FRICTION_NOISE = False
+
+        # if self.FRICTION_marker == 'fAN' or self.FRICTION_marker == 'fBN' or self.FRICTION_marker == 'fCN' or self.FRICTION_marker == 'fDN':
+        #     self.MOTION_NOISE = True
+        #     self.MASS_NOISE = True
+        #     self.FRICTION_NOISE = True
 
 
         self.MASS_MEAN_list = [0.5] * self.object_num
@@ -172,11 +180,6 @@ class SingleENV(multiprocessing.Process):
             self.FRICTION_SIGMA = 0
 
 
-# - Parmesan
-# - Milk
-# - SaladDressing
-# - Mustard
-# - Mayo
 
         # self.MOTION_MODEL_ANG_NOISE = 0.0 # original value = 0.05/0.5 
         self.mass_flag = False

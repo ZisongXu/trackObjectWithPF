@@ -9,17 +9,19 @@
    <material name="purple">
      <color rgba="0.68 0.55 0.90 1"/>
    </material>
+   <material name="white">
+     <color rgba="1. 1. 1. 1."/>
+   </material>
+   <material name="dark_green">
+     <color rgba="0.125 0.502 0.251 1."/>
+   </material>
    <link name="SaladDressing">
      <visual>
        <geometry>
          <!-- <box size="0.16 0.21343700408935547 0.061"/> -->
          <mesh filename="SaladDressing.obj" scale="1 1 1"/>
        </geometry>
-       <material name="purple"/>
-       <!-- <material name="light_green"/> -->
-       <!-- <material name="white">
-         <color rgba="1. 1. 1. 1."/>
-       </material> -->
+       <material name="dark_green"/>
        <origin xyz="0 0 0" rpy="0 0 0"/>
      </visual>
      <inertial>

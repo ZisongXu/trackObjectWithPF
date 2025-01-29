@@ -9,13 +9,16 @@
    <material name="purple">
      <color rgba="0.68 0.55 0.90 1"/>
    </material>
+   <material name="golden_yellow">
+     <color rgba="1 0.843 0.251 1"/>
+   </material>
    <link name="Mustard">
      <visual>
        <geometry>
          <!-- <box size="0.16 0.21343700408935547 0.061"/> -->
          <mesh filename="Mustard.obj" scale="1 1 1"/>
        </geometry>
-       <material name="purple"/>
+       <material name="golden_yellow"/>
        <!-- <material name="light_green"/> -->
        <!-- <material name="white">
          <color rgba="1. 1. 1. 1."/>

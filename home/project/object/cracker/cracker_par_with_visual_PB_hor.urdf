@@ -9,16 +9,19 @@
    <material name="purple">
      <color rgba="0.68 0.55 0.90 1"/>
    </material>
+   <material name="coral_red">
+     <color rgba="1 0.251 0.251 1"/>
+   </material>
+   <material name="white">
+     <color rgba="1 1 1 1"/>
+   </material>
    <link name="cracker">
      <visual>
        <geometry>
          <box size="0.16 0.21343700408935547 0.061"/>
          <!-- <mesh filename="textured_simple_reoriented.obj" scale="1 1 1"/> -->
        </geometry>
-       <material name="purple"/>
-       <!-- <material name="white"> -->
-         <!-- <color rgba="1. 1. 1. 1."/> -->
-       <!-- </material> -->
+       <material name="coral_red"/>
        <!-- <origin xyz="0 0 0" rpy="0 -1.5707963 1.5707963"/> -->
      </visual>
      <inertial>

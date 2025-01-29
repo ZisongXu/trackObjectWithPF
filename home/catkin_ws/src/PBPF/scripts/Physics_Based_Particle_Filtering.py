@@ -1075,6 +1075,16 @@ def resample_particles_update(particle_cloud, pw_T_obj_obse_objects_pose_list_, 
         else:
             while True:
                 print("Not yet implemented")
+    
+    # normalize_RGB_weight    
+    for obj_index in range(OBJECT_NUM):
+        weight_RGB_img_list_ = [particle[obj_index].w for particle in particle_cloud]
+        weight_RGB_img_list_new = normalize_score_to_0_1(weight_RGB_img_list_)
+        # 直接用 zip() 赋值，提高效率
+        for particle, new_weight in zip(particle_cloud, weight_RGB_img_list_new):
+            particle[obj_index].w = new_weight
+    
+    
     for index, particle in enumerate(particle_cloud):
         each_par_weight = 1
         for obj_index in range(OBJECT_NUM):
@@ -1131,7 +1141,8 @@ def normalize_score_to_0_1(score_list):
     score_list_array_ = np.array(score_list)
     score_list_array_sub = score_list_array_ - score_list_min
     if score_list_array_sub.ndim == 1:
-        print("Dimension of score list is 1")
+        # print("Dimension of score list is 1")
+        pass
     else:
         input("Error: depth_value_difference_list_array_sub.ndim should be 1! Please check the code and press Crtl-C")
     score_list_array_sub_sum = sum(score_list_array_sub)

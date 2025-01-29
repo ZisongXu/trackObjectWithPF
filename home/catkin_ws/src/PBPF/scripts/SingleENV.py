@@ -49,6 +49,7 @@ import yaml
 # - Mayo
 # - cracker
 # - soup
+# - Ketchup
 
 #Class of initialize the simulation model
 class SingleENV(multiprocessing.Process):
@@ -467,10 +468,14 @@ class SingleENV(multiprocessing.Process):
                 normal_x = normal_x + 0.0000
                 normal_y = normal_y - 0.000
             elif obj_index == 1:
-                normal_x = normal_x - 0.0000
+                normal_x = normal_x - 0.001
                 normal_y = normal_y + 0.0000
             elif obj_index == 2:
-                normal_x = normal_x - 0.0001
+                normal_x = normal_x - 0.0005
+            elif obj_index == 3:
+                normal_x = normal_x - 0.0000
+            elif obj_index == 4:
+                normal_x = normal_x - 0.001
 
             self.update_object_pose_PB(obj_index, normal_x, normal_y, normal_z, pb_quat, linearVelocity, angularVelocity)
         self.p_env.stepSimulation()

@@ -38,13 +38,13 @@ declare -a update_style_flag=("time") # "time" "pose"
 # declare -a runVersions=("PBPF_D")
 declare -a runVersions=("PBPF_RGBD")
 # declare -a massMarkers=("mA" "mB" "mC" "mD")
-declare -a massMarkers=("mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
+# declare -a massMarkers=("mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
 # declare -a massMarkers=("mAN" "mBN" "mCN" "mDN")
 # declare -a massMarkers=("mA")
 # declare -a frictionMarkers=("fA" "fB" "fC" "fD")
-declare -a frictionMarkers=("fA")
-# declare -a massMarkers=("mA")
-# declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
+# declare -a frictionMarkers=("fA")
+declare -a massMarkers=("mA")
+declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
 
 for ang_and_pos in "${Ang_and_Pos[@]}"
 do
@@ -70,7 +70,7 @@ do
 						# 	DATA_PRO_PID=$!
 						# 	sleep 2
 						# 	# for repeat in {1..10}
-						for ((repeat=0;repeat<=9;repeat++));
+						for ((repeat=0;repeat<=1;repeat++));
 						do
 							for massMarker in "${massMarkers[@]}"
 							do
@@ -81,8 +81,8 @@ do
 										python3 compute_par_avg_err_after_align.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" "${massMarker}" "${frictionMarker}" &
 										DATA_PRO_PID=$!
 
-										sleep 100
-										# sleep 1.5
+										# sleep 100
+										sleep 1.5
 									done
 								done
 							done

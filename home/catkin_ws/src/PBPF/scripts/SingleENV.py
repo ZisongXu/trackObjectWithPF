@@ -76,11 +76,11 @@ class SingleENV(multiprocessing.Process):
         self.objects_list = ["None"] * self.object_num
         
         self.pf_update_interval_in_sim = self.pf_update_interval_in_real / self.sim_time_step
-        self.boss_sigma_obs_pos_init = 0.05 # original value: 16cm/10CM 
+        self.boss_sigma_obs_pos_init = 0.01 # original value: 16cm/10CM /5cm
         # self.boss_sigma_obs_pos_init = 0.09 # original value: 16cm/10CM 
         self.boss_sigma_obs_x = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
-        self.boss_sigma_obs_z = 0.02
+        self.boss_sigma_obs_z = 0.005    # 2cm
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 20 # original value: 0.0216773873 * 20
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
         self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
@@ -385,12 +385,12 @@ class SingleENV(multiprocessing.Process):
                         break
                 if flag == 0:
                     break
-            # particle_ang = self.p_env.getEulerFromQuaternion(particle_ori)
-            # particle_ang_x = particle_ang[0]
-            # particle_ang_y = particle_ang[1]
-            # particle_ang_z = particle_ang[2]
-            # particle_ang = [particle_ang_x, 0, 0]
-            # particle_ori = self.p_env.getQuaternionFromEuler(particle_ang)
+            particle_ang = self.p_env.getEulerFromQuaternion(particle_ori)
+            particle_ang_x = particle_ang[0]
+            particle_ang_y = particle_ang[1]
+            particle_ang_z = particle_ang[2]
+            particle_ang = [0, 0, particle_ang_z]
+            particle_ori = self.p_env.getQuaternionFromEuler(particle_ang)
             objPose = Particle(obj_obse_name, 0, particle_no_visual_id, particle_pos, particle_ori, 1/self.particle_num, 0, 0, 0)
             self.objects_list[obj_index] = objPose
 

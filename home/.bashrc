@@ -1,6 +1,6 @@
 PS1="[trackObjectWithPF] Singularity> \w \$ "
-# export ROS_MASTER_URI=http://localhost:11311
-export ROS_MASTER_URI=http://panda-workstation:11311
+export ROS_MASTER_URI=http://localhost:11311
+# export ROS_MASTER_URI=http://panda-workstation:11311
 # export ROS_HOSTNAME=server3
 export ROS_HOSTNAME=$(hostname)
 # export ROS_HOSTNAME=panda-server

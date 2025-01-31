@@ -48,7 +48,7 @@ normal_and_par_list = ["par", "normal"] # par/normal
 mass_and_friction_list = ["mass", "friction"] # par/normal
 ang_and_pos_list = ["ADD", "ADDS"]
 
-mass_and_friction_list = ["mass"] # par/normal
+# mass_and_friction_list = ["mass"] # par/normal
 # normal_and_par_list = ["par"] # par/normal
 # ang_and_pos_list = ["ADD"]
 
@@ -157,7 +157,6 @@ for ang_and_pos in ang_and_pos_list:
                     label__labels.append('m = 0.75')
                 elif label_ == "fD" or label_ == "fDN":
                     label__labels.append('m = 1.00')
-                
                 
         
         # Add labels and title

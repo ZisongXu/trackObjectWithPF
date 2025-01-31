@@ -6,13 +6,15 @@
    <material name="yellow">
      <color rgba="1.0 1.0 0.0 1"/>
    </material>
+   <material name="blue">
+     <color rgba="0.3 0.73137 0.888 1"/>
+   </material>
    <link name="base_link">
      <visual>
        <geometry>
          <cylinder length="0.1000" radius="0.033829689025878906"/>
-         
        </geometry>
-       <material name="yellow"/>
+       <material name="blue"/>
        <origin xyz="0 0 0" rpy="1.5707963 0 0"/>
      </visual>
      <inertial>

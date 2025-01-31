@@ -6,16 +6,19 @@
    <material name="coral">
      <color rgba="1 0.498 0.3137 1"/>
    </material>
+   <material name="soft_orange">
+     <color rgba="1 0.549 0.251 1"/>
+   </material>
+   <material name="white">
+     <color rgba="1 1 1 1"/>
+   </material>
    <link name="Ketchup">
      <visual>
        <geometry>
          <!-- <box size="0.16 0.21343700408935547 0.061"/> -->
          <mesh filename="Ketchup_sim.obj" scale="1 1 1"/>
        </geometry>
-       <!-- <material name="light_green"/> -->
-       <material name="white">
-         <color rgba="1. 1. 1. 1."/>
-       </material>
+       <material name="soft_orange"/>
        <origin xyz="0 0 0" rpy="0 0 0"/>
      </visual>
      <inertial>

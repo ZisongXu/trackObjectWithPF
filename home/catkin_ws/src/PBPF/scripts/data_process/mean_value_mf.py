@@ -136,27 +136,43 @@ for ang_and_pos in ang_and_pos_list:
                     plt.plot(x_values, y_values, label=label_, color=color_map.get(label_,'#000000'))
                 else:
                     plt.plot(x_values, y_values, label=label_, color=color_map.get(label_,'#000000'), linestyle='--')
-                if label_ == "mA" or label_ == "mAN":
-                    label__labels.append('m = 0.5')
-                elif label_ == "mB" or label_ == "mBN":
-                    label__labels.append('m = 1.0')
-                elif label_ == "mC" or label_ == "mCN":
-                    label__labels.append('m = 5.0')
-                elif label_ == "mD" or label_ == "mDN":
-                    label__labels.append('m = 10.')
+                if label_ == "mA":
+                    label__labels.append('mA = 0.5')
+                elif  label_ == "mAN":
+                    label__labels.append('mAN = 0.5')
+                elif label_ == "mB":
+                    label__labels.append('mB = 1.0')
+                elif label_ == "mBN":
+                    label__labels.append('mBN = 1.0')
+                elif label_ == "mC":
+                    label__labels.append('mC = 5.0')
+                elif label_ == "mCN":
+                    label__labels.append('mCN = 5.0')
+                elif label_ == "mD":
+                    label__labels.append('mC = 10.')
+                elif label_ == "mDN":
+                    label__labels.append('mCN = 10.')
             elif mass_and_friction == "friction":
                 if label_ == "fA" or label_ == "fB" or label_ == "fC" or label_ == "fD":
                     plt.plot(x_values, y_values, label=label_, color=color_map.get(label_,'#000000'))
                 else:
                     plt.plot(x_values, y_values, label=label_, color=color_map.get(label_,'#000000'), linestyle='--')
-                if label_ == "fA" or label_ == "fAN":
-                    label__labels.append('m = 0.10')
-                elif label_ == "fB" or label_ == "fBN":
-                    label__labels.append('m = 0.50')
-                elif label_ == "fC" or label_ == "fCN":
-                    label__labels.append('m = 0.75')
-                elif label_ == "fD" or label_ == "fDN":
-                    label__labels.append('m = 1.00')
+                if label_ == "fA":
+                    label__labels.append('mA = 0.10')
+                elif label_ == "fAN":
+                    label__labels.append('mAN = 0.10')
+                elif label_ == "fB":
+                    label__labels.append('mB = 0.50')
+                elif label_ == "fBN":
+                    label__labels.append('mBN = 0.50')
+                elif label_ == "fC":
+                    label__labels.append('mC = 0.75')
+                elif label_ == "fCN":
+                    label__labels.append('mCN = 0.75')
+                elif label_ == "fD":
+                    label__labels.append('mD = 1.00')
+                elif label_ == "fDN":
+                    label__labels.append('mDN = 1.00')
                 
         
         # Add labels and title

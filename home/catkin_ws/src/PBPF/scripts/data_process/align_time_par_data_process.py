@@ -76,7 +76,7 @@ prepare_time = 1600 * 100
 rosbag_slowdown_rate = 20
 
 if object_name == "cracker" and rosbag_flag == "1":
-    prepare_time = 30 * 100
+    prepare_time = 80 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Ketchup" and rosbag_flag == "1":
     prepare_time = 100 * 100
@@ -97,7 +97,7 @@ if object_name == "SaladDressing" and rosbag_flag == "1":
     prepare_time = 120 * 100
     rosbag_slowdown_rate = 1
 if object_name == "soup" and rosbag_flag == "1":
-    prepare_time = 95 * 100
+    prepare_time = 80 * 100
     rosbag_slowdown_rate = 1
 
 # save file

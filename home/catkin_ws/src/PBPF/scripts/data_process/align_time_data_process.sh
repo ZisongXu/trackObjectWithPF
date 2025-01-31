@@ -1,13 +1,13 @@
 #!/bin/bash
 # cracker soup Ketchup Mayo Milk
-# declare -a objectNames=("cracker" "soup")
+declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("Mustard" "Parmesan")
 # declare -a objectNames=("SaladDressing" "cracker")
 # declare -a objectNames=("SaladDressing" "soup")
 # declare -a objectNames=("soup" "Parmesan")
 # declare -a objectNames=("SaladDressing" "Mustard")
 # declare -a objectNames=("Milk" "Parmesan")
-declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
+# declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
 # declare -a objectNames=("soup" "Mayo")
 # declare -a objectNames=("Mustard" "SaladDressing")
 # declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing" "soup")
@@ -16,9 +16,9 @@ declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
 # declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
 # declare -a sceneNames=("scene1")
-declare -a sceneNames=("scene2")
+declare -a sceneNames=("scene1")
 
-declare -a particleNumbers=(40)
+declare -a particleNumbers=(50)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 # declare -a runAlgFlags=("GT" obse)
@@ -37,9 +37,9 @@ declare -a massMarkers=("mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
 # declare -a massMarkers=("mA" "mB" "mC" "mD")
 # declare -a massMarkers=("mA")
 # declare -a frictionMarkers=("fA" "fB" "fC" "fD")
-# declare -a frictionMarkers=("fA")
-declare -a massMarkers=("mA")
-declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
+declare -a frictionMarkers=("fA")
+# declare -a massMarkers=("mA")
+# declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
 
 for ang_and_pos in "${Ang_and_Pos[@]}"
 do
@@ -60,7 +60,7 @@ do
 					for ((rosbag=1;rosbag<=1;rosbag++)); 
 					do
 						# for repeat in {1..10}
-						for ((repeat=0;repeat<=1;repeat++));
+						for ((repeat=0;repeat<=4;repeat++));
 						do
 							for massMarker in "${massMarkers[@]}"
 							do

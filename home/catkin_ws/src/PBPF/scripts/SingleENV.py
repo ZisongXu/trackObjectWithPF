@@ -136,24 +136,23 @@ class SingleENV(multiprocessing.Process):
         self.MASS_NOISE = True
         self.FRICTION_NOISE = True
 
-        if self.MASS_marker == 'mAN' or self.MASS_marker == 'mBN' or self.MASS_marker == 'mCN' or self.MASS_marker == 'mDN':
-            self.MOTION_NOISE = True
-            self.MASS_NOISE = True
-            self.FRICTION_NOISE = True
-        if self.MASS_marker == 'mA' or self.MASS_marker == 'mB' or self.MASS_marker == 'mC' or self.MASS_marker == 'mD':
-            self.MOTION_NOISE = False
-            self.MASS_NOISE = False
-            self.FRICTION_NOISE = False
-                
-        # if self.FRICTION_marker == 'fA' or self.FRICTION_marker == 'fB' or self.FRICTION_marker == 'fC' or self.FRICTION_marker == 'fD':
-        #     self.MOTION_NOISE = False
-        #     self.MASS_NOISE = False
-        #     self.FRICTION_NOISE = False
-
-        # if self.FRICTION_marker == 'fAN' or self.FRICTION_marker == 'fBN' or self.FRICTION_marker == 'fCN' or self.FRICTION_marker == 'fDN':
+        # if self.MASS_marker == 'mAN' or self.MASS_marker == 'mBN' or self.MASS_marker == 'mCN' or self.MASS_marker == 'mDN':
         #     self.MOTION_NOISE = True
         #     self.MASS_NOISE = True
         #     self.FRICTION_NOISE = True
+        # if self.MASS_marker == 'mA' or self.MASS_marker == 'mB' or self.MASS_marker == 'mC' or self.MASS_marker == 'mD':
+        #     self.MOTION_NOISE = False
+        #     self.MASS_NOISE = False
+        #     self.FRICTION_NOISE = False
+                
+        if self.FRICTION_marker == 'fA' or self.FRICTION_marker == 'fB' or self.FRICTION_marker == 'fC' or self.FRICTION_marker == 'fD':
+            self.MOTION_NOISE = False
+            self.MASS_NOISE = False
+            self.FRICTION_NOISE = False
+        if self.FRICTION_marker == 'fAN' or self.FRICTION_marker == 'fBN' or self.FRICTION_marker == 'fCN' or self.FRICTION_marker == 'fDN':
+            self.MOTION_NOISE = True
+            self.MASS_NOISE = True
+            self.FRICTION_NOISE = True
 
 
         self.MASS_MEAN_list = [0.5] * self.object_num
@@ -466,16 +465,16 @@ class SingleENV(multiprocessing.Process):
                                                             
             if obj_index == 0:
                 normal_x = normal_x + 0.0000
-                normal_y = normal_y - 0.000
+                normal_y = normal_y - 0.0000
             elif obj_index == 1:
-                normal_x = normal_x - 0.001
+                normal_x = normal_x - 0.0000
                 normal_y = normal_y + 0.0000
             elif obj_index == 2:
-                normal_x = normal_x - 0.0005
+                normal_x = normal_x - 0.0000
             elif obj_index == 3:
                 normal_x = normal_x - 0.0000
             elif obj_index == 4:
-                normal_x = normal_x - 0.001
+                normal_x = normal_x - 0.0000
 
             self.update_object_pose_PB(obj_index, normal_x, normal_y, normal_z, pb_quat, linearVelocity, angularVelocity)
         self.p_env.stepSimulation()

@@ -1,10 +1,10 @@
 #!/bin/bash
 # cracker soup Ketchup Mayo Milk
-declare -a objectNames=("cracker" "soup")
+# declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("Mustard" "Parmesan")
 # declare -a objectNames=("SaladDressing" "cracker")
 # declare -a objectNames=("SaladDressing" "soup")
-# declare -a objectNames=("soup" "Parmesan")
+declare -a objectNames=("Ketchup" "Parmesan")
 # declare -a objectNames=("SaladDressing" "Mustard")
 # declare -a objectNames=("Milk" "Parmesan")
 # declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
@@ -33,13 +33,13 @@ declare -a update_style_flag=("time") # "time" "pose"
 # declare -a runVersions=("depth_img" "multiray")
 # declare -a runVersions=("PBPF_RGBD" "PBPF_RGB" "PBPF_D")
 declare -a runVersions=("PBPF_RGBD")
-declare -a massMarkers=("mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
+# declare -a massMarkers=("mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
 # declare -a massMarkers=("mA" "mB" "mC" "mD")
 # declare -a massMarkers=("mA")
 # declare -a frictionMarkers=("fA" "fB" "fC" "fD")
-declare -a frictionMarkers=("fA")
-# declare -a massMarkers=("mA")
-# declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
+# declare -a frictionMarkers=("fA")
+declare -a massMarkers=("mA")
+declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
 
 for ang_and_pos in "${Ang_and_Pos[@]}"
 do

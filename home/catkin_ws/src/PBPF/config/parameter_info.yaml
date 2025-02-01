@@ -1,6 +1,6 @@
 ADDMatrix_flag: true
-FRICTION_marker: fD
-MASS_marker: mA
+FRICTION_marker: fA
+MASS_marker: mD
 camera_info_topic_color: /camera/color/camera_info
 camera_info_topic_depth: /camera/depth/camera_info
 combine_particle_depth_mask_flag: false
@@ -24,8 +24,8 @@ locate_camera_flag: ar
 multiprocessing_flag: false
 nearVal: 0.03
 object_name_list:
-- cracker
-- soup
+- Parmesan
+- Ketchup
 object_num: 2
 objs_are_not_touching_target_objs_num: 0
 objs_touching_target_objs_num: 0

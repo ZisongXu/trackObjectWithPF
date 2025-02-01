@@ -79,7 +79,7 @@ if object_name == "cracker" and rosbag_flag == "1":
     prepare_time = 80 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Ketchup" and rosbag_flag == "1":
-    prepare_time = 100 * 100
+    prepare_time = 85 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Mayo" and rosbag_flag == "1":
     prepare_time = 120 * 100

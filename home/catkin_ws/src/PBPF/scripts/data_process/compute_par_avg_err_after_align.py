@@ -269,6 +269,7 @@ ang_and_pos = sys.argv[7] # pos/ang/ADD/ADDS
 runVersion = sys.argv[8] # "PBPF_RGBD" "PBPF_RGB" "PBPF_D"
 MASS_marker = sys.argv[9] # obj_name
 FRICTION_marker = sys.argv[10] # obj_name
+MF_FLAG = sys.argv[11] # obj_name
 
 file_path_par = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/results/particles/")
 file_path_GT = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/results/")
@@ -372,6 +373,7 @@ for row_index in range(num_rows_data):
     print("Compute par avg "+ang_and_pos+" error: "+file_name_error+" processing... ", row_index, err_distance)
 
 
+save_file_path_par = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/results/particles/"+MF_FLAG+"/")
 
-new_err_data.to_csv(file_path_par+file_name_error,index=0,header=0,mode='a')
+new_err_data.to_csv(save_file_path_par+file_name_error,index=0,header=0,mode='a')
 print("Done")  

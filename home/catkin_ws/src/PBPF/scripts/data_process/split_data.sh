@@ -9,8 +9,8 @@
 # declare -a objectNames=("Mayo" "Milk")
 # declare -a objectNames=("cracker" "Ketchup")
 # declare -a objectNames=("cracker")
-# declare -a objectNames=("Parmesan")
-declare -a objectNames=("cracker")
+declare -a objectNames=("Parmesan")
+# declare -a objectNames=("cracker")
 # declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing")
 # declare -a sceneNames=("scene1" "scene2")
 declare -a sceneNames=("scene1")
@@ -30,11 +30,11 @@ declare -a update_style_flag=("time") # "time" "pose"
 # declare -a runVersions=("PBPF_D" "PBPF_RGB" "PBPF_RGBD")
 declare -a runVersions=("PBPF_RGBD")
 # declare -a massMarkers=("mA" "mB" "mC" "mD")
-declare -a massMarkers=("mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
+# declare -a massMarkers=("mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
 # declare -a massMarkers=("mAN" "mBN" "mCN" "mDN")
-# declare -a massMarkers=("mA")
-# declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
-declare -a frictionMarkers=("fA")
+declare -a massMarkers=("mA")
+declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
+# declare -a frictionMarkers=("fA")
 
 for objectName in "${objectNames[@]}"
 do

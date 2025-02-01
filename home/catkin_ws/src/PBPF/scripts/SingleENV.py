@@ -464,10 +464,10 @@ class SingleENV(multiprocessing.Process):
 
                                                             
             if obj_index == 0:
-                normal_x = normal_x + 0.0004
+                normal_x = normal_x + 0.000
                 normal_y = normal_y - 0.0000
             elif obj_index == 1:
-                normal_x = normal_x - 0.0004
+                normal_x = normal_x - 0.000
                 normal_y = normal_y + 0.0000
             elif obj_index == 2:
                 normal_x = normal_x - 0.0000

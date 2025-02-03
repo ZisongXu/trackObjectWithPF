@@ -185,7 +185,8 @@ for ang_and_pos in ang_and_pos_list:
         plt.yticks(fontsize=17)
         plt.xlim([0, 0.1])
         plt.ylim([0, 1])
-        plt.savefig(file_path+'AUC.svg', format='svg')
+        plt.savefig(file_path+'AUC_'+ang_and_pos+'_'+mass_and_friction+'.svg', format='svg')
+        plt.savefig(file_path+'AUC_'+ang_and_pos+'_'+mass_and_friction+'.png', format='png')
 
         # # Show plot
         # plt.show()

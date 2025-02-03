@@ -142,6 +142,7 @@ VISIBILITY_COMPUTE_VK = parameter_info['visibility_compute_vk']
 PROCESS_MODEL_FLAG = parameter_info['process_model_flag'] # thread/multiprocess/normal
 
 RECORD_RESULTS_FLAG = parameter_info['record_results_flag'] 
+RECORD_TIME_CONSUMPTION_FLAG = parameter_info['record_time_consumption_flag'] 
 PRINT_FLAG = parameter_info['print_flag']
 
 PRINT_SCORE_FLAG = parameter_info['print_score_flag'] 
@@ -190,6 +191,32 @@ for par_index in range(PARTICLE_NUM):
     _boss_par_err_ADD_df_list[par_index] = _boss_par_err_ADD_df
 
 
+
+Motion_model_time_consuming_list = []
+Render_depth_image_time_comsuming_list = []
+Compare_depth_image_time_consuming_list = []
+Compare_distance_time_consuming_list = []
+Compute_visibility_score_time_consuming_list = []
+Observation_model_time_consuming_list = []
+Resample_time_consuming_list = []
+One_update_time_cosuming_list = []
+
+Motion_model_time_consumption = 0
+Render_depth_image_time_consumption = 0
+Compare_depth_image_time_consumption = 0
+Compare_distance_time_consumption = 0
+Compute_visibility_score_time_consumption = 0
+Observation_model_time_consumption = 0
+Resample_time_consumption = 0
+One_update_time_consumption = 0
+
+_boss_time_consumption_df = pd.DataFrame(columns=['step','time',
+                                                  'motion_model',
+                                                  'render_depth_img','compare_depth_img',
+                                                  'compare_dis','compute_visibility_score',
+                                                  'resample','obs_model',
+                                                  'one_update_time'],index=[])
+_time_record_index = 0
 
 # ==============================================================================================================================
 # vulkan
@@ -1367,7 +1394,12 @@ def signal_handler(sig, frame):
                 # file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/')
                 file_name_par_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+"_"+str(par_index)+'.csv'
                 _boss_par_err_ADD_df_list[par_index].to_csv(file_save_path+file_name_par_ADD,index=0,header=0,mode='w')
-                
+    if RECORD_TIME_CONSUMPTION_FLAG == True:
+        OBJECT_NUM
+        time_file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/time_consumption_record/')
+        time_file_name = str(OBJECT_NUM)+"_obj_repeat"+str(REPEAT_TIME)+'.csv'
+        _boss_time_consumption_df.to_csv(time_file_save_path+time_file_name,index=0,header=0,mode='w')
+
     
     # print("")
     # print(" -------------------------------------------- ")
@@ -1520,8 +1552,8 @@ if __name__ == '__main__':
     RESTITUTION_MEAN = 0.9
     RESTITUTION_SIGMA = 0.2
 
-    PBPF_time_cosuming_list = []
-    
+
+
     # multi-objects/robot list
     pw_T_rob_sim_pose_list_alg = []
     pw_T_obj_obse_obj_list_alg = []
@@ -2047,9 +2079,11 @@ if __name__ == '__main__':
                             _objs_pose_info_list[env_index] = objs_pose_info
                             _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
                         t_after_motion_model = time.time()
+                        Motion_model_time_consumption = t_after_motion_model - t_before_motion_model
+                        Motion_model_time_consuming_list.append(Motion_model_time_consumption)
                         if PRINT_FLAG == True:
                             print("--------------------------------------------------------")
-                            print("Motion model cost time:", t_after_motion_model - t_before_motion_model)
+                            print("Motion model cost time:", Motion_model_time_consumption)
                             print("--------------------------------------------------------")
 
 
@@ -2072,9 +2106,11 @@ if __name__ == '__main__':
                             _links_info = _links_info["links_info"]
                             _vk_get_rendered_depth_image_parallelised(_particle_cloud_pub, _links_info)
                         t_after_render = time.time()
+                        Render_depth_image_time_consumption = t_after_render - t_before_render
+                        Render_depth_image_time_comsuming_list.append(Render_depth_image_time_consumption)
                         if PRINT_FLAG == True:
                             print("--------------------------------------------------------")
-                            print("Render cost time:", t_after_render - t_before_render)
+                            print("Render cost time:", Render_depth_image_time_consumption)
                             print("--------------------------------------------------------")
                         # b. Compare Depth Image ############################################################################## 
                         t_before_compare = time.time()
@@ -2083,9 +2119,11 @@ if __name__ == '__main__':
                             if USING_D_FLAG != True:
                                 _D_scores_list = []
                         t_after_compare = time.time()
+                        Compare_depth_image_time_consumption = t_after_compare - t_before_compare
+                        Compare_depth_image_time_consuming_list.append(Compare_depth_image_time_consumption)
                         if PRINT_FLAG == True:
                             print("--------------------------------------------------------")
-                            print("Compare image cost time:", t_after_compare - t_before_compare)
+                            print("Compare image cost time:", Compare_depth_image_time_consumption)
                             print("--------------------------------------------------------")
 
                         # B. observation model (RGB)
@@ -2103,9 +2141,11 @@ if __name__ == '__main__':
                                     _RGB_weights_list = wait_and_get_result_from(single_env)
                                     _RGB_weights_lists[env_index] = _RGB_weights_list[str(env_index)]
                             t_after_RGB = time.time()
+                            Compare_distance_time_consumption = t_after_RGB - t_before_RGB
+                            Compare_distance_time_consuming_list.append(Compare_distance_time_consumption)
                             if PRINT_FLAG == True:
                                 print("--------------------------------------------------------")
-                                print("Compare distance cost time:", t_after_RGB - t_before_RGB)
+                                print("Compare distance cost time:", Compare_distance_time_consumption)
                                 print("--------------------------------------------------------")
                             # b. Visibility Score #################################################################################
                             t_before_Vis = time.time()
@@ -2116,19 +2156,24 @@ if __name__ == '__main__':
                                 while True:
                                     print("Not yet implemented")
                             t_after_Vis = time.time()
+                            Compute_visibility_score_time_consumption = t_after_Vis - t_before_Vis
+                            Compute_visibility_score_time_consuming_list.append(Compute_visibility_score_time_consumption)
                             if PRINT_FLAG == True:
                                 print("--------------------------------------------------------")
-                                print("Compute visibility score cost time:", t_after_Vis - t_before_Vis)
+                                print("Compute visibility score cost time:", Compute_visibility_score_time_consumption)
                                 print("--------------------------------------------------------")
                             t_after_Vis = time.time()
                         t_after_observation_model = time.time()
+                        Observation_model_time_consumption = t_after_observation_model - t_before_observation_model
+                        Observation_model_time_consuming_list.append(Observation_model_time_consumption)
                         if PRINT_FLAG == True:
                             print("--------------------------------------------------------")
-                            print("Observation model cost time:", t_after_observation_model - t_before_observation_model)
+                            print("Observation model cost time:", Observation_model_time_consumption)
                             print("--------------------------------------------------------")
                         
 
                         # III. Resampling #########################################################################################
+                        t_before_resample = time.time()
                         new_particle_cloud = resample_particles_update(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, _D_scores_list)
                         _particle_cloud_pub = copy.deepcopy(new_particle_cloud)
                         for env_index, single_env in _single_envs.items():
@@ -2147,7 +2192,11 @@ if __name__ == '__main__':
                         if SHOW_RAY == True:
                             while True:
                                 print("Not yet implemented")
-
+                        t_after_resample = time.time()
+                        Resample_time_consumption = t_after_resample - t_before_resample
+                        Resample_time_consuming_list.append(Resample_time_consumption)
+                        if PRINT_FLAG == True:
+                            print("Resample/Compute Mean/... cost time:", t_after_resample - t_before_resample)
                         ###########################################################################################################
                         ###########################################################################################################
                         ################################## One Particle Filtering Update Finished #################################
@@ -2155,11 +2204,21 @@ if __name__ == '__main__':
                         ###########################################################################################################
                         rob_link_9_pose_old = copy.deepcopy(rob_link_9_pose_cur)
                         t_finish_PBPF = time.time()
-                        PBPF_time_cosuming_list.append(t_finish_PBPF - t_begin_PBPF)
+                        One_update_time_consumption = t_finish_PBPF - t_begin_PBPF
+                        One_update_time_cosuming_list.append(One_update_time_consumption)
                         if PRINT_FLAG == True:
-                            print("Time consuming:", t_finish_PBPF - t_begin_PBPF)
-                            print("Mean value:", np.mean(PBPF_time_cosuming_list))
+                            print("Time consuming:", One_update_time_consumption)
+                            print("Mean value:", np.mean(One_update_time_cosuming_list))
                         simRobot_touch_par_flag = 0
+                        _record_time_consumption = time.time()
+                        time_x = 1.
+                        _boss_time_consumption_df.loc[_time_record_index] = [_time_record_index, _record_time_consumption - _record_t_begin, 
+                                                                             Motion_model_time_consumption/time_x, 
+                                                                             Render_depth_image_time_consumption/time_x, Compare_depth_image_time_consumption/time_x, 
+                                                                             Compare_distance_time_consumption/time_x, Compute_visibility_score_time_consumption/time_x,
+                                                                             Resample_time_consumption/time_x, Observation_model_time_consumption/time_x,
+                                                                             One_update_time_consumption/time_x]      
+                        _time_record_index = _time_record_index + 1
 
                     else:
                         Only_update_robot_flag = True

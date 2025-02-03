@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -a objectNames=("cracker" "soup")
+# declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("cracker" "Ketchup")
 # declare -a objectNames=("Mayo" "Milk" "Mustard")
 # declare -a objectNames=("Parmesan")
@@ -8,7 +8,8 @@ declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("cracker" "Ketchup")
 # declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing")
 # declare -a objectNames=("Mustard")
-# declare -a objectNames=("Parmesan" "soup")
+# declare -a objectNames=("Parmesan" "Ketchup")
+declare -a objectNames=("Parmesan")
 # declare -a objectNames=("cracker" "SaladDressing")
 # declare -a objectNames=("soup" "Parmesan" "Milk")
 # declare -a objectNames=("Milk" "Parmesan")
@@ -19,9 +20,9 @@ declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a sceneNames=("scene1")
+declare -a sceneNames=("scene2")
 
-declare -a particleNumbers=(50)
+declare -a particleNumbers=(70)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 # declare -a runAlgFlags=("PBPF" "obse" "FOUD")
@@ -84,8 +85,8 @@ do
 											python3 compute_par_avg_err_after_align.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" "${massMarker}" "${frictionMarker}" "${mf_flag}" &
 											DATA_PRO_PID=$!
 
-											sleep 100
-											# sleep 1.5
+											# sleep 100
+											sleep 1.5
 										done
 									done
 								done

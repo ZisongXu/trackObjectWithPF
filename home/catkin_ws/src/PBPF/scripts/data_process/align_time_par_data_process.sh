@@ -27,10 +27,10 @@ declare -a objectNames=("Parmesan")
 # declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing")
 # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
 # declare -a objectNames=("Ketchup" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
-declare -a sceneNames=("scene2")
+declare -a sceneNames=("scene4")
 
 
-declare -a particleNumbers=(70)
+declare -a particleNumbers=(2)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("PBPF")

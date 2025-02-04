@@ -41,6 +41,7 @@ from Particle import Particle
 from Create_Scene import Create_Scene
 from Ros_Listener import Ros_Listener
 import yaml
+from scipy.spatial.transform import Rotation as R
 
 #Class of initialize the real world model
 class Visualisation_World():
@@ -96,6 +97,44 @@ class Visualisation_World():
                                                             pw_T_pringles_pos,
                                                             pw_T_pringles_ori,
                                                             useFixedBase=1)
+        if self.task_flag == "4":
+
+
+            opti_T_Milk_pos = [ 0.4511045813560486, 0.11162098497152328, 0.05507103353738785]
+            opti_T_Milk_ori = [-0.007128444965928793, 0.0011914853239431977, 0.0018489131471142173, -0.9999721646308899] # x,y,z,w
+            opti_T_rob_pos = [ -0.0718435794115, 0.0254542306066, 0.469521909952]
+            opti_T_rob_ori = [-0.70724105835, 0.0016563066747, 0.00259045651183, 0.70696580419] # x,y,z,w
+
+            rob_T_Milk_4_4 = compute_transformation_matrix(opti_T_rob_pos, opti_T_rob_ori, opti_T_Milk_pos, opti_T_Milk_ori)
+            pw_T_rob_4_4 = [[1.,   0.,   0.,   0.  ],
+                            [0.,   1.,   0.,   0.  ],
+                            [0.,   0.,   1.,   0.73],
+                            [0.,   0.,   0.,   1.  ]]
+            pw_T_Milk_4_4 = np.dot(pw_T_rob_4_4, rob_T_Milk_4_4)
+
+            pw_T_Milk_pos = _get_position_from_matrix44(pw_T_Milk_4_4)
+            pw_T_Milk_ori = _get_quaternion_from_matrix(pw_T_Milk_4_4)
+            # pw_T_Milk_pos: [0.5255412218811237, 0.4112688983400049, 0.8156348920165202]
+            # pw_T_Milk_ori: [ 0.71226091, -0.00120944, -0.00472836,  0.70189783]
+
+            base_Milk1_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/Milk/Milk_par_no_visual_hor.urdf"),
+                                                    pw_T_Milk_pos,
+                                                    pw_T_Milk_ori,
+                                                    useFixedBase=1)
+            pw_T_Milk_pos = [0.5255412218811237, 0.4092688983400049, 0.8156348920165202-2*0.0358583]
+            pw_T_Milk_ori = [ 0.71226091, -0.00120944, -0.00472836,  0.70189783]
+            base_Milk2_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/Milk/Milk_par_no_visual_hor.urdf"),
+                                                     pw_T_Milk_pos, 
+                                                     pw_T_Milk_ori, 
+                                                     useFixedBase=1)
+            # board_pos_4 = [0.5255412218811237, 0.4112688983400049-0.73/2+0.0356507+0.004, 0.8156348920165202+1*0.0358583+0.005]
+            # board_ori_4 = p_visualisation.getQuaternionFromEuler([0,0,0])
+            board_pos_4 = [0.5254358709124907, 0.08732338308299908, 0.7967666216816303-0.01]
+            board_ori_4 = [0.10745146728023694, -6.812425524646768e-05, -0.0006642243648951836, 0.9942101067402217]
+            board_id_4 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"),
+                                                     board_pos_4, 
+                                                     board_ori_4,
+                                                     useFixedBase = 1)
 
         if self.task_flag == "5":
             pw_T_she_pos = [0.75889274, -0.24494845, 0.33818097+0.02]
@@ -145,11 +184,11 @@ class Visualisation_World():
             # barry_pos_5 = [0.499, 0.61, 0.895]
             # barry_ori_5 = p_visualisation.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
             # barry_id_5 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_5, barry_ori_5, useFixedBase = 1)
+            if self.task_flag != "4": # slope
+                board_pos_1 = [0.274, 0.581, 0.87575]
+                board_ori_1 = p_visualisation.getQuaternionFromEuler([math.pi/2,math.pi/2,0])
+                board_id_1 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"), board_pos_1, board_ori_1, useFixedBase = 1)
 
-            board_pos_1 = [0.274, 0.581, 0.87575]
-            board_ori_1 = p_visualisation.getQuaternionFromEuler([math.pi/2,math.pi/2,0])
-            board_id_1 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"), board_pos_1, board_ori_1, useFixedBase = 1)
-           
 
         # observation: target obejct pose list
         pw_T_target_obj_obse_pose_lsit, trans_ob_list, rot_ob_list = self.create_scene.initialize_object()
@@ -360,7 +399,21 @@ def compute_transformation_matrix(a_pos, a_ori, b_pos, b_ori):
     a_T_ow_4_4 = np.linalg.inv(ow_T_a_4_4)
     a_T_b_4_4 = np.dot(a_T_ow_4_4,ow_T_b_4_4)
     return a_T_b_4_4        
-        
+
+def _get_position_from_matrix44(a_T_b_4_4):
+    x = a_T_b_4_4[0][3]
+    y = a_T_b_4_4[1][3]
+    z = a_T_b_4_4[2][3]
+    position = [x, y, z]
+    return position
+
+# get quaternion from matrix
+def _get_quaternion_from_matrix(a_T_b_4_4):
+    rot_matrix = a_T_b_4_4[:3, :3]
+    rotation = R.from_matrix(rot_matrix)
+    quaternion = rotation.as_quat()
+    return quaternion
+
 # ctrl-c write down the error file
 def signal_handler(sig, frame):
     sys.exit()
@@ -398,7 +451,7 @@ while reset_flag == True:
 
         display_obse_flag = True
         object_name_list = parameter_info['object_name_list']
-        task_flag = parameter_info['task_flag'] # parameter_info['task_flag']
+        task_flag = parameter_info['task_flag'] # parameter_info['task_flag']/ 4: slope
         dope_flag = parameter_info['dope_flag']
 
         OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM = parameter_info['objs_are_not_touching_target_objs_num']

@@ -757,29 +757,89 @@ def _vk_load_meshes():
         elif link_index == 10:
             rob_link_id = _vk_context.load_model("assets/meshes/right_finger.vkdepthmesh")
         vk_rob_link_id_list[link_index] = rob_link_id
-    
+
+    vk_other_obj_info_list = []
     # table
     other_obj_id = _vk_context.load_model("assets/meshes/table.vkdepthmesh")
     vk_other_id_list.append(other_obj_id)
+    vk_other_obj_info = Object_Pose(obj_name='table', obj_id=0, pos=[0.46, -0.01, 0.702], ori=p.getQuaternionFromEuler([0,0,0]), index=0) # ori: x, y, z, w   
+    vk_other_obj_info_list.append(vk_other_obj_info)
+
     # board
-    other_obj_id = _vk_context.load_model("assets/meshes/board.vkdepthmesh")
-    vk_other_id_list.append(other_obj_id)
+    if TASK_FLAG != '4':
+        other_obj_id = _vk_context.load_model("assets/meshes/board.vkdepthmesh")
+        vk_other_id_list.append(other_obj_id)
+        vk_other_obj_info = Object_Pose(obj_name='board', obj_id=1, pos=[0.274, 0.581, 0.87575], ori=p.getQuaternionFromEuler([math.pi/2,math.pi/2,0]), index=0) # ori: x, y, z, w           
+        vk_other_obj_info_list.append(vk_other_obj_info)
+
     # barrier 1,2,3
     other_obj_id = _vk_context.load_model("assets/meshes/barrier.vkdepthmesh")
     vk_other_id_list.append(other_obj_id)
+    vk_other_obj_info = Object_Pose(obj_name='barrier1', obj_id=0, pos=[-0.694, 0.443, 0.895], ori=p.getQuaternionFromEuler([0,math.pi/2,0]), index=0) # ori: x, y, z, w          
+    vk_other_obj_info_list.append(vk_other_obj_info)
     other_obj_id = _vk_context.load_model("assets/meshes/barrier.vkdepthmesh")
     vk_other_id_list.append(other_obj_id)
+    vk_other_obj_info = Object_Pose(obj_name='barrier2', obj_id=0, pos=[-0.694, -0.607, 0.895], ori=p.getQuaternionFromEuler([0,math.pi/2,0]), index=0) # ori: x, y, z, w          
+    vk_other_obj_info_list.append(vk_other_obj_info)
     other_obj_id = _vk_context.load_model("assets/meshes/barrier.vkdepthmesh")
     vk_other_id_list.append(other_obj_id)
+    vk_other_obj_info = Object_Pose(obj_name='barrier3', obj_id=0, pos=[0.459, -0.972, 0.895], ori=p.getQuaternionFromEuler([0,math.pi/2,math.pi/2]), index=0) # ori: x, y, z, w          
+    vk_other_obj_info_list.append(vk_other_obj_info) 
+    
     # pringles
     if TASK_FLAG == '1':
         other_obj_id = _vk_context.load_model("assets/meshes/pringles.vkdepthmesh")
         vk_other_id_list.append(other_obj_id)
+        vk_other_obj_info = Object_Pose(obj_name='pringles', obj_id=0, pos=[0.6652218209791124, 0.058946644391304814, 0.8277292172960276], ori=[ 0.67280124, -0.20574896, -0.20600051, 0.68012472], index=0) # ori: x, y, z, w           
+        vk_other_obj_info_list.append(vk_other_obj_info) 
+    if TASK_FLAG == '4':
+        other_obj_id = _vk_context.load_model("assets/meshes/Milk.vkdepthmesh")
+        vk_other_id_list.append(other_obj_id)
+        vk_other_obj_info = Object_Pose(obj_name='Milk1', obj_id=0, pos=[0.5255412218811237, 0.4112688983400049, 0.8156348920165202], ori=[ 0.71226091, -0.00120944, -0.00472836,  0.70189783], index=0) # ori: x, y, z, w           
+        vk_other_obj_info_list.append(vk_other_obj_info) 
+        other_obj_id = _vk_context.load_model("assets/meshes/Milk.vkdepthmesh")
+        vk_other_id_list.append(other_obj_id)
+        vk_other_obj_info = Object_Pose(obj_name='Milk2', obj_id=0, pos=[0.5255412218811237, 0.4092688983400049, 0.8156348920165202-2*0.0358583], ori=[ 0.71226091, -0.00120944, -0.00472836,  0.70189783], index=0) # ori: x, y, z, w           
+        vk_other_obj_info_list.append(vk_other_obj_info) 
+        other_obj_id = _vk_context.load_model("assets/meshes/board.vkdepthmesh")
+        vk_other_id_list.append(other_obj_id)
+        vk_other_obj_info = Object_Pose(obj_name='board4', obj_id=0, pos=[0.5254358709124907, 0.08732338308299908, 0.7967666216816303-0.01], ori=[0.10745146728023694, -6.812425524646768e-05, -0.0006642243648951836, 0.9942101067402217], index=0) # ori: x, y, z, w           
+        vk_other_obj_info_list.append(vk_other_obj_info) 
 
-    # obj_id = _vk_context.load_model()
-    # vk_other_id_list.append(obj_id)
+    return vk_obj_id_list, vk_rob_link_id_list, vk_other_id_list, vk_other_obj_info_list
+    
 
-    return vk_obj_id_list, vk_rob_link_id_list, vk_other_id_list
+    # # table
+    # other_obj_id = _vk_context.load_model("assets/meshes/table.vkdepthmesh")
+    # vk_other_id_list.append(other_obj_id)
+    # # board
+    # other_obj_id = _vk_context.load_model("assets/meshes/board.vkdepthmesh")
+    # vk_other_id_list.append(other_obj_id)
+    # # barrier 1,2,3
+    # other_obj_id = _vk_context.load_model("assets/meshes/barrier.vkdepthmesh")
+    # vk_other_id_list.append(other_obj_id)
+    # other_obj_id = _vk_context.load_model("assets/meshes/barrier.vkdepthmesh")
+    # vk_other_id_list.append(other_obj_id)
+    # other_obj_id = _vk_context.load_model("assets/meshes/barrier.vkdepthmesh")
+    # vk_other_id_list.append(other_obj_id)
+    # # pringles
+    # if TASK_FLAG == '1':
+    #     other_obj_id = _vk_context.load_model("assets/meshes/pringles.vkdepthmesh")
+    #     vk_other_id_list.append(other_obj_id)
+    # # Milk, Milk, board
+    # if TASK_FLAG == '4':
+    #     other_obj_id = _vk_context.load_model("assets/meshes/Milk.vkdepthmesh")
+    #     vk_other_id_list.append(other_obj_id)
+    #     other_obj_id = _vk_context.load_model("assets/meshes/Milk.vkdepthmesh")
+    #     vk_other_id_list.append(other_obj_id)
+    #     other_obj_id = _vk_context.load_model("assets/meshes/board.vkdepthmesh")
+    #     vk_other_id_list.append(other_obj_id)
+
+    # # obj_id = _vk_context.load_model()
+    # # vk_other_id_list.append(obj_id)
+
+    # return vk_obj_id_list, vk_rob_link_id_list, vk_other_id_list
+
 
 # "particle setting"
 def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4, pybullet_env, par_robot_id):
@@ -857,41 +917,70 @@ def _vk_state_setting(vk_particle_cloud, pw_T_camVk_4_4, pybullet_env, par_robot
         # other objects
         vk_other_obj_number_ = len(_vk_other_id_list)
         
-        # table
-        table_pos_1 = [0.46, -0.01, 0.70]
-        table_ori_1 = p.getQuaternionFromEuler([0,0,0]) # x, y, z, w
-        vk_state.add_instance(_vk_other_id_list[0],
-                              table_pos_1[0], table_pos_1[1], table_pos_1[2],
-                              table_ori_1[3], table_ori_1[0], table_ori_1[1], table_ori_1[2]) # w, x, y, z
-        # board
-        board_pos_1 = [0.274, 0.581, 0.87575]
-        board_ori_1 = p.getQuaternionFromEuler([math.pi/2,math.pi/2,0]) # x, y, z, w
-        vk_state.add_instance(_vk_other_id_list[1],
-                              board_pos_1[0], board_pos_1[1], board_pos_1[2],
-                              board_ori_1[3], board_ori_1[0], board_ori_1[1], board_ori_1[2]) # w, x, y, z
-        # barrier 1,2,3
-        barrier_pos_1 = [-0.694, 0.443, 0.895]
-        barrier_ori_1 = p.getQuaternionFromEuler([0,math.pi/2,0]) # x, y, z, w
-        vk_state.add_instance(_vk_other_id_list[2],
-                              barrier_pos_1[0], barrier_pos_1[1], barrier_pos_1[2],
-                              barrier_ori_1[3], barrier_ori_1[0], barrier_ori_1[1], barrier_ori_1[2]) # w, x, y, z
-        barrier_pos_2 = [-0.694, -0.607, 0.895]
-        barrier_ori_2 = p.getQuaternionFromEuler([0,math.pi/2,0]) # x, y, z, w
-        vk_state.add_instance(_vk_other_id_list[3],
-                              barrier_pos_2[0], barrier_pos_2[1], barrier_pos_2[2],
-                              barrier_ori_2[3], barrier_ori_2[0], barrier_ori_2[1], barrier_ori_2[2]) # w, x, y, z
-        barrier_pos_3 = [0.459, -0.972, 0.895]
-        barrier_ori_3 = p.getQuaternionFromEuler([0,math.pi/2,math.pi/2]) # x, y, z, w
-        vk_state.add_instance(_vk_other_id_list[4],
-                              barrier_pos_3[0], barrier_pos_3[1], barrier_pos_3[2],
-                              barrier_ori_3[3], barrier_ori_3[0], barrier_ori_3[1], barrier_ori_3[2]) # w, x, y, z
-        # pringles
-        if TASK_FLAG == '1':
-            pringles_pos_1 = [0.6652218209791124, 0.058946644391304814, 0.8277292172960276]
-            pringles_ori_1 = [ 0.67280124, -0.20574896, -0.20600051, 0.68012472] # x, y, z, w
-            vk_state.add_instance(_vk_other_id_list[5],
-                                pringles_pos_1[0], pringles_pos_1[1], pringles_pos_1[2],
-                                pringles_ori_1[3], pringles_ori_1[0], pringles_ori_1[1], pringles_ori_1[2]) # w, x, y, z
+ 
+        for vk_other_obj_index in range(vk_other_obj_number_):
+            vk_other_obj_info = _vk_other_obj_info_list[vk_other_obj_index]
+            vk_other_obj_name = vk_other_obj_info.obj_name
+            vk_other_obj_pos = vk_other_obj_info.pos
+            vk_other_obj_ori = vk_other_obj_info.ori
+            vk_state.add_instance(_vk_other_id_list[vk_other_obj_index],
+                                  vk_other_obj_pos[0], vk_other_obj_pos[1], vk_other_obj_pos[2],
+                                  vk_other_obj_ori[3], vk_other_obj_ori[0], vk_other_obj_ori[1], vk_other_obj_ori[2]) # w, x, y, z
+            
+
+        # # table
+        # table_pos_1 = [0.46, -0.01, 0.70]
+        # table_ori_1 = p.getQuaternionFromEuler([0,0,0]) # x, y, z, w
+        # vk_state.add_instance(_vk_other_id_list[0],
+        #                       table_pos_1[0], table_pos_1[1], table_pos_1[2],
+        #                       table_ori_1[3], table_ori_1[0], table_ori_1[1], table_ori_1[2]) # w, x, y, z
+        # # board
+        # board_pos_1 = [0.274, 0.581, 0.87575]
+        # board_ori_1 = p.getQuaternionFromEuler([math.pi/2,math.pi/2,0]) # x, y, z, w
+        # vk_state.add_instance(_vk_other_id_list[1],
+        #                       board_pos_1[0], board_pos_1[1], board_pos_1[2],
+        #                       board_ori_1[3], board_ori_1[0], board_ori_1[1], board_ori_1[2]) # w, x, y, z
+        # # barrier 1,2,3
+        # barrier_pos_1 = [-0.694, 0.443, 0.895]
+        # barrier_ori_1 = p.getQuaternionFromEuler([0,math.pi/2,0]) # x, y, z, w
+        # vk_state.add_instance(_vk_other_id_list[2],
+        #                       barrier_pos_1[0], barrier_pos_1[1], barrier_pos_1[2],
+        #                       barrier_ori_1[3], barrier_ori_1[0], barrier_ori_1[1], barrier_ori_1[2]) # w, x, y, z
+        # barrier_pos_2 = [-0.694, -0.607, 0.895]
+        # barrier_ori_2 = p.getQuaternionFromEuler([0,math.pi/2,0]) # x, y, z, w
+        # vk_state.add_instance(_vk_other_id_list[3],
+        #                       barrier_pos_2[0], barrier_pos_2[1], barrier_pos_2[2],
+        #                       barrier_ori_2[3], barrier_ori_2[0], barrier_ori_2[1], barrier_ori_2[2]) # w, x, y, z
+        # barrier_pos_3 = [0.459, -0.972, 0.895]
+        # barrier_ori_3 = p.getQuaternionFromEuler([0,math.pi/2,math.pi/2]) # x, y, z, w
+        # vk_state.add_instance(_vk_other_id_list[4],
+        #                       barrier_pos_3[0], barrier_pos_3[1], barrier_pos_3[2],
+        #                       barrier_ori_3[3], barrier_ori_3[0], barrier_ori_3[1], barrier_ori_3[2]) # w, x, y, z
+        # # pringles
+        # if TASK_FLAG == '1':
+        #     pringles_pos_1 = [0.6652218209791124, 0.058946644391304814, 0.8277292172960276]
+        #     pringles_ori_1 = [ 0.67280124, -0.20574896, -0.20600051, 0.68012472] # x, y, z, w
+        #     vk_state.add_instance(_vk_other_id_list[5],
+        #                         pringles_pos_1[0], pringles_pos_1[1], pringles_pos_1[2],
+        #                         pringles_ori_1[3], pringles_ori_1[0], pringles_ori_1[1], pringles_ori_1[2]) # w, x, y, z
+        # # Milk, Milk, board
+        # if TASK_FLAG == '4':
+        #     Milk_pos_1 = [0.5255412218811237, 0.4112688983400049, 0.8156348920165202]
+        #     Milk_ori_1 = [ 0.71226091, -0.00120944, -0.00472836,  0.70189783] # x, y, z, w
+        #     vk_state.add_instance(_vk_other_id_list[5],
+        #                         Milk_pos_1[0], Milk_pos_1[1], Milk_pos_1[2],
+        #                         Milk_ori_1[3], Milk_ori_1[0], Milk_ori_1[1], Milk_ori_1[2]) # w, x, y, z
+        #     Milk_pos_2 = [0.5255412218811237, 0.4092688983400049, 0.8156348920165202-2*0.0358583]
+        #     Milk_ori_2 = [ 0.71226091, -0.00120944, -0.00472836,  0.70189783] # x, y, z, w
+        #     vk_state.add_instance(_vk_other_id_list[6],
+        #                         Milk_pos_2[0], Milk_pos_2[1], Milk_pos_2[2],
+        #                         Milk_ori_2[3], Milk_ori_2[0], Milk_ori_2[1], Milk_ori_2[2]) # w, x, y, z
+        #     board_pos_4 = [0.5254358709124907, 0.08732338308299908, 0.7967666216816303]
+        #     board_ori_4 = [0.10745146728023694, -6.812425524646768e-05, -0.0006642243648951836, 0.9942101067402217] # x, y, z, w
+        #     vk_state.add_instance(_vk_other_id_list[7],
+        #                         board_pos_4[0], board_pos_4[1], board_pos_4[2],
+        #                         board_ori_4[3], board_ori_4[0], board_ori_4[1], board_ori_4[2]) # w, x, y, z
+
 
         _vk_context.add_state(vk_state)
         # vk_state: 
@@ -1575,6 +1664,10 @@ if __name__ == '__main__':
     print("Finish initializing robot")
     # Here, because we are using only one robot so we use [0]
     _pw_T_rob_sim_4_4 = pw_T_rob_sim_pose_list_alg[0].trans_matrix
+    print("========================")
+    print("Robot pose in Pybullet world:")
+    print(_pw_T_rob_sim_4_4)
+    print("========================")
     # get cameraDepth pose
     _pw_T_camD_tf_4_4 = _launch_camera.getCameraInPybulletWorldPose44(_tf_listener, _pw_T_rob_sim_4_4)
     print("========================")
@@ -1589,24 +1682,24 @@ if __name__ == '__main__':
 
     # ============================================================================
     # we are not using this for now
-    if TASK_FLAG == '4':
-        objs_touching_target_objs_num_ = OBJS_TOUCHING_TARGET_OBJS_NUM
-        objs_touching_target_objs_num_ = 1
-        objs_touching_target_objs_name_list = ["base"]
-        pw_T_objs_touching_targetObjs = create_scene.initialize_other_objects_touching(objs_touching_target_objs_num_, objs_touching_target_objs_name_list)
-        for num_index in range(len(pw_T_objs_touching_targetObjs)):
-            pw_T_objs_touching_targetObjs_list.append(pw_T_objs_touching_targetObjs[num_index])
-    if TASK_FLAG == '1':
-        objs_not_touching_target_objs_num_ = OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM
-        objs_not_touching_target_objs_num_ = 0
-        objs_not_touching_target_objs_name_list = ["pringles"]
-        pw_T_objs_not_touching_targetObjs = create_scene.initialize_other_objects_not_touching(objs_not_touching_target_objs_num_, objs_not_touching_target_objs_name_list)
+    # if TASK_FLAG == '4':
+    #     objs_touching_target_objs_num_ = OBJS_TOUCHING_TARGET_OBJS_NUM
+    #     objs_touching_target_objs_num_ = 1
+    #     objs_touching_target_objs_name_list = ["base"]
+    #     pw_T_objs_touching_targetObjs = create_scene.initialize_other_objects_touching(objs_touching_target_objs_num_, objs_touching_target_objs_name_list)
+    #     for num_index in range(len(pw_T_objs_touching_targetObjs)):
+    #         pw_T_objs_touching_targetObjs_list.append(pw_T_objs_touching_targetObjs[num_index])
+    # if TASK_FLAG == '1':
+    #     objs_not_touching_target_objs_num_ = OBJS_ARE_NOT_TOUCHING_TARGET_OBJS_NUM
+    #     objs_not_touching_target_objs_num_ = 0
+    #     objs_not_touching_target_objs_name_list = ["pringles"]
+    #     pw_T_objs_not_touching_targetObjs = create_scene.initialize_other_objects_not_touching(objs_not_touching_target_objs_num_, objs_not_touching_target_objs_name_list)
     # ============================================================================
 
     # cpu 
     # create 70 "objects" of SingleENV class 
     _single_envs = create_particles(OBJECT_NUM, ROBOT_NUM, PARTICLE_NUM,
-                                    pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, 
+                                    pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, # pw_T_objs_touching_targetObjs_list is empty
                                     UPDATE_STYLE_FLAG, SIM_TIME_STEP, BOSS_PF_UPDATE_INTERVAL_IN_REAL)
 
     _objs_pose_info_list = [0] * PARTICLE_NUM
@@ -1695,7 +1788,7 @@ if __name__ == '__main__':
         _vk_context.set_depth_threshold(DEPTH_DIFF_VALUE_0_1_THRESHOLD)
         _vk_context.update_camera(_vk_camera)
         ## Load meshes
-        _vk_obj_id_list, _vk_rob_link_id_list, _vk_other_id_list = _vk_load_meshes()
+        _vk_obj_id_list, _vk_rob_link_id_list, _vk_other_id_list, _vk_other_obj_info_list = _vk_load_meshes()
         ## Create states
         ## state -> particle
         ## instance -> object
@@ -1718,7 +1811,7 @@ if __name__ == '__main__':
         #         print(obj_pixel_num, total_elements)
         #         print(single_obj_num_zeros)
         
-        ## show vk rendered depth image
+        # # show vk rendered depth image
         # fig, axs = plt.subplots(2, PARTICLE_NUM)
         # for par_index in range(PARTICLE_NUM):
         #     axs[0, par_index].imshow(vk_rendered_depth_image_array_list[par_index], cmap="gray")

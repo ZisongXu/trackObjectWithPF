@@ -300,6 +300,27 @@ class SingleENV(multiprocessing.Process):
             pw_T_pringles_ori = [ 0.67280124, -0.20574896, -0.20600051, 0.68012472] # x, y, z, w
             pringles_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/pringles.urdf"),
                                               pw_T_pringles_pos, pw_T_pringles_ori, useFixedBase=1)
+        if self.task_flag == "4": # slope
+            pw_T_Milk_pos = [0.5255412218811237, 0.4112688983400049, 0.8156348920165202]
+            pw_T_Milk_ori = [ 0.71226091, -0.00120944, -0.00472836,  0.70189783]
+            base_Milk1_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/Milk/Milk_par_no_visual_hor.urdf"),
+                                               pw_T_Milk_pos, pw_T_Milk_ori, useFixedBase=1)
+            pw_T_Milk_pos = [0.5255412218811237, 0.4092688983400049, 0.8156348920165202-2*0.0358583]
+            pw_T_Milk_ori = [ 0.71226091, -0.00120944, -0.00472836,  0.70189783]
+            base_Milk2_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/Milk/Milk_par_no_visual_hor.urdf"),
+                                               pw_T_Milk_pos, pw_T_Milk_ori, useFixedBase=1)
+            board_pos_4 = [0.5254358709124907, 0.08732338308299908, 0.7967666216816303-0.01]
+            board_ori_4 = [0.10745146728023694, -6.812425524646768e-05, -0.0006642243648951836, 0.9942101067402217]
+            board_id_4 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"),
+                                                     board_pos_4, 
+                                                     board_ori_4,
+                                                     useFixedBase = 1)
+
+            # self.p_env.changeDynamics(board_id_4, -1, mass = 5, 
+            #                       lateralFriction = 1)
+
+            self.collision_detection_obj_id_collection.append(board_id_4)
+
         if self.SIM_REAL_WORLD_FLAG == True:
             table_pos_1 = [0.46, -0.01, 0.702] # 0.710
             table_ori_1 = self.p_env.getQuaternionFromEuler([0,0,0])
@@ -325,11 +346,11 @@ class SingleENV(multiprocessing.Process):
             # barry_ori_5 = self.p_env.getQuaternionFromEuler([0,math.pi/2,math.pi/2])
             # barry_id_5 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/barrier.urdf"), barry_pos_5, barry_ori_5, useFixedBase = 1)
 
-            board_pos_1 = [0.274, 0.581, 0.87575]
-            board_ori_1 = self.p_env.getQuaternionFromEuler([math.pi/2,math.pi/2,0])
-            self.board_id_1 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"), board_pos_1, board_ori_1, useFixedBase = 1)
-
-            self.collision_detection_obj_id_collection.append(self.board_id_1)
+            if self.task_flag != "4": # slope
+                board_pos_1 = [0.274, 0.581, 0.87575]
+                board_ori_1 = self.p_env.getQuaternionFromEuler([math.pi/2,math.pi/2,0])
+                self.board_id_1 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"), board_pos_1, board_ori_1, useFixedBase = 1)
+                self.collision_detection_obj_id_collection.append(self.board_id_1)
 
     def add_robot(self):
         real_robot_start_pos = self.pw_T_rob_sim_pose_list_alg[0].pos
@@ -441,7 +462,8 @@ class SingleENV(multiprocessing.Process):
         # collision check: add robot
         collision_detection_obj_id_.append(self.robot_id)
         # collision check: add board
-        collision_detection_obj_id_.append(self.board_id_1)
+        if self.task_flag != "4": # slope 
+            collision_detection_obj_id_.append(self.board_id_1)
         # collision check
         for obj_index in range(self.object_num):
             obj_id = self.objects_list[obj_index].no_visual_par_id
@@ -466,6 +488,7 @@ class SingleENV(multiprocessing.Process):
             if obj_index == 0:
                 normal_x = normal_x + 0.000
                 normal_y = normal_y - 0.0000
+                normal_z = normal_z + 0.0000
             elif obj_index == 1:
                 normal_x = normal_x - 0.000
                 normal_y = normal_y + 0.0000

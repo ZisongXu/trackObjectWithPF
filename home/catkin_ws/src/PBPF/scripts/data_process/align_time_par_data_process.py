@@ -76,28 +76,31 @@ prepare_time = 1600 * 100
 rosbag_slowdown_rate = 20
 
 if object_name == "cracker" and rosbag_flag == "1":
-    prepare_time = 80 * 100
+    prepare_time = 85 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Ketchup" and rosbag_flag == "1":
     prepare_time = 85 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Mayo" and rosbag_flag == "1":
-    prepare_time = 120 * 100
+    prepare_time = 115 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Milk" and rosbag_flag == "1":
     prepare_time = 85 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Mustard" and rosbag_flag == "1":
-    prepare_time = 120 * 100
+    prepare_time = 115 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Parmesan" and rosbag_flag == "1":
-    prepare_time = 25 * 100
+    prepare_time = 85 * 100
     rosbag_slowdown_rate = 1
 if object_name == "SaladDressing" and rosbag_flag == "1":
-    prepare_time = 120 * 100
+    prepare_time = 115 * 100
     rosbag_slowdown_rate = 1
 if object_name == "soup" and rosbag_flag == "1":
-    prepare_time = 80 * 100
+    prepare_time = 85 * 100
+    rosbag_slowdown_rate = 1
+if object_name == "soup2" and rosbag_flag == "1":
+    prepare_time = 60 * 100
     rosbag_slowdown_rate = 1
 
 # save file

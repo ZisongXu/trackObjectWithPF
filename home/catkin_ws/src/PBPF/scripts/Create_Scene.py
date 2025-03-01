@@ -35,6 +35,7 @@ import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 import multiprocessing
+from collections import defaultdict
 #from sksurgerycore.algorithms.averagequaternions import average_quaternions
 from quaternion_averaging import weightedAverageQuaternions
 from Particle import Particle
@@ -110,6 +111,17 @@ class Create_Scene():
                
     #        return self.pw_T_target_obj_obse_pose_lsit
         print_note_flag_list = [0] * self.target_obj_num
+        #####################################################
+        tmp_mark_obj_pose_array = np.zeros((self.target_obj_num, 2))
+        tmp_mark_obj_pose_list = tmp_mark_obj_pose_array.tolist()
+        count, details = self.find_duplicates(self.object_name_list)
+        if count != 0:
+            self.same_object_flag = True
+        else:
+            self.same_object_flag = False
+        print('Try to track same objects?', self.same_object_flag)
+        #####################################################
+
         for obj_index in range(self.target_obj_num):
             pw_T_rob_sim_4_4 = self.pw_T_rob_sim_pose_list[0].trans_matrix
             
@@ -130,10 +142,35 @@ class Create_Scene():
                     a = 1
                 try:
                     (trans_ob, rot_ob) = self.listener.lookupTransform('/panda_link0', '/'+self.object_name_list[obj_index]+use_gazebo, rospy.Time(0))
+
+
+                    tmp_mark_obj_pose_list[obj_index][0] = trans_ob
+                    tmp_mark_obj_pose_list[obj_index][1] = rot_ob
+                    ############################ be careful, only for tracking same objects, need to soup in the future!!!!!!!!!!
+                    if obj_index == self.target_obj_num - 1:
+                        if self.same_object_flag == True:
+                            dentical_objects_flag = self.identical_objects(self.object_name_list, tmp_mark_obj_pose_list)
+                            print("dentical_objects_flag:", dentical_objects_flag)
+                            if dentical_objects_flag == True:
+                                continue
+                            else:
+                                break
+                        else:
+                            pass
+                    else:
+                        pass
+
+
+
                     break
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                     continue
-                
+            
+                    
+
+
+
+
             rob_T_obj_obse_pos = list(trans_ob)
             rob_T_obj_obse_ori = list(rot_ob)
             rob_T_obj_obse_3_3 = transformations.quaternion_matrix(rob_T_obj_obse_ori)
@@ -147,9 +184,12 @@ class Create_Scene():
             #     robpw_T_robga_4_4 = np.array(robpw_T_robga_4_4)                
             #     rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
 
-    
+            if obj_index == 1:
+                bias = 0.0
+            else:
+                bias = 0
             pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
-            pw_T_obj_obse_pos = [pw_T_obj_obse[0][3], pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
+            pw_T_obj_obse_pos = [pw_T_obj_obse[0][3]-bias, pw_T_obj_obse[1][3], pw_T_obj_obse[2][3]]
             pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
 
             obse_obj = Object_Pose(self.object_name_list[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
@@ -157,7 +197,7 @@ class Create_Scene():
             self.trans_ob_list.append(trans_ob)
             self.rot_ob_list.append(rot_ob) # need to update
             # print("here") 
-        
+
         return self.pw_T_target_obj_obse_pose_lsit, self.trans_ob_list, self.rot_ob_list
             
     def initialize_robot(self):
@@ -324,6 +364,9 @@ class Create_Scene():
 
             trans_gt = 0
             rot_gt = 0
+
+            # print("I am here")
+
             return self.pw_T_target_obj_opti_pose_lsit, self.pw_T_objs_touching_targetObjs_list, self.pw_T_objs_not_touching_targetObjs_list, trans_gt, rot_gt
         
         
@@ -385,3 +428,46 @@ class Create_Scene():
     def take_easy_gaussian_value(self, mean, sigma):
         normal = random.normalvariate(mean, sigma)
         return normal
+
+    def find_duplicates(self, lst):
+        index_dict = defaultdict(list)
+        # 记录元素及其出现的索引
+        for index, value in enumerate(lst):
+            index_dict[value].append(index)
+        # 只保留出现 **两次及以上** 的元素
+        duplicates = {key: value for key, value in index_dict.items() if len(value) > 1}
+        # 计算有几个重复的元素
+        duplicate_count = len(duplicates)
+        return duplicate_count, duplicates
+
+    def euclidean_distance(self, pos1, pos2):
+        """计算欧几里得距离"""
+        return np.linalg.norm(np.array(pos1) - np.array(pos2))
+    
+    def identical_objects(self, lst, test_list, threshold=0.02):
+        """
+        1. 先调用 find_duplicates 找到 lst 里的重复元素
+        2. 如果没有重复元素，直接返回 True（默认所有物体不同）
+        3. 如果有重复元素，检查 test_list[索引][0]（pos）的距离是否 <= threshold
+        4. 若所有 pos 距离均 <= threshold，返回 True，否则返回 False
+        """
+        duplicate_count, duplicates = self.find_duplicates(lst)
+    
+        # 没有重复元素，直接返回 True
+        if duplicate_count == 0:
+            return True
+    
+        # 遍历所有重复元素，检查 pos 距离
+        for key, indices in duplicates.items():
+            for i in range(len(indices)):
+                for j in range(i + 1, len(indices)):
+                    idx1, idx2 = indices[i], indices[j]
+                    pos1, pos2 = np.array(test_list[idx1][0]), np.array(test_list[idx2][0])
+                    # 计算距离
+                    distance = self.euclidean_distance(pos1, pos2)
+    
+                    # 如果有一个距离大于 2cm，返回 False
+                    if distance > threshold:
+                        return False
+        # 所有检查的物体距离都 <= 2cm，返回 True
+        return True

@@ -112,29 +112,32 @@ class Visualisation_World():
                             [0.,   0.,   0.,   1.  ]]
             pw_T_Milk_4_4 = np.dot(pw_T_rob_4_4, rob_T_Milk_4_4)
 
-            pw_T_Milk_pos = _get_position_from_matrix44(pw_T_Milk_4_4)
-            pw_T_Milk_ori = _get_quaternion_from_matrix(pw_T_Milk_4_4)
-            # pw_T_Milk_pos: [0.5255412218811237, 0.4112688983400049, 0.8156348920165202]
-            # pw_T_Milk_ori: [ 0.71226091, -0.00120944, -0.00472836,  0.70189783]
+            # pw_T_Milk_pos = _get_position_from_matrix44(pw_T_Milk_4_4)
+            # pw_T_Milk_ori = _get_quaternion_from_matrix(pw_T_Milk_4_4)
+            pw_T_Milk_pos = [0.5255412218811237, 0.4112688983400049+0.13, 0.8156348920165202-0.01-0.01]
+            pw_T_Milk_ori = [ 0.71226091, -0.00120944, -0.00472836,  0.70189783]
 
             base_Milk1_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/Milk/Milk_par_no_visual_hor.urdf"),
                                                     pw_T_Milk_pos,
                                                     pw_T_Milk_ori,
                                                     useFixedBase=1)
-            pw_T_Milk_pos = [0.5255412218811237, 0.4092688983400049, 0.8156348920165202-2*0.0358583]
+            pw_T_Milk_pos = [0.5255412218811237, 0.4092688983400049+0.13, 0.8156348920165202-2*0.0358583]
             pw_T_Milk_ori = [ 0.71226091, -0.00120944, -0.00472836,  0.70189783]
             base_Milk2_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/Milk/Milk_par_no_visual_hor.urdf"),
                                                      pw_T_Milk_pos, 
                                                      pw_T_Milk_ori, 
                                                      useFixedBase=1)
-            # board_pos_4 = [0.5255412218811237, 0.4112688983400049-0.73/2+0.0356507+0.004, 0.8156348920165202+1*0.0358583+0.005]
+            # board_pos_4 = [0.5255412218811237, 0.4112688983400049-0.73/2+0.0356507+0.003, 0.8156348920165202+1*0.0358583+0.005]
             # board_ori_4 = p_visualisation.getQuaternionFromEuler([0,0,0])
-            board_pos_4 = [0.5254358709124907, 0.08732338308299908, 0.7967666216816303-0.01]
-            board_ori_4 = [0.10745146728023694, -6.812425524646768e-05, -0.0006642243648951836, 0.9942101067402217]
+            # board_pos_4 = [0.5254358709124907, 0.08732338308299908, 0.7967666216816303-0.01-0.01]
+            # board_ori_4 = [0.10745146728023694, -6.812425524646768e-05, -0.0006642243648951836, 0.9942101067402217]
+            board_pos_4 = [0.5255245316420766, 0.08585146275273556+0.13, 0.7858109052752488]
+            board_ori_4 = [0.0921379328294458, -1.0388626282143925e-05, -0.00014271076727580726, 0.9957462432063853]
+
             board_id_4 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"),
                                                      board_pos_4, 
-                                                     board_ori_4,
-                                                     useFixedBase = 1)
+                                                     board_ori_4, 
+                                                     useFixedBase=1)
 
         if self.task_flag == "5":
             pw_T_she_pos = [0.75889274, -0.24494845, 0.33818097+0.02]
@@ -189,6 +192,12 @@ class Visualisation_World():
                 board_ori_1 = p_visualisation.getQuaternionFromEuler([math.pi/2,math.pi/2,0])
                 board_id_1 = p_visualisation.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"), board_pos_1, board_ori_1, useFixedBase = 1)
 
+        # while True:
+        #     p_visualisation.stepSimulation()
+        #     pos, ori = p_visualisation.getBasePositionAndOrientation(board_id_4)
+        #     time.sleep(1.0/240)
+        #     print(pos)
+        #     print(ori)
 
         # observation: target obejct pose list
         pw_T_target_obj_obse_pose_lsit, trans_ob_list, rot_ob_list = self.create_scene.initialize_object()
@@ -344,6 +353,18 @@ class Visualisation_World():
                                                             obse_obj_ori)
         obse_object_pose.obj_id = observation_object_id
 
+    def init_display_observation_object2(self, obse_object_pose):
+        obse_obj_name = obse_object_pose.obj_name
+        obse_obj_pos = copy.deepcopy(obse_object_pose.pos)
+        obse_obj_ori = copy.deepcopy(obse_object_pose.ori)
+        use_gazebo = ""
+        if self.gazebo_flag == True:
+            use_gazebo = "gazebo_"
+        observation_object_id = self.p_visualisation.loadURDF(os.path.expanduser("~/project/object/"+use_gazebo+obse_obj_name+"/"+use_gazebo+obse_obj_name+"_obse_obj_with_visual_hor2.urdf"),
+                                                            obse_obj_pos,
+                                                            obse_obj_ori)
+        obse_object_pose.obj_id = observation_object_id
+
 
     def init_display_estimated_object(self, esti_object_pose):
         esti_obj_name = esti_object_pose.name
@@ -445,11 +466,11 @@ while reset_flag == True:
         display_par_flag = True
         display_esti_flag = False
         
-        display_gt_flag = False
-        if optitrack_flag == False:
-            display_gt_flag = False
+        display_gt_flag = True
+        # if optitrack_flag == False:
+        #     display_gt_flag = False
 
-        display_obse_flag = True
+        display_obse_flag = False
         object_name_list = parameter_info['object_name_list']
         task_flag = parameter_info['task_flag'] # parameter_info['task_flag']/ 4: slope
         dope_flag = parameter_info['dope_flag']
@@ -561,7 +582,7 @@ while reset_flag == True:
                         if init_gt_obj_flag == 0:
                             if obj_index == object_num - 1:
                                 init_gt_obj_flag = 1
-
+                            
                             visual_world.init_display_ground_truth_object(pw_T_target_obj_opti_pose_lsit_param[obj_index])
                             
                         pw_T_obj_opti_4_4 = np.dot(pw_T_rob_sim_4_4, rob_T_obj_opti_4_4)
@@ -589,9 +610,12 @@ while reset_flag == True:
                 # print("display_obse_flag")
                 for obj_index in range(object_num):
                     if init_obse_flag == 0:
+                        # need to soup
                         if obj_index == object_num - 1:
                             init_obse_flag = 1
-                        visual_world.init_display_observation_object(pw_T_target_obj_obse_pose_lsit_param[obj_index])
+                            visual_world.init_display_observation_object(pw_T_target_obj_obse_pose_lsit_param[obj_index])
+                        else:
+                            visual_world.init_display_observation_object(pw_T_target_obj_obse_pose_lsit_param[obj_index])
                     
                     use_gazebo = ""
                     if visual_world.gazebo_flag == True:

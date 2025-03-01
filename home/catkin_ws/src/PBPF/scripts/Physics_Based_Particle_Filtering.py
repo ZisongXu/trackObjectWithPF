@@ -97,7 +97,7 @@ PICK_PARTICLE_RATE = parameter_info['pick_particle_rate']
 OPTITRACK_FLAG = parameter_info['optitrack_flag']
 
 VERSION = parameter_info['version'] # old/ray/multiray/
-RUNNING_MODEL = parameter_info['running_model'] # PBPF_RGB/PBPF_RGBD/PBPF_D
+RUNNING_MODEL = parameter_info['running_model'] # PBPF_RGB/PBPF_RGBD/PBPF_D/PBPF_Opti
 
 DEBUG_DEPTH_IMG_FLAG = parameter_info['debug_depth_img_flag'] # old/ray/multiray/depth_img
 USE_CONVOLUTION_FLAG = parameter_info['use_convolution_flag'] # old/ray/multiray/depth_img
@@ -199,6 +199,8 @@ Compare_distance_time_consuming_list = []
 Compute_visibility_score_time_consuming_list = []
 Observation_model_time_consuming_list = []
 Resample_time_consuming_list = []
+Deepcopy_time_consuming_list = []
+Setpub_time_consuming_list = []
 One_update_time_cosuming_list = []
 
 Motion_model_time_consumption = 0
@@ -208,13 +210,15 @@ Compare_distance_time_consumption = 0
 Compute_visibility_score_time_consumption = 0
 Observation_model_time_consumption = 0
 Resample_time_consumption = 0
+Deepcopy_time_consumption = 0
+Setpub_time_consumption = 0
 One_update_time_consumption = 0
 
 _boss_time_consumption_df = pd.DataFrame(columns=['step','time',
                                                   'motion_model',
                                                   'render_depth_img','compare_depth_img',
                                                   'compare_dis','compute_visibility_score',
-                                                  'resample','obs_model',
+                                                  'resample','deepcopy','setpub','obs_model',
                                                   'one_update_time'],index=[])
 _time_record_index = 0
 
@@ -407,6 +411,10 @@ def _publish_par_pose_info(particle_cloud_pub):
                 obj_scene = obj_info.par_name+"_scene"+str(TASK_FLAG)
                 _record_t = time.time()
                 # x, y, z ,w
+                # need to soup
+                # if obj_index == 1:
+                #     _boss_par_err_ADD_df_list[par_index].loc[_par_panda_step] = [_par_panda_step, _record_t - _record_t_begin, obj_info.pos[0], obj_info.pos[1], obj_info.pos[2], obj_info.ori[0], obj_info.ori[1], obj_info.ori[2], obj_info.ori[3], RUNNING_MODEL, obj_name, scene, PARTICLE_NUM, VERSION, obj_name+'2', MASS_marker, FRICTION_marker]
+                # else:
                 _boss_par_err_ADD_df_list[par_index].loc[_par_panda_step] = [_par_panda_step, _record_t - _record_t_begin, obj_info.pos[0], obj_info.pos[1], obj_info.pos[2], obj_info.ori[0], obj_info.ori[1], obj_info.ori[2], obj_info.ori[3], RUNNING_MODEL, obj_name, scene, PARTICLE_NUM, VERSION, obj_name, MASS_marker, FRICTION_marker]
                 _par_panda_step = _par_panda_step + 1
     
@@ -480,6 +488,10 @@ def _publish_esti_pose_info(estimated_object_set):
             obj_name = esti_obj_info.obj_name
             _record_t = time.time()
             # x, y, z ,w
+            # need to soup
+            # if obj_index == 1:
+            #     _boss_PBPF_err_ADD_df_list[obj_index].loc[_PBPF_panda_step] = [_PBPF_panda_step, _record_t - _record_t_begin, esti_obj_info.pos[0], esti_obj_info.pos[1], esti_obj_info.pos[2], esti_obj_info.ori[0], esti_obj_info.ori[1], esti_obj_info.ori[2], esti_obj_info.ori[3], RUNNING_MODEL, obj, scene, PARTICLE_NUM, VERSION, obj_name+'2', MASS_marker, FRICTION_marker]                                    
+            # else:
             _boss_PBPF_err_ADD_df_list[obj_index].loc[_PBPF_panda_step] = [_PBPF_panda_step, _record_t - _record_t_begin, esti_obj_info.pos[0], esti_obj_info.pos[1], esti_obj_info.pos[2], esti_obj_info.ori[0], esti_obj_info.ori[1], esti_obj_info.ori[2], esti_obj_info.ori[3], RUNNING_MODEL, obj, scene, PARTICLE_NUM, VERSION, obj_name, MASS_marker, FRICTION_marker]                                    
 
     
@@ -795,7 +807,7 @@ def _vk_load_meshes():
     if TASK_FLAG == '4':
         other_obj_id = _vk_context.load_model("assets/meshes/Milk.vkdepthmesh")
         vk_other_id_list.append(other_obj_id)
-        vk_other_obj_info = Object_Pose(obj_name='Milk1', obj_id=0, pos=[0.5255412218811237, 0.4112688983400049, 0.8156348920165202], ori=[ 0.71226091, -0.00120944, -0.00472836,  0.70189783], index=0) # ori: x, y, z, w           
+        vk_other_obj_info = Object_Pose(obj_name='Milk1', obj_id=0, pos=[0.5255412218811237, 0.4112688983400049, 0.8156348920165202-0.01-0.01], ori=[ 0.71226091, -0.00120944, -0.00472836,  0.70189783], index=0) # ori: x, y, z, w           
         vk_other_obj_info_list.append(vk_other_obj_info) 
         other_obj_id = _vk_context.load_model("assets/meshes/Milk.vkdepthmesh")
         vk_other_id_list.append(other_obj_id)
@@ -803,7 +815,7 @@ def _vk_load_meshes():
         vk_other_obj_info_list.append(vk_other_obj_info) 
         other_obj_id = _vk_context.load_model("assets/meshes/board.vkdepthmesh")
         vk_other_id_list.append(other_obj_id)
-        vk_other_obj_info = Object_Pose(obj_name='board4', obj_id=0, pos=[0.5254358709124907, 0.08732338308299908, 0.7967666216816303-0.01], ori=[0.10745146728023694, -6.812425524646768e-05, -0.0006642243648951836, 0.9942101067402217], index=0) # ori: x, y, z, w           
+        vk_other_obj_info = Object_Pose(obj_name='board4', obj_id=0, pos=[0.5255245316420766, 0.08585146275273556, 0.7858109052752488], ori=[0.0921379328294458, -1.0388626282143925e-05, -0.00014271076727580726, 0.9957462432063853], index=0) # ori: x, y, z, w           
         vk_other_obj_info_list.append(vk_other_obj_info) 
 
     return vk_obj_id_list, vk_rob_link_id_list, vk_other_id_list, vk_other_obj_info_list
@@ -1192,13 +1204,13 @@ def resample_particles_update(particle_cloud, pw_T_obj_obse_objects_pose_list_, 
             while True:
                 print("Not yet implemented")
     
-    # normalize_RGB_weight    
-    for obj_index in range(OBJECT_NUM):
-        weight_RGB_img_list_ = [particle[obj_index].w for particle in particle_cloud]
-        weight_RGB_img_list_new = normalize_score_to_0_1(weight_RGB_img_list_)
-        # 直接用 zip() 赋值，提高效率
-        for particle, new_weight in zip(particle_cloud, weight_RGB_img_list_new):
-            particle[obj_index].w = new_weight
+    # # normalize_RGB_weight    
+    # for obj_index in range(OBJECT_NUM):
+    #     weight_RGB_img_list_ = [particle[obj_index].w for particle in particle_cloud]
+    #     weight_RGB_img_list_new = normalize_score_to_0_1(weight_RGB_img_list_)
+    #     # 直接用 zip() 赋值，提高效率
+    #     for particle, new_weight in zip(particle_cloud, weight_RGB_img_list_new):
+    #         particle[obj_index].w = new_weight
     
     
     for index, particle in enumerate(particle_cloud):
@@ -1464,10 +1476,16 @@ def signal_handler(sig, frame):
             # 70_scene1_rosbag3_repeat0_cracker_time_obse_err_ADD_PBPF_RGBD
             file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/')
             obj_name = OBJECT_NAME_LIST[obj_index]
-
+            # need to soup
+            # if obj_index == 1:
+            #     file_name_PBPF_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"2_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
+            #     file_name_obse_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"2_"+UPDATE_STYLE_FLAG+'_obse_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
+            #     file_name_GT_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"2_"+UPDATE_STYLE_FLAG+'_GT_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
+            # else:
             file_name_PBPF_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
             file_name_obse_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_obse_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
             file_name_GT_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_GT_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
+            
             # if _boss_PBPF_err_ADD_df_list[obj_index].empty:
             #     print(OBJECT_NAME_LIST[obj_index]+" is empty !")
             _boss_PBPF_err_ADD_df_list[obj_index].to_csv(file_save_path+file_name_PBPF_ADD,index=0,header=0,mode='w')
@@ -1481,6 +1499,7 @@ def signal_handler(sig, frame):
             for par_index in range(PARTICLE_NUM):
                 file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/'+OBJECT_NAME_LIST[obj_index]+'/')
                 # file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/')
+                # need to soup
                 file_name_par_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+"_"+str(par_index)+'.csv'
                 _boss_par_err_ADD_df_list[par_index].to_csv(file_save_path+file_name_par_ADD,index=0,header=0,mode='w')
     if RECORD_TIME_CONSUMPTION_FLAG == True:
@@ -1534,8 +1553,14 @@ if __name__ == '__main__':
     elif RUNNING_MODEL == "PBPF_RGBD":
         USING_RGB_FLAG = True
         USING_D_FLAG = True
-    else: # PBPF_D
+    elif RUNNING_MODEL == "PBPF_D":
         USING_RGB_FLAG = False
+        USING_D_FLAG = True
+    elif RUNNING_MODEL == "PBPF_Opti":
+        USING_RGB_FLAG = True
+        USING_D_FLAG = False
+    elif RUNNING_MODEL == "PBPF_OptiD":
+        USING_RGB_FLAG = True
         USING_D_FLAG = True
 
     _particle_update_time = 0
@@ -1617,7 +1642,8 @@ if __name__ == '__main__':
     for obj_index in range(OBJECT_NUM):
         object_name = OBJECT_NAME_LIST[obj_index]
         if object_name == "cracker":
-            BOSS_SIGMA_OBS_POS = 0.10
+            # BOSS_SIGMA_OBS_POS = 0.10
+            BOSS_SIGMA_OBS_POS = 0.05
             BOSS_SIGMA_OBS_ANG = 0.0216773873 * 30
             POS_NOISE = 0.001 * 5.0 # 5
             ANG_NOISE = 0.05 * 3.0 # 3.0
@@ -1625,7 +1651,8 @@ if __name__ == '__main__':
             # POS_NOISE = 0.0
             # ANG_NOISE = 0.0
         else:
-            BOSS_SIGMA_OBS_POS = 0.10 # 0.02 need to increase
+            # BOSS_SIGMA_OBS_POS = 0.10 # 0.02 need to increase
+            BOSS_SIGMA_OBS_POS = 0.05 # 0.02 need to increase
             BOSS_SIGMA_OBS_ANG = 0.0216773873 * 10
             POS_NOISE = 0.001 * 5.0
             ANG_NOISE = 0.05 * 1.0 # 3.0
@@ -2008,6 +2035,7 @@ if __name__ == '__main__':
         global_objects_outlier_by_DOPE_list = [0] * OBJECT_NUM
 
         temp_pw_T_obj_obse_objs_list = []
+        temp_pw_T_obj_opti_objs_list = []
         #panda robot moves in the visualization window
         track_fk_world_rob_mv(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
         if RECORD_RESULTS_FLAG == True:
@@ -2093,6 +2121,15 @@ if __name__ == '__main__':
                 opti_T_rob_opti_pos = ROS_LISTENER.listen_2_robot_pose()[0]
                 opti_T_rob_opti_ori = ROS_LISTENER.listen_2_robot_pose()[1]
                 # pose of objects in OptiTrack coordinate frame
+                # if (obj_name == 'cracker') or (obj_name == 'Parmesan') or (obj_name == 'SaladDressing'):
+                #     opti_T_obj_opti_pos = ROS_LISTENER.listen_2_object_pose('soup')[0]
+                #     opti_T_obj_opti_ori = ROS_LISTENER.listen_2_object_pose('soup')[1]
+                # else:    
+                # need to soup
+                # if obj_index == 1:
+                #     opti_T_obj_opti_pos = ROS_LISTENER.listen_2_object_pose(obj_name+'2')[0]
+                #     opti_T_obj_opti_ori = ROS_LISTENER.listen_2_object_pose(obj_name+'2')[1]
+                # else:
                 opti_T_obj_opti_pos = ROS_LISTENER.listen_2_object_pose(obj_name)[0]
                 opti_T_obj_opti_ori = ROS_LISTENER.listen_2_object_pose(obj_name)[1]
                 # pose of objects in robot coordinate frame
@@ -2107,15 +2144,24 @@ if __name__ == '__main__':
                 obj_scene = obj_name+"_scene"+str(TASK_FLAG)
                 _record_t = time.time()
                 # x, y, z ,w
+                # need to soup
+                # if obj_index == 1:
+                #     _boss_GT_err_ADD_df_list[obj_index].loc[_GT_panda_step] = [_GT_panda_step, _record_t - _record_t_begin, pw_T_obj_opti_pos[0], pw_T_obj_opti_pos[1], pw_T_obj_opti_pos[2], pw_T_obj_opti_ori[0], pw_T_obj_opti_ori[1], pw_T_obj_opti_ori[2], pw_T_obj_opti_ori[3], 'GT', obj, scene, PARTICLE_NUM, VERSION, obj_name+'2', MASS_marker, FRICTION_marker]
+                #     _boss_obse_err_ADD_df_list[obj_index].loc[_obse_panda_step] = [_obse_panda_step, _record_t - _record_t_begin, pw_T_obj_obse_pos[0], pw_T_obj_obse_pos[1], pw_T_obj_obse_pos[2], pw_T_obj_obse_ori[0], pw_T_obj_obse_ori[1], pw_T_obj_obse_ori[2], pw_T_obj_obse_ori[3], 'DOPE', obj, scene, PARTICLE_NUM, VERSION, obj_name+'2', MASS_marker, FRICTION_marker]      
+                # else:
                 _boss_GT_err_ADD_df_list[obj_index].loc[_GT_panda_step] = [_GT_panda_step, _record_t - _record_t_begin, pw_T_obj_opti_pos[0], pw_T_obj_opti_pos[1], pw_T_obj_opti_pos[2], pw_T_obj_opti_ori[0], pw_T_obj_opti_ori[1], pw_T_obj_opti_ori[2], pw_T_obj_opti_ori[3], 'GT', obj, scene, PARTICLE_NUM, VERSION, obj_name, MASS_marker, FRICTION_marker]
                 _boss_obse_err_ADD_df_list[obj_index].loc[_obse_panda_step] = [_obse_panda_step, _record_t - _record_t_begin, pw_T_obj_obse_pos[0], pw_T_obj_obse_pos[1], pw_T_obj_obse_pos[2], pw_T_obj_obse_ori[0], pw_T_obj_obse_ori[1], pw_T_obj_obse_ori[2], pw_T_obj_obse_ori[3], 'DOPE', obj, scene, PARTICLE_NUM, VERSION, obj_name, MASS_marker, FRICTION_marker]      
 
+                opti_object = Object_Pose(obj_name, pw_T_obj_obse_id, pw_T_obj_opti_pos, pw_T_obj_opti_ori, index=obj_index)
+                temp_pw_T_obj_opti_objs_list.append(opti_object)
+                
                 # if obj_index == 0:
                 #     print(pw_T_obj_obse_pos[1])
         _GT_panda_step = _GT_panda_step + 1
         _obse_panda_step = _obse_panda_step + 1
 
         pw_T_obj_obse_objects_list = copy.deepcopy(temp_pw_T_obj_obse_objs_list)
+        pw_T_obj_opti_objects_list = copy.deepcopy(temp_pw_T_obj_opti_objs_list)
         
         if RECORD_RESULTS_FLAG == True:
             _record_obse_pose_first_flag = 1
@@ -2153,14 +2199,20 @@ if __name__ == '__main__':
                         if PRINT_FLAG == True:
                             print("Run ", RUNNING_MODEL, "; Repeat time:", REPEAT_TIME, "; Particle Update Time:", _particle_update_time)
                         _pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
+                        _pw_T_obj_opti_objects_pose_list = copy.deepcopy(pw_T_obj_opti_objects_list)
                         # execute PBPF algorithm movement
                         if PRINT_FLAG == True:
-                            print("-------------------------------------")
-                            print("global_objects_visual_by_DOPE_list: -")
-                            print(global_objects_visual_by_DOPE_list)
-                            print("global_objects_outlier_by_DOPE_list:-")
-                            print(global_objects_outlier_by_DOPE_list)
-                            print("-------------------------------------")
+                            pass
+                        if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
+                            global_objects_visual_by_DOPE_list = [0] * OBJECT_NUM
+                            global_objects_outlier_by_DOPE_list = [0] *OBJECT_NUM
+
+                        print("-------------------------------------")
+                        print("global_objects_visual_by_DOPE_list: -")
+                        print(global_objects_visual_by_DOPE_list)
+                        print("global_objects_outlier_by_DOPE_list:-")
+                        print(global_objects_outlier_by_DOPE_list)
+                        print("-------------------------------------")
 
 
                         # I. Motion Model #########################################################################################
@@ -2226,7 +2278,10 @@ if __name__ == '__main__':
                             t_before_RGB = time.time()
                             compare_distance_method = "seq" # seq/multi
                             if compare_distance_method == "seq":
-                                _RGB_weights_lists, test_particle_cloud_pub = compare_distance_seq(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list)
+                                if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
+                                    _RGB_weights_lists, test_particle_cloud_pub = compare_distance_seq(_particle_cloud_pub, _pw_T_obj_opti_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list)
+                                else:
+                                    _RGB_weights_lists, test_particle_cloud_pub = compare_distance_seq(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list)
                             elif compare_distance_method == "multi":
                                 for env_index, single_env in _single_envs.items():
                                     single_env.queue.put((SingleENV.compare_distance, env_index, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list))
@@ -2242,12 +2297,16 @@ if __name__ == '__main__':
                                 print("--------------------------------------------------------")
                             # b. Visibility Score #################################################################################
                             t_before_Vis = time.time()
-                            if VISIBILITY_COMPUTE_VK == True:
-                                new_particle_cloud = visibility_computing_vk(_particle_cloud_pub, _RGB_weights_lists)
-                                _particle_cloud_pub = copy.deepcopy(new_particle_cloud)
+
+                            if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
+                                pass
                             else:
-                                while True:
-                                    print("Not yet implemented")
+                                if VISIBILITY_COMPUTE_VK == True:
+                                    new_particle_cloud = visibility_computing_vk(_particle_cloud_pub, _RGB_weights_lists)
+                                    _particle_cloud_pub = copy.deepcopy(new_particle_cloud)
+                                else:
+                                    while True:
+                                        print("Not yet implemented")
                             t_after_Vis = time.time()
                             Compute_visibility_score_time_consumption = t_after_Vis - t_before_Vis
                             Compute_visibility_score_time_consuming_list.append(Compute_visibility_score_time_consumption)
@@ -2268,14 +2327,26 @@ if __name__ == '__main__':
                         # III. Resampling #########################################################################################
                         t_before_resample = time.time()
                         new_particle_cloud = resample_particles_update(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, _D_scores_list)
+                        t_after_resample = time.time()
+                        Resample_time_consumption = t_after_resample - t_before_resample
+                        Resample_time_consuming_list.append(Resample_time_consumption)
+                        if PRINT_FLAG == True:
+                            print("Resample/Compute Mean/... cost time:", t_after_resample - t_before_resample)
                         _particle_cloud_pub = copy.deepcopy(new_particle_cloud)
+                        t_after_deepcopy = time.time()
+                        Deepcopy_time_consumption = t_after_deepcopy - t_after_resample
+                        Deepcopy_time_consuming_list.append(Deepcopy_time_consumption)
+
                         for env_index, single_env in _single_envs.items():
                             single_env.queue.put((SingleENV.set_particle_in_each_sim_env, _particle_cloud_pub[env_index]))
                         for env_index, single_env in _single_envs.items():
                             _empty_return = wait_and_get_result_from(single_env)
-                        estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
+                        # estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
                         _publish_par_pose_info(_particle_cloud_pub)
-                        _publish_esti_pose_info(estimated_object_set)
+                        # _publish_esti_pose_info(estimated_object_set)
+                        t_after_setpub = time.time()
+                        Setpub_time_consumption = t_after_setpub - t_after_deepcopy
+                        Setpub_time_consuming_list.append(Setpub_time_consumption)
 
                         if RECORD_RESULTS_FLAG == True:
                             _record_obse_pose_list.append(_pw_T_obj_obse_objects_pose_list)
@@ -2285,11 +2356,6 @@ if __name__ == '__main__':
                         if SHOW_RAY == True:
                             while True:
                                 print("Not yet implemented")
-                        t_after_resample = time.time()
-                        Resample_time_consumption = t_after_resample - t_before_resample
-                        Resample_time_consuming_list.append(Resample_time_consumption)
-                        if PRINT_FLAG == True:
-                            print("Resample/Compute Mean/... cost time:", t_after_resample - t_before_resample)
                         ###########################################################################################################
                         ###########################################################################################################
                         ################################## One Particle Filtering Update Finished #################################
@@ -2305,12 +2371,18 @@ if __name__ == '__main__':
                         simRobot_touch_par_flag = 0
                         _record_time_consumption = time.time()
                         time_x = 1.
+                        # _boss_time_consumption_df.loc[_time_record_index] = [_time_record_index, _record_time_consumption - _record_t_begin, 
+                        #                                                      Motion_model_time_consumption/time_x, 
+                        #                                                      Render_depth_image_time_consumption/time_x, Compare_depth_image_time_consumption/time_x, 
+                        #                                                      Compare_distance_time_consumption/time_x, Compute_visibility_score_time_consumption/time_x,
+                        #                                                      Resample_time_consumption/time_x, Deepcopy_time_consumption/time_x, Setpub_time_consumption/time_x, Observation_model_time_consumption/time_x,
+                        #                                                      One_update_time_consumption/time_x]      
                         _boss_time_consumption_df.loc[_time_record_index] = [_time_record_index, _record_time_consumption - _record_t_begin, 
-                                                                             Motion_model_time_consumption/time_x, 
-                                                                             Render_depth_image_time_consumption/time_x, Compare_depth_image_time_consumption/time_x, 
-                                                                             Compare_distance_time_consumption/time_x, Compute_visibility_score_time_consumption/time_x,
-                                                                             Resample_time_consumption/time_x, Observation_model_time_consumption/time_x,
-                                                                             One_update_time_consumption/time_x]      
+                                                                             Motion_model_time_consumption, 
+                                                                             Render_depth_image_time_consumption, Compare_depth_image_time_consumption, 
+                                                                             Compare_distance_time_consumption, Compute_visibility_score_time_consumption,
+                                                                             Resample_time_consumption, Deepcopy_time_consumption, Setpub_time_consumption, Observation_model_time_consumption,
+                                                                             One_update_time_consumption]     
                         _time_record_index = _time_record_index + 1
 
                     else:

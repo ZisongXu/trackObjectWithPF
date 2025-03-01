@@ -117,6 +117,7 @@ class SingleENV(multiprocessing.Process):
         self.MASS_MIN_VALUE = 0.05
         self.FRICTION_MEAN = 0.1
         self.FRICTION_SIGMA = 0.3
+        # self.FRICTION_SIGMA = 0.0
         self.RESTITUTION_MEAN = 0.9
         self.RESTITUTION_SIGMA = 0.2 # 0.2
         # MASS_MEAN = 1.750 # 0.380
@@ -128,51 +129,179 @@ class SingleENV(multiprocessing.Process):
 
 
         # Motion Model Noise
-        self.MOTION_MODEL_POS_NOISE = 0.01 # original value = 0.005
-        self.MOTION_MODEL_ANG_NOISE = 0.1 # original value = 0.05/0.5 
+        self.MOTION_MODEL_POS_NOISE = 0.005 # original value = 0.005
+        self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5 
         # self.MOTION_MODEL_POS_NOISE = 0.0 # original value = 0.005
 
         self.MOTION_NOISE = True
         self.MASS_NOISE = True
         self.FRICTION_NOISE = True
 
-        if self.MASS_marker == 'mAN' or self.MASS_marker == 'mBN' or self.MASS_marker == 'mCN' or self.MASS_marker == 'mDN':
-            self.MOTION_NOISE = True
-            self.MASS_NOISE = True
-            self.FRICTION_NOISE = True
-        if self.MASS_marker == 'mA' or self.MASS_marker == 'mB' or self.MASS_marker == 'mC' or self.MASS_marker == 'mD':
+        if self.MASS_marker == 'mA' or self.MASS_marker == 'mB' or self.MASS_marker == 'mC' or self.MASS_marker == 'mD' or self.MASS_marker == 'mE' or self.MASS_marker == 'mF' or self.MASS_marker == 'mG':
             self.MOTION_NOISE = False
             self.MASS_NOISE = False
             self.FRICTION_NOISE = False
+        if self.MASS_marker == 'mAN' or self.MASS_marker == 'mBN' or self.MASS_marker == 'mCN' or self.MASS_marker == 'mDN' or self.MASS_marker == 'mEN' or self.MASS_marker == 'mFN' or self.MASS_marker == 'mGN':
+            self.MOTION_NOISE = True
+            self.MASS_NOISE = True
+            self.FRICTION_NOISE = False
+        if self.MASS_marker == 'mANN' or self.MASS_marker == 'mBNN' or self.MASS_marker == 'mCNN' or self.MASS_marker == 'mDNN' or self.MASS_marker == 'mENN' or self.MASS_marker == 'mFNN' or self.MASS_marker == 'mGNN':
+            self.MOTION_NOISE = False
+            self.MASS_NOISE = True
+            self.FRICTION_NOISE = True
                 
-        # if self.FRICTION_marker == 'fA' or self.FRICTION_marker == 'fB' or self.FRICTION_marker == 'fC' or self.FRICTION_marker == 'fD':
+        # if self.FRICTION_marker == 'fA' or self.FRICTION_marker == 'fB' or self.FRICTION_marker == 'fC' or self.FRICTION_marker == 'fD' or self.FRICTION_marker == 'fE' or self.FRICTION_marker == 'fF' or self.FRICTION_marker == 'fG' or self.FRICTION_marker == 'fH':
         #     self.MOTION_NOISE = False
         #     self.MASS_NOISE = False
         #     self.FRICTION_NOISE = False
-        # if self.FRICTION_marker == 'fAN' or self.FRICTION_marker == 'fBN' or self.FRICTION_marker == 'fCN' or self.FRICTION_marker == 'fDN':
+        # if self.FRICTION_marker == 'fAN' or self.FRICTION_marker == 'fBN' or self.FRICTION_marker == 'fCN' or self.FRICTION_marker == 'fDN' or self.FRICTION_marker == 'fEN' or self.FRICTION_marker == 'fFN' or self.FRICTION_marker == 'fGN' or self.FRICTION_marker == 'fHN':
+        #     self.MOTION_NOISE = True
+        #     self.MASS_NOISE = True
+        #     self.FRICTION_NOISE = False
+        # if self.FRICTION_marker == 'fANN' or self.FRICTION_marker == 'fBNN' or self.FRICTION_marker == 'fCNN' or self.FRICTION_marker == 'fDNN' or self.FRICTION_marker == 'fENN' or self.FRICTION_marker == 'fFNN' or self.FRICTION_marker == 'fGNN' or self.FRICTION_marker == 'fHNN':
         #     self.MOTION_NOISE = True
         #     self.MASS_NOISE = True
         #     self.FRICTION_NOISE = True
 
 
-        self.MASS_MEAN_list = [0.5] * self.object_num
-        if self.MASS_marker == 'mA' or self.MASS_marker == 'mAN':
-            self.MASS_MEAN_list = [0.5] * self.object_num
-        elif self.MASS_marker == 'mB' or self.MASS_marker == 'mBN':
-            self.MASS_MEAN_list = [1.0] * self.object_num
-        elif self.MASS_marker == 'mC' or self.MASS_marker == 'mCN':
-            self.MASS_MEAN_list = [5.0] * self.object_num
-        elif self.MASS_marker == 'mD' or self.MASS_marker == 'mDN':
-            self.MASS_MEAN_list = [10.0] * self.object_num
+        # self.MASS_MEAN_list = [0.06] * self.object_num
+        # self.MASS_MEAN_list = np.array(self.MASS_MEAN_list)
+        # if self.MASS_marker == 'mA' or self.MASS_marker == 'mAN' or self.MASS_marker == 'mANN':
+        #     self.MASS_MEAN_list = [0.01] * self.object_num
+        #     # self.MASS_MEAN_list = self.MASS_MEAN_list * (0.5)
+        # elif self.MASS_marker == 'mB' or self.MASS_marker == 'mBN' or self.MASS_marker == 'mBNN':
+        #     self.MASS_MEAN_list = [0.5] * self.object_num
+        #     # self.MASS_MEAN_list = self.MASS_MEAN_list * 1
+        # elif self.MASS_marker == 'mC' or self.MASS_marker == 'mCN' or self.MASS_marker == 'mCNN':
+        #     self.MASS_MEAN_list = [0.1] * self.object_num
+        #     # self.MASS_MEAN_list = self.MASS_MEAN_list * 2
+        # elif self.MASS_marker == 'mD' or self.MASS_marker == 'mDN' or self.MASS_marker == 'mDNN':
+        #     self.MASS_MEAN_list = [0.5] * self.object_num
+        #     # self.MASS_MEAN_list = self.MASS_MEAN_list * 3
+        # elif self.MASS_marker == 'mE' or self.MASS_marker == 'mEN' or self.MASS_marker == 'mENN':
+        #     self.MASS_MEAN_list = [1.0] * self.object_num
+        #     # self.MASS_MEAN_list = self.MASS_MEAN_list * 4
+        # elif self.MASS_marker == 'mF' or self.MASS_marker == 'mFN' or self.MASS_marker == 'mFNN':
+        #     self.MASS_MEAN_list = [5.0] * self.object_num
+        #     # self.MASS_MEAN_list = self.MASS_MEAN_list * 5
+        # elif self.MASS_marker == 'mG' or self.MASS_marker == 'mGN' or self.MASS_marker == 'mGNN':
+        #     self.MASS_MEAN_list = [10.0] * self.object_num
+        #     # self.MASS_MEAN_list = self.MASS_MEAN_list * 10
 
-        if self.FRICTION_marker == 'fA' or self.FRICTION_marker == 'fAN':
+
+
+        self.MASS_MEAN_list = [0.06, 0.05, 0.06] 
+        self.MASS_SIGMA_list = [0.1, 0.1, 0.1] 
+        self.MASS_SIGMA_list = np.array(self.MASS_SIGMA_list)
+        if self.MASS_marker == 'mA' or self.MASS_marker == 'mAN' or self.MASS_marker == 'mANN':
+            self.MASS_SIGMA_list = self.MASS_SIGMA_list / 100.0
+            self.FRICTION_SIGMA = 0.3 / 100.0
+            # self.MASS_MEAN_list = self.MASS_MEAN_list * (0.5)
+        elif self.MASS_marker == 'mB' or self.MASS_marker == 'mBN' or self.MASS_marker == 'mBNN':
+            self.MASS_SIGMA_list = self.MASS_SIGMA_list / 1.0
+            self.FRICTION_SIGMA = 0.3 / 1.0
+            # self.MASS_MEAN_list = self.MASS_MEAN_list * 1
+        elif self.MASS_marker == 'mC' or self.MASS_marker == 'mCN' or self.MASS_marker == 'mCNN':
+            self.MASS_SIGMA_list = self.MASS_SIGMA_list / 10.0
+            self.FRICTION_SIGMA = 0.3 / 10.0
+            # self.MASS_SIGMA_list = [0.5] * self.object_num
+            # self.MASS_MEAN_list = self.MASS_MEAN_list * 2
+        elif self.MASS_marker == 'mD' or self.MASS_marker == 'mDN' or self.MASS_marker == 'mDNN':
+            self.MASS_SIGMA_list = self.MASS_SIGMA_list * 2
+            self.FRICTION_SIGMA = 0.3 * 2
+            # self.MASS_SIGMA_list = [0.5] * self.object_num
+            # self.MASS_MEAN_list = self.MASS_MEAN_list * 3
+        elif self.MASS_marker == 'mE' or self.MASS_marker == 'mEN' or self.MASS_marker == 'mENN':
+            self.MASS_SIGMA_list = self.MASS_SIGMA_list * 5
+            self.FRICTION_SIGMA = 0.3 * 5
+            # self.MASS_SIGMA_list = [0.5] * self.object_num
+            # self.MASS_MEAN_list = self.MASS_MEAN_list * 4
+        elif self.MASS_marker == 'mF' or self.MASS_marker == 'mFN' or self.MASS_marker == 'mFNN':
+            self.MASS_SIGMA_list = self.MASS_SIGMA_list * 10
+            self.FRICTION_SIGMA = 0.3 * 10
+            # self.MASS_SIGMA_list = [0.5] * self.object_num
+            # self.MASS_MEAN_list = self.MASS_MEAN_list * 5
+        elif self.MASS_marker == 'mG' or self.MASS_marker == 'mGN' or self.MASS_marker == 'mGNN':
+            self.MASS_SIGMA_list = self.MASS_SIGMA_list * 100
+            self.FRICTION_SIGMA = 0.3 * 100
+            # self.MASS_SIGMA_list = [0.5] * self.object_num
+            # self.MASS_MEAN_list = self.MASS_MEAN_list * 10
+
+        # self.MASS_MEAN_list = [0.06] * self.object_num
+        # self.MASS_MEAN_list = np.array(self.MASS_MEAN_list)
+        # if self.MASS_marker == 'mA' or self.MASS_marker == 'mAN' or self.MASS_marker == 'mANN':
+        #     self.MOTION_MODEL_POS_NOISE = 0.000 # original value = 0.005
+        #     self.MOTION_MODEL_ANG_NOISE = 0.00 # original value = 0.05/0.5 
+        #     self.MOTION_NOISE = False
+        #     # self.MASS_MEAN_list = [0.01] * self.object_num
+        #     # self.MASS_MEAN_list = self.MASS_MEAN_list * (0.5)
+        # elif self.MASS_marker == 'mB' or self.MASS_marker == 'mBN' or self.MASS_marker == 'mBNN':
+        #     self.MOTION_MODEL_POS_NOISE = 0.005 # original value = 0.005
+        #     self.MOTION_MODEL_ANG_NOISE = 0.05 # original value = 0.05/0.5 
+        #     # self.MASS_MEAN_list = [0.5] * self.object_num
+        #     # self.MASS_MEAN_list = self.MASS_MEAN_list * 1
+        # elif self.MASS_marker == 'mC' or self.MASS_marker == 'mCN' or self.MASS_marker == 'mCNN':
+        #     self.MOTION_MODEL_POS_NOISE = 0.005 * 2 # original value = 0.005
+        #     self.MOTION_MODEL_ANG_NOISE = 0.05 * 2 # original value = 0.05/0.5 
+        #     # self.MASS_MEAN_list = [0.1] * self.object_num
+        #     # self.MASS_MEAN_list = self.MASS_MEAN_list * 2
+        # elif self.MASS_marker == 'mD' or self.MASS_marker == 'mDN' or self.MASS_marker == 'mDNN':
+        #     self.MOTION_MODEL_POS_NOISE = 0.005 * 4 # original value = 0.005
+        #     self.MOTION_MODEL_ANG_NOISE = 0.05 * 4 # original value = 0.05/0.5 
+        #     # self.MASS_MEAN_list = [0.5] * self.object_num
+        #     # self.MASS_MEAN_list = self.MASS_MEAN_list * 3
+        # elif self.MASS_marker == 'mE' or self.MASS_marker == 'mEN' or self.MASS_marker == 'mENN':
+        #     self.MOTION_MODEL_POS_NOISE = 0.005 * 10 # original value = 0.005
+        #     self.MOTION_MODEL_ANG_NOISE = 0.05 * 10 # original value = 0.05/0.5 
+        #     # self.MASS_MEAN_list = [1.0] * self.object_num
+        #     # self.MASS_MEAN_list = self.MASS_MEAN_list * 4
+        # elif self.MASS_marker == 'mF' or self.MASS_marker == 'mFN' or self.MASS_marker == 'mFNN':
+        #     self.MOTION_MODEL_POS_NOISE = 0.005 * 20 # original value = 0.005
+        #     self.MOTION_MODEL_ANG_NOISE = 0.05 * 20 # original value = 0.05/0.5 
+        #     # self.MASS_MEAN_list = [5.0] * self.object_num
+        #     # self.MASS_MEAN_list = self.MASS_MEAN_list * 5
+        # elif self.MASS_marker == 'mG' or self.MASS_marker == 'mGN' or self.MASS_marker == 'mGNN':
+        #     self.MOTION_MODEL_POS_NOISE = 0.005 * 40 # original value = 0.005
+        #     self.MOTION_MODEL_ANG_NOISE = 0.05 * 40 # original value = 0.05/0.5 
+        #     # self.MASS_MEAN_list = [10.0] * self.object_num
+        #     # self.MASS_MEAN_list = self.MASS_MEAN_list * 10
+
+        # if self.FRICTION_marker == 'fA' or self.FRICTION_marker == 'fAN' or self.FRICTION_marker == 'fANN':
+        #     self.FRICTION_MEAN = 0.5
+        # elif self.FRICTION_marker == 'fB' or self.FRICTION_marker == 'fBN' or self.FRICTION_marker == 'fBNN':
+        #     self.FRICTION_MEAN = 0.66667
+        # elif self.FRICTION_marker == 'fC' or self.FRICTION_marker == 'fCN' or self.FRICTION_marker == 'fCNN':
+        #     self.FRICTION_MEAN = 0.83337
+        # elif self.FRICTION_marker == 'fD' or self.FRICTION_marker == 'fDN' or self.FRICTION_marker == 'fDNN':
+        #     self.FRICTION_MEAN = 1
+        # elif self.FRICTION_marker == 'fE' or self.FRICTION_marker == 'fEN' or self.FRICTION_marker == 'fENN':
+        #     self.FRICTION_MEAN = 0.1
+        # elif self.FRICTION_marker == 'fF' or self.FRICTION_marker == 'fFN' or self.FRICTION_marker == 'fFNN':
+        #     self.FRICTION_MEAN = 0.2
+        # elif self.FRICTION_marker == 'fG' or self.FRICTION_marker == 'fGN' or self.FRICTION_marker == 'fGNN':
+        #     self.FRICTION_MEAN = 0.3
+        # elif self.FRICTION_marker == 'fH' or self.FRICTION_marker == 'fHN' or self.FRICTION_marker == 'fHNN':
+        #     self.FRICTION_MEAN = 0.4
+
+        if self.FRICTION_marker == 'fA' or self.FRICTION_marker == 'fAN' or self.FRICTION_marker == 'fANN':
+            self.FRICTION_MEAN = 0.01 # 0.01
+        elif self.FRICTION_marker == 'fB' or self.FRICTION_marker == 'fBN' or self.FRICTION_marker == 'fBNN':
             self.FRICTION_MEAN = 0.1
-        elif self.FRICTION_marker == 'fB' or self.FRICTION_marker == 'fBN':
+        elif self.FRICTION_marker == 'fC' or self.FRICTION_marker == 'fCN' or self.FRICTION_marker == 'fCNN':
+            self.FRICTION_MEAN = 0.25
+        elif self.FRICTION_marker == 'fD' or self.FRICTION_marker == 'fDN' or self.FRICTION_marker == 'fDNN':
+            self.FRICTION_MEAN = 0.38
+        elif self.FRICTION_marker == 'fE' or self.FRICTION_marker == 'fEN' or self.FRICTION_marker == 'fENN':
             self.FRICTION_MEAN = 0.5
-        elif self.FRICTION_marker == 'fC' or self.FRICTION_marker == 'fCN':
+        elif self.FRICTION_marker == 'fF' or self.FRICTION_marker == 'fFN' or self.FRICTION_marker == 'fFNN':
             self.FRICTION_MEAN = 0.75
-        elif self.FRICTION_marker == 'fD' or self.FRICTION_marker == 'fDN':
+        elif self.FRICTION_marker == 'fG' or self.FRICTION_marker == 'fGN' or self.FRICTION_marker == 'fGNN':
             self.FRICTION_MEAN = 1
+        # elif self.FRICTION_marker == 'fG' or self.FRICTION_marker == 'fGN' or self.FRICTION_marker == 'fGNN':
+        #     self.FRICTION_MEAN = 0.3
+        # elif self.FRICTION_marker == 'fH' or self.FRICTION_marker == 'fHN' or self.FRICTION_marker == 'fHNN':
+        #     self.FRICTION_MEAN = 0.4
+
 
         if self.MASS_NOISE == False:
             self.MASS_SIGMA_list = [0.0] * self.object_num
@@ -301,17 +430,17 @@ class SingleENV(multiprocessing.Process):
             pringles_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/pringles.urdf"),
                                               pw_T_pringles_pos, pw_T_pringles_ori, useFixedBase=1)
         if self.task_flag == "4": # slope
-            pw_T_Milk_pos = [0.5255412218811237, 0.4112688983400049, 0.8156348920165202]
+            pw_T_Milk_pos = [0.5255412218811237, 0.4092688983400049+0.13, 0.8156348920165202-2*0.0358583]
             pw_T_Milk_ori = [ 0.71226091, -0.00120944, -0.00472836,  0.70189783]
             base_Milk1_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/Milk/Milk_par_no_visual_hor.urdf"),
                                                pw_T_Milk_pos, pw_T_Milk_ori, useFixedBase=1)
-            pw_T_Milk_pos = [0.5255412218811237, 0.4092688983400049, 0.8156348920165202-2*0.0358583]
+            pw_T_Milk_pos = [0.5255412218811237, 0.4092688983400049+0.13, 0.8156348920165202-2*0.0358583]
             pw_T_Milk_ori = [ 0.71226091, -0.00120944, -0.00472836,  0.70189783]
             base_Milk2_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/Milk/Milk_par_no_visual_hor.urdf"),
                                                pw_T_Milk_pos, pw_T_Milk_ori, useFixedBase=1)
-            board_pos_4 = [0.5254358709124907, 0.08732338308299908, 0.7967666216816303-0.01]
-            board_ori_4 = [0.10745146728023694, -6.812425524646768e-05, -0.0006642243648951836, 0.9942101067402217]
-            board_id_4 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"),
+            board_pos_4 = [0.5255245316420766, 0.08585146275273556+0.13, 0.7858109052752488]
+            board_ori_4 = [0.0921379328294458, -1.0388626282143925e-05, -0.00014271076727580726, 0.9957462432063853]
+            self.board_id_4 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/board.urdf"),
                                                      board_pos_4, 
                                                      board_ori_4,
                                                      useFixedBase = 1)
@@ -319,12 +448,13 @@ class SingleENV(multiprocessing.Process):
             # self.p_env.changeDynamics(board_id_4, -1, mass = 5, 
             #                       lateralFriction = 1)
 
-            self.collision_detection_obj_id_collection.append(board_id_4)
+            self.collision_detection_obj_id_collection.append(self.board_id_4)
 
         if self.SIM_REAL_WORLD_FLAG == True:
             table_pos_1 = [0.46, -0.01, 0.702] # 0.710
             table_ori_1 = self.p_env.getQuaternionFromEuler([0,0,0])
-            table_id_1 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1, useFixedBase = 1)
+            self.table_id_1 = self.p_env.loadURDF(os.path.expanduser("~/project/object/others/table.urdf"), table_pos_1, table_ori_1, useFixedBase = 1)
+
 
             barry_pos_1 = [-0.694, 0.443, 0.895]
             barry_ori_1 = self.p_env.getQuaternionFromEuler([0,math.pi/2,0])
@@ -484,20 +614,36 @@ class SingleENV(multiprocessing.Process):
                                                                              obj_cur_pos, obj_cur_ori,
                                                                              obj_id, obj_index, obj_pose_3_1)
 
-                                                            
             if obj_index == 0:
-                normal_x = normal_x + 0.000
+                normal_x = normal_x - 0.000
                 normal_y = normal_y - 0.0000
                 normal_z = normal_z + 0.0000
             elif obj_index == 1:
                 normal_x = normal_x - 0.000
-                normal_y = normal_y + 0.0000
+                normal_y = normal_y - 0.0000
             elif obj_index == 2:
-                normal_x = normal_x - 0.0000
+                normal_x = normal_x - 0.000
+                normal_y = normal_y + 0.000
             elif obj_index == 3:
-                normal_x = normal_x - 0.0000
+                normal_x = normal_x - 0.000
+                normal_y = normal_y + 0.000
             elif obj_index == 4:
-                normal_x = normal_x - 0.0000
+                normal_x = normal_x - 0.000
+                normal_y = normal_y + 0.000
+
+            # if obj_index == 0:
+            #     normal_x = normal_x - 0.0005
+            #     normal_y = normal_y - 0.0000
+            #     normal_z = normal_z + 0.0000
+            # elif obj_index == 1:
+            #     normal_x = normal_x - 0.0002
+            #     normal_y = normal_y - 0.0002
+            # elif obj_index == 2:
+            #     normal_x = normal_x - 0.0000
+            # elif obj_index == 3:
+            #     normal_x = normal_x - 0.0000
+            # elif obj_index == 4:
+            #     normal_x = normal_x - 0.0000
 
             self.update_object_pose_PB(obj_index, normal_x, normal_y, normal_z, pb_quat, linearVelocity, angularVelocity)
         self.p_env.stepSimulation()
@@ -756,3 +902,26 @@ class SingleENV(multiprocessing.Process):
                                   spinningFriction = spinningFriction, 
                                   rollingFriction = rollingFriction, 
                                   restitution = restitution)
+
+        if self.task_flag == "4": # slope
+            self.p_env.changeDynamics(self.board_id_4, 0, 
+                                    lateralFriction = lateralFriction, 
+                                    spinningFriction = spinningFriction, 
+                                    rollingFriction = 0.001, 
+                                    restitution = restitution)
+        else:
+            self.p_env.changeDynamics(self.table_id_1, 0, 
+                                    lateralFriction = lateralFriction, 
+                                    spinningFriction = spinningFriction, 
+                                    rollingFriction = 0.001, 
+                                    restitution = restitution)
+        self.p_env.changeDynamics(self.robot_id, 10, 
+                                lateralFriction = lateralFriction, 
+                                spinningFriction = spinningFriction, 
+                                rollingFriction = 0.001, 
+                                restitution = restitution)
+        self.p_env.changeDynamics(self.robot_id, 11, 
+                                lateralFriction = lateralFriction, 
+                                spinningFriction = spinningFriction, 
+                                rollingFriction = 0.001, 
+                                restitution = restitution)

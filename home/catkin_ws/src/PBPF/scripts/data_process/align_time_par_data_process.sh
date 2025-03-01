@@ -1,6 +1,11 @@
 #!/bin/bash
 
-declare -a objectNames=("cracker" "soup")
+# declare -a objectNames=("cracker" "soup")
+# declare -a objectNames=("Parmesan" "Ketchup")
+# declare -a objectNames=("Parmesan" "Milk")
+declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
+# declare -a objectNames=("Milk")
+# declare -a objectNames=("SaladDressing" "cracker" "Parmesan")
 # declare -a objectNames=("cracker" "Ketchup" "Milk")
 # declare -a objectNames=("Parmesan")
 # declare -a objectNames=("Mayo")
@@ -19,18 +24,20 @@ declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("Mustard" "SaladDressing")
 # declare -a objectNames=("soup" "Parmesan" "Milk")
 # declare -a objectNames=("Ketchup" "Parmesan")
-declare -a objectNames=("Parmesan")
+# declare -a objectNames=("cracker" "soup")
+# declare -a objectNames=("Parmesan" "Ketchup")
 # declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
+# declare -a objectNames=("SaladDressing")
 # declare -a objectNames=("cracker" "SaladDressing")
 # declare -a objectNames=("Mayo" "Milk")
 # declare -a objectNames=("soup")
 # declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing")
 # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
 # declare -a objectNames=("Ketchup" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
-declare -a sceneNames=("scene4")
+declare -a sceneNames=("scene2")
 
 
-declare -a particleNumbers=(2)
+declare -a particleNumbers=(40)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("PBPF")
@@ -39,15 +46,33 @@ declare -a Ang_and_Pos=("ADD")
 declare -a update_style_flag=("time") # "time" "pose"
 # declare -a runVersions=("depth_img" "multiray")
 # declare -a runVersions=("PBPF_RGBD" "PBPF_RGB" "PBPF_D")
+# declare -a runVersions=("PBPF_Opti" "PBPF_RGB")
 declare -a runVersions=("PBPF_RGBD")
 # declare -a massMarkers=("mA" "mB" "mC" "mD")
 # declare -a massMarkers=("mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
+# declare -a massMarkers=("mANN" "mBNN" "mCNN" "mDNN" "mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
 # declare -a massMarkers=("mAN" "mBN" "mCN" "mDN")
-# declare -a massMarkers=("mA")
+# declare -a massMarkers=("mANN" "mA" "mBNN" "mB" "mCNN" "mC" "mDNN" "mD" "mENN" "mE" "mFNN" "mF" "mGNN" "mG")
+# declare -a massMarkers=("mBNN")
+declare -a massMarkers=("mANN" "mBNN" "mCNN" "mDNN" "mENN" "mFNN" "mGNN")
+# declare -a massMarkers=("mANN" "mBNN" "mCNN" "mDNN" "mENN")
 # declare -a frictionMarkers=("fA" "fB" "fC" "fD")
-# declare -a frictionMarkers=("fA")
-declare -a massMarkers=("mA")
-declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
+declare -a frictionMarkers=("fB")
+# declare -a massMarkers=("mA")
+# declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
+# declare -a frictionMarkers=("fANN" "fBNN" "fCNN" "fDNN" "fENN" "fFNN" "fA" "fB" "fC" "fD" "fE" "fF")
+# declare -a frictionMarkers=("fA" "fANN")
+# declare -a frictionMarkers=("fB" "fBNN")
+# declare -a frictionMarkers=("fC" "fCNN")
+# declare -a frictionMarkers=("fD" "fDNN")
+# declare -a frictionMarkers=("fE" "fENN")
+# declare -a frictionMarkers=("fF" "fFNN")
+# declare -a massMarkers=("mA")
+# declare -a massMarkers=("mB")
+# declare -a frictionMarkers=("fANN" "fA" "fBNN" "fB" "fCNN" "fC" "fDNN" "fD" "fENN" "fE" "fFNN" "fF" "fGNN" "fG")
+# declare -a frictionMarkers=("fANN")
+# declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fAN" "fBN" "fCN" "fDN")
+# declare -a frictionMarkers=("fA" "fB" "fC" "fD" "fE" "fF" "fG" "fH" "fAN" "fBN" "fCN" "fDN" "fEN" "fFN" "fGN" "fHN" "fANN" "fBNN" "fCNN" "fDNN" "fENN" "fFNN" "fGNN" "fHNN")
 
 for ang_and_pos in "${Ang_and_Pos[@]}"
 do
@@ -78,11 +103,15 @@ do
 									do
 										for ((par_index=0;par_index<${particleNumber};par_index++)); 
 										do
+										# for ((par_index=0;par_index<=0;par_index++)); 
+										# do
 											python3 align_time_par_data_process.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" "${par_index}" "${massMarker}" "${frictionMarker}" &
 											DATA_PRO_PID=$!
 
-											sleep 1.5
-											# sleep 1.5 # 2obj 50par
+											# sleep 2 # 2obj 50par 12*5
+											# sleep 2 # 2obj 50par 12*5
+											# sleep 2.5 # 3obj 40par 12*5
+											sleep 5 # 1obj 70par 14*5
 											# sleep 2.5 
 										done
 									done

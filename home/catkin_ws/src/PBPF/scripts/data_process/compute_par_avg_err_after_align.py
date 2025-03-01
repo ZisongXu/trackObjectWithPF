@@ -63,7 +63,7 @@ def ADDMatrixBtTwoObjects(obj_name, pos1, ori1, pos2, ori2):
 def getCenterTPointsList(object_name):
     center_T_points_pose_4_4_list = []
     # if object_name == "cracker" or object_name == "gelatin":
-    if object_name != "soup":
+    if object_name != "soup" or object_name != "soup2" :
         if object_name == "cracker":
             x_w = 0.159
             y_l = 0.21243700408935547
@@ -271,8 +271,8 @@ MASS_marker = sys.argv[9] # obj_name
 FRICTION_marker = sys.argv[10] # obj_name
 MF_FLAG = sys.argv[11] # obj_name
 
-file_path_par = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/results/particles/")
-file_path_GT = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/results/")
+file_path_par = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/results/particles/"+MF_FLAG+"/")
+file_path_GT = os.path.expanduser("~/catkin_ws/src/PBPF/scripts/results/"+MF_FLAG+"/")
 # Time_aligned_5_scene1_rosbag1_repeat0_time_PBPF_pose_PBPF_RGBD_0_cracker.csv
 # Time_aligned_70_scene1_rosbag1_repeat0_time_PBPF_pose_PBPF_RGBD_69_Mayo.csv
 file_name_list = []

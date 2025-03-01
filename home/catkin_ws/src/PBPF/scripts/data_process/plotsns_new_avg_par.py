@@ -122,12 +122,19 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
         x_xlim = 120 # 28
         y_ylim = 0.5 # 0.5
     if object_name == "soup" and rosbag_flag == "1":
-        x_range_max = 95 # 28, 129, 265
-        x_range_unit = 10 # 2, 6, 25, 125
+        x_range_max = 60 # 28, 129, 265
+        x_range_unit = 6 # 2, 6, 25, 125
         y_range_max = 0.5 # 0.5
-        y_range_unit = 0.05 # 0.04
+        y_range_unit = 0.025 # 0.04
         x_xlim = 95 # 28
-        y_ylim = 0.5 # 0.5
+        y_ylim = 0.25 # 0.5
+    if object_name == "soup2" and rosbag_flag == "1":
+        x_range_max = 60 # 28, 129, 265
+        x_range_unit = 6 # 2, 6, 25, 125
+        y_range_max = 0.5 # 0.5
+        y_range_unit = 0.025 # 0.04
+        x_xlim = 95 # 28
+        y_ylim = 0.25 # 0.5
 
 
     print("Ready to plot the figure of "+ang_and_pos+" ("+object_name+")")
@@ -152,29 +159,29 @@ if ang_and_pos == "ADD" or ang_and_pos == "ADDS" :
         "Diff-DOPE-Tracking": "#EDB11A",
     }
 
-    color_map = {
-        "mA": "#614099",
-        "mB": "#EE4431",
-        "mC": "#369F2D",
-    }
+    # color_map = {
+    #     "mA": "#614099",
+    #     "mBNN": "#EE4431",
+    #     "mC": "#369F2D",
+    # }
 
-    color_map = {
-        "fA": "#614099",
-        "fB": "#EE4431",
-        "fC": "#369F2D",
-        "fD": "#4995C6",
-    }
+    # color_map = {
+    #     "fA": "#614099",
+    #     "fB": "#EE4431",
+    #     "fC": "#369F2D",
+    #     "fD": "#4995C6",
+    # }
     # print("Before")
     # print(dataset_ADD)
     # dataset_ADD = dataset_ADD.to_numpy()[:,np.newaxis]
     # print("After")
     # print(dataset_ADD)
     if ang_and_pos == "ADD":
-        # figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADD Error (m)", hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
-        figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADD Error (m)", hue='friction', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
+        figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADD Error (m)", hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
+        # figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADD Error (m)", hue='friction', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
     if ang_and_pos == "ADDS":
-        # figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADDS Error (m)", hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
-        figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADDS Error (m)", hue='friction', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
+        figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADDS Error (m)", hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
+        # figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADDS Error (m)", hue='friction', errorbar=('ci', 95), legend=True, linewidth=0.5, palette=color_map)
     # figure_ADD = sns.lineplot(data=dataset_ADD, x="time", y="ADD Matrix Error (m)", palette=['y', 'g', 'r'], hue='alg', errorbar=('ci', 95), legend=True, linewidth=0.5)
     # figure_ADD = sns.lineplot(data=dataset_ADD, x=1, y=2, hue=3, errorbar=('ci', 95), legend=False, linewidth = 0.5)
     figure_ADD.set(xlabel = None, ylabel = None)

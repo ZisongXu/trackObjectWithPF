@@ -53,12 +53,13 @@ repeat_time = sys.argv[5]
 run_alg_flag = sys.argv[6] # PBPF
 ang_and_pos = sys.argv[7] # pos/ang
 runVersion = sys.argv[8] # multiray/ang
+MASS_marker = sys.argv[9] # obj_name
+FRICTION_marker = sys.argv[10] # obj_name
 
 # 10_scene1_rosbag1_repeat0_cracker_time_GT_pose_PBPF_RGBD
 # 10_scene1_rosbag1_repeat0_cracker_time_obse_pose_PBPF_RGBD
 # 10_scene1_rosbag1_repeat0_cracker_time_PBPF_pose_PBPF_RGBD
-# 70_scene1_rosbag1_repeat0_cracker_time_FOUD_pose_PBPF_RGBD
-file_name = str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_'+run_alg_flag+'_pose_'+runVersion
+file_name = str(particle_num)+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+object_name+'_'+update_style_flag+'_'+run_alg_flag+'_pose_'+runVersion+'_'+MASS_marker+'_'+FRICTION_marker
 
 
 flag_pos = True
@@ -75,13 +76,13 @@ prepare_time = 55 * 100
 rosbag_slowdown_rate = 1
 
 if object_name == "cracker" and rosbag_flag == "1":
-    prepare_time = 30 * 100
+    prepare_time = 95 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Ketchup" and rosbag_flag == "1":
     prepare_time = 100 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Mayo" and rosbag_flag == "1":
-    prepare_time = 105 * 100
+    prepare_time = 100 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Milk" and rosbag_flag == "1":
     prepare_time = 100 * 100
@@ -90,13 +91,16 @@ if object_name == "Mustard" and rosbag_flag == "1":
     prepare_time = 115 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Parmesan" and rosbag_flag == "1":
-    prepare_time = 95 * 100
+    prepare_time = 20 * 100
     rosbag_slowdown_rate = 1
 if object_name == "SaladDressing" and rosbag_flag == "1":
-    prepare_time = 115 * 100
+    prepare_time = 95 * 100
     rosbag_slowdown_rate = 1
 if object_name == "soup" and rosbag_flag == "1":
-    prepare_time = 95 * 100
+    prepare_time = 60 * 100
+    rosbag_slowdown_rate = 1
+if object_name == "soup2" and rosbag_flag == "1":
+    prepare_time = 60 * 100
     rosbag_slowdown_rate = 1
 
 # pw_T_cam_pose = np.array([[-0.17022463,  0.22072718, -0.96036612,  1.01227219],
@@ -104,11 +108,23 @@ if object_name == "soup" and rosbag_flag == "1":
 #                           [-0.01048739, -0.97494059, -0.22221804,  0.93997983],
 #                           [ 0.        ,  0.        ,  0.        ,  1.        ]])
 
+# pw_T_cam_pose = np.array([[-0.044931,    0.23043063, -0.97205089,  1.20441085],
+#                             [ 0.99824785,  0.04785813, -0.03479683,  0.0336495 ],
+#                             [ 0.03850228, -0.97191117, -0.2321772 ,  1.0223675 ],
+#                             [ 0.        ,  0.        ,  0.        ,  1.        ]])
 
-pw_T_cam_pose = np.array([[ 4.00994672e-02,  3.70849964e-01, -9.27826674e-01,  1.09106847e+00],
- [ 9.99195687e-01, -1.49875652e-02,  3.71934518e-02, -2.02243172e-02],
- [-1.12672521e-04, -9.28571848e-01, -3.71152678e-01,  1.08219147e+00],
- [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+# pw_T_cam_pose = np.array([[-8.95095741e-03,  2.17633877e-01, -9.75989434e-01,  1.21345200e+00],
+#                             [ 9.99005319e-01,  4.45843495e-02,  7.79732597e-04, -6.73263951e-03],
+#                             [ 4.36835502e-02, -9.75011657e-01, -2.17816474e-01,  1.00687529e+00],
+#                             [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+# pw_T_cam_pose = np.array([[ 9.37735911e-02,  2.78147082e-01, -9.55950163e-01,  1.18120405e+00],
+#                             [ 9.95593427e-01, -2.57238183e-02,  9.01776779e-02, -8.42059848e-02],
+#                             [ 4.91969723e-04, -9.60193983e-01, -2.79333621e-01,  1.04590236e+00],
+#                             [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+pw_T_cam_pose = np.array([[ 0.04771702,  0.29078387, -0.95559815,  1.15756931],
+                            [ 0.99797884,  0.02631729,  0.05784149,  0.01792461],
+                            [ 0.04196812, -0.95642676, -0.28894036,  1.0088215 ],
+                            [ 0.        ,  0.        ,  0.        ,  1.        ]])            
 
 # prepare_time = 250000
 
@@ -140,7 +156,7 @@ def angle_correction(angle):
 # print("Ready to integrate the data of "+ang_and_pos)
 dataset = pd.read_csv(save_file_path+file_name+'.csv', header=None)
 # dataset.columns=["index","time","error","alg","obj_scene","particle_num","ray_type"]
-dataset.columns=['index','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type', 'obj_name']
+dataset.columns=['index','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type', 'obj_name', 'mass', 'friction']
 
 for index, row in dataset.iterrows():
     pos_x = row['pos_x']
@@ -199,7 +215,7 @@ for index, row in dataset.iterrows():
 
 # dataset.time = dataset.time - 4.3
 datasetcopy = copy.deepcopy(dataset)
-newdataset = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type', 'obj_name'],index=[])
+newdataset = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type', 'obj_name', 'mass', 'friction'],index=[])
 timestep_list = []
 # for timestep in range(prepare_time):
 for timestep in range(int(prepare_time/rosbag_slowdown_rate)):
@@ -240,7 +256,9 @@ for i in range(int(prepare_time/rosbag_slowdown_rate)):
                              datasetcopy.loc[newdata.idxmin(),'scene'],
                              datasetcopy.loc[newdata.idxmin(),'particle_num'],
                              datasetcopy.loc[newdata.idxmin(),'ray_type'],
-                             datasetcopy.loc[newdata.idxmin(),'obj_name']]
+                             datasetcopy.loc[newdata.idxmin(),'obj_name'],
+                             datasetcopy.loc[newdata.idxmin(),'mass'],
+                             datasetcopy.loc[newdata.idxmin(),'friction']]
 # print(newdataset.time)
 # print(str(particle_num)+'_'+object_name+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+run_alg_flag+'_'+ang_and_pos)
 print("Done")

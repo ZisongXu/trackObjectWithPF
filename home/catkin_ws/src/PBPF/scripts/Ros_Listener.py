@@ -53,6 +53,9 @@ class Ros_Listener():
         
         rospy.Subscriber('/mocap/rigid_bodies/soup_opti/pose', PoseStamped, self.object_pose_callback_soup, queue_size=1)
         self.object_soup_pose = PoseStamped()
+        
+        rospy.Subscriber('/mocap/rigid_bodies/soup_opti2/pose', PoseStamped, self.object_pose_callback_soup2, queue_size=1)
+        self.object_soup2_pose = PoseStamped()
 
         rospy.Subscriber('/mocap/rigid_bodies/Ketchup_opti/pose', PoseStamped, self.object_pose_callback_Ketchup, queue_size=1)
         self.object_Ketchup_pose = PoseStamped()
@@ -199,6 +202,12 @@ class Ros_Listener():
             # print(self.object_soup_pose)
             # print("==============")
             return self.object_soup_pose
+        elif object_flag == "soup2":
+            # print("==============")
+            # print("soup: In the Ros_Listener")
+            # print(self.object_soup_pose)
+            # print("==============")
+            return self.object_soup2_pose
         elif object_flag == "gelatin":
             # print("==============")
             # print("gelation: In the Ros_Listener")
@@ -322,6 +331,20 @@ class Ros_Listener():
         w_ori = data.pose.orientation.w
         self.object_ori = [x_ori, y_ori, z_ori, w_ori]
         self.object_soup_pose = [self.object_pos, self.object_ori]
+
+    def object_pose_callback_soup2(self, data):
+        #pos
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.object_pos = [x_pos, y_pos, z_pos]
+        #ori
+        x_ori = data.pose.orientation.x
+        y_ori = data.pose.orientation.y
+        z_ori = data.pose.orientation.z
+        w_ori = data.pose.orientation.w
+        self.object_ori = [x_ori, y_ori, z_ori, w_ori]
+        self.object_soup2_pose = [self.object_pos, self.object_ori]
     
     def object_pose_callback_Ketchup(self, data):
         #pos

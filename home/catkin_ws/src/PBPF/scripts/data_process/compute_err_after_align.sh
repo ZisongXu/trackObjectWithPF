@@ -4,35 +4,36 @@
 # declare -a objectNames=("cracker" "Ketchup")
 # declare -a objectNames=("cracker" "Ketchup")
 # declare -a objectNames=("cracker" "Ketchup" "Milk")
-# declare -a objectNames=("Parmesan")
+declare -a objectNames=("Parmesan")
 # declare -a objectNames=("cracker" "Ketchup")
 # declare -a objectNames=("Mustard")
-# declare -a objectNames=("soup" "Parmesan")
+# declare -a objectNames=("soup" "soup2")
 # declare -a objectNames=("SaladDressing" "Mustard")
-# declare -a objectNames=("cracker" "soup" "Parmesan")
+# declare -a objectNames=("cracker" "SaladDressing" "Parmesan")
 # declare -a objectNames=("cracker" "Mayo" "Milk")
 # declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
 # declare -a objectNames=("Parmesan" "soup")
 # declare -a objectNames=("soup" "Parmesan" "Milk")
 # declare -a objectNames=("Mayo")
-declare -a objectNames=("Milk" "Parmesan")
+# declare -a objectNames=("cracker" "Parmesan")
 # declare -a objectNames=("Mustard" "SaladDressing")
 # declare -a objectNames=("Mayo" "Milk")
 # declare -a objectNames=("Ketchup")
 # declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a sceneNames=("scene1")
+declare -a sceneNames=("scene2")
 
-declare -a particleNumbers=(50)
+declare -a particleNumbers=(70)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 # declare -a runAlgFlags=("PBPF" "obse" "FOUD")
 # declare -a runAlgFlags=("FOUD")
 # declare -a runAlgFlags=("PBPF")
+# declare -a runAlgFlags=("DiffDOPE")
 # declare -a runAlgFlags=("DiffDOPE" "DiffDOPET")
-declare -a runAlgFlags=("FOUD" "DiffDOPE" "DiffDOPET")
+# declare -a runAlgFlags=("FOUD" "DiffDOPE" "DiffDOPET")
 # declare -a runAlgFlags=("PBPF" "obse")
-# declare -a runAlgFlags=("FOUD" "DiffDOPE")
+declare -a runAlgFlags=("FOUD" "DiffDOPE")
 # declare -a runobseFlags=("obse" "FOUD")
 # declare -a Ang_and_Pos=("ang" "pos")
 declare -a Ang_and_Pos=("ADD" "ADDS")
@@ -41,9 +42,12 @@ declare -a update_style_flag=("time") # "time" "pose"
 # declare -a runVersions=("PBPF_RGBD" "PBPF_RGB" "PBPF_D")
 declare -a runVersions=("PBPF_RGBD")
 # declare -a massMarkers=("mA" "mB" "mC")
-declare -a massMarkers=("mA")
-declare -a frictionMarkers=("fA" "fB" "fC" "fD")
+declare -a massMarkers=("mBNN")
+# declare -a massMarkers=("mANN" "mA" "mBNN" "mB" "mCNN" "mC" "mDNN" "mD" "mENN" "mE" "mFNN" "mF" "mGNN" "mG")
+# declare -a frictionMarkers=("fA" "fB" "fC" "fD")
+declare -a frictionMarkers=("fB")
 # declare -a frictionMarkers=("fA")
+declare -a MF_flag=("mass") # mass/friction
 
 for ang_and_pos in "${Ang_and_Pos[@]}"
 do
@@ -75,13 +79,18 @@ do
 							do
 								for frictionMarker in "${frictionMarkers[@]}"
 								do
+
 									for runVersion in "${runVersions[@]}"
 									do
-										python3 compute_err_after_align.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" "${massMarker}" "${frictionMarker}" &
-										DATA_PRO_PID=$!
+										for mf_flag in "${MF_flag[@]}"
+										do
+											python3 compute_err_after_align.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" "${massMarker}" "${frictionMarker}" "${mf_flag}" &
+											DATA_PRO_PID=$!
 
-										sleep 1
+											sleep 1
+										done
 									done
+
 								done
 							done
 						done

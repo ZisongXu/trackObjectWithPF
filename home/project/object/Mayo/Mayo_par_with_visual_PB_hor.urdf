@@ -18,7 +18,7 @@
          <!-- <box size="0.16 0.21343700408935547 0.061"/> -->
          <mesh filename="Mayo.obj" scale="1 1 1"/>
        </geometry>
-       <material name="white"/>
+       <material name="purple"/>
        <origin xyz="0 0 0" rpy="0 0 0"/>
      </visual>
      <inertial>

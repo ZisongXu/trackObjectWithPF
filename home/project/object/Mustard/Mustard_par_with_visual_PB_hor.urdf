@@ -18,7 +18,7 @@
          <!-- <box size="0.16 0.21343700408935547 0.061"/> -->
          <mesh filename="Mustard.obj" scale="1 1 1"/>
        </geometry>
-       <material name="golden_yellow"/>
+       <material name="purple"/>
        <!-- <material name="light_green"/> -->
        <!-- <material name="white">
          <color rgba="1. 1. 1. 1."/>

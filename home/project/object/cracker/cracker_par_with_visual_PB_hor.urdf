@@ -21,7 +21,7 @@
          <box size="0.16 0.21343700408935547 0.061"/>
          <!-- <mesh filename="textured_simple_reoriented.obj" scale="1 1 1"/> -->
        </geometry>
-       <material name="coral_red"/>
+       <material name="purple"/>
        <!-- <origin xyz="0 0 0" rpy="0 -1.5707963 1.5707963"/> -->
      </visual>
      <inertial>

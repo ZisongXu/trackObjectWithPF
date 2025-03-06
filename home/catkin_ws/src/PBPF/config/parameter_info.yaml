@@ -1,6 +1,6 @@
 ADDMatrix_flag: true
 FRICTION_marker: fB
-MASS_marker: mGNN
+MASS_marker: mBNN
 camera_info_topic_color: /camera/color/camera_info
 camera_info_topic_depth: /camera/depth/camera_info
 combine_particle_depth_mask_flag: false
@@ -24,10 +24,9 @@ locate_camera_flag: ar
 multiprocessing_flag: false
 nearVal: 0.03
 object_name_list:
-- SaladDressing
-- Mustard
-- Mayo
-object_num: 3
+- Parmesan
+- Milk
+object_num: 2
 objs_are_not_touching_target_objs_num: 0
 objs_touching_target_objs_num: 0
 optitrack_flag: true
@@ -58,7 +57,7 @@ running_model: PBPF_RGBD
 show_particle_depth_image_to_point_cloud_flag: false
 show_ray: false
 sim_real_world_flag: true
-task_flag: '2'
+task_flag: '1'
 update_style_flag: time
 use_convolution_flag: false
 version: multiray

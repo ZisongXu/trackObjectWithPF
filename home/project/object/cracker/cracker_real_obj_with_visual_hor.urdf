@@ -3,12 +3,15 @@
    <material name="blue">
      <color rgba="0.2 0.63137 0.788 1"/>
    </material>
+   <material name="coral">
+     <color rgba="1 0.498 0.3137 1"/>
+   </material>
    <link name="base_link">
      <visual>
        <geometry>
          <box size="0.2600016 0.21343700408935547 0.062"/>
        </geometry>
-       <material name="blue"/>
+       <material name="coral"/>
      </visual>
      <inertial>
        <mass value="0"/>

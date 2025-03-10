@@ -33,7 +33,7 @@ err_file = parameter_info['err_file']
 
 
 normal_and_par_list = ["par", "normal"] # par/normal
-normal_and_par_list = ["quick_push"] # par/normal/Opti_RGB
+normal_and_par_list = ["normal_quick_push"] # par/normal/Opti_RGB/normal_quick_push/normal_scene2_clear
 ang_and_pos_list = ["ADD", "ADDS"]
 # ang_and_pos_list = ["ADD"]
 
@@ -116,7 +116,8 @@ for ang_and_pos in ang_and_pos_list:
         for label_ in result_df.index:
             y_values = [0] + result_df.loc[label_].values.tolist()
 
-            if label_ == "PBPF_RGBD_par_avg" or label_ == "FOUD" or label_ == "Diff-DOPE" or label_ == "PBPF_Opti_par_avg" or label_ == "PBPF_RGB_par_avg":
+            # if label_ == "PBPF_RGBD_par_avg" or label_ == "FOUD" or label_ == "Diff-DOPE" or label_ == "PBPF_Opti_par_avg" or label_ == "PBPF_RGB_par_avg":
+            if label_ == "PBPF_RGBD_par_avg" or label_ == "FOUD" or label_ == "Diff-DOPE" or label_ == "PBPF_Opti_par_avg":
                 plt.plot(x_values, y_values, label=label_, color=color_map.get(label_,'#000000'))
                 # continue
             else:
@@ -145,6 +146,7 @@ for ang_and_pos in ang_and_pos_list:
         plt.xlabel('Error Threshold (m)', fontsize=18)
         plt.ylabel('Accuracy', fontsize=18)
         plt.title("AUC-"+ang_and_pos, fontsize=18)
+        # plt.title("(Slow Push) (Fast Push)", fontsize=18)
         plt.legend(loc='lower right', labels=label__labels, title_fontsize=16)
         plt.grid(False)
         plt.xticks(fontsize=17)

@@ -146,6 +146,15 @@ class Visualisation_World():
                                                   pw_T_she_pos,
                                                   pw_T_she_ori,
                                                   useFixedBase=1)
+        if self.task_flag == "6":
+            pw_T_Milk_opti_pos = [0.5639079993582834, 0.06686931205630225, 0.7947410960108179]
+            pw_T_Milk_opti_ori = [-0.61877113,  0.33879951,  0.61984684,  0.3436962 ]
+            obstacle_Milk_id = p_visualisation.loadURDF(os.path.expanduser("~/project/object/Milk/Milk_real_obj_with_visual_hor.urdf"),
+                                                  pw_T_Milk_opti_pos,
+                                                  pw_T_Milk_opti_ori,
+                                                  useFixedBase=1)
+
+
         
         # load robot in the pybullet world
         pw_T_rob_sim_pose_list = self.create_scene.initialize_robot()

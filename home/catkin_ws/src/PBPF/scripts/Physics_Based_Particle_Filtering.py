@@ -817,6 +817,11 @@ def _vk_load_meshes():
         vk_other_id_list.append(other_obj_id)
         vk_other_obj_info = Object_Pose(obj_name='board4', obj_id=0, pos=[0.5255245316420766, 0.08585146275273556, 0.7858109052752488], ori=[0.0921379328294458, -1.0388626282143925e-05, -0.00014271076727580726, 0.9957462432063853], index=0) # ori: x, y, z, w           
         vk_other_obj_info_list.append(vk_other_obj_info) 
+    if TASK_FLAG == "6":
+        other_obj_id = _vk_context.load_model("assets/meshes/Milk.vkdepthmesh")
+        vk_other_id_list.append(other_obj_id)
+        vk_other_obj_info = Object_Pose(obj_name='Milk', obj_id=0, pos=[0.5639079993582834, 0.06686931205630225, 0.7947410960108179], ori=[-0.61877113,  0.33879951,  0.61984684,  0.3436962 ], index=0) # ori: x, y, z, w           
+        vk_other_obj_info_list.append(vk_other_obj_info) 
 
     return vk_obj_id_list, vk_rob_link_id_list, vk_other_id_list, vk_other_obj_info_list
     
@@ -1725,8 +1730,11 @@ if __name__ == '__main__':
     # c_pw_T_target_obj_obse_pose_lsit = []
     # for obj_index in range(len(pw_T_obj_obse_obj_list_alg)):        
     #     if obj_index == 0:
-    #         pw_T_obj_obse_pos = [0.44387777404766426, -0.24483345047213362, 0.7748352994472808]
-    #         pw_T_obj_obse_ori = [-0.55190256,  0.44159203,  0.58406295,  0.3990871 ]
+    #         pw_T_obj_obse_pos = [0.35720025517846266, -0.19457586435273772, 0.7497465517420716]
+    #         pw_T_obj_obse_ori = [ 0.70004977 -0.22280119 -0.66403485 -0.13909588]
+
+    #         # pw_T_obj_obse_pos = [0.44387777404766426, -0.24483345047213362, 0.7748352994472808]
+    #         # pw_T_obj_obse_ori = [-0.55190256,  0.44159203,  0.58406295,  0.3990871 ]
     #     elif obj_index == 1:
     #         pw_T_obj_obse_pos = [0.31913317797909924, -0.19259196383206673, 0.7759606553600721]
     #         pw_T_obj_obse_ori = [ 0.52136008, -0.48381242, -0.4988777 , -0.49520729]
@@ -2220,8 +2228,8 @@ if __name__ == '__main__':
                         # execute PBPF algorithm movement
                         if PRINT_FLAG == True:
                             pass
-                        # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
-                        if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
+                        if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
+                        # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
                             global_objects_visual_by_DOPE_list = [0] * OBJECT_NUM
                             global_objects_outlier_by_DOPE_list = [0] *OBJECT_NUM
 
@@ -2296,7 +2304,8 @@ if __name__ == '__main__':
                             t_before_RGB = time.time()
                             compare_distance_method = "seq" # seq/multi
                             if compare_distance_method == "seq":
-                                if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
+                                if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
+                                # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
                                     _RGB_weights_lists, test_particle_cloud_pub = compare_distance_seq(_particle_cloud_pub, _pw_T_obj_opti_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list)
                                 else:
                                     _RGB_weights_lists, test_particle_cloud_pub = compare_distance_seq(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list)
@@ -2316,7 +2325,8 @@ if __name__ == '__main__':
                             # b. Visibility Score #################################################################################
                             t_before_Vis = time.time()
 
-                            if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
+                            if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
+                            # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
                                 pass
                             else:
                                 if VISIBILITY_COMPUTE_VK == True:
@@ -2359,9 +2369,9 @@ if __name__ == '__main__':
                             single_env.queue.put((SingleENV.set_particle_in_each_sim_env, _particle_cloud_pub[env_index]))
                         for env_index, single_env in _single_envs.items():
                             _empty_return = wait_and_get_result_from(single_env)
-                        estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
                         _publish_par_pose_info(_particle_cloud_pub)
-                        _publish_esti_pose_info(estimated_object_set)
+                        # estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
+                        # _publish_esti_pose_info(estimated_object_set)
                         t_after_setpub = time.time()
                         Setpub_time_consumption = t_after_setpub - t_after_deepcopy
                         Setpub_time_consuming_list.append(Setpub_time_consumption)
@@ -2418,8 +2428,8 @@ if __name__ == '__main__':
                             _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
                         _publish_par_pose_info(_particle_cloud_pub)
 
-                estimated_object_set_old = copy.deepcopy(estimated_object_set)
-                estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
+                # estimated_object_set_old = copy.deepcopy(estimated_object_set)
+                # estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
                 
                 if Only_update_robot_flag == False:
                     print("Waiting for next loop")

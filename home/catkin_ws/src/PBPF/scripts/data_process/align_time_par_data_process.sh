@@ -3,11 +3,11 @@
 # declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("Parmesan" "Ketchup")
 # declare -a objectNames=("Parmesan" "Milk")
-declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
+# declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
 # declare -a objectNames=("Milk")
 # declare -a objectNames=("SaladDressing" "cracker" "Parmesan")
 # declare -a objectNames=("cracker" "Ketchup" "Milk")
-# declare -a objectNames=("Parmesan")
+declare -a objectNames=("Parmesan")
 # declare -a objectNames=("Mayo")
 # declare -a objectNames=("SaladDressing" "cracker")
 # declare -a objectNames=("SaladDressing" "soup")
@@ -34,10 +34,10 @@ declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
 # declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing")
 # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
 # declare -a objectNames=("Ketchup" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
-declare -a sceneNames=("scene2")
+declare -a sceneNames=("scene6")
 
 
-declare -a particleNumbers=(40)
+declare -a particleNumbers=(70)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 declare -a runAlgFlags=("PBPF")
@@ -53,8 +53,8 @@ declare -a runVersions=("PBPF_RGBD")
 # declare -a massMarkers=("mANN" "mBNN" "mCNN" "mDNN" "mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
 # declare -a massMarkers=("mAN" "mBN" "mCN" "mDN")
 # declare -a massMarkers=("mANN" "mA" "mBNN" "mB" "mCNN" "mC" "mDNN" "mD" "mENN" "mE" "mFNN" "mF" "mGNN" "mG")
-# declare -a massMarkers=("mBNN")
-declare -a massMarkers=("mANN" "mBNN" "mCNN" "mDNN" "mENN" "mFNN" "mGNN")
+declare -a massMarkers=("mBNN")
+# declare -a massMarkers=("mANN" "mBNN" "mCNN" "mDNN" "mENN" "mFNN" "mGNN")
 # declare -a massMarkers=("mANN" "mBNN" "mCNN" "mDNN" "mENN")
 # declare -a frictionMarkers=("fA" "fB" "fC" "fD")
 declare -a frictionMarkers=("fB")
@@ -111,7 +111,7 @@ do
 											# sleep 2 # 2obj 50par 12*5
 											# sleep 2 # 2obj 50par 12*5
 											# sleep 2.5 # 3obj 40par 12*5
-											sleep 5 # 1obj 70par 14*5
+											sleep 1 # 1obj 70par 14*5
 											# sleep 2.5 
 										done
 									done

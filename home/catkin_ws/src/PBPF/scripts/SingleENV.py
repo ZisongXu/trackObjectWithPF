@@ -228,7 +228,7 @@ class SingleENV(multiprocessing.Process):
             # self.MASS_SIGMA_list = [0.5] * self.object_num
             # self.MASS_MEAN_list = self.MASS_MEAN_list * 10
 
-        self.MASS_MEAN_list = [0.5] * self.object_num
+        self.MASS_MEAN_list = [0.06] * self.object_num
         # self.MASS_MEAN_list = np.array(self.MASS_MEAN_list)
         # if self.MASS_marker == 'mA' or self.MASS_marker == 'mAN' or self.MASS_marker == 'mANN':
         #     self.MOTION_MODEL_POS_NOISE = 0.000 # original value = 0.005
@@ -287,7 +287,7 @@ class SingleENV(multiprocessing.Process):
         if self.FRICTION_marker == 'fA' or self.FRICTION_marker == 'fAN' or self.FRICTION_marker == 'fANN':
             self.FRICTION_MEAN = 0.01 # 0.01
         elif self.FRICTION_marker == 'fB' or self.FRICTION_marker == 'fBN' or self.FRICTION_marker == 'fBNN':
-            self.FRICTION_MEAN = 0.1
+            self.FRICTION_MEAN = 0.07
         elif self.FRICTION_marker == 'fC' or self.FRICTION_marker == 'fCN' or self.FRICTION_marker == 'fCNN':
             self.FRICTION_MEAN = 0.25
         elif self.FRICTION_marker == 'fD' or self.FRICTION_marker == 'fDN' or self.FRICTION_marker == 'fDNN':
@@ -445,11 +445,22 @@ class SingleENV(multiprocessing.Process):
                                                      board_pos_4, 
                                                      board_ori_4,
                                                      useFixedBase = 1)
+        
 
             # self.p_env.changeDynamics(board_id_4, -1, mass = 5, 
             #                       lateralFriction = 1)
 
             self.collision_detection_obj_id_collection.append(self.board_id_4)
+        
+
+        if self.task_flag == "6":
+            pw_T_Milk_opti_pos = [0.5639079993582834, 0.06686931205630225, 0.7947410960108179]
+            pw_T_Milk_opti_ori = [-0.61877113,  0.33879951,  0.61984684,  0.3436962 ]
+            obstacle_Milk_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/Milk/Milk_real_obj_with_visual_hor.urdf"),
+                                                  pw_T_Milk_opti_pos,
+                                                  pw_T_Milk_opti_ori,
+                                                  useFixedBase=1)
+
 
         if self.SIM_REAL_WORLD_FLAG == True:
             table_pos_1 = [0.46, -0.01, 0.702] # 0.710

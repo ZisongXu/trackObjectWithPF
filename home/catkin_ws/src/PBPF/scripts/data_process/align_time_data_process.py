@@ -91,7 +91,7 @@ if object_name == "Mustard" and rosbag_flag == "1":
     prepare_time = 115 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Parmesan" and rosbag_flag == "1":
-    prepare_time = 85 * 100
+    prepare_time = 30 * 100
     rosbag_slowdown_rate = 1
 if object_name == "SaladDressing" and rosbag_flag == "1":
     prepare_time = 115 * 100

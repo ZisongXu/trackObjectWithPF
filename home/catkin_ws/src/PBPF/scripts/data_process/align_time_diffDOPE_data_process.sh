@@ -15,7 +15,7 @@ declare -a objectNames=("Parmesan")
 # declare -a objectNames=("Mayo" "Milk")
 # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard" "cracker")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a sceneNames=("scene2")
+declare -a sceneNames=("scene6")
 
 declare -a particleNumbers=(70)
 # declare -a objectNames=("cracker")

@@ -1,10 +1,11 @@
 #!/bin/bash
 
 # declare -a objectNames=("cracker" "soup")
-declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
+# declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
 # declare -a objectNames=("SaladDressing" "cracker" "Parmesan")
 # declare -a objectNames=("Mayo" "Milk" "Mustard")
 # declare -a objectNames=("Parmesan" "Milk")
+declare -a objectNames=("Parmesan")
 # declare -a objectNames=("SaladDressing" "soup")
 # declare -a objectNames=("cracker" "Ketchup")
 # declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing")
@@ -21,9 +22,9 @@ declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
 # declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
-declare -a sceneNames=("scene2")
+declare -a sceneNames=("scene6")
 
-declare -a particleNumbers=(40)
+declare -a particleNumbers=(70)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 # declare -a runAlgFlags=("PBPF" "obse" "FOUD")
@@ -45,8 +46,8 @@ declare -a runVersions=("PBPF_RGBD")
 # declare -a massMarkers=("mANN" "mBNN" "mCNN" "mDNN" "mA" "mB" "mC" "mD" "mAN" "mBN" "mCN" "mDN")
 # declare -a frictionMarkers=("fA")
 # declare -a massMarkers=("mAN" "mBN" "mCN" "mDN")
-# declare -a massMarkers=("mBNN")
-declare -a massMarkers=("mANN" "mBNN" "mCNN" "mDNN" "mENN" "mFNN" "mGNN")
+declare -a massMarkers=("mBNN")
+# declare -a massMarkers=("mANN" "mBNN" "mCNN" "mDNN" "mENN" "mFNN" "mGNN")
 # declare -a massMarkers=("mANN" "mBNN" "mCNN" "mDNN" "mENN")
 # declare -a massMarkers=("mANN" "mA" "mBNN" "mB" "mCNN" "mC" "mDNN" "mD" "mENN" "mE" "mFNN" "mF" "mGNN" "mG")
 # declare -a frictionMarkers=("fA" "fB" "fC" "fD")
@@ -59,7 +60,7 @@ declare -a frictionMarkers=("fB")
 # declare -a frictionMarkers=("fANN" "fBNN" "fCNN" "fDNN" "fENN" "fFNN" "fA" "fB" "fC" "fD" "fE" "fF")
 # declare -a massMarkers=("mB")
 # declare -a frictionMarkers=("fANN" "fA" "fBNN" "fB" "fCNN" "fC" "fDNN" "fD" "fENN" "fE" "fFNN" "fF" "fGNN" "fG")
-declare -a MF_flag=("friction") # mass/friction
+declare -a MF_flag=("mass") # mass/friction
 
 for ang_and_pos in "${Ang_and_Pos[@]}"
 do

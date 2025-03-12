@@ -33,7 +33,7 @@ err_file = parameter_info['err_file']
 
 
 normal_and_par_list = ["par", "normal"] # par/normal
-normal_and_par_list = ["normal_quick_push"] # par/normal/Opti_RGB/normal_quick_push/normal_scene2_clear
+normal_and_par_list = ["normal_quick_push_obstacle"] # par/normal/Opti_RGB/normal_quick_push/normal_scene2_clear/normal_quick_push_obstacle/normal_scene1_obstacle
 ang_and_pos_list = ["ADD", "ADDS"]
 # ang_and_pos_list = ["ADD"]
 

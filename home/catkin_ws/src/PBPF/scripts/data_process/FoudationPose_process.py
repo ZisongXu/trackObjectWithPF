@@ -142,9 +142,13 @@ if __name__ == '__main__':
     #                           [ 9.95593427e-01, -2.57238183e-02,  9.01776779e-02, -8.42059848e-02],
     #                           [ 4.91969723e-04, -9.60193983e-01, -2.79333621e-01,  1.04590236e+00],
     #                           [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
-    pw_T_cam_pose = np.array([[ 0.04771702,  0.29078387, -0.95559815,  1.15756931],
-                              [ 0.99797884,  0.02631729,  0.05784149,  0.01792461],
-                              [ 0.04196812, -0.95642676, -0.28894036,  1.0088215 ],
+    # pw_T_cam_pose = np.array([[ 0.04771702,  0.29078387, -0.95559815,  1.15756931],
+    #                           [ 0.99797884,  0.02631729,  0.05784149,  0.01792461],
+    #                           [ 0.04196812, -0.95642676, -0.28894036,  1.0088215 ],
+    #                           [ 0.        ,  0.        ,  0.        ,  1.        ]])
+    pw_T_cam_pose = np.array([[ 0.07372993,  0.2208193 , -0.9725239 ,  1.10858728],
+                              [ 0.99704642,  0.00470366,  0.07665706,  0.01198535],
+                              [ 0.02150178, -0.9753034 , -0.21982029,  1.02230446],
                               [ 0.        ,  0.        ,  0.        ,  1.        ]])
 
 
@@ -189,7 +193,7 @@ if __name__ == '__main__':
     # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
     rosbag_file_path = os.path.expanduser('~/pyvkdepth/rosbag/')
     # ImageCreator(rosbag_file_path+'1_scene2_'+OBJ_NAME+'1.bag', "/home/zisongxu/catkin_ws/src/PBPF/scripts/rayTracing/ob_in_cam/000000000/", "/home/sc19zx/depth/", 1, 1, _all_data_list)
-    ImageCreator(rosbag_file_path+'quick_push4.bag', "", "", 1, 1, _all_data_list)
+    ImageCreator(rosbag_file_path+'hit_object_obstacle.bag', "", "", 1, 1, _all_data_list)
     
 
 

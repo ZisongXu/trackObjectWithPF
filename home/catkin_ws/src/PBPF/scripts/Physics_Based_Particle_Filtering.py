@@ -746,7 +746,8 @@ def _vk_load_meshes():
     # a, b
     for obj_index in range(OBJECT_NUM):
         obj_name = OBJECT_NAME_LIST[obj_index] # "cracker"/"soup"/"Ketchup"
-        
+        if obj_name == "soup2":
+            obj_name = "soup"
         obj_id = _vk_context.load_model("assets/meshes/"+obj_name+".vkdepthmesh")
         
         # if obj_index == 0:
@@ -1727,30 +1728,38 @@ if __name__ == '__main__':
     #     objs_not_touching_target_objs_name_list = ["pringles"]
     #     pw_T_objs_not_touching_targetObjs = create_scene.initialize_other_objects_not_touching(objs_not_touching_target_objs_num_, objs_not_touching_target_objs_name_list)
     # ============================================================================
-    # c_pw_T_target_obj_obse_pose_lsit = []
-    # for obj_index in range(len(pw_T_obj_obse_obj_list_alg)):        
-    #     if obj_index == 0:
-    #         pw_T_obj_obse_pos = [0.35720025517846266, -0.19457586435273772, 0.7497465517420716]
-    #         pw_T_obj_obse_ori = [ 0.70004977 -0.22280119 -0.66403485 -0.13909588]
+    
+    
+    
+    
+    # ============================================================================
+    ################# Only for test
+    c_pw_T_target_obj_obse_pose_lsit = []
+    for obj_index in range(len(pw_T_obj_obse_obj_list_alg)):        
+        if obj_index == 0:
+            pw_T_obj_obse_pos = [0.3573666390731277, -0.19481724027539649, 0.7497603590297327]
+            pw_T_obj_obse_ori = [ 0.70216567, -0.22320338, -0.66201905, -0.13738415]
 
-    #         # pw_T_obj_obse_pos = [0.44387777404766426, -0.24483345047213362, 0.7748352994472808]
-    #         # pw_T_obj_obse_ori = [-0.55190256,  0.44159203,  0.58406295,  0.3990871 ]
-    #     elif obj_index == 1:
-    #         pw_T_obj_obse_pos = [0.31913317797909924, -0.19259196383206673, 0.7759606553600721]
-    #         pw_T_obj_obse_ori = [ 0.52136008, -0.48381242, -0.4988777 , -0.49520729]
-    #     elif obj_index == 2:
-    #         pw_T_obj_obse_pos = [0.3948234965404585, -0.1039755313382335, 0.7755253068476263]
-    #         pw_T_obj_obse_ori = [-0.49862651,  0.52125916,  0.49984925,  0.47938629]
-    #     pw_T_obj_obse_pos = pw_T_obj_obse_obj_list_alg[obj_index].pos
-    #     pw_T_obj_obse_ori = pw_T_obj_obse_obj_list_alg[obj_index].ori
-    #     c_obse_obj = Object_Pose(OBJECT_NAME_LIST[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
-    #     c_pw_T_target_obj_obse_pose_lsit.append(c_obse_obj)
+            # pw_T_obj_obse_pos = [0.44387777404766426, -0.24483345047213362, 0.7748352994472808]
+            # pw_T_obj_obse_ori = [-0.55190256,  0.44159203,  0.58406295,  0.3990871 ]
+        elif obj_index == 1:
+            pw_T_obj_obse_pos = [0.30957266108125187, -0.1979083263216742, 0.7523182803351007]
+            pw_T_obj_obse_ori = [-0.61143742,  0.36735759, -0.35623665,  0.60356286]
+        elif obj_index == 2:
+            pw_T_obj_obse_pos = [0.3948234965404585, -0.1039755313382335, 0.7755253068476263]
+            pw_T_obj_obse_ori = [-0.49862651,  0.52125916,  0.49984925,  0.47938629]
+        # pw_T_obj_obse_pos = pw_T_obj_obse_obj_list_alg[obj_index].pos
+        # pw_T_obj_obse_ori = pw_T_obj_obse_obj_list_alg[obj_index].ori
+        c_obse_obj = Object_Pose(OBJECT_NAME_LIST[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
+        c_pw_T_target_obj_obse_pose_lsit.append(c_obse_obj)
+
+
 
     # cpu 
     # create 70 "objects" of SingleENV class 
     _single_envs = create_particles(OBJECT_NUM, ROBOT_NUM, PARTICLE_NUM,
-                                    pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, # pw_T_objs_touching_targetObjs_list is empty
-                                    # pw_T_rob_sim_pose_list_alg, c_pw_T_target_obj_obse_pose_lsit, pw_T_objs_touching_targetObjs_list, # pw_T_objs_touching_targetObjs_list is empty
+                                    # pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, # pw_T_objs_touching_targetObjs_list is empty
+                                    pw_T_rob_sim_pose_list_alg, c_pw_T_target_obj_obse_pose_lsit, pw_T_objs_touching_targetObjs_list, # pw_T_objs_touching_targetObjs_list is empty
                                     UPDATE_STYLE_FLAG, SIM_TIME_STEP, BOSS_PF_UPDATE_INTERVAL_IN_REAL)
 
     _objs_pose_info_list = [0] * PARTICLE_NUM
@@ -2066,6 +2075,8 @@ if __name__ == '__main__':
             pw_T_obj_GT_pose = []
         for obj_index in range(OBJECT_NUM):
             object_name = OBJECT_NAME_LIST[obj_index]
+            if object_name == "soup2":
+                object_name = "soup"
             use_gazebo = ""
             if gazebo_flag == True:
                 use_gazebo = '_noise'
@@ -2228,8 +2239,8 @@ if __name__ == '__main__':
                         # execute PBPF algorithm movement
                         if PRINT_FLAG == True:
                             pass
-                        if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
-                        # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
+                        # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
+                        if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
                             global_objects_visual_by_DOPE_list = [0] * OBJECT_NUM
                             global_objects_outlier_by_DOPE_list = [0] *OBJECT_NUM
 
@@ -2304,8 +2315,8 @@ if __name__ == '__main__':
                             t_before_RGB = time.time()
                             compare_distance_method = "seq" # seq/multi
                             if compare_distance_method == "seq":
-                                if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
-                                # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
+                                # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
+                                if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
                                     _RGB_weights_lists, test_particle_cloud_pub = compare_distance_seq(_particle_cloud_pub, _pw_T_obj_opti_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list)
                                 else:
                                     _RGB_weights_lists, test_particle_cloud_pub = compare_distance_seq(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list)
@@ -2325,8 +2336,8 @@ if __name__ == '__main__':
                             # b. Visibility Score #################################################################################
                             t_before_Vis = time.time()
 
-                            if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
-                            # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
+                            # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
+                            if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
                                 pass
                             else:
                                 if VISIBILITY_COMPUTE_VK == True:
@@ -2370,8 +2381,8 @@ if __name__ == '__main__':
                         for env_index, single_env in _single_envs.items():
                             _empty_return = wait_and_get_result_from(single_env)
                         _publish_par_pose_info(_particle_cloud_pub)
-                        # estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
-                        # _publish_esti_pose_info(estimated_object_set)
+                        estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
+                        _publish_esti_pose_info(estimated_object_set)
                         t_after_setpub = time.time()
                         Setpub_time_consumption = t_after_setpub - t_after_deepcopy
                         Setpub_time_consuming_list.append(Setpub_time_consumption)
@@ -2428,8 +2439,8 @@ if __name__ == '__main__':
                             _particle_cloud_pub[env_index] = objs_pose_info[str(env_index)]
                         _publish_par_pose_info(_particle_cloud_pub)
 
-                # estimated_object_set_old = copy.deepcopy(estimated_object_set)
-                # estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
+                estimated_object_set_old = copy.deepcopy(estimated_object_set)
+                estimated_object_set_old_list = process_esti_pose_from_rostopic(estimated_object_set_old)
                 
                 if Only_update_robot_flag == False:
                     print("Waiting for next loop")

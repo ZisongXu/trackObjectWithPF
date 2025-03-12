@@ -9,13 +9,16 @@
    <material name="coral">
      <color rgba="1 0.498 0.3137 1"/>
    </material>
+   <material name="red">
+     <color rgba="0.99607843 0.21960784 0.00784314 1"/>
+   </material>
    <link name="Parmesan">
      <visual>
        <geometry>
          <!-- <box size="0.16 0.21343700408935547 0.061"/> -->
-         <mesh filename="Parmesan.obj" scale="1 1 1"/>
+         <mesh filename="Parmesan.obj" scale="1.2 1 1"/>
        </geometry>
-       <material name="coral"/>
+       <material name="red"/>
        <origin xyz="0 0 0" rpy="0 0 0"/>
      </visual>
      <inertial>

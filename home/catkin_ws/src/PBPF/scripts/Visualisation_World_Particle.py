@@ -35,6 +35,7 @@ import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 import multiprocessing
+from collections import defaultdict
 #from sksurgerycore.algorithms.averagequaternions import average_quaternions
 from quaternion_averaging import weightedAverageQuaternions
 from Particle import Particle
@@ -444,6 +445,18 @@ def _get_quaternion_from_matrix(a_T_b_4_4):
     quaternion = rotation.as_quat()
     return quaternion
 
+
+def find_duplicates(lst):
+    index_dict = defaultdict(list)
+    # 记录元素及其出现的索引
+    for index, value in enumerate(lst):
+        index_dict[value].append(index)
+    # 只保留出现 **两次及以上** 的元素
+    duplicates = {key: value for key, value in index_dict.items() if len(value) > 1}
+    # 计算有几个重复的元素
+    duplicate_count = len(duplicates)
+    return duplicate_count, duplicates
+
 # ctrl-c write down the error file
 def signal_handler(sig, frame):
     sys.exit()
@@ -577,10 +590,20 @@ while reset_flag == True:
                             # print(rob_T_obj_opti_4_4)
                         else:    
                             # if optitrack_flag == True:
+                            # need to change only for visual
+                                
                             opti_T_rob_opti_pos = visual_world.ros_listener.listen_2_robot_pose()[0]
                             opti_T_rob_opti_ori = visual_world.ros_listener.listen_2_robot_pose()[1]
-                            opti_T_obj_opti_pos = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[0]
-                            opti_T_obj_opti_ori = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[1]
+                            
+                            
+                            count, details = find_duplicates(object_name_list)
+                            if count != 0:
+                                object_name_list = ["soup", "soup2"]
+                                opti_T_obj_opti_pos = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[0]
+                                opti_T_obj_opti_ori = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[1]
+                            else:
+                                opti_T_obj_opti_pos = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[0]
+                                opti_T_obj_opti_ori = visual_world.ros_listener.listen_2_object_pose(object_name_list[obj_index])[1]
                             # get ground truth data 
                             rob_T_obj_opti_4_4 = compute_transformation_matrix(opti_T_rob_opti_pos, opti_T_rob_opti_ori, opti_T_obj_opti_pos, opti_T_obj_opti_ori)
                             # else:
@@ -617,6 +640,7 @@ while reset_flag == True:
 
             if display_obse_flag == True:
                 # print("display_obse_flag")
+                pos_record = []
                 for obj_index in range(object_num):
                     if init_obse_flag == 0:
                         # need to soup
@@ -632,6 +656,8 @@ while reset_flag == True:
                         if dope_flag == True:
                             use_gazebo  = ""
                     obse_is_fresh = True
+                    if object_name_list[obj_index] == "soup2":
+                        object_name_list[obj_index] = "soup"
                     try:
                         # latest_obse_time = listener_tf.getLatestCommonTime('/panda_link0', '/'+object_name_list[obj_index]+use_gazebo)
                         # if (rospy.get_time() - latest_obse_time.to_sec()) < 0.1:
@@ -664,6 +690,22 @@ while reset_flag == True:
                     pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)
                     pw_T_obj_obse_pos = [pw_T_obj_obse[0][3],pw_T_obj_obse[1][3],pw_T_obj_obse[2][3]]
                     pw_T_obj_obse_ori = transformations.quaternion_from_matrix(pw_T_obj_obse)
+                    
+                    # pos_record.append(pw_T_obj_obse_pos)
+                    # if len(pos_record) == object_num:
+                    #     if pos_record[0][0] < pos_record[1][0]:
+                    #         pos_record[0][0] = pos_record[0][0] - 0.1
+                    #         pw_T_obj_obse_pos = pos_record[0]
+                    #     if pos_record[0][0] > pos_record[1][0]:
+                    #         pos_record[1][0] = pos_record[1][0] - 0.1
+                    #         pw_T_obj_obse_pos = pos_record[1]
+                        
+                    # print("---------------------------------------")
+                    # print("obj_name:", obj_name)
+                    # print("pw_T_obj_obse_pos:", pw_T_obj_obse_pos)
+                    # print("---------------------------------------")
+
+                    
                     
                     # cam_T_obj_obse_pos = list(trans_ob_cTo)
                     # cam_T_obj_obse_ori = list(rot_ob_cTo)

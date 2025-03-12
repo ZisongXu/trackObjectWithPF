@@ -287,7 +287,7 @@ class SingleENV(multiprocessing.Process):
         if self.FRICTION_marker == 'fA' or self.FRICTION_marker == 'fAN' or self.FRICTION_marker == 'fANN':
             self.FRICTION_MEAN = 0.01 # 0.01
         elif self.FRICTION_marker == 'fB' or self.FRICTION_marker == 'fBN' or self.FRICTION_marker == 'fBNN':
-            self.FRICTION_MEAN = 0.07
+            self.FRICTION_MEAN = 0.1
         elif self.FRICTION_marker == 'fC' or self.FRICTION_marker == 'fCN' or self.FRICTION_marker == 'fCNN':
             self.FRICTION_MEAN = 0.25
         elif self.FRICTION_marker == 'fD' or self.FRICTION_marker == 'fDN' or self.FRICTION_marker == 'fDNN':
@@ -515,6 +515,8 @@ class SingleENV(multiprocessing.Process):
             gazebo_contain = ""
             if self.gazebo_flag == True:
                 gazebo_contain = "gazebo_"
+            if obj_obse_name == "soup2":
+                obj_obse_name = "soup"
             particle_no_visual_id = self.p_env.loadURDF(os.path.expanduser("~/project/object/"+gazebo_contain+obj_obse_name+"/"+gazebo_contain+obj_obse_name+"_par_no_visual_hor.urdf"),
                                                         particle_pos, particle_ori)
             self.collision_detection_obj_id_collection.append(particle_no_visual_id)
@@ -621,8 +623,8 @@ class SingleENV(multiprocessing.Process):
                                                                              obj_id, obj_index, obj_pose_3_1)
 
             if obj_index == 0:
-                normal_x = normal_x - 0.001
-                normal_y = normal_y - 0.0000
+                normal_x = normal_x - 0.000
+                normal_y = normal_y + 0.000
                 normal_z = normal_z + 0.0000
             elif obj_index == 1:
                 normal_x = normal_x - 0.000

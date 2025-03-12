@@ -48,7 +48,7 @@ print_flag: false
 print_score_flag: false
 process_model_flag: normal
 ray_tracing_type: multiray
-record_results_flag: false
+record_results_flag: true
 record_time_consumption_flag: false
 robot_num: 1
 run_alg_flag: PBPF

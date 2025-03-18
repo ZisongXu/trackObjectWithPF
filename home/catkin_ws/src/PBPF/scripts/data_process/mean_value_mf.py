@@ -46,7 +46,7 @@ err_file = parameter_info['err_file']
 
 normal_and_par_list = ["par", "normal"] # par/normal
 # mass_and_friction_list = ["mass", "friction"] # par/normal
-mass_and_friction_list = ["MassFriction_Var"] # par/normal/friction/mass/motion_noise/MassFriction_Var
+mass_and_friction_list = ["friction"] # par/normal/friction/mass/motion_noise/MassFriction_Var/
 ang_and_pos_list = ["ADD", "ADDS"]
 # ang_and_pos_list = ["ADDS"]
 

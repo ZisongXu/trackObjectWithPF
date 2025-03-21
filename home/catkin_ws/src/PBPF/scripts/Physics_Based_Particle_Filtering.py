@@ -176,6 +176,8 @@ _boss_PBPF_err_ADD_df_list = [0]*OBJECT_NUM
 _PBPF_panda_step = 0
 _boss_GT_err_ADD_df_list = [0]*OBJECT_NUM
 _GT_panda_step = 0
+_boss_GT_visibility_ADD_df_list = [0]*OBJECT_NUM
+_GTV_panda_step = 0
 _boss_par_err_ADD_df_list = [0]*PARTICLE_NUM
 _par_panda_step = 0
 
@@ -186,6 +188,9 @@ for obj_index in range(OBJECT_NUM):
     _boss_obse_err_ADD_df_list[obj_index] = _boss_obse_err_ADD_df
     _boss_PBPF_err_ADD_df_list[obj_index] = _boss_PBPF_err_ADD_df
     _boss_GT_err_ADD_df_list[obj_index] = _boss_GT_err_ADD_df
+    # _boss_GT_visibility_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','visibilityScore','obj_name','mass','friction'],index=[])
+    _boss_GT_visibility_ADD_df = pd.DataFrame(columns=['step','time','visibilityScore'],index=[])
+    _boss_GT_visibility_ADD_df_list[obj_index] = _boss_GT_visibility_ADD_df
 for par_index in range(PARTICLE_NUM):
     _boss_par_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name','mass','friction'],index=[])
     _boss_par_err_ADD_df_list[par_index] = _boss_par_err_ADD_df
@@ -1115,10 +1120,16 @@ def visibility_computing_vk(particle_cloud, RGB_weights_lists_):
         full_arr = np.array(full, copy = False)
         for obj_index in range(OBJECT_NUM):
             if full_arr[obj_index] == 0:
+                # input()
                 weight = RGB_weights_lists_[index][obj_index]
                 weight = weight * 0.1
             else:
                 visible_score = 1.0 * part_arr[obj_index] / full_arr[obj_index]
+                print("visible_score:", visible_score)
+                _record_t_visible_score = time.time()
+                _boss_GT_visibility_ADD_df_list[obj_index].loc[_par_panda_step] = [_par_panda_step, _record_t_visible_score - _record_t_begin, visible_score]
+                # _boss_GT_visibility_ADD_df_list[obj_index].loc[_par_panda_step] = [_par_panda_step, _record_t_visible_score - _record_t_begin, 0,0,0,0,0,0,0,0,0,0,0,visible_score,0,0,0]
+
                 # weight = particle[obj_index].w
                 weight = RGB_weights_lists_[index][obj_index]
                 local_obj_visual_by_DOPE_val = global_objects_visual_by_DOPE_list[obj_index]
@@ -1138,6 +1149,12 @@ def visibility_computing_vk(particle_cloud, RGB_weights_lists_):
                     else:
                         weight = visible_weight_dope_X_larger_than_threshold_list[obj_index] * weight # 0.25/0.5
             particle_cloud[index][obj_index].w = weight
+
+
+            
+                
+
+
     return particle_cloud
 
 # compare depth image
@@ -1491,6 +1508,7 @@ def signal_handler(sig, frame):
             file_name_PBPF_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
             file_name_obse_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_obse_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
             file_name_GT_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_GT_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
+            file_name_GT_ADD_V = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_GT_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'_V.csv'
             
             # if _boss_PBPF_err_ADD_df_list[obj_index].empty:
             #     print(OBJECT_NAME_LIST[obj_index]+" is empty !")
@@ -1501,6 +1519,8 @@ def signal_handler(sig, frame):
             # print("write "+obj_name+" obse file: "+RUNNING_MODEL)
             # print("write "+obj_name+" GT file: "+RUNNING_MODEL)
 
+            _boss_GT_visibility_ADD_df_list[obj_index].to_csv(file_save_path+file_name_GT_ADD_V,index=0,header=0,mode='w')
+
             # print("write Particle file (should include all objects): "+RUNNING_MODEL)
             for par_index in range(PARTICLE_NUM):
                 file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/particles/'+OBJECT_NAME_LIST[obj_index]+'/')
@@ -1508,6 +1528,8 @@ def signal_handler(sig, frame):
                 # need to soup
                 file_name_par_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+"_"+str(par_index)+'.csv'
                 _boss_par_err_ADD_df_list[par_index].to_csv(file_save_path+file_name_par_ADD,index=0,header=0,mode='w')
+
+                
     if RECORD_TIME_CONSUMPTION_FLAG == True:
         OBJECT_NUM
         time_file_save_path = os.path.expanduser('~/catkin_ws/src/PBPF/scripts/results/time_consumption_record/')
@@ -1737,8 +1759,8 @@ if __name__ == '__main__':
     c_pw_T_target_obj_obse_pose_lsit = []
     for obj_index in range(len(pw_T_obj_obse_obj_list_alg)):        
         if obj_index == 0:
-            pw_T_obj_obse_pos = [0.3573666390731277, -0.19481724027539649, 0.7497603590297327]
-            pw_T_obj_obse_ori = [ 0.70216567, -0.22320338, -0.66201905, -0.13738415]
+            pw_T_obj_obse_pos = [0.3876914528076614, -0.21410733510489965, 0.7852905085928885]
+            pw_T_obj_obse_ori = [ 0.53965167, -0.46331638,  0.52678137,  0.46541959]
 
             # pw_T_obj_obse_pos = [0.44387777404766426, -0.24483345047213362, 0.7748352994472808]
             # pw_T_obj_obse_ori = [-0.55190256,  0.44159203,  0.58406295,  0.3990871 ]
@@ -1752,8 +1774,6 @@ if __name__ == '__main__':
         # pw_T_obj_obse_ori = pw_T_obj_obse_obj_list_alg[obj_index].ori
         c_obse_obj = Object_Pose(OBJECT_NAME_LIST[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
         c_pw_T_target_obj_obse_pose_lsit.append(c_obse_obj)
-
-
 
     # cpu 
     # create 70 "objects" of SingleENV class 
@@ -2069,6 +2089,8 @@ if __name__ == '__main__':
 
         temp_pw_T_obj_obse_objs_list = []
         temp_pw_T_obj_opti_objs_list = []
+        temp_pw_T_obj_opti_objs_list_V = []
+        temp_pw_T_obj_opti_objs_list_V_list = []
         #panda robot moves in the visualization window
         track_fk_world_rob_mv(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
         if RECORD_RESULTS_FLAG == True:
@@ -2190,14 +2212,24 @@ if __name__ == '__main__':
 
                 opti_object = Object_Pose(obj_name, pw_T_obj_obse_id, pw_T_obj_opti_pos, pw_T_obj_opti_ori, index=obj_index)
                 temp_pw_T_obj_opti_objs_list.append(opti_object)
-                
+
+                opti_object_V = Particle(obj_name, 0, pw_T_obj_obse_id, pw_T_obj_opti_pos, pw_T_obj_opti_ori, 1, 0, 0, 0)
+                temp_pw_T_obj_opti_objs_list_V.append(opti_object_V)
                 # if obj_index == 0:
                 #     print(pw_T_obj_obse_pos[1])
+
+        # need to change
+        temp_pw_T_obj_opti_objs_list_V_list.append(temp_pw_T_obj_opti_objs_list_V)
+        
+        
         _GT_panda_step = _GT_panda_step + 1
         _obse_panda_step = _obse_panda_step + 1
 
         pw_T_obj_obse_objects_list = copy.deepcopy(temp_pw_T_obj_obse_objs_list)
         pw_T_obj_opti_objects_list = copy.deepcopy(temp_pw_T_obj_opti_objs_list)
+
+        
+        
         
         if RECORD_RESULTS_FLAG == True:
             _record_obse_pose_first_flag = 1
@@ -2228,19 +2260,23 @@ if __name__ == '__main__':
                     for env_index, single_env in _single_envs.items():
                         contact_result = wait_and_get_result_from(single_env)
                         _contact_results_list[env_index] = contact_result
-                    if any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002):
+                    # if any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002):
+                    if True:
                         t_begin_PBPF = time.time()
                         simRobot_touch_par_flag = 1
                         _particle_update_time = _particle_update_time + 1
                         if PRINT_FLAG == True:
                             print("Run ", RUNNING_MODEL, "; Repeat time:", REPEAT_TIME, "; Particle Update Time:", _particle_update_time)
+
                         _pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                         _pw_T_obj_opti_objects_pose_list = copy.deepcopy(pw_T_obj_opti_objects_list)
+                        _pw_T_obj_opti_objects_pose_list_V = copy.deepcopy(temp_pw_T_obj_opti_objs_list_V_list)
+                        
                         # execute PBPF algorithm movement
                         if PRINT_FLAG == True:
                             pass
-                        # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
-                        if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
+                        if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
+                        # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
                             global_objects_visual_by_DOPE_list = [0] * OBJECT_NUM
                             global_objects_outlier_by_DOPE_list = [0] *OBJECT_NUM
 
@@ -2286,7 +2322,10 @@ if __name__ == '__main__':
                                 _links_info = wait_and_get_result_from(single_env)
                             # here, all the links_info should be the same, so I can only get the last one!
                             _links_info = _links_info["links_info"]
-                            _vk_get_rendered_depth_image_parallelised(_particle_cloud_pub, _links_info)
+
+                            # _vk_get_rendered_depth_image_parallelised(_particle_cloud_pub, _links_info)
+                            _vk_get_rendered_depth_image_parallelised(_pw_T_obj_opti_objects_pose_list_V, _links_info)
+
                         t_after_render = time.time()
                         Render_depth_image_time_consumption = t_after_render - t_before_render
                         Render_depth_image_time_comsuming_list.append(Render_depth_image_time_consumption)
@@ -2315,8 +2354,8 @@ if __name__ == '__main__':
                             t_before_RGB = time.time()
                             compare_distance_method = "seq" # seq/multi
                             if compare_distance_method == "seq":
-                                # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
-                                if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
+                                if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
+                                # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
                                     _RGB_weights_lists, test_particle_cloud_pub = compare_distance_seq(_particle_cloud_pub, _pw_T_obj_opti_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list)
                                 else:
                                     _RGB_weights_lists, test_particle_cloud_pub = compare_distance_seq(_particle_cloud_pub, _pw_T_obj_obse_objects_pose_list, global_objects_visual_by_DOPE_list, global_objects_outlier_by_DOPE_list)
@@ -2336,8 +2375,8 @@ if __name__ == '__main__':
                             # b. Visibility Score #################################################################################
                             t_before_Vis = time.time()
 
-                            # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
-                            if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
+                            if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD":
+                            # if RUNNING_MODEL == "PBPF_Opti" or RUNNING_MODEL == "PBPF_OptiD" or RUNNING_MODEL == "PBPF_RGBD":
                                 pass
                             else:
                                 if VISIBILITY_COMPUTE_VK == True:
@@ -2377,11 +2416,14 @@ if __name__ == '__main__':
                         Deepcopy_time_consuming_list.append(Deepcopy_time_consumption)
 
                         for env_index, single_env in _single_envs.items():
-                            single_env.queue.put((SingleENV.set_particle_in_each_sim_env, _particle_cloud_pub[env_index]))
+                            # single_env.queue.put((SingleENV.set_particle_in_each_sim_env, _particle_cloud_pub[env_index]))
+                            single_env.queue.put((SingleENV.set_particle_in_each_sim_env, _pw_T_obj_opti_objects_pose_list_V[env_index]))
                         for env_index, single_env in _single_envs.items():
                             _empty_return = wait_and_get_result_from(single_env)
-                        _publish_par_pose_info(_particle_cloud_pub)
-                        estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
+                        # _publish_par_pose_info(_particle_cloud_pub)
+                        _publish_par_pose_info(_pw_T_obj_opti_objects_pose_list_V)
+                        # estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
+                        estimated_object_set = _compute_estimate_pos_of_object(_pw_T_obj_opti_objects_pose_list_V)
                         _publish_esti_pose_info(estimated_object_set)
                         t_after_setpub = time.time()
                         Setpub_time_consumption = t_after_setpub - t_after_deepcopy

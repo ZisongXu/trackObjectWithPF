@@ -78,14 +78,17 @@ class SingleENV(multiprocessing.Process):
         
         self.pf_update_interval_in_sim = self.pf_update_interval_in_real / self.sim_time_step
         self.boss_sigma_obs_pos_init = 0.01 # original value: 16cm/10CM /5cm
+        # self.boss_sigma_obs_pos_init = 0.00 # original value: 16cm/10CM /5cm
         # self.boss_sigma_obs_pos_init = 0.09 # original value: 16cm/10CM 
         self.boss_sigma_obs_x = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_y = self.boss_sigma_obs_pos_init / math.sqrt(2)
         self.boss_sigma_obs_z = 0.02   # 2cm
+        # self.boss_sigma_obs_z = 0.00   # 2cm
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 20 # original value: 0.0216773873 * 20
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
-        self.boss_sigma_obs_ang_init = 0 # original value: 0.0216773873 * 20
+        self.boss_sigma_obs_ang_init = 0.0216773873 * 20 # original value: 0.0216773873 * 20
+        # self.boss_sigma_obs_ang_init = 0 # original value: 0.0216773873 * 20
         
         
         

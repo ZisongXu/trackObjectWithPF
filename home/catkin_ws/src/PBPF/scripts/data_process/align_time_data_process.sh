@@ -2,6 +2,11 @@
 # cracker soup Ketchup Mayo Milk
 # declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("Parmesan" "Milk")
+# declare -a objectNames=("Parmesan" "Mayo")
+# declare -a objectNames=("Parmesan" "Mustard")
+# declare -a objectNames=("Parmesan" "SaladDressing")
+# declare -a objectNames=("cracker" "SaladDressing")
+# declare -a objectNames=("Parmesan" "Milk")
 # declare -a objectNames=("Parmesan" "Ketchup")
 # declare -a objectNames=("Mustard" "Parmesan")
 # declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
@@ -9,24 +14,28 @@
 # declare -a objectNames=("Ketchup" "Parmesan")
 # declare -a objectNames=("Parmesan" "Ketchup")
 # declare -a objectNames=("SaladDressing" "Mustard")
-declare -a objectNames=("Parmesan")
+# declare -a objectNames=("cracker" "soup")
 # declare -a objectNames=("SaladDressing" "Mustard" "Mayo")
 # declare -a objectNames=("soup" "Mayo")
+# declare -a objectNames=("Mayo")
+# declare -a objectNames=("Mustard")
+# declare -a objectNames=("Milk")
+# declare -a objectNames=("Milk" "Mustard")
 # declare -a objectNames=("Mustard" "SaladDressing")
-# declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing" "soup")
+declare -a objectNames=("cracker" "Ketchup" "Mayo" "Milk" "Mustard" "Parmesan" "SaladDressing" "soup")
 # declare -a objectNames=("Ketchup" "Mayo" "Milk" "SaladDressing" "soup" "Parmesan" "Mustard")
 
 # declare -a objectNames=("cracker" "gelatin" "soup")
 # declare -a sceneNames=("scene1" "scene2" "scene3" "scene4")
 # declare -a sceneNames=("scene1")
-declare -a sceneNames=("scene6")
+declare -a sceneNames=("scene1")
 
-declare -a particleNumbers=(70)
+declare -a particleNumbers=(1)
 # declare -a objectNames=("cracker")
 # declare -a sceneNames=("scene3")
 # declare -a runAlgFlags=("GT" obse)
-# declare -a runAlgFlags=("GT")
-declare -a runAlgFlags=("FOUD")
+declare -a runAlgFlags=("GT")
+# declare -a runAlgFlags=("FOUD")
 # declare -a runAlgFlags=("GT" "FOUD")
 # declare -a runAlgFlags=("obse" "PBPF" "GT")
 # declare -a runAlgFlags=("GT" "FOUD")
@@ -74,7 +83,7 @@ do
 					for ((rosbag=1;rosbag<=1;rosbag++)); 
 					do
 						# for repeat in {1..10}
-						for ((repeat=0;repeat<=4;repeat++));
+						for ((repeat=0;repeat<=0;repeat++));
 						do
 							for massMarker in "${massMarkers[@]}"
 							do
@@ -85,7 +94,7 @@ do
 										python3 align_time_data_process.py "${particleNumber}" "${objectName}" "${sceneName}" "${rosbag}" "${repeat}" "${runAlgFlag}" "${ang_and_pos}" "${runVersion}" "${massMarker}" "${frictionMarker}" &
 										DATA_PRO_PID=$!
 
-										sleep 1
+										sleep 0.1
 									done
 								done
 							done

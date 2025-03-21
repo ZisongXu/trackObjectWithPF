@@ -76,28 +76,28 @@ rosbag_slowdown_rate = 1
 
 
 if object_name == "cracker" and rosbag_flag == "1":
-    prepare_time = 85 * 100
+    prepare_time = 75 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Ketchup" and rosbag_flag == "1":
     prepare_time = 85 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Mayo" and rosbag_flag == "1":
-    prepare_time = 115 * 100
+    prepare_time = 95 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Milk" and rosbag_flag == "1":
-    prepare_time = 85 * 100
+    prepare_time = 120 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Mustard" and rosbag_flag == "1":
-    prepare_time = 115 * 100
+    prepare_time = 85 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Parmesan" and rosbag_flag == "1":
-    prepare_time = 30 * 100
+    prepare_time = 60 * 100
     rosbag_slowdown_rate = 1
 if object_name == "SaladDressing" and rosbag_flag == "1":
-    prepare_time = 115 * 100
+    prepare_time = 75 * 100
     rosbag_slowdown_rate = 1
 if object_name == "soup" and rosbag_flag == "1":
-    prepare_time = 85 * 100
+    prepare_time = 130 * 100
     rosbag_slowdown_rate = 1
 if object_name == "soup2" and rosbag_flag == "1":
     prepare_time = 60 * 100
@@ -132,10 +132,12 @@ def angle_correction(angle):
 # print("Ready to integrate the data of "+ang_and_pos)
 dataset = pd.read_csv(save_file_path+file_name+'.csv', header=None)
 # dataset.columns=["index","time","error","alg","obj_scene","particle_num","ray_type"]
-dataset.columns=['index','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type', 'obj_name', 'mass', 'friction']
+# dataset.columns=['index','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type', 'obj_name', 'mass', 'friction']
+dataset.columns=['index','time', 'visibilityScore']
 # dataset.time = dataset.time - 4.3
 datasetcopy = copy.deepcopy(dataset)
-newdataset = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type', 'obj_name', 'mass', 'friction'],index=[])
+# newdataset = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type', 'obj_name', 'mass', 'friction'],index=[])
+newdataset = pd.DataFrame(columns=['step','time','visibilityScore'],index=[])
 timestep_list = []
 # for timestep in range(prepare_time):
 for timestep in range(int(prepare_time/rosbag_slowdown_rate)):
@@ -162,23 +164,26 @@ for i in range(int(prepare_time/rosbag_slowdown_rate)):
                              datasetcopy.loc[newdata.idxmin(),'obj_name']]
     else:
         datasetcopy.loc[datasetcopy.index==newdata.idxmin(),'time'] = timestep_list[int(i)]
+        # newdataset.loc[i] = [datasetcopy.loc[newdata.idxmin(),'index'],
+        #                      datasetcopy.loc[newdata.idxmin(),'time'],
+        #                      datasetcopy.loc[newdata.idxmin(),'pos_x'],
+        #                      datasetcopy.loc[newdata.idxmin(),'pos_y'],
+        #                      datasetcopy.loc[newdata.idxmin(),'pos_z'],
+        #                      datasetcopy.loc[newdata.idxmin(),'ori_x'],
+        #                      datasetcopy.loc[newdata.idxmin(),'ori_y'],
+        #                      datasetcopy.loc[newdata.idxmin(),'ori_z'],
+        #                      datasetcopy.loc[newdata.idxmin(),'ori_w'],
+        #                      datasetcopy.loc[newdata.idxmin(),'alg'],
+        #                      datasetcopy.loc[newdata.idxmin(),'obj'],
+        #                      datasetcopy.loc[newdata.idxmin(),'scene'],
+        #                      datasetcopy.loc[newdata.idxmin(),'particle_num'],
+        #                      datasetcopy.loc[newdata.idxmin(),'ray_type'],
+        #                      datasetcopy.loc[newdata.idxmin(),'obj_name'],
+        #                      datasetcopy.loc[newdata.idxmin(),'mass'],
+        #                      datasetcopy.loc[newdata.idxmin(),'friction']]
         newdataset.loc[i] = [datasetcopy.loc[newdata.idxmin(),'index'],
                              datasetcopy.loc[newdata.idxmin(),'time'],
-                             datasetcopy.loc[newdata.idxmin(),'pos_x'],
-                             datasetcopy.loc[newdata.idxmin(),'pos_y'],
-                             datasetcopy.loc[newdata.idxmin(),'pos_z'],
-                             datasetcopy.loc[newdata.idxmin(),'ori_x'],
-                             datasetcopy.loc[newdata.idxmin(),'ori_y'],
-                             datasetcopy.loc[newdata.idxmin(),'ori_z'],
-                             datasetcopy.loc[newdata.idxmin(),'ori_w'],
-                             datasetcopy.loc[newdata.idxmin(),'alg'],
-                             datasetcopy.loc[newdata.idxmin(),'obj'],
-                             datasetcopy.loc[newdata.idxmin(),'scene'],
-                             datasetcopy.loc[newdata.idxmin(),'particle_num'],
-                             datasetcopy.loc[newdata.idxmin(),'ray_type'],
-                             datasetcopy.loc[newdata.idxmin(),'obj_name'],
-                             datasetcopy.loc[newdata.idxmin(),'mass'],
-                             datasetcopy.loc[newdata.idxmin(),'friction']]
+                             datasetcopy.loc[newdata.idxmin(),'visibilityScore']]
 # print(newdataset.time)
 # print(str(particle_num)+'_'+object_name+'_'+task_flag+'_rosbag'+str(rosbag_flag)+'_repeat'+str(repeat_time)+'_'+run_alg_flag+'_'+ang_and_pos)
 print("Done")

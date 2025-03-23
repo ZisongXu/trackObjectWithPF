@@ -176,7 +176,7 @@ _boss_PBPF_err_ADD_df_list = [0]*OBJECT_NUM
 _PBPF_panda_step = 0
 _boss_GT_err_ADD_df_list = [0]*OBJECT_NUM
 _GT_panda_step = 0
-_boss_GT_visibility_ADD_df_list = [0]*OBJECT_NUM
+# _boss_GT_visibility_ADD_df_list = [0]*OBJECT_NUM
 _GTV_panda_step = 0
 _boss_par_err_ADD_df_list = [0]*PARTICLE_NUM
 _par_panda_step = 0
@@ -189,8 +189,8 @@ for obj_index in range(OBJECT_NUM):
     _boss_PBPF_err_ADD_df_list[obj_index] = _boss_PBPF_err_ADD_df
     _boss_GT_err_ADD_df_list[obj_index] = _boss_GT_err_ADD_df
     # _boss_GT_visibility_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','visibilityScore','obj_name','mass','friction'],index=[])
-    _boss_GT_visibility_ADD_df = pd.DataFrame(columns=['step','time','visibilityScore'],index=[])
-    _boss_GT_visibility_ADD_df_list[obj_index] = _boss_GT_visibility_ADD_df
+    # _boss_GT_visibility_ADD_df = pd.DataFrame(columns=['step','time','visibilityScore'],index=[])
+    # _boss_GT_visibility_ADD_df_list[obj_index] = _boss_GT_visibility_ADD_df
 for par_index in range(PARTICLE_NUM):
     _boss_par_err_ADD_df = pd.DataFrame(columns=['step','time','pos_x','pos_y','pos_z','ori_x','ori_y','ori_z','ori_w','alg','obj','scene','particle_num','ray_type','obj_name','mass','friction'],index=[])
     _boss_par_err_ADD_df_list[par_index] = _boss_par_err_ADD_df
@@ -1127,7 +1127,7 @@ def visibility_computing_vk(particle_cloud, RGB_weights_lists_):
                 visible_score = 1.0 * part_arr[obj_index] / full_arr[obj_index]
                 # print("visible_score:", visible_score)
                 _record_t_visible_score = time.time()
-                _boss_GT_visibility_ADD_df_list[obj_index].loc[_par_panda_step] = [_par_panda_step, _record_t_visible_score - _record_t_begin, visible_score]
+                # _boss_GT_visibility_ADD_df_list[obj_index].loc[_par_panda_step] = [_par_panda_step, _record_t_visible_score - _record_t_begin, visible_score]
                 # _boss_GT_visibility_ADD_df_list[obj_index].loc[_par_panda_step] = [_par_panda_step, _record_t_visible_score - _record_t_begin, 0,0,0,0,0,0,0,0,0,0,0,visible_score,0,0,0]
 
                 # weight = particle[obj_index].w
@@ -1508,7 +1508,7 @@ def signal_handler(sig, frame):
             file_name_PBPF_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_PBPF_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
             file_name_obse_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_obse_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
             file_name_GT_ADD = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_GT_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'.csv'
-            file_name_GT_ADD_V = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_GT_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'_V.csv'
+            # file_name_GT_ADD_V = str(PARTICLE_NUM)+"_scene"+TASK_FLAG+"_rosbag"+str(ROSBAG_TIME)+"_repeat"+str(REPEAT_TIME)+"_"+obj_name+"_"+UPDATE_STYLE_FLAG+'_GT_pose_'+RUNNING_MODEL+'_'+MASS_marker+'_'+FRICTION_marker+'_V.csv'
             
             # if _boss_PBPF_err_ADD_df_list[obj_index].empty:
             #     print(OBJECT_NAME_LIST[obj_index]+" is empty !")
@@ -1519,7 +1519,7 @@ def signal_handler(sig, frame):
             # print("write "+obj_name+" obse file: "+RUNNING_MODEL)
             # print("write "+obj_name+" GT file: "+RUNNING_MODEL)
 
-            _boss_GT_visibility_ADD_df_list[obj_index].to_csv(file_save_path+file_name_GT_ADD_V,index=0,header=0,mode='w')
+            # _boss_GT_visibility_ADD_df_list[obj_index].to_csv(file_save_path+file_name_GT_ADD_V,index=0,header=0,mode='w')
 
             # print("write Particle file (should include all objects): "+RUNNING_MODEL)
             for par_index in range(PARTICLE_NUM):

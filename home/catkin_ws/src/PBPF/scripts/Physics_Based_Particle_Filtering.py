@@ -1125,7 +1125,7 @@ def visibility_computing_vk(particle_cloud, RGB_weights_lists_):
                 weight = weight * 0.1
             else:
                 visible_score = 1.0 * part_arr[obj_index] / full_arr[obj_index]
-                print("visible_score:", visible_score)
+                # print("visible_score:", visible_score)
                 _record_t_visible_score = time.time()
                 _boss_GT_visibility_ADD_df_list[obj_index].loc[_par_panda_step] = [_par_panda_step, _record_t_visible_score - _record_t_begin, visible_score]
                 # _boss_GT_visibility_ADD_df_list[obj_index].loc[_par_panda_step] = [_par_panda_step, _record_t_visible_score - _record_t_begin, 0,0,0,0,0,0,0,0,0,0,0,visible_score,0,0,0]
@@ -1756,30 +1756,30 @@ if __name__ == '__main__':
     
     # ============================================================================
     ################# Only for test
-    c_pw_T_target_obj_obse_pose_lsit = []
-    for obj_index in range(len(pw_T_obj_obse_obj_list_alg)):        
-        if obj_index == 0:
-            pw_T_obj_obse_pos = [0.3876914528076614, -0.21410733510489965, 0.7852905085928885]
-            pw_T_obj_obse_ori = [ 0.53965167, -0.46331638,  0.52678137,  0.46541959]
+    # c_pw_T_target_obj_obse_pose_lsit = []
+    # for obj_index in range(len(pw_T_obj_obse_obj_list_alg)):        
+    #     if obj_index == 0:
+    #         pw_T_obj_obse_pos = [0.3876914528076614, -0.21410733510489965, 0.7852905085928885]
+    #         pw_T_obj_obse_ori = [ 0.53965167, -0.46331638,  0.52678137,  0.46541959]
 
-            # pw_T_obj_obse_pos = [0.44387777404766426, -0.24483345047213362, 0.7748352994472808]
-            # pw_T_obj_obse_ori = [-0.55190256,  0.44159203,  0.58406295,  0.3990871 ]
-        elif obj_index == 1:
-            pw_T_obj_obse_pos = [0.30957266108125187, -0.1979083263216742, 0.7523182803351007]
-            pw_T_obj_obse_ori = [-0.61143742,  0.36735759, -0.35623665,  0.60356286]
-        elif obj_index == 2:
-            pw_T_obj_obse_pos = [0.3948234965404585, -0.1039755313382335, 0.7755253068476263]
-            pw_T_obj_obse_ori = [-0.49862651,  0.52125916,  0.49984925,  0.47938629]
-        # pw_T_obj_obse_pos = pw_T_obj_obse_obj_list_alg[obj_index].pos
-        # pw_T_obj_obse_ori = pw_T_obj_obse_obj_list_alg[obj_index].ori
-        c_obse_obj = Object_Pose(OBJECT_NAME_LIST[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
-        c_pw_T_target_obj_obse_pose_lsit.append(c_obse_obj)
+    #         # pw_T_obj_obse_pos = [0.44387777404766426, -0.24483345047213362, 0.7748352994472808]
+    #         # pw_T_obj_obse_ori = [-0.55190256,  0.44159203,  0.58406295,  0.3990871 ]
+    #     elif obj_index == 1:
+    #         pw_T_obj_obse_pos = [0.30957266108125187, -0.1979083263216742, 0.7523182803351007]
+    #         pw_T_obj_obse_ori = [-0.61143742,  0.36735759, -0.35623665,  0.60356286]
+    #     elif obj_index == 2:
+    #         pw_T_obj_obse_pos = [0.3948234965404585, -0.1039755313382335, 0.7755253068476263]
+    #         pw_T_obj_obse_ori = [-0.49862651,  0.52125916,  0.49984925,  0.47938629]
+    #     # pw_T_obj_obse_pos = pw_T_obj_obse_obj_list_alg[obj_index].pos
+    #     # pw_T_obj_obse_ori = pw_T_obj_obse_obj_list_alg[obj_index].ori
+    #     c_obse_obj = Object_Pose(OBJECT_NAME_LIST[obj_index], 0, pw_T_obj_obse_pos, pw_T_obj_obse_ori, obj_index)
+    #     c_pw_T_target_obj_obse_pose_lsit.append(c_obse_obj)
 
     # cpu 
     # create 70 "objects" of SingleENV class 
     _single_envs = create_particles(OBJECT_NUM, ROBOT_NUM, PARTICLE_NUM,
-                                    # pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, # pw_T_objs_touching_targetObjs_list is empty
-                                    pw_T_rob_sim_pose_list_alg, c_pw_T_target_obj_obse_pose_lsit, pw_T_objs_touching_targetObjs_list, # pw_T_objs_touching_targetObjs_list is empty
+                                    pw_T_rob_sim_pose_list_alg, pw_T_obj_obse_obj_list_alg, pw_T_objs_touching_targetObjs_list, # pw_T_objs_touching_targetObjs_list is empty
+                                    # pw_T_rob_sim_pose_list_alg, c_pw_T_target_obj_obse_pose_lsit, pw_T_objs_touching_targetObjs_list, # pw_T_objs_touching_targetObjs_list is empty
                                     UPDATE_STYLE_FLAG, SIM_TIME_STEP, BOSS_PF_UPDATE_INTERVAL_IN_REAL)
 
     _objs_pose_info_list = [0] * PARTICLE_NUM
@@ -2090,7 +2090,7 @@ if __name__ == '__main__':
         temp_pw_T_obj_obse_objs_list = []
         temp_pw_T_obj_opti_objs_list = []
         temp_pw_T_obj_opti_objs_list_V = []
-        temp_pw_T_obj_opti_objs_list_V_list = []
+        # temp_pw_T_obj_opti_objs_list_V_list = []
         #panda robot moves in the visualization window
         track_fk_world_rob_mv(p_sim, sim_rob_id, ROS_LISTENER.current_joint_values)
         if RECORD_RESULTS_FLAG == True:
@@ -2219,7 +2219,7 @@ if __name__ == '__main__':
                 #     print(pw_T_obj_obse_pos[1])
 
         # need to change
-        temp_pw_T_obj_opti_objs_list_V_list.append(temp_pw_T_obj_opti_objs_list_V)
+        # temp_pw_T_obj_opti_objs_list_V_list.append(temp_pw_T_obj_opti_objs_list_V)
         
         
         _GT_panda_step = _GT_panda_step + 1
@@ -2260,8 +2260,8 @@ if __name__ == '__main__':
                     for env_index, single_env in _single_envs.items():
                         contact_result = wait_and_get_result_from(single_env)
                         _contact_results_list[env_index] = contact_result
-                    # if any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002):
-                    if True:
+                    if any(result['result'] for result in _contact_results_list) and (dis_robcur_robold > 0.002):
+                    # if True:
                         t_begin_PBPF = time.time()
                         simRobot_touch_par_flag = 1
                         _particle_update_time = _particle_update_time + 1
@@ -2270,7 +2270,7 @@ if __name__ == '__main__':
 
                         _pw_T_obj_obse_objects_pose_list = copy.deepcopy(pw_T_obj_obse_objects_list)
                         _pw_T_obj_opti_objects_pose_list = copy.deepcopy(pw_T_obj_opti_objects_list)
-                        _pw_T_obj_opti_objects_pose_list_V = copy.deepcopy(temp_pw_T_obj_opti_objs_list_V_list)
+                        # _pw_T_obj_opti_objects_pose_list_V = copy.deepcopy(temp_pw_T_obj_opti_objs_list_V_list)
                         
                         # execute PBPF algorithm movement
                         if PRINT_FLAG == True:
@@ -2323,8 +2323,8 @@ if __name__ == '__main__':
                             # here, all the links_info should be the same, so I can only get the last one!
                             _links_info = _links_info["links_info"]
 
-                            # _vk_get_rendered_depth_image_parallelised(_particle_cloud_pub, _links_info)
-                            _vk_get_rendered_depth_image_parallelised(_pw_T_obj_opti_objects_pose_list_V, _links_info)
+                            _vk_get_rendered_depth_image_parallelised(_particle_cloud_pub, _links_info)
+                            # _vk_get_rendered_depth_image_parallelised(_pw_T_obj_opti_objects_pose_list_V, _links_info)
 
                         t_after_render = time.time()
                         Render_depth_image_time_consumption = t_after_render - t_before_render
@@ -2416,14 +2416,14 @@ if __name__ == '__main__':
                         Deepcopy_time_consuming_list.append(Deepcopy_time_consumption)
 
                         for env_index, single_env in _single_envs.items():
-                            # single_env.queue.put((SingleENV.set_particle_in_each_sim_env, _particle_cloud_pub[env_index]))
-                            single_env.queue.put((SingleENV.set_particle_in_each_sim_env, _pw_T_obj_opti_objects_pose_list_V[env_index]))
+                            single_env.queue.put((SingleENV.set_particle_in_each_sim_env, _particle_cloud_pub[env_index]))
+                            # single_env.queue.put((SingleENV.set_particle_in_each_sim_env, _pw_T_obj_opti_objects_pose_list_V[env_index]))
                         for env_index, single_env in _single_envs.items():
                             _empty_return = wait_and_get_result_from(single_env)
-                        # _publish_par_pose_info(_particle_cloud_pub)
-                        _publish_par_pose_info(_pw_T_obj_opti_objects_pose_list_V)
-                        # estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
-                        estimated_object_set = _compute_estimate_pos_of_object(_pw_T_obj_opti_objects_pose_list_V)
+                        _publish_par_pose_info(_particle_cloud_pub)
+                        # _publish_par_pose_info(_pw_T_obj_opti_objects_pose_list_V)
+                        estimated_object_set = _compute_estimate_pos_of_object(_particle_cloud_pub)
+                        # estimated_object_set = _compute_estimate_pos_of_object(_pw_T_obj_opti_objects_pose_list_V)
                         _publish_esti_pose_info(estimated_object_set)
                         t_after_setpub = time.time()
                         Setpub_time_consumption = t_after_setpub - t_after_deepcopy

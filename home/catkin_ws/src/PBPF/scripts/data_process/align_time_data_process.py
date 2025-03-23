@@ -82,22 +82,22 @@ if object_name == "Ketchup" and rosbag_flag == "1":
     prepare_time = 85 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Mayo" and rosbag_flag == "1":
-    prepare_time = 95 * 100
+    prepare_time = 50 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Milk" and rosbag_flag == "1":
-    prepare_time = 120 * 100
+    prepare_time = 50 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Mustard" and rosbag_flag == "1":
     prepare_time = 85 * 100
     rosbag_slowdown_rate = 1
 if object_name == "Parmesan" and rosbag_flag == "1":
-    prepare_time = 60 * 100
+    prepare_time = 50 * 100
     rosbag_slowdown_rate = 1
 if object_name == "SaladDressing" and rosbag_flag == "1":
-    prepare_time = 75 * 100
+    prepare_time = 85 * 100
     rosbag_slowdown_rate = 1
 if object_name == "soup" and rosbag_flag == "1":
-    prepare_time = 130 * 100
+    prepare_time = 90 * 100
     rosbag_slowdown_rate = 1
 if object_name == "soup2" and rosbag_flag == "1":
     prepare_time = 60 * 100

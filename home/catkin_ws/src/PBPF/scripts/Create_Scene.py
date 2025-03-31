@@ -189,7 +189,7 @@ class Create_Scene():
             #     rob_T_obj_obse_4_4 = np.dot(robpw_T_robga_4_4, rob_T_obj_obse_4_4)
 
             if obj_index == 1:
-                bias = 0.1
+                bias = 0.0
             else:
                 bias = 0
             pw_T_obj_obse = np.dot(pw_T_rob_sim_4_4, rob_T_obj_obse_4_4)

@@ -28,7 +28,8 @@ object_name_list:
 - Parmesan
 - soup
 - Mayo
-object_num: 4
+- SaladDressing
+object_num: 5
 objs_are_not_touching_target_objs_num: 0
 objs_touching_target_objs_num: 0
 optitrack_flag: true

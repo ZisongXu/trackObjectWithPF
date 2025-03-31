@@ -33,7 +33,7 @@ err_file = parameter_info['err_file']
 
 
 normal_and_par_list = ["par", "normal"] # par/normal
-normal_and_par_list = ["same_objects_pushig"] # par/normal/Opti_RGB/normal_quick_push/normal_scene2_clear/normal_quick_push_obstacle/normal_scene1_obstacle/same_objects_pushig
+normal_and_par_list = ["normal_3"] # par/normal/Opti_RGB/normal_quick_push/normal_scene2_clear/normal_quick_push_obstacle/normal_scene1_obstacle/same_objects_pushig/normal_1/normal_2/normal_3
 ang_and_pos_list = ["ADD", "ADDS"]
 # ang_and_pos_list = ["ADD"]
 
@@ -48,8 +48,8 @@ error_thresholds = [0.001 * i for i in range(0, 101)]
 
 
 
-# columns_name = ['step', 'time', 'alg', 'obj', 'scene', 'particle_num', 'ray_type', 'obj_name', 'Errors']
-columns_name = ['step', 'time', 'alg', 'obj', 'scene', 'particle_num', 'ray_type', 'obj_name', 'mass', 'friction', 'Errors']
+columns_name = ['step', 'time', 'alg', 'obj', 'scene', 'particle_num', 'ray_type', 'obj_name', 'Errors']
+# columns_name = ['step', 'time', 'alg', 'obj', 'scene', 'particle_num', 'ray_type', 'obj_name', 'mass', 'friction', 'Errors']
 for ang_and_pos in ang_and_pos_list:
     for normal_and_par in normal_and_par_list:
         panda_data_list = []

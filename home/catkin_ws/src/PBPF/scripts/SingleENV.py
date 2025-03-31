@@ -87,7 +87,7 @@ class SingleENV(multiprocessing.Process):
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 20 # original value: 0.0216773873 * 20
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
         # self.boss_sigma_obs_ang_init = 0.0216773873 * 10 # original value: 0.0216773873 * 20
-        self.boss_sigma_obs_ang_init = 0.0216773873 * 20 # original value: 0.0216773873 * 20
+        self.boss_sigma_obs_ang_init = 0.0216773873 * 1 # original value: 0.0216773873 * 20
         # self.boss_sigma_obs_ang_init = 0 # original value: 0.0216773873 * 20
         
         
@@ -290,7 +290,7 @@ class SingleENV(multiprocessing.Process):
         if self.FRICTION_marker == 'fA' or self.FRICTION_marker == 'fAN' or self.FRICTION_marker == 'fANN':
             self.FRICTION_MEAN = 0.01 # 0.01
         elif self.FRICTION_marker == 'fB' or self.FRICTION_marker == 'fBN' or self.FRICTION_marker == 'fBNN':
-            self.FRICTION_MEAN = 0.1
+            self.FRICTION_MEAN = 0.38
         elif self.FRICTION_marker == 'fC' or self.FRICTION_marker == 'fCN' or self.FRICTION_marker == 'fCNN':
             self.FRICTION_MEAN = 0.25
         elif self.FRICTION_marker == 'fD' or self.FRICTION_marker == 'fDN' or self.FRICTION_marker == 'fDNN':
@@ -626,21 +626,21 @@ class SingleENV(multiprocessing.Process):
                                                                              obj_id, obj_index, obj_pose_3_1)
 
             if obj_index == 0:
-                normal_x = normal_x - 0.000
+                normal_x = normal_x - 0.001
                 normal_y = normal_y + 0.000
                 normal_z = normal_z + 0.0000
             elif obj_index == 1:
-                normal_x = normal_x - 0.000
+                normal_x = normal_x + 0.002
                 normal_y = normal_y - 0.0000
             elif obj_index == 2:
-                normal_x = normal_x - 0.0000
+                normal_x = normal_x - 0.002
                 normal_y = normal_y + 0.000
             elif obj_index == 3:
-                normal_x = normal_x - 0.000
+                normal_x = normal_x - 0.002
                 normal_y = normal_y + 0.000
             elif obj_index == 4:
-                normal_x = normal_x - 0.000
-                normal_y = normal_y + 0.000
+                normal_x = normal_x - 0.005
+                normal_y = normal_y + 0.002
 
             # if obj_index == 0:
             #     normal_x = normal_x - 0.0005

@@ -1,0 +1,4 @@
+<launch>
+    <node name="joy_node" pkg="joy" type="joy_node" output="screen"/>
+    <node name="panda_controller" pkg="panda-ps3-control" type="only_control_pump.py" output="screen"/>
+</launch>

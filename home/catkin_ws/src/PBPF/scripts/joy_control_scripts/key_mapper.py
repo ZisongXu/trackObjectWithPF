@@ -1,0 +1,17 @@
+KEYMAP = {
+    'x': 0,
+    'o': 1,
+    'delta': 2,
+    'square': 3,
+    'l1': 4,
+    'r1': 5,
+    'l2': 6,
+    'r2': 7,
+    'select': 8,
+    'start': 9,
+    'pskey': 10,
+    'up-arrow': 13,
+    'down-arrow': 14,
+    'left-arrow': 15,
+    'right-arrow': 16,
+}
